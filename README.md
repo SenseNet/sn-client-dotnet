@@ -2,7 +2,7 @@
 
 [![Join the chat at https://gitter.im/SenseNet/sn-client-dotnet](https://badges.gitter.im/SenseNet/sn-client-dotnet.svg)](https://gitter.im/SenseNet/sn-client-dotnet?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-This component lets you work with the SenseNet ECM Content Repository (create or manage content, execute queries, etc.) by providing a **C# client API** for the main content operations.
+This component lets you work with the [SenseNet ECM](https://github.com/SenseNet/sensenet) Content Repository (create or manage content, execute queries, etc.) by providing a **C# client API** for the main content operations.
 
 This library connects to a SenseNet portal's **REST API**, but **hides the underlying HTTP requests**. You can work with simple load or create Content operations in C#, instead of having to construct web requests yourself.
 ````csharp
