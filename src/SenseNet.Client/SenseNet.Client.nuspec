@@ -3,21 +3,22 @@
     <metadata>
         <id>SenseNet.Client</id>
         <version>1.1.0.0</version>
-        <title>SenseNet Client for .Net</title>
-        <authors>tusmester,kavics</authors>
-        <owners>SenseNet</owners>
+        <title>Sense/Net Client for .Net</title>
+        <authors>Sense/Net</authors>
+        <owners>Sense/Net</owners>
         <licenseUrl>https://github.com/SenseNet/sn-client-dotnet/blob/master/LICENSE</licenseUrl>
         <projectUrl>https://github.com/SenseNet/sn-client-dotnet</projectUrl>
         <iconUrl>https://avatars2.githubusercontent.com/u/4069121?v=3&amp;s=200</iconUrl>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
-        <description>A .Net client for SenseNet ECMS that makes it easy to use the REST API of the Content Repository.</description>
+        <description>A .Net client for Sense/Net ECMS that makes it easy to use the REST API of the Content Repository.</description>
         <releaseNotes>Initial release.</releaseNotes>
         <copyright>Copyright © Sense/Net Inc.</copyright>
         <language>en-US</language>
-        <tags>sensenet client odata rest api</tags>
+        <tags>sensenet client odata rest</tags>
         <dependencies>
             <group targetFramework=".NETFramework4.5">
                 <dependency id="Newtonsoft.Json" version="9.0.1" />
+                <dependency id="SenseNet.Tools" version="2.1" />
             </group>
         </dependencies>
     </metadata>
