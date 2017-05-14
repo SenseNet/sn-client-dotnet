@@ -81,6 +81,7 @@
     <Compile Include="RenameTests.cs" />
     <Compile Include="EventLoggerTests.cs" />
     <Compile Include="RepositoryPathTests.cs" />
+    <Compile Include="ServerContextTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SenseNet.Client\SenseNet.Client.csproj">
