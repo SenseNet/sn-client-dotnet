@@ -29,7 +29,7 @@
         public static string GetUrl(ServerContext server)
         {
             if (server == null)
-                server = ClientContext.Current.MainServer;
+                server = ClientContext.Current.Server;
             return server.Url;
         }
     }

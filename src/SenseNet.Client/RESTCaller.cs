@@ -680,7 +680,7 @@ namespace SenseNet.Client
         private static void SetAuthenticationForRequest(WebRequest myReq, ServerContext server)
         {
             if (server == null)
-                server = ClientContext.Current.MainServer;
+                server = ClientContext.Current.Server;
 
             if (string.IsNullOrEmpty(server.Username))
             {
