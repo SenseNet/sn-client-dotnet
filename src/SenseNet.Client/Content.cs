@@ -74,7 +74,7 @@ namespace SenseNet.Client
         /// <param name="server">Target server. If null, the first one will be used from the configuration.</param>
         protected Content(ServerContext server)
         {
-            Server = server ?? ClientContext.Current.Servers[0];
+            Server = server ?? ClientContext.Current.MainServer;
             _fields = new Dictionary<string, object>();
         }
         /// <summary>

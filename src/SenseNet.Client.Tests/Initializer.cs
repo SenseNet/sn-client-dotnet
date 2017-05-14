@@ -8,7 +8,7 @@ namespace SenseNet.Client.Tests
         [AssemblyInitialize]
         public static void InitializeAllTests(TestContext context)
         {
-            ClientContext.Initialize(new[]
+            ClientContext.Current.AddServers(new[]
             {
                 new ServerContext
                 {
