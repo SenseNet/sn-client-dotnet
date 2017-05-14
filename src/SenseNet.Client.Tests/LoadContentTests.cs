@@ -143,7 +143,7 @@ namespace SenseNet.Client.Tests
         [TestMethod]
         public async Task Query_Simple()
         {
-            var tasks = await Content.QueryAsync("+TypeIs:Task",
+            var tasks = await Content.QueryAsync("+TypeIs:Folder",
                 new[] {"Id", "Name", "Path", "DisplayName", "Description"},
                 settings: new QuerySettings
                 {
@@ -159,7 +159,7 @@ namespace SenseNet.Client.Tests
         [TestMethod]
         public async Task Query_Complex()
         {
-            var tasks = await Content.QueryAsync("+TypeIs:(Task Memo) +Description:*ae* +CreationDate:>'2000-01-01'",
+            var tasks = await Content.QueryAsync("+TypeIs:(File Folder) +Name:(*e* *.js) +CreationDate:>'2000-01-01'",
                 new[] { "Id", "Name", "Path", "DisplayName", "Description" },
                 settings: new QuerySettings
                 {
