@@ -1,11 +1,11 @@
-# Sense/Net Client library for .Net
+# sensenet ECM Client library for .Net
 
 [![Join the chat at https://gitter.im/SenseNet/sn-client-dotnet](https://badges.gitter.im/SenseNet/sn-client-dotnet.svg)](https://gitter.im/SenseNet/sn-client-dotnet?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![NuGet](https://img.shields.io/nuget/v/SenseNet.Client.svg)](https://www.nuget.org/packages/SenseNet.Client)
 
-This component lets you work with the [Sense/Net ECM](https://github.com/SenseNet/sensenet) Content Repository (create or manage content, execute queries, etc.) by providing a **C# client API** for the main content operations.
+This component lets you work with the [sensenet ECM](https://github.com/SenseNet/sensenet) Content Repository (create or manage content, execute queries, etc.) by providing a **C# client API** for the main content operations.
 
-This library connects to a Sense/Net ECM **REST API**, but **hides the underlying HTTP requests**. You can work with simple load or create Content operations in C#, instead of having to construct web requests yourself.
+This library connects to a sensenet ECM **REST API**, but **hides the underlying HTTP requests**. You can work with simple load or create Content operations in C#, instead of having to construct web requests yourself.
 ````csharp
 var content = await Content.LoadAsync(id);
 ````
