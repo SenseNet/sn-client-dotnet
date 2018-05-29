@@ -23,8 +23,8 @@
         </dependencies>
     </metadata>
     <files>
-        <file src="bin\Release\SenseNet.Client.dll" target="lib\net45\SenseNet.Client.dll" />
-        <file src="bin\Release\SenseNet.Client.pdb" target="lib\net45\SenseNet.Client.pdb" />
-        <file src="bin\Release\SenseNet.Client.XML" target="lib\net45\SenseNet.Client.XML" />
+        <file src="bin\Release\SenseNet.Client.dll" target="lib\net451\SenseNet.Client.dll" />
+        <file src="bin\Release\SenseNet.Client.pdb" target="lib\net451\SenseNet.Client.pdb" />
+        <file src="bin\Release\SenseNet.Client.XML" target="lib\net451\SenseNet.Client.XML" />
     </files>
 </package>
