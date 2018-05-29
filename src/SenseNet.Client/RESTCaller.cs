@@ -611,7 +611,7 @@ namespace SenseNet.Client
             myRequest.Method = "POST";
             myRequest.ContentType = "multipart/form-data; boundary=" + boundary;            
 
-            myRequest.Headers.Add("Content-Disposition", "attachment; filename=\"" + uploadData.FileName + "\"");
+            myRequest.Headers.Add("Content-Disposition", "attachment; filename=\"" + Uri.EscapeUriString(uploadData.FileName) + "\"");
 
             var boundarybytes = Encoding.ASCII.GetBytes("\r\n--" + boundary + "\r\n");            
 
@@ -633,7 +633,7 @@ namespace SenseNet.Client
             requestStream.Write(boundarybytes, 0, boundarybytes.Length);
 
             //write file name and content type
-            var header = string.Format(UPLOAD_HEADER_TEMPLATE, "files[]", uploadData.FileName);
+            var header = string.Format(UPLOAD_HEADER_TEMPLATE, "files[]", Uri.EscapeUriString(uploadData.FileName));
             var headerbytes = Encoding.UTF8.GetBytes(header);
 
             requestStream.Write(headerbytes, 0, headerbytes.Length);
