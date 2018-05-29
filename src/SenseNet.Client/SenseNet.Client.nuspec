@@ -2,16 +2,16 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
     <metadata>
         <id>SenseNet.Client</id>
-        <version>1.1.0.0</version>
-        <title>Sense/Net Client for .Net</title>
-        <authors>Sense/Net</authors>
+        <version>1.1.1.0</version>
+        <title>sensenet Client for .Net</title>
+        <authors>kavics,aniko,lajos,tusmester</authors>
         <owners>Sense/Net</owners>
         <licenseUrl>https://github.com/SenseNet/sn-client-dotnet/blob/master/LICENSE</licenseUrl>
         <projectUrl>https://github.com/SenseNet/sn-client-dotnet</projectUrl>
         <iconUrl>https://avatars2.githubusercontent.com/u/4069121?v=3&amp;s=200</iconUrl>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
-        <description>A .Net client for Sense/Net ECMS that makes it easy to use the REST API of the Content Repository.</description>
-        <releaseNotes>Initial release.</releaseNotes>
+        <description>A .Net client for sensenet that makes it easy to use the REST API of the Content Repository.</description>
+      <releaseNotes>See release notes on GitHub.</releaseNotes>
         <copyright>Copyright © Sense/Net Inc.</copyright>
         <language>en-US</language>
         <tags>sensenet client odata rest</tags>
