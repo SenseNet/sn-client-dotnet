@@ -592,7 +592,7 @@ namespace SenseNet.Client
             var myRequest = GetRequest(url, server);
             myRequest.Method = "POST";
 
-            var postDataBytes = Encoding.ASCII.GetBytes(uploadData.ToString());
+            var postDataBytes = Encoding.UTF8.GetBytes(uploadData.ToString());
 
             myRequest.ContentLength = postDataBytes.Length;
             myRequest.ContentType = UPLOAD_CONTENTTYPE;
