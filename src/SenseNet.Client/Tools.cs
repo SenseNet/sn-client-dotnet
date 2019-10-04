@@ -38,20 +38,20 @@ namespace SenseNet.Client
             if (string.IsNullOrEmpty(path) || string.CompareOrdinal(path, "/Root") == 0)
                 return null;
 
-            if (await Content.ExistsAsync(path))
+            if (await Content.ExistsAsync(path).ConfigureAwait(false))
                 return null;
 
             var parentPath = RepositoryPath.GetParentPath(path);
 
             // ensure parent
-            await EnsurePathAsync(parentPath, containerTypeName);
+            await EnsurePathAsync(parentPath, containerTypeName).ConfigureAwait(false);
 
             var name = RepositoryPath.GetFileName(path);
             var folder = Content.CreateNew(parentPath, containerTypeName ?? "Folder", name);
 
             try
             {
-                await folder.SaveAsync();
+                await folder.SaveAsync().ConfigureAwait(false);
 
                 return folder;
             }

@@ -17,7 +17,7 @@ namespace SenseNet.Client.Tests
 
             try
             {
-                await content.SaveAsync();
+                await content.SaveAsync().ConfigureAwait(false);
             }
             catch (ClientException ex)
             {
@@ -38,7 +38,7 @@ namespace SenseNet.Client.Tests
 
             try
             {
-                await content.SaveAsync();
+                await content.SaveAsync().ConfigureAwait(false);
             }
             catch (ClientException ex)
             {
@@ -52,7 +52,7 @@ namespace SenseNet.Client.Tests
         public async Task ParseException()
         {
             var webex = new WebException("error");
-            var ce = await RESTCaller.GetClientExceptionAsync(webex, "url", HttpMethod.Post, "body");
+            var ce = await RESTCaller.GetClientExceptionAsync(webex, "url", HttpMethod.Post, "body").ConfigureAwait(false);
 
             Assert.AreEqual("url", ce.Data["Url"]);
             Assert.AreEqual("POST", ce.Data["Method"]);

@@ -26,7 +26,8 @@ namespace SenseNet.Client.Security
             {
                 r = permissions
             }),
-            server);
+            server)
+            .ConfigureAwait(false);
         }
 
         /// <summary>
@@ -53,7 +54,7 @@ namespace SenseNet.Client.Security
             if (!string.IsNullOrEmpty(user))
                 requestData.Parameters.Add("user", user);
 
-            var result = await RESTCaller.GetResponseStringAsync(requestData.GetUri(), server);
+            var result = await RESTCaller.GetResponseStringAsync(requestData.GetUri(), server).ConfigureAwait(false);
 
             bool hasPermission;
             if (bool.TryParse(result, out hasPermission))
@@ -73,7 +74,8 @@ namespace SenseNet.Client.Security
             {
                 inheritance = "break"
             }),
-            server);
+            server)
+            .ConfigureAwait(false);
         }
 
         /// <summary>
@@ -87,7 +89,8 @@ namespace SenseNet.Client.Security
             {
                 inheritance = "unbreak"
             }),
-            server);
+            server)
+            .ConfigureAwait(false);
         }
     }
 }

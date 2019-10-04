@@ -112,7 +112,7 @@ namespace SenseNet.Client.Tests
                 // create a temporary empty context
                 ClientContext.Current = new ClientContext();
 
-                await Content.LoadAsync(Constants.User.AdminId);
+                await Content.LoadAsync(Constants.User.AdminId).ConfigureAwait(false);
             }
             finally
             {
