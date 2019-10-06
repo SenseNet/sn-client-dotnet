@@ -181,13 +181,13 @@ namespace SenseNet.Client
         /// Gets the raw response of a general HTTP request from the server.
         /// </summary>
         /// <param name="uri">Request URI.</param>
+        /// <param name="server">Target server.</param>
         /// <param name="method">HTTP method (SenseNet.Client.HttpMethods class has a few predefined methods).</param>
         /// <param name="body">Request body.</param>
-        /// <param name="server">Target server.</param>
         /// <returns>Raw HTTP response.</returns>
         public static async Task<string> GetResponseStringAsync(Uri uri, ServerContext server = null, HttpMethod method = null, string body = null)
         {
-            var retryCount = 0;            
+            var retryCount = 0;
 
             while (retryCount < REQUEST_RETRY_COUNT)
             {
@@ -226,12 +226,10 @@ namespace SenseNet.Client
                 }
                 catch (WebException ex)
                 {
-                    var webResponse = ex.Response as HttpWebResponse;
-
                     // a 404 result is not an error in case of simple get requests, so return silently
-                    if (webResponse != null && webResponse.StatusCode == HttpStatusCode.NotFound && (method == null || method != HttpMethod.Post))
+                    if (ex.Response is HttpWebResponse webResponse && webResponse.StatusCode == HttpStatusCode.NotFound && (method == null || method != HttpMethod.Post))
                         return null;
-                    
+
                     if (retryCount >= REQUEST_RETRY_COUNT - 1)
                     {
                         throw await GetClientExceptionAsync(ex, uri.ToString(), method, body);
@@ -285,7 +283,7 @@ namespace SenseNet.Client
         /// Please catch WebExceptions and parse them using the GetClientExceptionAsync method.
         /// </summary>
         /// <param name="id">Content id.</param>
-        /// <param name="version">Content version (e.g. V2.3D). If not provided, the highest version 
+        /// <param name="version">Content version (e.g. V2.3D). If not provided, the highest version
         /// accessible to the current user will be served.</param>
         /// <param name="propertyName">Binary field name. Default is Binary.</param>
         /// <param name="server">Target server.</param>
@@ -297,7 +295,7 @@ namespace SenseNet.Client
 
             return GetRequest(url, server);
         }
-        
+
         //============================================================================= Static POST methods
 
         /// <summary>
@@ -449,7 +447,7 @@ namespace SenseNet.Client
 
                         ce.Data["SiteUrl"] = requestData.SiteUrl;
                         ce.Data["Parent"] = requestData.ContentId != 0 ? requestData.ContentId.ToString() : requestData.Path;
-                        ce.Data["FileName"] = uploadData.FileName;                        
+                        ce.Data["FileName"] = uploadData.FileName;
                         ce.Data["ContentType"] = uploadData.ContentType;
 
                         throw ce;
@@ -485,7 +483,7 @@ namespace SenseNet.Client
                     HttpWebRequest chunkRequest;
 
                     try
-                    {                        
+                    {
                         chunkRequest = CreateChunkUploadWebRequest(requestData.ToString(), server, uploadData, boundary, out requestStream);
 
                         SnTrace.Category(ClientContext.TraceCategory).Write("###>REQ: {0}", chunkRequest.RequestUri);
@@ -501,9 +499,9 @@ namespace SenseNet.Client
                     }
                     finally
                     {
-                        if (requestStream != null)                            
+                        if (requestStream != null)
                             requestStream.Close();
-                    }                    
+                    }
 
                     //send the request
                     try
@@ -609,11 +607,11 @@ namespace SenseNet.Client
             var myRequest = GetRequest(url, server);
 
             myRequest.Method = "POST";
-            myRequest.ContentType = "multipart/form-data; boundary=" + boundary;            
+            myRequest.ContentType = "multipart/form-data; boundary=" + boundary;
 
             myRequest.Headers.Add("Content-Disposition", "attachment; filename=\"" + Uri.EscapeUriString(uploadData.FileName) + "\"");
 
-            var boundarybytes = Encoding.ASCII.GetBytes("\r\n--" + boundary + "\r\n");            
+            var boundarybytes = Encoding.ASCII.GetBytes("\r\n--" + boundary + "\r\n");
 
             // we must not close the stream after this as we need to write the chunk into it in the caller method
             requestStream = myRequest.GetRequestStream();
@@ -647,7 +645,7 @@ namespace SenseNet.Client
         }
         private static HttpWebRequest GetRequest(Uri uri, ServerContext server)
         {
-            // WebRequest.Create returns HttpWebRequest only if the url 
+            // WebRequest.Create returns HttpWebRequest only if the url
             // is an HTTP url. It may return FtpWebRequest also!
             var myRequest = (HttpWebRequest)WebRequest.Create(uri);
 
