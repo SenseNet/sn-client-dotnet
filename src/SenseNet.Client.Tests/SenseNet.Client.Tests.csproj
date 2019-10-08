@@ -109,7 +109,6 @@
     <Compile Include="ErrorHandlingTests.cs" />
     <Compile Include="EventLogEntryForTests.cs" />
     <Compile Include="EventLoggerForTests.cs" />
-    <Compile Include="GroupTests.cs" />
     <Compile Include="ImportTests.cs" />
     <Compile Include="Initializer.cs" />
     <Compile Include="JsonHelperTests.cs" />
@@ -119,13 +118,10 @@
     <Compile Include="RenameTests.cs" />
     <Compile Include="EventLoggerTests.cs" />
     <Compile Include="RepositoryPathTests.cs" />
-    <Compile Include="RESTCallerTests.cs" />
     <Compile Include="RESTExtensionsTests.cs" />
-    <Compile Include="Security\SecurityManagerTests.cs" />
     <Compile Include="Security\SetPermissionRequestTests.cs" />
     <Compile Include="ServerContextTests.cs" />
     <Compile Include="ToolsTests.cs" />
-    <Compile Include="UploadDataTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SenseNet.Client\SenseNet.Client.csproj">
