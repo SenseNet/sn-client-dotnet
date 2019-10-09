@@ -2,6 +2,7 @@
 
 [![Join the chat at https://gitter.im/SenseNet/sn-client-dotnet](https://badges.gitter.im/SenseNet/sn-client-dotnet.svg)](https://gitter.im/SenseNet/sn-client-dotnet?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![NuGet](https://img.shields.io/nuget/v/SenseNet.Client.svg)](https://www.nuget.org/packages/SenseNet.Client)
+[![GPL License](https://img.shields.io/github/license/SenseNet/sn-client-dotnet)](https://github.com/SenseNet/sn-client-dotnet/blob/master/LICENSE)
 
 This component lets you work with the [sensenet](https://github.com/SenseNet/sensenet) Content Repository (create or manage content, execute queries, etc.) by providing a **C# client API** for the main content operations.
 
