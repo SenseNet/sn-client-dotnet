@@ -14,7 +14,7 @@ namespace SenseNet.Client.Tests
         public async Task Load_NotFound()
         {
             // load a non-existing content: this should not throw an exception
-            var content = await Content.LoadAsync("/Root/ThisPathDoesNotExist");
+            var content = await Content.LoadAsync("/Root/ThisPathDoesNotExist").ConfigureAwait(false);
 
             Assert.IsNull(content);
         }
@@ -22,7 +22,7 @@ namespace SenseNet.Client.Tests
         [TestMethod]
         public async Task LoadById()
         {
-            var content = await Content.LoadAsync(Constants.User.AdminId);
+            var content = await Content.LoadAsync(Constants.User.AdminId).ConfigureAwait(false);
             
             Assert.IsNotNull(content);
             Assert.AreEqual(Constants.User.AdminId, content.Id);
@@ -31,7 +31,7 @@ namespace SenseNet.Client.Tests
         [TestMethod]
         public async Task LoadReferences_Default()
         {
-            var admins = await Content.LoadReferencesAsync(Constants.Group.AdministratorsPath, "Members");
+            var admins = await Content.LoadReferencesAsync(Constants.Group.AdministratorsPath, "Members").ConfigureAwait(false);
             var admin = admins.FirstOrDefault();
 
             Assert.IsNotNull(admin);
@@ -44,7 +44,7 @@ namespace SenseNet.Client.Tests
         {
             // ------------------------------------ load by path
 
-            var admins = await Content.LoadReferencesAsync(Constants.Group.AdministratorsPath, "Members", new[] { "Id", "Path" });
+            var admins = await Content.LoadReferencesAsync(Constants.Group.AdministratorsPath, "Members", new[] { "Id", "Path" }).ConfigureAwait(false);
             var admin = admins.FirstOrDefault();
 
             Assert.IsNotNull(admin);
@@ -53,8 +53,8 @@ namespace SenseNet.Client.Tests
             
             // ------------------------------------ load by id
 
-            var adminsGroup = await Content.LoadAsync(Constants.Group.AdministratorsPath);
-            admins = await Content.LoadReferencesAsync(adminsGroup.Id, "Members", new[] { "Id", "Path" });
+            var adminsGroup = await Content.LoadAsync(Constants.Group.AdministratorsPath).ConfigureAwait(false);
+            admins = await Content.LoadReferencesAsync(adminsGroup.Id, "Members", new[] { "Id", "Path" }).ConfigureAwait(false);
             admin = admins.FirstOrDefault();
 
             Assert.IsNotNull(admin);
@@ -71,7 +71,8 @@ namespace SenseNet.Client.Tests
                 Expand = new[] { "Members" },
                 Select = new[] { "Id", "Name", "Members/Id", "Members/Path", "Members/Type", "Members/CreationDate" },
                 SiteUrl = ServerContext.GetUrl(null)
-            });
+            })
+            .ConfigureAwait(false);
 
             IEnumerable<dynamic> members = adminGroup.Members;
             Assert.IsNotNull(members);
@@ -98,7 +99,8 @@ namespace SenseNet.Client.Tests
                 Expand = new[] { "Members" },
                 Select = new[] { "Id", "Name", "Members/Id", "Members/Name", "Members/Path", "Members/Type", "Members/CreationDate", "Members/Index" },
                 SiteUrl = ServerContext.GetUrl(null)
-            });
+            })
+            .ConfigureAwait(false);
 
             //var members = ((IEnumerable<dynamic>)adminGroup.Members).ToContentEnumerable();
             //var members = adminGroup.Members.ToContentEnumerable();
@@ -110,10 +112,10 @@ namespace SenseNet.Client.Tests
                 member.Index = newIndex;
 
                 // use the client Content API, this was the purpose of the ToContentEnumerable extension method
-                await member.SaveAsync();
+                await member.SaveAsync().ConfigureAwait(false);
 
                 // load it again from the server
-                dynamic tempContent = await Content.LoadAsync(member.Id);
+                dynamic tempContent = await Content.LoadAsync(member.Id).ConfigureAwait(false);
 
                 Assert.AreEqual(newIndex, (int)tempContent.Index);
             }
@@ -122,7 +124,7 @@ namespace SenseNet.Client.Tests
         [TestMethod]
         public async Task Load_PropertyAccess_DateTime()
         {
-            var content = await Content.LoadAsync(Constants.User.AdminId);
+            var content = await Content.LoadAsync(Constants.User.AdminId).ConfigureAwait(false);
             dynamic dContent = content;
 
             Assert.IsNotNull(content);
@@ -149,7 +151,8 @@ namespace SenseNet.Client.Tests
                 {
                     EnableAutofilters = FilterStatus.Disabled,
                     Top = 5
-                });
+                })
+                .ConfigureAwait(false);
 
             var count = tasks.Count();
 
@@ -165,7 +168,8 @@ namespace SenseNet.Client.Tests
                 {
                     EnableAutofilters = FilterStatus.Disabled,
                     Top = 5
-                });
+                })
+                .ConfigureAwait(false);
 
             var count = tasks.Count();
 

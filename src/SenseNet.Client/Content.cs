@@ -206,7 +206,7 @@ namespace SenseNet.Client
         /// <param name="server">Target server.</param>
         public static async Task<Content> LoadAsync(int id, ServerContext server = null)
         {
-            return await RESTCaller.GetContentAsync(id, server);
+            return await RESTCaller.GetContentAsync(id, server).ConfigureAwait(false);
         }
         /// <summary>
         /// Loads a content from the server.
@@ -215,7 +215,7 @@ namespace SenseNet.Client
         /// <param name="server">Target server.</param>
         public static async Task<Content> LoadAsync(string path, ServerContext server = null)
         {
-            return await RESTCaller.GetContentAsync(path, server);
+            return await RESTCaller.GetContentAsync(path, server).ConfigureAwait(false);
         }
         /// <summary>
         /// Loads a content from the server. Use this method to specify a detailed 
@@ -225,7 +225,7 @@ namespace SenseNet.Client
         /// <param name="server">Target server.</param>
         public static async Task<Content> LoadAsync(ODataRequest requestData, ServerContext server = null)
         {
-            return await RESTCaller.GetContentAsync(requestData, server);
+            return await RESTCaller.GetContentAsync(requestData, server).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -243,7 +243,7 @@ namespace SenseNet.Client
                 Select = new[] { "Id" }
             };
 
-            var content = await RESTCaller.GetContentAsync(requestData);
+            var content = await RESTCaller.GetContentAsync(requestData).ConfigureAwait(false);
             return content != null;
         }
         
@@ -255,7 +255,7 @@ namespace SenseNet.Client
         /// <returns></returns>
         public static async Task<IEnumerable<Content>> LoadCollectionAsync(string path, ServerContext server = null)
         {
-            return await RESTCaller.GetCollectionAsync(path, server);
+            return await RESTCaller.GetCollectionAsync(path, server).ConfigureAwait(false);
         }
         /// <summary>
         /// Queries the server for content items using the provided request data.
@@ -265,7 +265,7 @@ namespace SenseNet.Client
         /// <param name="server">Target server.</param>
         public static async Task<IEnumerable<Content>> LoadCollectionAsync(ODataRequest requestData, ServerContext server = null)
         {
-            return await RESTCaller.GetCollectionAsync(requestData, server);
+            return await RESTCaller.GetCollectionAsync(requestData, server).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -277,7 +277,7 @@ namespace SenseNet.Client
         /// <param name="server">Target server.</param>
         public static async Task<IEnumerable<Content>> LoadReferencesAsync(int id, string fieldName, string[] select = null, ServerContext server = null)
         {
-            return await LoadReferencesAsync(null, id, fieldName, select, server);
+            return await LoadReferencesAsync(null, id, fieldName, select, server).ConfigureAwait(false);
         }
         /// <summary>
         /// Loads referenced content from a reference field.
@@ -288,7 +288,7 @@ namespace SenseNet.Client
         /// <param name="server">Target server.</param>
         public static async Task<IEnumerable<Content>> LoadReferencesAsync(string path, string fieldName, string[] select = null, ServerContext server = null)
         {
-            return await LoadReferencesAsync(path, 0, fieldName, select, server);
+            return await LoadReferencesAsync(path, 0, fieldName, select, server).ConfigureAwait(false);
         }
         private static async Task<IEnumerable<Content>> LoadReferencesAsync(string path, int id, string fieldName, string[] select = null, ServerContext server = null)
         {
@@ -306,7 +306,7 @@ namespace SenseNet.Client
                 Path = path
             };
 
-            dynamic content = await Content.LoadAsync(oreq, server);
+            dynamic content = await Content.LoadAsync(oreq, server).ConfigureAwait(false);
 
             // we assume that this is an array of content json objects
             var items = (JArray)content[fieldName];
@@ -334,7 +334,7 @@ namespace SenseNet.Client
             if (!string.IsNullOrEmpty(query))
                 request.Parameters.Add("query", query);
 
-            return await RESTCaller.GetCountAsync(request, server);
+            return await RESTCaller.GetCountAsync(request, server).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -354,7 +354,7 @@ namespace SenseNet.Client
             settings.EnableAutofilters = FilterStatus.Disabled;
             settings.EnableLifespanFilter = FilterStatus.Disabled;
 
-            return await QueryAsync(queryText, select, expand, settings, server);
+            return await QueryAsync(queryText, select, expand, settings, server).ConfigureAwait(false);
         }
         /// <summary>
         /// Executes a query on the server and returns results filtered and expanded 
@@ -387,7 +387,7 @@ namespace SenseNet.Client
             if (settings.EnableLifespanFilter != FilterStatus.Default)
                 oreq.Parameters.Add("enablelifespanfilter", settings.EnableLifespanFilter.ToString().ToLower());
 
-            return await Content.LoadCollectionAsync(oreq, server);
+            return await Content.LoadCollectionAsync(oreq, server).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -415,7 +415,7 @@ namespace SenseNet.Client
             if (!string.IsNullOrEmpty(propertyName))
                 uploadData.PropertyName = propertyName;
 
-            return await RESTCaller.UploadAsync(stream, uploadData, parentPath, server, progressCallback);
+            return await RESTCaller.UploadAsync(stream, uploadData, parentPath, server, progressCallback).ConfigureAwait(false);
         }
         /// <summary>
         /// Uploads a file to the server into the provided container.
@@ -442,7 +442,7 @@ namespace SenseNet.Client
             if (!string.IsNullOrEmpty(propertyName))
                 uploadData.PropertyName = propertyName;
 
-            return await RESTCaller.UploadAsync(stream, uploadData, parentId, server, progressCallback);
+            return await RESTCaller.UploadAsync(stream, uploadData, parentId, server, progressCallback).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -478,10 +478,11 @@ namespace SenseNet.Client
                     fullSize = fileSize,
                     fieldName = propertyName
                 }),
-                server);
+                server)
+                .ConfigureAwait(false);
 
             // call the common method that contains the part that is the same for all implementations
-            await SaveAndFinalizeBlobInternalAsync(responseText, fileSize, blobCallback, fileName, propertyName, server);
+            await SaveAndFinalizeBlobInternalAsync(responseText, fileSize, blobCallback, fileName, propertyName, server).ConfigureAwait(false);
         }
         /// <summary>
         /// Uploads a file or a custom binary property of a content in the provided container.
@@ -514,10 +515,11 @@ namespace SenseNet.Client
                     fullSize = fileSize,
                     fieldName = propertyName
                 }),
-                server);
+                server)
+                .ConfigureAwait(false);
 
             // call the common method that contains the part that is the same for all implementations
-            await SaveAndFinalizeBlobInternalAsync(responseText, fileSize, blobCallback, fileName, propertyName, server);
+            await SaveAndFinalizeBlobInternalAsync(responseText, fileSize, blobCallback, fileName, propertyName, server).ConfigureAwait(false);
         }
         private static async Task SaveAndFinalizeBlobInternalAsync(string initResponse, long fileSize,
             Func<int, int, string, Task> blobCallback, string fileName = null,
@@ -530,7 +532,7 @@ namespace SenseNet.Client
             int versionId = response.versionId;
 
             // save binary through the blob storage
-            await blobCallback(contentId, versionId, token);
+            await blobCallback(contentId, versionId, token).ConfigureAwait(false);
 
             // send final request
             await RESTCaller.GetResponseStringAsync(contentId, "FinalizeBlobUpload", HttpMethod.Post,
@@ -541,7 +543,8 @@ namespace SenseNet.Client
                     fieldName = propertyName,
                     fileName
                 }),
-                server);
+                server)
+                .ConfigureAwait(false);
         }
 
         /// <summary>
@@ -556,7 +559,8 @@ namespace SenseNet.Client
         public static async Task<string> GetBlobToken(int id, string version = null, string propertyName = null, ServerContext server = null)
         {
             var responseText = await RESTCaller.GetResponseStringAsync(id, "GetBinaryToken", HttpMethod.Post,
-                JsonHelper.Serialize(new { version, fieldName = propertyName }), server);
+                JsonHelper.Serialize(new { version, fieldName = propertyName }), server)
+                .ConfigureAwait(false);
 
             var response = JsonHelper.Deserialize(responseText);
 
@@ -574,7 +578,8 @@ namespace SenseNet.Client
         public static async Task<string> GetBlobToken(string path, string version = null, string propertyName = null, ServerContext server = null)
         {
             var responseText = await RESTCaller.GetResponseStringAsync(path, "GetBinaryToken", HttpMethod.Post,
-                JsonHelper.Serialize(new { version, fieldName = propertyName }), server);
+                JsonHelper.Serialize(new { version, fieldName = propertyName }), server)
+                .ConfigureAwait(false);
 
             var response = JsonHelper.Deserialize(responseText);
 
@@ -604,9 +609,9 @@ namespace SenseNet.Client
 
             dynamic responseContent = Existing
                 ? (this.Id > 0
-                    ? await RESTCaller.PatchContentAsync(this.Id, postData, Server)
-                    : await RESTCaller.PatchContentAsync(this.Path, postData, Server))
-                : await RESTCaller.PostContentAsync(this.ParentPath, postData, Server);
+                    ? await RESTCaller.PatchContentAsync(this.Id, postData, Server).ConfigureAwait(false)
+                    : await RESTCaller.PatchContentAsync(this.Path, postData, Server).ConfigureAwait(false))
+                : await RESTCaller.PostContentAsync(this.ParentPath, postData, Server).ConfigureAwait(false);
 
             // reset local values
             InitializeFromResponse(responseContent);
@@ -629,7 +634,8 @@ namespace SenseNet.Client
             await RESTCaller.GetResponseStringAsync(requestData.GetUri(), Server, HttpMethod.Post, JsonHelper.GetJsonPostModel(new
             {
                 permanent
-            }));
+            }))
+            .ConfigureAwait(false);
         }
         /// <summary>
         /// Moves the content to the target location.
@@ -648,7 +654,8 @@ namespace SenseNet.Client
             await RESTCaller.GetResponseStringAsync(requestData.GetUri(), Server, HttpMethod.Post, JsonHelper.GetJsonPostModel(new 
             {
                 targetPath 
-            }));
+            }))
+            .ConfigureAwait(false);
         }
         /// <summary>
         /// Creates a copy of the content to the target location.
@@ -667,7 +674,8 @@ namespace SenseNet.Client
             await RESTCaller.GetResponseStringAsync(requestData.GetUri(), Server, HttpMethod.Post, JsonHelper.GetJsonPostModel(new
             {
                 targetPath
-            }));
+            }))
+            .ConfigureAwait(false);
         }
 
         /// <summary>
@@ -684,7 +692,7 @@ namespace SenseNet.Client
                 Select = new[] {"Id"}
             };
 
-            await RESTCaller.GetResponseStringAsync(requestData.GetUri(), Server, HttpMethod.Post);
+            await RESTCaller.GetResponseStringAsync(requestData.GetUri(), Server, HttpMethod.Post).ConfigureAwait(false);
         }
         /// <summary>
         /// Check in the content.
@@ -700,7 +708,7 @@ namespace SenseNet.Client
                 Select = new[] { "Id" }
             };
 
-            await RESTCaller.GetResponseStringAsync(requestData.GetUri(), Server, HttpMethod.Post);
+            await RESTCaller.GetResponseStringAsync(requestData.GetUri(), Server, HttpMethod.Post).ConfigureAwait(false);
         }
         /// <summary>
         /// Undo all modifications on the content since the last checkout operation.
@@ -716,7 +724,7 @@ namespace SenseNet.Client
                 Select = new [] { "Id" }
             };
 
-            await RESTCaller.GetResponseStringAsync(requestData.GetUri(), Server, HttpMethod.Post);
+            await RESTCaller.GetResponseStringAsync(requestData.GetUri(), Server, HttpMethod.Post).ConfigureAwait(false);
         }
 
         //----------------------------------------------------------------------------- Security
@@ -729,7 +737,7 @@ namespace SenseNet.Client
         /// <param name="server">Target server.</param>
         public async Task<bool> HasPermissionAsync(string[] permissions, string user = null, ServerContext server = null)
         {
-            return await SecurityManager.HasPermissionAsync(this.Id, permissions, user, server);
+            return await SecurityManager.HasPermissionAsync(this.Id, permissions, user, server).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -738,7 +746,7 @@ namespace SenseNet.Client
         /// <param name="server">Target server.</param>
         public async Task BreakInheritanceAsync(ServerContext server = null)
         {
-            await SecurityManager.BreakInheritanceAsync(this.Id, server);
+            await SecurityManager.BreakInheritanceAsync(this.Id, server).ConfigureAwait(false);
         }
         /// <summary>
         /// Removes permission break on the content.
@@ -746,7 +754,7 @@ namespace SenseNet.Client
         /// <param name="server">Target server.</param>
         public async Task UnbreakInheritanceAsync(ServerContext server = null)
         {
-            await SecurityManager.UnbreakInheritanceAsync(this.Id, server);
+            await SecurityManager.UnbreakInheritanceAsync(this.Id, server).ConfigureAwait(false);
         }
 
         //============================================================================= DynamicObject implementation

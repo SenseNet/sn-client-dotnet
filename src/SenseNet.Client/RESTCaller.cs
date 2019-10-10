@@ -52,7 +52,8 @@ namespace SenseNet.Client
                 SiteUrl = ServerContext.GetUrl(server),
                 ContentId = contentId
             },
-            server);
+            server)
+            .ConfigureAwait(false);
         }
         /// <summary>
         /// Loads a content from the server.
@@ -66,7 +67,8 @@ namespace SenseNet.Client
                 SiteUrl = ServerContext.GetUrl(server),
                 Path = path
             },
-            server);
+            server)
+            .ConfigureAwait(false);
         }
         /// <summary>
         /// Loads a content from the server.
@@ -78,7 +80,7 @@ namespace SenseNet.Client
             // just to make sure
             requestData.IsCollectionRequest = false;
 
-            var rs = await GetResponseStringAsync(requestData.GetUri(), server);
+            var rs = await GetResponseStringAsync(requestData.GetUri(), server).ConfigureAwait(false);
             if (rs == null)
                 return null;
 
@@ -97,7 +99,8 @@ namespace SenseNet.Client
                 SiteUrl = ServerContext.GetUrl(server),
                 Path = path,
                 IsCollectionRequest = true
-            });
+            })
+            .ConfigureAwait(false);
         }
         /// <summary>
         /// Queries the server for content items using the provided request data.
@@ -111,7 +114,7 @@ namespace SenseNet.Client
             // just to make sure
             requestData.IsCollectionRequest = true;
 
-            var rs = await GetResponseStringAsync(requestData.GetUri(), server);
+            var rs = await GetResponseStringAsync(requestData.GetUri(), server).ConfigureAwait(false);
             var items = JsonHelper.Deserialize(rs).d.results as JArray;
 
             return items?.Select(c => Content.CreateFromResponse(c, server)) ?? new Content[0];
@@ -128,7 +131,7 @@ namespace SenseNet.Client
             requestData.IsCollectionRequest = true;
             requestData.CountOnly = true;
 
-            var rs = await GetResponseStringAsync(requestData.GetUri(), server);
+            var rs = await GetResponseStringAsync(requestData.GetUri(), server).ConfigureAwait(false);
             int count;
 
             if (int.TryParse(rs, out count))
@@ -155,7 +158,7 @@ namespace SenseNet.Client
                 ActionName = actionName
             };
 
-            return await GetResponseStringAsync(requestData.GetUri(), server, method, body);
+            return await GetResponseStringAsync(requestData.GetUri(), server, method, body).ConfigureAwait(false);
         }
         /// <summary>
         /// Gets the raw response of an OData single content request from the server.
@@ -175,7 +178,7 @@ namespace SenseNet.Client
                 ActionName = actionName
             };
 
-            return await GetResponseStringAsync(requestData.GetUri(), server, method, body);
+            return await GetResponseStringAsync(requestData.GetUri(), server, method, body).ConfigureAwait(false);
         }
         /// <summary>
         /// Gets the raw response of a general HTTP request from the server.
@@ -221,7 +224,7 @@ namespace SenseNet.Client
                 {
                     using (var wr = await myRequest.GetResponseAsync())
                     {
-                        return await ReadResponseStringAsync(wr);
+                        return await ReadResponseStringAsync(wr).ConfigureAwait(false);
                     }
                 }
                 catch (WebException ex)
@@ -232,11 +235,11 @@ namespace SenseNet.Client
 
                     if (retryCount >= REQUEST_RETRY_COUNT - 1)
                     {
-                        throw await GetClientExceptionAsync(ex, uri.ToString(), method, body);
+                        throw await GetClientExceptionAsync(ex, uri.ToString(), method, body).ConfigureAwait(false);
                     }
                     else
                     {
-                        var responseString = await ReadResponseStringAsync(ex.Response);
+                        var responseString = await ReadResponseStringAsync(ex.Response).ConfigureAwait(false);
 
                         Thread.Sleep(50);
 
@@ -265,7 +268,7 @@ namespace SenseNet.Client
             if (postData != null && method == null)
                 method = HttpMethod.Post;
 
-            var rs = await GetResponseStringAsync(requestData.GetUri(), server, method, postData == null ? null : JsonHelper.Serialize(postData));
+            var rs = await GetResponseStringAsync(requestData.GetUri(), server, method, postData == null ? null : JsonHelper.Serialize(postData)).ConfigureAwait(false);
 
             try
             {
@@ -307,7 +310,7 @@ namespace SenseNet.Client
         /// <returns>A deserialized dynamic JSON object parsed from the response.</returns>
         public static async Task<dynamic> PostContentAsync(string parentPath, object postData, ServerContext server = null)
         {
-            return await PostContentInternalAsync(parentPath, postData, HttpMethod.Post, server);
+            return await PostContentInternalAsync(parentPath, postData, HttpMethod.Post, server).ConfigureAwait(false);
         }
         /// <summary>
         /// Sends a PATCH OData request to the server containing the specified data.
@@ -318,7 +321,7 @@ namespace SenseNet.Client
         /// <returns>A deserialized dynamic JSON object parsed from the response.</returns>
         public static async Task<dynamic> PatchContentAsync(int contentId, object postData, ServerContext server = null)
         {
-            return await PostContentInternalAsync(contentId, postData, HttpMethods.PATCH, server);
+            return await PostContentInternalAsync(contentId, postData, HttpMethods.PATCH, server).ConfigureAwait(false);
         }
         /// <summary>
         /// Sends a PATCH OData request to the server containing the specified data.
@@ -329,7 +332,7 @@ namespace SenseNet.Client
         /// <returns>A deserialized dynamic JSON object parsed from the response.</returns>
         public static async Task<dynamic> PatchContentAsync(string path, object postData, ServerContext server = null)
         {
-            return await PostContentInternalAsync(path, postData, HttpMethods.PATCH, server);
+            return await PostContentInternalAsync(path, postData, HttpMethods.PATCH, server).ConfigureAwait(false);
         }
         /// <summary>
         /// Sends a PUT OData request to the server containing the specified data.
@@ -340,7 +343,7 @@ namespace SenseNet.Client
         /// <returns>A deserialized dynamic JSON object parsed from the response.</returns>
         public static async Task<dynamic> PutContentAsync(string path, object postData, ServerContext server = null)
         {
-            return await PostContentInternalAsync(path, postData, HttpMethod.Put, server);
+            return await PostContentInternalAsync(path, postData, HttpMethod.Put, server).ConfigureAwait(false);
         }
 
         private static async Task<dynamic> PostContentInternalAsync(string path, object postData, HttpMethod method, ServerContext server = null)
@@ -351,7 +354,7 @@ namespace SenseNet.Client
                 Path = path
             };
 
-            var rs = await GetResponseStringAsync(reqData.GetUri(), server, method, JsonHelper.GetJsonPostModel(postData));
+            var rs = await GetResponseStringAsync(reqData.GetUri(), server, method, JsonHelper.GetJsonPostModel(postData)).ConfigureAwait(false);
 
             return JsonHelper.Deserialize(rs).d;
         }
@@ -363,7 +366,7 @@ namespace SenseNet.Client
                 ContentId = contentId
             };
 
-            var rs = await GetResponseStringAsync(reqData.GetUri(), server, method, JsonHelper.GetJsonPostModel(postData));
+            var rs = await GetResponseStringAsync(reqData.GetUri(), server, method, JsonHelper.GetJsonPostModel(postData)).ConfigureAwait(false);
 
             return JsonHelper.Deserialize(rs).d;
         }
@@ -388,7 +391,7 @@ namespace SenseNet.Client
                 ContentId = parentId
             };
 
-            return await UploadInternalAsync(binaryStream, uploadData, requestData, server, progressCallback);
+            return await UploadInternalAsync(binaryStream, uploadData, requestData, server, progressCallback).ConfigureAwait(false);
         }
         /// <summary>
         /// Uploads a file to the server into the provided container.
@@ -408,7 +411,7 @@ namespace SenseNet.Client
                 Path = parentPath
             };
 
-            return await UploadInternalAsync(binaryStream, uploadData, requestData, server, progressCallback);
+            return await UploadInternalAsync(binaryStream, uploadData, requestData, server, progressCallback).ConfigureAwait(false);
         }
         private static async Task<Content> UploadInternalAsync(Stream binaryStream, UploadData uploadData, ODataRequest requestData, ServerContext server = null, Action<int> progressCallback = null)
         {
@@ -433,7 +436,7 @@ namespace SenseNet.Client
 
                     using (var wr = await myReq.GetResponseAsync())
                     {
-                        uploadData.ChunkToken = await ReadResponseStringAsync(wr);
+                        uploadData.ChunkToken = await ReadResponseStringAsync(wr).ConfigureAwait(false);
                     }
 
                     // succesful request: skip out from retry loop
@@ -495,7 +498,7 @@ namespace SenseNet.Client
                         requestStream.Write(buffer, 0, bytesRead);
                         requestStream.Write(trailer, 0, trailer.Length);
 
-                        await requestStream.FlushAsync();
+                        await requestStream.FlushAsync().ConfigureAwait(false);
                     }
                     finally
                     {
@@ -508,7 +511,7 @@ namespace SenseNet.Client
                     {
                         using (var wr = await chunkRequest.GetResponseAsync())
                         {
-                            var rs = await ReadResponseStringAsync(wr);
+                            var rs = await ReadResponseStringAsync(wr).ConfigureAwait(false);
 
                             uploadedContent = JsonHelper.Deserialize(rs);
                         }
@@ -570,7 +573,7 @@ namespace SenseNet.Client
         /// status code, original response text, etc.) and the original exception as an inner exception.</returns>
         public static async Task<ClientException> GetClientExceptionAsync(WebException ex, string requestUrl = null, HttpMethod method = null, string body = null)
         {
-            var responseString = await ReadResponseStringAsync(ex.Response);
+            var responseString = await ReadResponseStringAsync(ex.Response).ConfigureAwait(false);
             var exceptionData = GetExceptionData(responseString);
 
             var ce = new ClientException(exceptionData, ex)
@@ -670,7 +673,7 @@ namespace SenseNet.Client
 
                 using (var reader = new StreamReader(stream))
                 {
-                    return await reader.ReadToEndAsync();
+                    return await reader.ReadToEndAsync().ConfigureAwait(false);
                 }
             }
         }

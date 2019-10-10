@@ -60,7 +60,8 @@ namespace SenseNet.Client.Tests
                         else
                             Trace.WriteLine("##IMP> FILEIMPORTED: " + repositoryPath);
                     }
-                });
+                })
+                .ConfigureAwait(false);
 
                 Trace.WriteLine("##IMP> SESSION FINISHED");
             }

@@ -145,7 +145,7 @@ namespace SenseNet.Client
             // create an instance to let clients start multiple import operations in parallel
             var importer = new Importer(sourcePath, targetPath, options);
 
-            await importer.ImportInternal();
+            await importer.ImportInternal().ConfigureAwait(false);
         }
 
         //================================================================================================== Internal instance API
@@ -163,18 +163,18 @@ namespace SenseNet.Client
 
             if (isFile)
             {
-                await ImportDocumentAsync(_sourcePath, _targetPath);
+                await ImportDocumentAsync(_sourcePath, _targetPath).ConfigureAwait(false);
                 return;
             }
 
             // create root
-            await Tools.EnsurePathAsync(_targetPath);
+            await Tools.EnsurePathAsync(_targetPath).ConfigureAwait(false);
 
             // enter the main processing phase
-            await _mainSemaphore.WaitAsync();
-
+            await _mainSemaphore.WaitAsync().ConfigureAwait(false);
+            
             // algorithm: recursive, limited by the max degree of parallelism option
-            await StartProcessingChildren(_sourcePath);
+            await StartProcessingChildren(_sourcePath).ConfigureAwait(false);
 
             // check if there is any work to do (e.g. no folders and files at all)
             if (ImportIsCompleted())
@@ -184,7 +184,7 @@ namespace SenseNet.Client
             // released by one of the subtasks when it finishes its job and realizes that
             // there are no more folders in the queue and no more tasks to wait for.
             // This technique is better than calling Task.Delay in a loop.
-            await _mainSemaphore.WaitAsync();
+            await _mainSemaphore.WaitAsync().ConfigureAwait(false);
         }
 
         private async Task CreateFolderAsyncAndEnqueue(string fileSystemPath)
@@ -196,7 +196,7 @@ namespace SenseNet.Client
                 // TODO: implement multiple target servers
 
                 // this will do the real job (create the folder)
-                var folder = await Tools.EnsurePathAsync(repositoryPath, _options.ContainerTypeName);
+                var folder = await Tools.EnsurePathAsync(repositoryPath, _options.ContainerTypeName).ConfigureAwait(false);
 
                 // subfolders are ready to be processed later: add this path to the queue
                 _folderPathCollection.TryAdd(fileSystemPath);
@@ -226,16 +226,16 @@ namespace SenseNet.Client
                 var name = Path.GetFileName(sourcePath);
                 var repositoryPath = RepositoryPath.Combine(targetPath, name);
 
-                if (!_options.Overwrite && await Content.ExistsAsync(repositoryPath))
+                if (!_options.Overwrite && await Content.ExistsAsync(repositoryPath).ConfigureAwait(false))
                     return;
 
-                var parent = await Content.LoadAsync(targetPath);
+                var parent = await Content.LoadAsync(targetPath).ConfigureAwait(false);
                 Content file;
 
                 using (var fileStream = File.OpenRead(sourcePath))
                 {
                     // TODO: implement multiple target servers
-                    file = await Content.UploadAsync(parent.Id, name, fileStream, _options.FileTypeName);
+                    file = await Content.UploadAsync(parent.Id, name, fileStream, _options.FileTypeName).ConfigureAwait(false);
                 }
 
                 _options.FileImportCallback?.Invoke(sourcePath, targetPath, file, null);
@@ -268,8 +268,8 @@ namespace SenseNet.Client
             // start tasks for subfolders
             foreach (var subfolderPath in Directory.EnumerateDirectories(sourcePath, _options.FolderSearchPattern, SearchOption.TopDirectoryOnly))
             {
-                // start a new task only if we did not exceed the max concurrent limit
-                await _workerSemaphore.WaitAsync();
+                // start a new task only if we did not exceed the max concurrent limit 
+                await _workerSemaphore.WaitAsync().ConfigureAwait(false);
 
                 // Suppress warning, DO NOT WAIT for this task
 #pragma warning disable CS4014
@@ -280,8 +280,8 @@ namespace SenseNet.Client
             // start tasks for files
             foreach (var filePath in Directory.EnumerateFiles(sourcePath, _options.FileSearchPattern, SearchOption.TopDirectoryOnly))
             {
-                // start a new task only if we did not exceed the max concurrent limit
-                await _workerSemaphore.WaitAsync();
+                // start a new task only if we did not exceed the max concurrent limit 
+                await _workerSemaphore.WaitAsync().ConfigureAwait(false);
 
                 // Suppress warning, DO NOT WAIT for this task
 #pragma warning disable CS4014

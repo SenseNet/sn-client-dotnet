@@ -30,7 +30,8 @@ namespace SenseNet.Client
             {
                 contentIds = memberIds
             }),
-            server);
+            server)
+            .ConfigureAwait(false);
         }
         /// <summary>
         /// Removes members from a group.
@@ -44,7 +45,8 @@ namespace SenseNet.Client
             {
                 contentIds = memberIds
             }),
-            server);
+            server)
+            .ConfigureAwait(false);
         }
 
         //============================================================================= Instance API
@@ -55,7 +57,7 @@ namespace SenseNet.Client
         /// <param name="memberIds">Ids of members to add to the group.</param>
         public async Task AddMembersAsync(int[] memberIds)
         {
-            await AddMembersAsync(this.Id, memberIds, this.Server);
+            await AddMembersAsync(this.Id, memberIds, this.Server).ConfigureAwait(false);
         }
         /// <summary>
         /// Removes members from a group.
@@ -63,7 +65,7 @@ namespace SenseNet.Client
         /// <param name="memberIds">Ids of members to remove from the group.</param>
         public async Task RemoveMembersAsync(int[] memberIds)
         {
-            await RemoveMembersAsync(this.Id, memberIds, this.Server);
+            await RemoveMembersAsync(this.Id, memberIds, this.Server).ConfigureAwait(false);
         }
     }
 }

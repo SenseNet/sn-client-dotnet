@@ -20,14 +20,14 @@ namespace SenseNet.Client.Tests
         {
             var folderName = Guid.NewGuid().ToString();
             var folderPath = RepositoryPath.Combine(RootPath, folderName);
-            await Tools.EnsurePathAsync(folderPath);
+            await Tools.EnsurePathAsync(folderPath).ConfigureAwait(false);
 
-            dynamic folder = await Content.LoadAsync(folderPath);
+            dynamic folder = await Content.LoadAsync(folderPath).ConfigureAwait(false);
 
             // This 'method' does not exist locally. It will be resolved to an OData request 
             // and will return a task of type dynamic that will contain the result.
             Task<dynamic> task = folder.GetPermissionInfo(new {identity = AdminPath});
-            var result = await task;
+            var result = await task.ConfigureAwait(false);
 
             string resultPath = result.d.permissionInfo.path;
 
@@ -38,11 +38,11 @@ namespace SenseNet.Client.Tests
         {
             var folderName = Guid.NewGuid().ToString();
             var folderPath = RepositoryPath.Combine(RootPath, folderName);
-            await Tools.EnsurePathAsync(folderPath);
+            await Tools.EnsurePathAsync(folderPath).ConfigureAwait(false);
 
-            dynamic folder = await Content.LoadAsync(folderPath);
+            dynamic folder = await Content.LoadAsync(folderPath).ConfigureAwait(false);
 
-            var haspermission = await folder.HasPermissionAsync(new[] { "See" }, VisitorPath);
+            var haspermission = await folder.HasPermissionAsync(new[] { "See" }, VisitorPath).ConfigureAwait(false);
             Assert.IsFalse(haspermission, "Test prerequisite error: Visitor should not have this permission here.");
 
             // This 'method' does not exist locally. It will be resolved to an OData request 
@@ -55,9 +55,9 @@ namespace SenseNet.Client.Tests
                 }
             });
 
-            await task;
+            await task.ConfigureAwait(false);
             
-            haspermission = await folder.HasPermissionAsync(new[] {"See"}, VisitorPath);
+            haspermission = await folder.HasPermissionAsync(new[] {"See"}, VisitorPath).ConfigureAwait(false);
             Assert.IsTrue(haspermission, "Visitor does not have the previously given permission.");
         }
 
