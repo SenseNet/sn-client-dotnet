@@ -309,7 +309,17 @@ namespace SenseNet.Client
             dynamic content = await Content.LoadAsync(oreq, server);
 
             // we assume that this is an array of content json objects
-            var items = (JArray)content[fieldName];
+            var _itemToken = (JToken)content[fieldName];
+            var items = new JArray();
+
+            if (((JToken)_itemToken).Type == JTokenType.Array)
+            {
+                items = (JArray)_itemToken;
+            }
+            else if (((JToken)_itemToken).Type == JTokenType.Object)
+            {
+                items.Add((JObject)_itemToken);
+            }
 
             return items.Select(c => CreateFromResponse(c, server));
         }
