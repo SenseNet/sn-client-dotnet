@@ -27,7 +27,7 @@ namespace SenseNet.Client
         /// <summary>
         /// Initializes a new instance of the ClientException class.
         /// </summary>
-        public ClientException(ErrorData errorData, Exception innerException = null): base(GetMessage(errorData), innerException)
+        public ClientException(ErrorData errorData, Exception innerException = null) : base(GetMessage(errorData), innerException)
         {
             ErrorData = errorData ?? ErrorData.Empty;
         }
@@ -39,12 +39,9 @@ namespace SenseNet.Client
         {
             get
             {
-                var wex = InnerException as WebException;
-                if (wex != null)
+                if (InnerException is WebException wex && wex.Response is HttpWebResponse webResponse)
                 {
-                    var webResponse = wex.Response as HttpWebResponse;
-                    if (webResponse != null)
-                        return webResponse.StatusCode;
+                    return webResponse.StatusCode;
                 }
 
                 return HttpStatusCode.OK;
@@ -74,8 +71,8 @@ namespace SenseNet.Client
             ErrorCode = string.Empty,
             HttpStatusCode = string.Empty,
             ExceptionType = string.Empty,
-            Message = new ErrorMessage { Language = string.Empty, Value = string.Empty},
-            InnerError = new StackInfo {Trace = string.Empty}
+            Message = new ErrorMessage { Language = string.Empty, Value = string.Empty },
+            InnerError = new StackInfo { Trace = string.Empty }
         };
 
         /// <summary>
@@ -84,7 +81,7 @@ namespace SenseNet.Client
         [JsonProperty(PropertyName = "code", Order = 1)]
         public string ErrorCode { get; internal set; }
         /// <summary>
-        /// HTTP status code parsed from the error response. This is a technical 
+        /// HTTP status code parsed from the error response. This is a technical
         /// property, check the ClientException.StatusCode property instead.
         /// </summary>
         [JsonIgnore]
@@ -127,7 +124,7 @@ namespace SenseNet.Client
     public class StackInfo
     {
         /// <summary>
-        /// Server code stack trace text. 
+        /// Server code stack trace text.
         /// </summary>
         [JsonProperty(PropertyName = "trace", Order = 1)]
         public string Trace { get; internal set; }

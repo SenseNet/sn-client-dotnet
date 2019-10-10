@@ -27,7 +27,7 @@ namespace SenseNet.Client
     public class ImportOptions
     {
         /// <summary>
-        /// Determines how many concurrent operations (e.g. file uploads or 
+        /// Determines how many concurrent operations (e.g. file uploads or
         /// folder creations) may occur at the same time. Default is 5.
         /// 1 means sequential processing.
         /// </summary>
@@ -138,9 +138,9 @@ namespace SenseNet.Client
         public static async Task ImportAsync(string sourcePath, string targetPath, ImportOptions options = null)
         {
             if (sourcePath == null)
-                throw new ArgumentNullException("sourcePath");
+                throw new ArgumentNullException(nameof(sourcePath));
             if (targetPath == null)
-                throw new ArgumentNullException("targetPath");
+                throw new ArgumentNullException(nameof(targetPath));
 
             // create an instance to let clients start multiple import operations in parallel
             var importer = new Importer(sourcePath, targetPath, options);
@@ -259,7 +259,7 @@ namespace SenseNet.Client
         private async Task StartProcessingChildren(string sourcePath)
         {
             // This methods enumerates direct child folders and files and
-            // starts tasks for creating them - but only in a pace as there 
+            // starts tasks for creating them - but only in a pace as there
             // are available 'slots' for them (determined by the configured
             // max degree of parallelism).
 
@@ -289,7 +289,7 @@ namespace SenseNet.Client
 #pragma warning restore CS4014
             }
         }
-        
+
         //================================================================================================== Helper methods
 
         private bool TryProcessingNextFolder()
