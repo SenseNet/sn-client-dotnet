@@ -683,6 +683,13 @@ namespace SenseNet.Client
             if (server == null)
                 server = ClientContext.Current.Server;
 
+            // use token authentication
+            if (!string.IsNullOrEmpty(server.Authentication.AccessToken))
+            {
+                myReq.Headers.Add("Authorization", "Bearer " + server.Authentication.AccessToken);
+                return;
+            }
+
             if (string.IsNullOrEmpty(server.Username))
             {
                 // use NTLM authentication
