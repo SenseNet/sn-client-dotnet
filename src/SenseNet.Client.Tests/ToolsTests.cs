@@ -1,3 +1,4 @@
+using System.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace SenseNet.Client.Tests
@@ -8,9 +9,15 @@ namespace SenseNet.Client.Tests
         [TestMethod]
         public void GenerateStreamFromString()
         {
-            var response = Tools.GenerateStreamFromString("test");
+            using (var stream = Tools.GenerateStreamFromString("test"))
+            {
+                using (var sr = new StreamReader(stream))
+                {
+                    var result = sr.ReadToEnd();
 
-            Assert.IsInstanceOfType(response, typeof(System.IO.Stream));
+                    Assert.AreEqual("test", result);
+                }
+            }
         }
     }
 }

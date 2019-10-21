@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace SenseNet.Client.Tests
@@ -13,7 +11,6 @@ namespace SenseNet.Client.Tests
         public void TestSerialize()
         {
             var testObject = new KeyValuePair<string, int>("id", 6);
-
             var response = JsonHelper.Serialize(testObject);
 
             Assert.IsInstanceOfType(response, typeof(string));
@@ -22,9 +19,8 @@ namespace SenseNet.Client.Tests
         [TestMethod]
         public void TestDeserializeAsType()
         {
-            string testObject = "{\"Key\":\"id\",\"Value\":6}";
-
-            KeyValuePair<string, int> response = JsonHelper.Deserialize<KeyValuePair<string, int>>(testObject);
+            var testObject = "{\"Key\":\"id\",\"Value\":6}";
+            var response = JsonHelper.Deserialize<KeyValuePair<string, int>>(testObject);
 
             Assert.IsNotInstanceOfType(response, typeof(string));
 
@@ -35,8 +31,7 @@ namespace SenseNet.Client.Tests
         [TestMethod]
         public void TestDeserialize()
         {
-            string testObject = "{\"Key\":\"id\",\"Value\":6}";
-
+            var testObject = "{\"Key\":\"id\",\"Value\":6}";
             var response = JsonHelper.Deserialize(testObject);
 
             Assert.IsNotInstanceOfType(response, typeof(string));
@@ -49,7 +44,6 @@ namespace SenseNet.Client.Tests
         public void TestGetJsonPostModel()
         {
             var testObject = new KeyValuePair<string, int>("id", 6);
-
             var response = JsonHelper.GetJsonPostModel(testObject);
 
             Assert.IsInstanceOfType(response, typeof(string));

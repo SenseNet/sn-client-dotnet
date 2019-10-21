@@ -13,7 +13,7 @@ namespace SenseNet.Client.Tests
                 new ServerContext
                 {
                     Url = "http://localhost",
-                    Username = "admin",
+                    Username = "builtin\\admin",
                     Password = "admin"
                 }
             });
