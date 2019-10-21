@@ -5,6 +5,12 @@
     /// </summary>
     public class ServerContext
     {
+        public class AuthenticationInfo
+        {
+            public string AccessToken { get; set; }
+            public string RefreshToken { get; set; }
+        }
+
         /// <summary>
         /// Username used for authenticating all requests made to this server.
         /// In case of an empty username DefaultCredentials will be used.
@@ -18,6 +24,8 @@
         /// Server URL.
         /// </summary>
         public string Url { get; set; }
+
+        public AuthenticationInfo Authentication { get; } = new AuthenticationInfo();
 
         //============================================================================= Static API
 
