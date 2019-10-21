@@ -12,7 +12,7 @@ namespace SenseNet.Client.Tests
             {
                 new ServerContext
                 {
-                    Url = "https://devservice.demo.sensenet.com",
+                    Url = "http://localhost",
                     Username = "builtin\\admin",
                     Password = "admin"
                 }
