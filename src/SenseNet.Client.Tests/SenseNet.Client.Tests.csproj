@@ -99,13 +99,17 @@
     <Compile Include="EventLoggerForTests.cs" />
     <Compile Include="ImportTests.cs" />
     <Compile Include="Initializer.cs" />
+    <Compile Include="JsonHelperTests.cs" />
     <Compile Include="LoadContentTests.cs" />
     <Compile Include="ProjectionTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RenameTests.cs" />
     <Compile Include="EventLoggerTests.cs" />
     <Compile Include="RepositoryPathTests.cs" />
+    <Compile Include="RESTExtensionsTests.cs" />
+    <Compile Include="Security\SetPermissionRequestTests.cs" />
     <Compile Include="ServerContextTests.cs" />
+    <Compile Include="ToolsTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SenseNet.Client\SenseNet.Client.csproj">
