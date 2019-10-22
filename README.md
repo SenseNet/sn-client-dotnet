@@ -23,3 +23,5 @@ var results = await Content.QueryAsync(queryText);
 ````
 
 See the details and more examples [here](http://wiki.sensenet.com/Client_library).
+
+*This article can also be read in [Brazilian Portuguese](README-pt-BR.md).*
