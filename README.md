@@ -9,7 +9,7 @@ This library connects to a sensenet **REST API**, but **hides the underlying HTT
 ````csharp
 var content = await Content.LoadAsync(id);
 ````
-The component exposes a completely *async API* so that you can use it in a resource-friendly way.
+The component exposes a completely *asynchronous API* so that you can use it in a resource-friendly way.
 
 The client *Content* class gives you a *dynamic* object so you can access fields (that are essentially properties in the response JSON) easily.
 ````csharp
