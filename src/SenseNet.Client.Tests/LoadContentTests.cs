@@ -10,6 +10,12 @@ namespace SenseNet.Client.Tests
     [TestClass]
     public class LoadContentTests
     {
+        [ClassInitialize]
+        public static void ClassInitializer(TestContext _)
+        {
+            Initializer.InitializeServer();
+        }
+
         [TestMethod]
         public async Task Load_NotFound()
         {

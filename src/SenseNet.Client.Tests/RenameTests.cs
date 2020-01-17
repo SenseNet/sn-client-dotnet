@@ -37,9 +37,10 @@ namespace SenseNet.Client.Tests
         [ClassInitialize]
         public static void Cleanup(TestContext context)
         {
+            Initializer.InitializeServer();
+
             var root = Content.LoadAsync(ROOTPATH).Result;
-            if (root != null)
-                root.DeleteAsync().Wait();
+            root?.DeleteAsync().Wait();
         }
     }
 }

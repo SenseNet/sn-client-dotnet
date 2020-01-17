@@ -15,6 +15,12 @@ namespace SenseNet.Client.Tests
     {
         private static int _errorCount;
 
+        [ClassInitialize]
+        public static void ClassInitializer(TestContext _)
+        {
+            Initializer.InitializeServer();
+        }
+
         [TestMethod]
         public async Task Import_Subfolders()
         {

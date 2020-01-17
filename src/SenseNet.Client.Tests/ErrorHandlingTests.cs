@@ -9,6 +9,12 @@ namespace SenseNet.Client.Tests
     [TestClass]
     public class ErrorHandlingTests
     {
+        [ClassInitialize]
+        public static void ClassInitializer(TestContext _)
+        {
+            Initializer.InitializeServer();
+        }
+
         [TestMethod]
         public async Task ContentTypeIsNotAllowed()
         {
