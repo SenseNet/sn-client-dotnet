@@ -121,12 +121,20 @@ namespace SenseNet.Client
         /// <summary>
         /// Initializes an instance of the ODataRequest class.
         /// </summary>
-        public ODataRequest()
+        public ODataRequest() : this(null) { }
+
+        /// <summary>
+        /// Initializes an instance of the ODataRequest class.
+        /// </summary>
+        public ODataRequest(ServerContext server)
         {
             // set default values
             Parameters = new Dictionary<string, string>();
             Metadata = MetadataFormat.None;
-            SiteUrl = ServerContext.GetUrl(null);
+            SiteUrl = ServerContext.GetUrl(server);
+
+            if (string.IsNullOrEmpty(SiteUrl))
+                throw new InvalidOperationException("SiteUrl is missing. Please configure or provide a server context.");
 
             //InlineCount = InlineCount.None;
             //Sort = new SortInfo[0];
@@ -188,7 +196,7 @@ namespace SenseNet.Client
                 urlParams.Add(key, Parameters[key]);
             }
 
-            // always omit metadata if not requested explicitely
+            // always omit metadata if not requested explicitly
             switch (Metadata)
             {
                 case MetadataFormat.Minimal: 
@@ -205,7 +213,7 @@ namespace SenseNet.Client
             if (urlParams.Count == 0)
                 return url;
 
-            return url + "?" + string.Join("&", urlParams.Select(dkv => string.Format("{0}={1}", dkv.Key, dkv.Value)));
+            return url + "?" + string.Join("&", urlParams.Select(dkv => $"{dkv.Key}={dkv.Value}"));
         }
 
         //============================================================================= Instance API
@@ -227,7 +235,7 @@ namespace SenseNet.Client
         {
             // short url format that contains only the id
             if (ContentId > 0)
-                return string.Format("{0}/{1}/content({2})", SiteUrl, SERVICE_NAME, ContentId);
+                return $"{SiteUrl}/{SERVICE_NAME}/content({ContentId})";
 
             // regular url that contains the content path
             var path = Path.TrimStart('/');
@@ -240,15 +248,15 @@ namespace SenseNet.Client
                 {
                     var path1 = path.Substring(0, lastSlash);
                     var path2 = path.Substring(lastSlash + 1);
-                    path = string.Format("{0}/('{1}')", path1, path2);
+                    path = $"{path1}/('{path2}')";
                 }
                 else
                 {
-                    path = string.Format("('{0}')", path);
+                    path = $"('{path}')";
                 }
             }
 
-            return string.Format("{0}/{1}/{2}", SiteUrl.TrimEnd('/'), SERVICE_NAME, path);
+            return $"{SiteUrl.TrimEnd('/')}/{SERVICE_NAME}/{path}";
         }
     }
 }

@@ -131,6 +131,16 @@ namespace SenseNet.Client
                 Servers = serverList.ToArray();
             }
         }
+        /// <summary>
+        /// Removes all servers from the servers list. This method is thread safe.
+        /// </summary>
+        internal void RemoveAllServers()
+        {
+            lock (_serversLock)
+            {
+                Servers = new ServerContext[0];
+            }
+        }
 
         /// <summary>
         /// Number of bytes sent to the server in one chunk during upload operations. Default: 10 MB.

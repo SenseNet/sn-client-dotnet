@@ -8,11 +8,17 @@ namespace SenseNet.Client.Tests
         [AssemblyInitialize]
         public static void InitializeAllTests(TestContext context)
         {
+            InitializeServer();
+        }
+
+        public static void InitializeServer()
+        {
+            ClientContext.Current.RemoveAllServers();
             ClientContext.Current.AddServers(new[]
             {
                 new ServerContext
                 {
-                    Url = "http://localhost",
+                    Url = "https://devservice.demo.sensenet.com",
                     Username = "builtin\\admin",
                     Password = "admin"
                 }
