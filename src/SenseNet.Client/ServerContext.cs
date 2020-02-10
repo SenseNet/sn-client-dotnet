@@ -1,4 +1,7 @@
-﻿namespace SenseNet.Client
+﻿using System;
+using System.Threading.Tasks;
+
+namespace SenseNet.Client
 {
     /// <summary>
     /// Represents a connection to a server.
@@ -24,6 +27,16 @@
         /// Server URL.
         /// </summary>
         public string Url { get; set; }
+        
+        public async Task LoginAsync(string username, string password)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Logout()
+        {
+            throw new NotImplementedException();
+        }
 
         public AuthenticationInfo Authentication { get; } = new AuthenticationInfo();
 
