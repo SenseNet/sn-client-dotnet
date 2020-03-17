@@ -42,9 +42,8 @@ namespace SenseNet.Client.Security
             if (permissions == null || permissions.Length == 0)
                 throw new InvalidOperationException("Please provide at least one permission entry.");
 
-            var requestData = new ODataRequest()
+            var requestData = new ODataRequest(server)
             {
-                SiteUrl = ServerContext.GetUrl(server),
                 ContentId = contentId,
                 ActionName = "HasPermission"
             };

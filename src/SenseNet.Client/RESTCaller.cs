@@ -47,9 +47,8 @@ namespace SenseNet.Client
         /// <param name="server">Target server.</param>
         public static async Task<Content> GetContentAsync(int contentId, ServerContext server = null)
         {
-            return await GetContentAsync(new ODataRequest()
+            return await GetContentAsync(new ODataRequest(server)
             {
-                SiteUrl = ServerContext.GetUrl(server),
                 ContentId = contentId
             },
             server)
@@ -62,9 +61,8 @@ namespace SenseNet.Client
         /// <param name="server">Target server.</param>
         public static async Task<Content> GetContentAsync(string path, ServerContext server = null)
         {
-            return await GetContentAsync(new ODataRequest()
+            return await GetContentAsync(new ODataRequest(server)
             {
-                SiteUrl = ServerContext.GetUrl(server),
                 Path = path
             },
             server)
@@ -94,12 +92,12 @@ namespace SenseNet.Client
         /// <param name="server">Target server.</param>
         public static async Task<IEnumerable<Content>> GetCollectionAsync(string path, ServerContext server = null)
         {
-            return await GetCollectionAsync(new ODataRequest()
+            return await GetCollectionAsync(new ODataRequest(server)
             {
-                SiteUrl = ServerContext.GetUrl(server),
                 Path = path,
                 IsCollectionRequest = true
-            })
+            }, 
+            server)
             .ConfigureAwait(false);
         }
         /// <summary>
@@ -151,9 +149,8 @@ namespace SenseNet.Client
         /// <returns>Raw HTTP response.</returns>
         public static async Task<string> GetResponseStringAsync(int contentId, string actionName = null, HttpMethod method = null, string body = null, ServerContext server = null)
         {
-            var requestData = new ODataRequest()
+            var requestData = new ODataRequest(server)
             {
-                SiteUrl = ServerContext.GetUrl(server),
                 ContentId = contentId,
                 ActionName = actionName
             };
@@ -171,9 +168,8 @@ namespace SenseNet.Client
         /// <returns>Raw HTTP response.</returns>
         public static async Task<string> GetResponseStringAsync(string path, string actionName = null, HttpMethod method = null, string body = null, ServerContext server = null)
         {
-            var requestData = new ODataRequest
+            var requestData = new ODataRequest(server)
             {
-                SiteUrl = ServerContext.GetUrl(server),
                 Path = path,
                 ActionName = actionName
             };
@@ -348,9 +344,8 @@ namespace SenseNet.Client
 
         private static async Task<dynamic> PostContentInternalAsync(string path, object postData, HttpMethod method, ServerContext server = null)
         {
-            var reqData = new ODataRequest()
+            var reqData = new ODataRequest(server)
             {
-                SiteUrl = ServerContext.GetUrl(server),
                 Path = path
             };
 
@@ -360,9 +355,8 @@ namespace SenseNet.Client
         }
         private static async Task<dynamic> PostContentInternalAsync(int contentId, object postData, HttpMethod method, ServerContext server = null)
         {
-            var reqData = new ODataRequest()
+            var reqData = new ODataRequest(server)
             {
-                SiteUrl = ServerContext.GetUrl(server),
                 ContentId = contentId
             };
 
@@ -384,9 +378,8 @@ namespace SenseNet.Client
         /// <returns>The uploaded file content returned at the end of the upload request.</returns>
         public static async Task<Content> UploadAsync(Stream binaryStream, UploadData uploadData, int parentId, ServerContext server = null, Action<int> progressCallback = null)
         {
-            var requestData = new ODataRequest()
+            var requestData = new ODataRequest(server)
             {
-                SiteUrl = ServerContext.GetUrl(server),
                 ActionName = "Upload",
                 ContentId = parentId
             };
@@ -404,9 +397,8 @@ namespace SenseNet.Client
         /// <returns>The uploaded file content returned at the end of the upload request.</returns>
         public static async Task<Content> UploadAsync(Stream binaryStream, UploadData uploadData, string parentPath, ServerContext server = null, Action<int> progressCallback = null)
         {
-            var requestData = new ODataRequest()
+            var requestData = new ODataRequest(server)
             {
-                SiteUrl = ServerContext.GetUrl(server),
                 ActionName = "Upload",
                 Path = parentPath
             };
