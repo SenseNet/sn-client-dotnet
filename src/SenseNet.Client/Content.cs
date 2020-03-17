@@ -235,15 +235,14 @@ namespace SenseNet.Client
         /// <param name="server">Target server.</param>
         public static async Task<bool> ExistsAsync(string path, ServerContext server = null)
         {
-            var requestData = new ODataRequest()
+            var requestData = new ODataRequest(server)
             {
-                SiteUrl = ServerContext.GetUrl(server),
                 Path = path,
                 Metadata = MetadataFormat.None,
                 Select = new[] { "Id" }
             };
 
-            var content = await RESTCaller.GetContentAsync(requestData).ConfigureAwait(false);
+            var content = await RESTCaller.GetContentAsync(requestData, server).ConfigureAwait(false);
             return content != null;
         }
         
@@ -297,9 +296,8 @@ namespace SenseNet.Client
             var projection = new[] { "Id", "Path", "Type" };
             projection = projection.Union(select.Select(p => fieldName + "/" + p)).ToArray();
 
-            var oreq = new ODataRequest
+            var oreq = new ODataRequest(server)
             {
-                SiteUrl = ServerContext.GetUrl(server),
                 Expand = new[] { fieldName },
                 Select = projection,
                 ContentId = id,
@@ -323,9 +321,8 @@ namespace SenseNet.Client
         /// <returns>Count of result content.</returns>
         public static async Task<int> GetCountAsync(string path, string query, ServerContext server = null)
         {
-            var request = new ODataRequest
+            var request = new ODataRequest(server)
             {
-                SiteUrl = ServerContext.GetUrl(server),
                 Path = path,
                 IsCollectionRequest = true,
                 CountOnly = true
@@ -370,14 +367,13 @@ namespace SenseNet.Client
             if (settings == null)
                 settings = QuerySettings.Default;
 
-            var oreq = new ODataRequest
+            var oreq = new ODataRequest(server)
             {
                 Path = "/Root",
                 Select = select,
                 Expand = expand,
                 Top = settings.Top,
-                Skip = settings.Skip,
-                SiteUrl = ServerContext.GetUrl(server)
+                Skip = settings.Skip
             };
 
             oreq.Parameters.Add("query", Uri.EscapeDataString(queryText));
@@ -623,9 +619,8 @@ namespace SenseNet.Client
         /// <param name="permanent">Delete the content permanently or into the Trash.</param>
         public async Task DeleteAsync(bool permanent = true)
         {
-            var requestData = new ODataRequest()
+            var requestData = new ODataRequest(Server)
             {
-                SiteUrl = Server.Url,
                 ContentId = this.Id,
                 Path = this.Path,
                 ActionName = "Delete"
@@ -643,9 +638,8 @@ namespace SenseNet.Client
         /// <param name="targetPath">Target path.</param>
         public async Task MoveToAsync(string targetPath)
         {
-            var requestData = new ODataRequest()
+            var requestData = new ODataRequest(Server)
             {
-                SiteUrl = Server.Url,
                 ContentId = this.Id,
                 Path = this.Path,
                 ActionName = "MoveTo"
@@ -663,9 +657,8 @@ namespace SenseNet.Client
         /// <param name="targetPath">Target path.</param>
         public async Task CopyToAsync(string targetPath)
         {
-            var requestData = new ODataRequest()
+            var requestData = new ODataRequest(Server)
             {
-                SiteUrl = Server.Url,
                 ContentId = this.Id,
                 Path = this.Path,
                 ActionName = "CopyTo"
@@ -683,9 +676,8 @@ namespace SenseNet.Client
         /// </summary>
         public async Task CheckOutAsync()
         {
-            var requestData = new ODataRequest()
+            var requestData = new ODataRequest(Server)
             {
-                SiteUrl = Server.Url,
                 ContentId = this.Id,
                 Path = this.Path,
                 ActionName = "CheckOut",
@@ -699,9 +691,8 @@ namespace SenseNet.Client
         /// </summary>
         public async Task CheckInAsync()
         {
-            var requestData = new ODataRequest()
+            var requestData = new ODataRequest(Server)
             {
-                SiteUrl = Server.Url,
                 ContentId = this.Id,
                 Path = this.Path,
                 ActionName = "CheckIn",
@@ -715,9 +706,8 @@ namespace SenseNet.Client
         /// </summary>
         public async Task UndoCheckOutAsync()
         {
-            var requestData = new ODataRequest
+            var requestData = new ODataRequest(Server)
             {
-                SiteUrl = Server.Url,
                 ContentId = this.Id,
                 Path = this.Path,
                 ActionName = "UndoCheckOut",
@@ -805,9 +795,8 @@ namespace SenseNet.Client
         /// <returns>Aleays true.</returns>
         public override bool TryInvokeMember(InvokeMemberBinder binder, object[] args, out object result)
         {
-            var requestData = new ODataRequest
+            var requestData = new ODataRequest(Server)
             {
-                SiteUrl = Server.Url,
                 ContentId = this.Id,
                 Path = this.Path,
                 ActionName = binder.Name
