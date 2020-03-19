@@ -47,12 +47,16 @@ namespace SenseNet.Client.Tests
                 Password = defaultServer.Password,
             };
 
+            // ACTION-1
             _serverCertificateCustomValidationCallbackCalled = false;
             var content = await Content.LoadAsync("/Root", regularServer);
+            // ASSERT-1
             Assert.IsFalse(_serverCertificateCustomValidationCallbackCalled);
 
+            // ACTION-2
             _serverCertificateCustomValidationCallbackCalled = false;
             content = await Content.LoadAsync("/Root", trustedServer);
+            // ASSERT-2
             Assert.IsTrue(_serverCertificateCustomValidationCallbackCalled);
         }
     }
