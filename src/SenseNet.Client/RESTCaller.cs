@@ -178,6 +178,7 @@ namespace SenseNet.Client
             return await GetResponseStringAsync(requestData.GetUri(), server, method, body).ConfigureAwait(false);
         }
 
+
         /// <summary>
         /// Gets the raw response of a general HTTP request from the server.
         /// </summary>
@@ -301,6 +302,58 @@ namespace SenseNet.Client
                 url += "&version=" + version;
 
             return GetRequest(url, server);
+        }
+
+
+        public static Task GetStreamResponseAsync(int contentId, Action<HttpResponseMessage> responseProcessor)
+        {
+            return GetStreamResponseAsync(contentId, null, responseProcessor);
+        }
+        public static Task GetStreamResponseAsync(int contentId, string version, Action<HttpResponseMessage> responseProcessor)
+        {
+            return GetStreamResponseAsync(contentId, version, null, responseProcessor);
+        }
+        public static Task GetStreamResponseAsync(int contentId, string version, string propertyName, Action<HttpResponseMessage> responseProcessor)
+        {
+            return GetStreamResponseAsync(contentId, version, propertyName, null, responseProcessor);
+        }
+        public static async Task GetStreamResponseAsync(int contentId, string version, string propertyName, ServerContext server, Action<HttpResponseMessage> responseProcessor)
+        {
+            if (server == null)
+                server = ClientContext.Current.Server;
+            var url = $"{ServerContext.GetUrl(server)}/binaryhandler.ashx?nodeid={contentId}&propertyname={propertyName ?? "Binary"}";
+            if (!string.IsNullOrEmpty(version))
+                url += "&version=" + version;
+
+            using (var handler = new HttpClientHandler())
+            {
+                if (server.IsTrusted)
+                    handler.ServerCertificateCustomValidationCallback =
+                        server.ServerCertificateCustomValidationCallback
+                            ?? ServerContext.DefaultServerCertificateCustomValidationCallback;
+
+                using (var client = new HttpClient(handler))
+                using (var request = new HttpRequestMessage(HttpMethod.Get, url))
+                {
+                    SetAuthenticationForRequest(handler, request, server);
+
+                    HttpResponseMessage response = null;
+                    try
+                    {
+                        response = await client.SendAsync(request).ConfigureAwait(false);
+                    }
+                    catch (WebException ex)
+                    {
+                        // a 404 result is not an error in case of simple get requests, so return silently
+                        var is404 = ex.Response is HttpWebResponse webResponse &&
+                                    webResponse.StatusCode == HttpStatusCode.NotFound;
+                        if (!is404)
+                            throw await GetClientExceptionAsync(ex, url, HttpMethod.Get, null).ConfigureAwait(false);
+                    }
+
+                    responseProcessor(response);
+                }
+            }
         }
 
         //============================================================================= Static POST methods
@@ -747,5 +800,6 @@ namespace SenseNet.Client
 
             return null;
         }
+
     }
 }
