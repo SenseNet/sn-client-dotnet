@@ -93,6 +93,7 @@
   </Choose>
   <ItemGroup>
     <Compile Include="ActionTests.cs" />
+    <Compile Include="BinaryStreamTests.cs" />
     <Compile Include="CertificateValidationTests.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="ContentTests.cs" />
