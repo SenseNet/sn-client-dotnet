@@ -93,7 +93,9 @@
   </Choose>
   <ItemGroup>
     <Compile Include="ActionTests.cs" />
+    <Compile Include="CertificateValidationTests.cs" />
     <Compile Include="Constants.cs" />
+    <Compile Include="ContentTests.cs" />
     <Compile Include="ErrorHandlingTests.cs" />
     <Compile Include="EventLogEntryForTests.cs" />
     <Compile Include="EventLoggerForTests.cs" />

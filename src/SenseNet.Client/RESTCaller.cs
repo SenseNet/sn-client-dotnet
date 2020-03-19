@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -176,6 +177,7 @@ namespace SenseNet.Client
 
             return await GetResponseStringAsync(requestData.GetUri(), server, method, body).ConfigureAwait(false);
         }
+
         /// <summary>
         /// Gets the raw response of a general HTTP request from the server.
         /// </summary>
@@ -184,70 +186,76 @@ namespace SenseNet.Client
         /// <param name="method">HTTP method (SenseNet.Client.HttpMethods class has a few predefined methods).</param>
         /// <param name="body">Request body.</param>
         /// <returns>Raw HTTP response.</returns>
-        public static async Task<string> GetResponseStringAsync(Uri uri, ServerContext server = null, HttpMethod method = null, string body = null)
+        public static async Task<string> GetResponseStringAsync(Uri uri, ServerContext server = null,
+            HttpMethod method = null, string body = null)
         {
-            var retryCount = 0;
+            if (server == null)
+                server = ClientContext.Current.Server;
 
-            while (retryCount < REQUEST_RETRY_COUNT)
+            SnTrace.Category(ClientContext.TraceCategory).Write("###>REQ: {0}", uri);
+
+            using (var handler = new HttpClientHandler())
             {
-                SnTrace.Category(ClientContext.TraceCategory).Write("###>REQ: {0}", uri);
+                if (server.IsTrusted)
+                    handler.ServerCertificateCustomValidationCallback =
+                        server.ServerCertificateCustomValidationCallback
+                            ?? ServerContext.DefaultServerCertificateCustomValidationCallback;
 
-                var myRequest = GetRequest(uri, server);
-
-                if (method != null)
-                    myRequest.Method = method.Method;
-
-                if (!string.IsNullOrEmpty(body))
+                using (var client = new HttpClient(handler))
+                using (var request = new HttpRequestMessage(method ?? HttpMethod.Get, uri))
                 {
+                    SetAuthenticationForRequest(handler, request, server);
+
+                    if (!string.IsNullOrEmpty(body))
+                        request.Content = CreateRequestBody(body);
+
                     try
                     {
-                        using (var requestWriter = new StreamWriter(myRequest.GetRequestStream()))
+                        using (var response = await client.SendAsync(
+                                request, HttpCompletionOption.ResponseHeadersRead, CancellationToken.None)
+                            .ConfigureAwait(false))
                         {
-                            requestWriter.Write(body);
+                            response.EnsureSuccessStatusCode();
+                            var result = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            return result;
                         }
                     }
-                    catch (Exception ex)
+                    catch (WebException ex)
                     {
-                        throw new ClientException("Error during writing to request stream: " + ex.Message, ex);
-                    }
-                }
-                else
-                {
-                    myRequest.ContentLength = 0;
-                }
+                        // a 404 result is not an error in case of simple get requests, so return silently
+                        if (ex.Response is HttpWebResponse webResponse &&
+                            webResponse.StatusCode == HttpStatusCode.NotFound &&
+                            (method == null || method != HttpMethod.Post))
+                            return null;
 
-                try
-                {
-                    using (var wr = await myRequest.GetResponseAsync())
-                    {
-                        return await ReadResponseStringAsync(wr).ConfigureAwait(false);
-                    }
-                }
-                catch (WebException ex)
-                {
-                    // a 404 result is not an error in case of simple get requests, so return silently
-                    if (ex.Response is HttpWebResponse webResponse && webResponse.StatusCode == HttpStatusCode.NotFound && (method == null || method != HttpMethod.Post))
-                        return null;
-
-                    if (retryCount >= REQUEST_RETRY_COUNT - 1)
-                    {
                         throw await GetClientExceptionAsync(ex, uri.ToString(), method, body).ConfigureAwait(false);
                     }
-                    else
-                    {
-                        var responseString = await ReadResponseStringAsync(ex.Response).ConfigureAwait(false);
-
-                        Thread.Sleep(50);
-
-                        SnTrace.Category(ClientContext.TraceCategory).Write("###>REQ: {0} ERROR:{1}", uri,
-                            responseString.Replace(Environment.NewLine, " ").Replace("\r\n", " ") + " " + ex);
-                    }
                 }
+            }
+            return string.Empty;
+        }
 
-                retryCount++;
+
+        private static HttpContent CreateRequestBody(string body)
+        {
+            // serialize json
+            var stream = new MemoryStream(); // it will be disposed later
+            using (var writer = new StreamWriter(stream, new UTF8Encoding(false), 1024, true))
+            {
+                writer.Write(body);
+                writer.Flush();
             }
 
-            return string.Empty;
+            // create a request content
+            stream.Seek(0, SeekOrigin.Begin);
+            var httpContent = new StreamContent(stream);
+            httpContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+
+            return httpContent;
+        }
+
+        private static void SerializeJsonIntoStream(string body, MemoryStream stream)
+        {
         }
 
         /// <summary>
@@ -692,6 +700,30 @@ namespace SenseNet.Client
                 // use basic authentication
                 var usernamePassword = server.Username + ":" + server.Password;
                 myReq.Headers.Add("Authorization", "Basic " + Convert.ToBase64String(new ASCIIEncoding().GetBytes(usernamePassword)));
+            }
+        }
+        private static void SetAuthenticationForRequest(HttpClientHandler handler, HttpRequestMessage request, ServerContext server)
+        {
+            if (server == null)
+                server = ClientContext.Current.Server;
+
+            // use token authentication
+            if (!string.IsNullOrEmpty(server.Authentication.AccessToken))
+            {
+                request.Headers.Add("Authorization", "Bearer " + server.Authentication.AccessToken);
+                return;
+            }
+
+            if (string.IsNullOrEmpty(server.Username))
+            {
+                // use NTLM authentication
+                handler.Credentials = CredentialCache.DefaultCredentials;
+            }
+            else
+            {
+                // use basic authentication
+                var usernamePassword = server.Username + ":" + server.Password;
+                request.Headers.Add("Authorization", "Basic " + Convert.ToBase64String(new ASCIIEncoding().GetBytes(usernamePassword)));
             }
         }
 
