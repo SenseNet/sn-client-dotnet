@@ -216,18 +216,19 @@ namespace SenseNet.Client
                                 request, HttpCompletionOption.ResponseHeadersRead, CancellationToken.None)
                             .ConfigureAwait(false))
                         {
-                            response.EnsureSuccessStatusCode();
+                            if (response.StatusCode == HttpStatusCode.NotFound)
+                                return null;
                             var result = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                             return result;
                         }
                     }
                     catch (WebException ex)
                     {
-                        // a 404 result is not an error in case of simple get requests, so return silently
-                        if (ex.Response is HttpWebResponse webResponse &&
-                            webResponse.StatusCode == HttpStatusCode.NotFound &&
-                            (method == null || method != HttpMethod.Post))
-                            return null;
+                        //// a 404 result is not an error in case of simple get requests, so return silently
+                        //if (ex.Response is HttpWebResponse webResponse &&
+                        //    webResponse.StatusCode == HttpStatusCode.NotFound &&
+                        //    (method == null || method != HttpMethod.Post))
+                        //    return null;
 
                         throw await GetClientExceptionAsync(ex, uri.ToString(), method, body).ConfigureAwait(false);
                     }
@@ -295,6 +296,7 @@ namespace SenseNet.Client
         /// accessible to the current user will be served.</param>
         /// <param name="propertyName">Binary field name. Default is Binary.</param>
         /// <param name="server">Target server.</param>
+        [Obsolete("Use GetStreamResponseAsync")]
         public static HttpWebRequest GetStreamRequest(int id, string version = null, string propertyName = null, ServerContext server = null)
         {
             var url = $"{ServerContext.GetUrl(server)}/binaryhandler.ashx?nodeid={id}&propertyname={propertyName ?? "Binary"}";
@@ -641,6 +643,7 @@ namespace SenseNet.Client
             return ce;
         }
 
+        [Obsolete("##", false)]
         private static WebRequest CreateInitUploadWebRequest(string url, ServerContext server, UploadData uploadData)
         {
             var myRequest = GetRequest(url, server);
@@ -658,6 +661,7 @@ namespace SenseNet.Client
 
             return myRequest;
         }
+        [Obsolete("##", false)]
         private static HttpWebRequest CreateChunkUploadWebRequest(string url, ServerContext server, UploadData uploadData, string boundary, out Stream requestStream)
         {
             var myRequest = GetRequest(url, server);
@@ -695,10 +699,12 @@ namespace SenseNet.Client
             return myRequest;
         }
 
+        [Obsolete ("##", false)]
         private static HttpWebRequest GetRequest(string url, ServerContext server)
         {
             return GetRequest(new Uri(url), server);
         }
+        [Obsolete("##", false)]
         private static HttpWebRequest GetRequest(Uri uri, ServerContext server)
         {
             // WebRequest.Create returns HttpWebRequest only if the url
