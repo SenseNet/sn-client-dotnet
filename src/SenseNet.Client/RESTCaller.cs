@@ -613,7 +613,7 @@ namespace SenseNet.Client
 
             dynamic uploadedContent = null;
 
-            #region // Get ChunkToken
+            // Get ChunkToken
             try
             {
                 var url = requestData.ToString();
@@ -632,23 +632,20 @@ namespace SenseNet.Client
 
                 throw ce;
             }
-            #endregion
 
-            // reuse previous request data, but remove unnecessary parameters
+            // Reuse previous request data, but remove unnecessary parameters
             requestData.Parameters.Remove("create");
 
+            // Send subsequent requests
             var boundary = "---------------------------" + DateTime.UtcNow.Ticks.ToString("x");
-            var trailer = Encoding.ASCII.GetBytes("\r\n--" + boundary + "--\r\n");
-
-            // send subsequent requests
-            var buffer = new byte[ClientContext.Current.ChunkSizeInBytes];
-            int bytesRead;
-            var start = 0;
             var uploadFormData = uploadData.ToKeyValuePairs();
             var contentDispositionHeaderValue = new ContentDispositionHeaderValue("attachment") //UNDONE: reusable?
             {
                 FileName = uploadData.FileName
             };
+            var buffer = new byte[ClientContext.Current.ChunkSizeInBytes];
+            int bytesRead;
+            var start = 0;
 
             while ((bytesRead = binaryStream.Read(buffer, 0, buffer.Length)) != 0)
             {
@@ -665,6 +662,7 @@ namespace SenseNet.Client
                 var postedStream = new MemoryStream(buffer, 0, bytesRead);
                 httpContent.Add(new StreamContent(postedStream), "files[]", uploadData.FileName);
 
+                // Process
                 await ProcessWebResponseAsync(requestData.ToString(), HttpMethod.Post, server,
                     httpContent,
                     async response =>
