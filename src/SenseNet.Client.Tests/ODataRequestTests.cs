@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace SenseNet.Client.Tests
@@ -48,10 +49,36 @@ namespace SenseNet.Client.Tests
                 IsCollectionRequest = false
             };
 
-            request.Parameters.Add("Id", "1");
-            request.Parameters.Add("Name", "Value");
+            request.Parameters.Add(new KeyValuePair<string, string>("Id", "1"));
+            request.Parameters.Add(new KeyValuePair<string, string>("Name", "Value"));
 
             var expected = "https://example.com/OData.svc/Root('MyContent')?Id=1&Name=Value&metadata=no";
+
+            // ACTION
+            var actual = request.ToString();
+
+            // ASSERT
+            Assert.AreEqual(expected, actual);
+        }
+
+        [TestMethod]
+        public void QueryString_ParameterArray()
+        {
+            var request = new ODataRequest(new ServerContext
+            {
+                Url = "https://example.com",
+            })
+            {
+                Path = "/Root/MyContent",
+                IsCollectionRequest = false
+            };
+
+            request.Parameters.Add(new KeyValuePair<string, string>("Id", "1"));
+            request.Parameters.Add(new KeyValuePair<string, string>("Id", "2"));
+            request.Parameters.Add(new KeyValuePair<string, string>("Id", "3"));
+            request.Parameters.Add(new KeyValuePair<string, string>("Name", "Value"));
+
+            var expected = "https://example.com/OData.svc/Root('MyContent')?Id=1&Id=2&Id=3&Name=Value&metadata=no";
 
             // ACTION
             var actual = request.ToString();

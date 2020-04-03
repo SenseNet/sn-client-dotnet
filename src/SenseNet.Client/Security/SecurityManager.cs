@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 
@@ -48,10 +49,11 @@ namespace SenseNet.Client.Security
                 ActionName = "HasPermission"
             };
 
-            requestData.Parameters.Add("permissions", string.Join(",", permissions));
+            foreach (var permission in permissions)
+                requestData.Parameters.Add(new KeyValuePair<string, string>("permissions", permission));
 
             if (!string.IsNullOrEmpty(user))
-                requestData.Parameters.Add("user", user);
+                requestData.Parameters.Add(new KeyValuePair<string, string>("user", user));
 
             var result = await RESTCaller.GetResponseStringAsync(requestData.GetUri(), server).ConfigureAwait(false);
 

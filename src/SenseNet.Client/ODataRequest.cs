@@ -114,7 +114,7 @@ namespace SenseNet.Client
         /// <summary>
         /// Custom URL parameters.
         /// </summary>
-        public IDictionary<string, string> Parameters { get; }
+        public IList<KeyValuePair<string, string>> Parameters { get; }
 
         //============================================================================= Constructors and overrides
 
@@ -129,7 +129,7 @@ namespace SenseNet.Client
         public ODataRequest(ServerContext server)
         {
             // set default values
-            Parameters = new Dictionary<string, string>();
+            Parameters = new List<KeyValuePair<string, string>>();
             Metadata = MetadataFormat.None;
             SiteUrl = ServerContext.GetUrl(server);
 
@@ -170,43 +170,43 @@ namespace SenseNet.Client
                 url += "/" + PropertyName;
 
             // collect additional parameters
-            var urlParams = new Dictionary<string, string>();
+            var urlParams = new List<KeyValuePair<string, string>>(); //Dictionary<string, string>();
 
             // version
             if (!string.IsNullOrEmpty(Version))
-                urlParams.Add("version", Version);
+                urlParams.Add(new KeyValuePair<string, string>("version", Version));
 
             // top
             if (Top > 0)
-                urlParams.Add("$top", Top.ToString());
+                urlParams.Add(new KeyValuePair<string, string>("$top", Top.ToString()));
             // skip
             if (Skip > 0)
-                urlParams.Add("$skip", Skip.ToString());
+                urlParams.Add(new KeyValuePair<string, string>("$skip", Skip.ToString()));
 
             // select
             if (Select != null)
-                urlParams["$select"] = string.Join(",", Select);
+                urlParams.Add(new KeyValuePair<string, string>("$select", string.Join(",", Select)));
             // expand
             if (Expand != null)
-                urlParams["$expand"] = string.Join(",", Expand);
+                urlParams.Add(new KeyValuePair<string, string>("$expand", string.Join(",", Expand)));
 
             // copy custom parameters
-            foreach (var key in Parameters.Keys)
+            foreach (var item in Parameters)
             {
-                urlParams.Add(key, Parameters[key]);
+                urlParams.Add(item);
             }
 
             // always omit metadata if not requested explicitly
             switch (Metadata)
             {
                 case MetadataFormat.Minimal: 
-                    urlParams.Add(PARAM_METADATA, "minimal"); 
+                    urlParams.Add(new KeyValuePair<string, string>(PARAM_METADATA, "minimal")); 
                     break;
                 case MetadataFormat.Full: 
                     // do not provide the parameter, full is the default on the server
                     break;
                 default:
-                    urlParams.Add(PARAM_METADATA, "no");
+                    urlParams.Add(new KeyValuePair<string, string>(PARAM_METADATA, "no"));
                     break;
             }
 

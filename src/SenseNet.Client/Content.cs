@@ -329,7 +329,7 @@ namespace SenseNet.Client
             };
 
             if (!string.IsNullOrEmpty(query))
-                request.Parameters.Add("query", query);
+                request.Parameters.Add(new KeyValuePair<string, string>("query", query));
 
             return await RESTCaller.GetCountAsync(request, server).ConfigureAwait(false);
         }
@@ -376,12 +376,12 @@ namespace SenseNet.Client
                 Skip = settings.Skip
             };
 
-            oreq.Parameters.Add("query", Uri.EscapeDataString(queryText));
+            oreq.Parameters.Add(new KeyValuePair<string, string>("query", Uri.EscapeDataString(queryText)));
 
             if (settings.EnableAutofilters != FilterStatus.Default)
-                oreq.Parameters.Add("enableautofilters", settings.EnableAutofilters.ToString().ToLower());
+                oreq.Parameters.Add(new KeyValuePair<string, string>("enableautofilters", settings.EnableAutofilters.ToString().ToLower()));
             if (settings.EnableLifespanFilter != FilterStatus.Default)
-                oreq.Parameters.Add("enablelifespanfilter", settings.EnableLifespanFilter.ToString().ToLower());
+                oreq.Parameters.Add(new KeyValuePair<string, string>("enablelifespanfilter", settings.EnableLifespanFilter.ToString().ToLower()));
 
             return await Content.LoadCollectionAsync(oreq, server).ConfigureAwait(false);
         }
