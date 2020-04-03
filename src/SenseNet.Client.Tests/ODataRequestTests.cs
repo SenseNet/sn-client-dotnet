@@ -35,5 +35,29 @@ namespace SenseNet.Client.Tests
                 Url = "example.com"
             });
         }
+
+        [TestMethod]
+        public void QueryString_Parameters()
+        {
+            var request = new ODataRequest(new ServerContext
+            {
+                Url = "https://example.com",
+            })
+            {
+                Path = "/Root/MyContent",
+                IsCollectionRequest = false
+            };
+
+            request.Parameters.Add("Id", "1");
+            request.Parameters.Add("Name", "Value");
+
+            var expected = "https://example.com/OData.svc/Root('MyContent')?Id=1&Name=Value&metadata=no";
+
+            // ACTION
+            var actual = request.ToString();
+
+            // ASSERT
+            Assert.AreEqual(expected, actual);
+        }
     }
 }

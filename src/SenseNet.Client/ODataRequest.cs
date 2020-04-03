@@ -248,7 +248,7 @@ namespace SenseNet.Client
                 {
                     var path1 = path.Substring(0, lastSlash);
                     var path2 = path.Substring(lastSlash + 1);
-                    path = $"{path1}/('{path2}')";
+                    path = $"{path1}('{path2}')";
                 }
                 else
                 {
