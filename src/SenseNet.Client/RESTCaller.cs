@@ -868,18 +868,22 @@ namespace SenseNet.Client
                     {
                         response = await client.SendAsync(request).ConfigureAwait(false);
 
-                        if (response.StatusCode == HttpStatusCode.NotFound)
+                        if (response.StatusCode != HttpStatusCode.OK && response.StatusCode != HttpStatusCode.NoContent)
                         {
-                            response = null;
-                        }
-                        else
-                        //UNDONE: NOT TESTED: MISSING RESPONSE EXCEPTION HANDLER
-                        if (response.StatusCode != HttpStatusCode.OK)
-                        {
-                            // try parse error content as json
-                            var serverExceptionData = 
-                                GetExceptionData(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
-                            throw new ClientException(serverExceptionData);
+                            if (response.StatusCode == HttpStatusCode.NotFound)
+                            {
+                                if(method != HttpMethod.Post)
+                                    response = null;
+                                else
+                                    throw new ClientException("Content not found", HttpStatusCode.NotFound);
+                            }
+                            else
+                            {
+                                // try parse error content as json
+                                var exceptionData = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                                var serverExceptionData = GetExceptionData(exceptionData);
+                                throw new ClientException(serverExceptionData, response.StatusCode);
+                            }
                         }
                     }
                     catch (HttpRequestException ex)

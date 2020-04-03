@@ -57,7 +57,7 @@ namespace SenseNet.Client
 
         public static bool DefaultServerCertificateCustomValidationCallback(HttpRequestMessage arg1, X509Certificate2 arg2, X509Chain arg3, SslPolicyErrors arg4)
         {
-            throw new System.NotImplementedException();
+            return true;
         }
     }
 }
