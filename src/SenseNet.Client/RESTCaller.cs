@@ -208,7 +208,7 @@ namespace SenseNet.Client
                     SetAuthenticationForRequest(handler, request, server);
 
                     if (!string.IsNullOrEmpty(body))
-                        request.Content = CreateRequestBody(body); //UNDONE: request.Content is IDisposable
+                        request.Content = CreateRequestBody(body);
 
                     try
                     {
@@ -456,6 +456,7 @@ namespace SenseNet.Client
             return await UploadInternalAsync(binaryStream, uploadData, requestData, server, progressCallback).ConfigureAwait(false);
         }
 
+        [Obsolete("##", true)]
         private static async Task<Content> UploadInternalAsync_OLD(Stream binaryStream, UploadData uploadData, ODataRequest requestData, ServerContext server = null, Action<int> progressCallback = null)
         {
             // force set values
@@ -719,7 +720,7 @@ namespace SenseNet.Client
             return result;
         }
 
-        [Obsolete("##", false)]
+        [Obsolete("##", true)]
         private static WebRequest CreateInitUploadWebRequest(string url, ServerContext server, UploadData uploadData)
         {
             var myRequest = GetRequest(url, server);
@@ -737,7 +738,7 @@ namespace SenseNet.Client
 
             return myRequest;
         }
-        [Obsolete("##", false)]
+        [Obsolete("##", true)]
         private static HttpWebRequest CreateChunkUploadWebRequest(string url, ServerContext server, UploadData uploadData, string boundary, out Stream requestStream)
         {
             var myRequest = GetRequest(url, server);
@@ -775,12 +776,12 @@ namespace SenseNet.Client
             return myRequest;
         }
 
-        [Obsolete ("##", false)]
+        [Obsolete ("##", true)]
         private static HttpWebRequest GetRequest(string url, ServerContext server)
         {
             return GetRequest(new Uri(url), server);
         }
-        [Obsolete("##", false)]
+        [Obsolete("##", true)]
         private static HttpWebRequest GetRequest(Uri uri, ServerContext server)
         {
             // WebRequest.Create returns HttpWebRequest only if the url
