@@ -41,6 +41,21 @@ namespace SenseNet.Client
         /// </summary>
         Disabled
     }
+    public static class ODataRequestExtensions
+    {
+        public static void Add(this List<KeyValuePair<string, string>> list, string name, string value)
+        {
+            list.Add(new KeyValuePair<string, string>(name, value));
+        }
+
+        public static bool Remove(this List<KeyValuePair<string, string>> list, string name)
+        {
+            var items = list.Where(x => x.Key == name).ToArray();
+            foreach(var item in items)
+                list.Remove(item);
+            return items.Length > 0;
+        }
+    }
 
     /// <summary>
     /// Encapsulates all parameters that an OData REST API request can handle. Use it
@@ -114,7 +129,7 @@ namespace SenseNet.Client
         /// <summary>
         /// Custom URL parameters.
         /// </summary>
-        public IList<KeyValuePair<string, string>> Parameters { get; }
+        public List<KeyValuePair<string, string>> Parameters { get; }
 
         //============================================================================= Constructors and overrides
 
@@ -174,21 +189,21 @@ namespace SenseNet.Client
 
             // version
             if (!string.IsNullOrEmpty(Version))
-                urlParams.Add(new KeyValuePair<string, string>("version", Version));
+                urlParams.Add("version", Version);
 
             // top
             if (Top > 0)
-                urlParams.Add(new KeyValuePair<string, string>("$top", Top.ToString()));
+                urlParams.Add("$top", Top.ToString());
             // skip
             if (Skip > 0)
-                urlParams.Add(new KeyValuePair<string, string>("$skip", Skip.ToString()));
+                urlParams.Add("$skip", Skip.ToString());
 
             // select
             if (Select != null)
-                urlParams.Add(new KeyValuePair<string, string>("$select", string.Join(",", Select)));
+                urlParams.Add("$select", string.Join(",", Select));
             // expand
             if (Expand != null)
-                urlParams.Add(new KeyValuePair<string, string>("$expand", string.Join(",", Expand)));
+                urlParams.Add("$expand", string.Join(",", Expand));
 
             // copy custom parameters
             foreach (var item in Parameters)
@@ -200,13 +215,13 @@ namespace SenseNet.Client
             switch (Metadata)
             {
                 case MetadataFormat.Minimal: 
-                    urlParams.Add(new KeyValuePair<string, string>(PARAM_METADATA, "minimal")); 
+                    urlParams.Add(PARAM_METADATA, "minimal");
                     break;
                 case MetadataFormat.Full: 
                     // do not provide the parameter, full is the default on the server
                     break;
                 default:
-                    urlParams.Add(new KeyValuePair<string, string>(PARAM_METADATA, "no"));
+                    urlParams.Add(PARAM_METADATA, "no");
                     break;
             }
 

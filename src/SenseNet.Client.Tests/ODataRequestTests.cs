@@ -49,8 +49,8 @@ namespace SenseNet.Client.Tests
                 IsCollectionRequest = false
             };
 
-            request.Parameters.Add(new KeyValuePair<string, string>("Id", "1"));
-            request.Parameters.Add(new KeyValuePair<string, string>("Name", "Value"));
+            request.Parameters.Add("Id", "1");
+            request.Parameters.Add("Name", "Value");
 
             var expected = "https://example.com/OData.svc/Root('MyContent')?Id=1&Name=Value&metadata=no";
 
@@ -73,10 +73,10 @@ namespace SenseNet.Client.Tests
                 IsCollectionRequest = false
             };
 
-            request.Parameters.Add(new KeyValuePair<string, string>("Id", "1"));
-            request.Parameters.Add(new KeyValuePair<string, string>("Id", "2"));
-            request.Parameters.Add(new KeyValuePair<string, string>("Id", "3"));
-            request.Parameters.Add(new KeyValuePair<string, string>("Name", "Value"));
+            request.Parameters.Add("Id", "1");
+            request.Parameters.Add("Id", "2");
+            request.Parameters.Add("Id", "3");
+            request.Parameters.Add("Name", "Value");
 
             var expected = "https://example.com/OData.svc/Root('MyContent')?Id=1&Id=2&Id=3&Name=Value&metadata=no";
 

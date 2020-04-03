@@ -103,22 +103,22 @@ namespace SenseNet.Client
 
             // leave out null values, but string.Empty is preserved
             if (FileName != null)
-                result.Add(new KeyValuePair<string, string>("FileName", FileName));
+                result.Add("FileName", FileName);
 
             if (ContentId > 0)
-                result.Add(new KeyValuePair<string, string>("ContentId", ContentId.ToString()));
+                result.Add("ContentId", ContentId.ToString());
 
             if (ContentType != null)
-                result.Add(new KeyValuePair<string, string>("ContentType", ContentType));
+                result.Add("ContentType", ContentType);
             if (PropertyName != null)
-                result.Add(new KeyValuePair<string, string>("PropertyName", PropertyName));
+                result.Add("PropertyName", PropertyName);
 
-            result.Add(new KeyValuePair<string, string>("UseChunk", UseChunk.ToString()));
-            result.Add(new KeyValuePair<string, string>("Overwrite", Overwrite.ToString()));
-            result.Add(new KeyValuePair<string, string>("FileLength", FileLength.ToString()));
+            result.Add("UseChunk", UseChunk.ToString());
+            result.Add("Overwrite", Overwrite.ToString());
+            result.Add("FileLength", FileLength.ToString());
 
             if (ChunkToken != null)
-                result.Add(new KeyValuePair<string, string>("ChunkToken", ChunkToken));
+                result.Add("ChunkToken", ChunkToken);
 
             return result;
         }

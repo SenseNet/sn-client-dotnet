@@ -430,7 +430,7 @@ namespace SenseNet.Client
             if (uploadData.FileLength == 0)
                 uploadData.FileLength = binaryStream.Length;
 
-            requestData.Parameters.Add(new KeyValuePair<string, string>("create", "1"));
+            requestData.Parameters.Add("create", "1");
 
             dynamic uploadedContent = null;
             var retryCount = 0;
@@ -483,7 +483,7 @@ namespace SenseNet.Client
             var start = 0;
 
             // reuse previous request data, but remove unnecessary parameters
-            requestData.Parameters.Remove(requestData.Parameters.First(x => x.Key == "create"));
+            requestData.Parameters.Remove("create");
 
             while ((bytesRead = binaryStream.Read(buffer, 0, buffer.Length)) != 0)
             {
@@ -576,7 +576,7 @@ namespace SenseNet.Client
             if (uploadData.FileLength == 0)
                 uploadData.FileLength = binaryStream.Length;
 
-            requestData.Parameters.Add(new KeyValuePair<string, string>("create", "1"));
+            requestData.Parameters.Add("create", "1");
 
             dynamic uploadedContent = null;
 
@@ -606,7 +606,7 @@ namespace SenseNet.Client
             }
 
             // Reuse previous request data, but remove unnecessary parameters
-            requestData.Parameters.Remove(requestData.Parameters.First(x => x.Key == "create"));
+            requestData.Parameters.Remove("create");
 
             // Send subsequent requests
             var boundary = "---------------------------" + DateTime.UtcNow.Ticks.ToString("x");

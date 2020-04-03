@@ -50,10 +50,10 @@ namespace SenseNet.Client.Security
             };
 
             foreach (var permission in permissions)
-                requestData.Parameters.Add(new KeyValuePair<string, string>("permissions", permission));
+                requestData.Parameters.Add("permissions", permission);
 
             if (!string.IsNullOrEmpty(user))
-                requestData.Parameters.Add(new KeyValuePair<string, string>("user", user));
+                requestData.Parameters.Add("user", user);
 
             var result = await RESTCaller.GetResponseStringAsync(requestData.GetUri(), server).ConfigureAwait(false);
 
