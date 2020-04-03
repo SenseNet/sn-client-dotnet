@@ -868,7 +868,7 @@ namespace SenseNet.Client
                     {
                         response = await client.SendAsync(request).ConfigureAwait(false);
 
-                        if (response.StatusCode != HttpStatusCode.OK && response.StatusCode != HttpStatusCode.NoContent)
+                        if (!response.IsSuccessStatusCode)
                         {
                             if (response.StatusCode == HttpStatusCode.NotFound)
                             {
