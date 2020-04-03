@@ -39,6 +39,8 @@ namespace SenseNet.Client
         private static readonly string UPLOAD_FORMDATA_TEMPLATE = "Content-Disposition: form-data; name=\"{0}\"\r\n\r\n{1}";
         private static readonly string UPLOAD_HEADER_TEMPLATE = "Content-Disposition: form-data; name=\"{0}\"; filename=\"{1}\"\r\n Content-Type: application/octet-stream\r\n\r\n";
 
+        private static readonly string JsonContentMimeType = "application/json";
+
         //============================================================================= Static GET methods
 
         /// <summary>
@@ -185,60 +187,24 @@ namespace SenseNet.Client
         /// <param name="uri">Request URI.</param>
         /// <param name="server">Target server.</param>
         /// <param name="method">HTTP method (SenseNet.Client.HttpMethods class has a few predefined methods).</param>
-        /// <param name="body">Request body.</param>
+        /// <param name="jsonBody">Request body in JSON format.</param>
         /// <returns>Raw HTTP response.</returns>
         public static async Task<string> GetResponseStringAsync(Uri uri, ServerContext server = null,
-            HttpMethod method = null, string body = null)
+            HttpMethod method = null, string jsonBody = null)
         {
-            if (server == null)
-                server = ClientContext.Current.Server;
+            string result = null;
 
             SnTrace.Category(ClientContext.TraceCategory).Write("###>REQ: {0}", uri);
 
-            using (var handler = new HttpClientHandler())
-            {
-                if (server.IsTrusted)
-                    handler.ServerCertificateCustomValidationCallback =
-                        server.ServerCertificateCustomValidationCallback
-                            ?? ServerContext.DefaultServerCertificateCustomValidationCallback;
-
-                using (var client = new HttpClient(handler))
-                using (var request = new HttpRequestMessage(method ?? HttpMethod.Get, uri))
+            await ProcessWebResponseAsync(uri.ToString(), method, server,
+                jsonBody != null ? CreateRequestBody(jsonBody) : null,
+                async response =>
                 {
-                    SetAuthenticationForRequest(handler, request, server);
+                    if (response != null)
+                        result = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                });
 
-                    if (!string.IsNullOrEmpty(body))
-                        request.Content = CreateRequestBody(body);
-
-                    try
-                    {
-                        using (var response = await client.SendAsync(
-                                request, HttpCompletionOption.ResponseHeadersRead, CancellationToken.None)
-                            .ConfigureAwait(false))
-                        {
-                            if (response.StatusCode == HttpStatusCode.NotFound)
-                                return null;
-                            var result = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                            return result;
-                        }
-                    }
-                    catch (WebException ex)
-                    {
-                        //// a 404 result is not an error in case of simple get requests, so return silently
-                        //if (ex.Response is HttpWebResponse webResponse &&
-                        //    webResponse.StatusCode == HttpStatusCode.NotFound &&
-                        //    (method == null || method != HttpMethod.Post))
-                        //    return null;
-
-                        throw await GetClientExceptionAsync(ex, uri.ToString(), method, body).ConfigureAwait(false);
-                    }
-                    catch (Exception e)
-                    {
-                        throw;
-                    }
-                }
-            }
-            return string.Empty;
+            return result;
         }
 
 
@@ -617,10 +583,15 @@ namespace SenseNet.Client
             // Get ChunkToken
             try
             {
-                var url = requestData.ToString();
-                SnTrace.Category(ClientContext.TraceCategory).Write("###>REQ: {0}", url);
-                uploadData.ChunkToken =
-                    await GetInitialUploadResponseAsync(url, server, uploadData).ConfigureAwait(false);
+                SnTrace.Category(ClientContext.TraceCategory).Write("###>REQ: {0}", requestData);
+
+                var httpContent = new StringContent(uploadData.ToString());
+                httpContent.Headers.ContentType = new MediaTypeHeaderValue(JsonContentMimeType);
+                await ProcessWebResponseAsync(requestData.ToString(), HttpMethod.Post, server, httpContent,
+                    async response =>
+                    {
+                        uploadData.ChunkToken = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    });
             }
             catch (WebException ex)
             {
@@ -691,34 +662,6 @@ namespace SenseNet.Client
         }
 
         //============================================================================= Helper methods
-
-        private async static Task<string> GetInitialUploadResponseAsync(string url, ServerContext server, UploadData uploadData)
-        {
-            string result = null;
-            using (var reqStream = new MemoryStream())
-            {
-                var postDataBytes = Encoding.UTF8.GetBytes(uploadData.ToString());
-
-                reqStream.Write(postDataBytes, 0, postDataBytes.Length);
-                reqStream.Seek(0, SeekOrigin.Begin);
-                using (var streamContent = new StreamContent(reqStream))
-                {
-                    streamContent.Headers.ContentLength = postDataBytes.Length;
-                    streamContent.Headers.ContentType = new MediaTypeHeaderValue(UPLOAD_CONTENTTYPE);
-
-                    await ProcessWebRequestResponseAsync(url, HttpMethod.Post, server,
-                        (handler, client, request) =>
-                        {
-                            request.Content = streamContent;
-                        },
-                        async response =>
-                        {
-                            result = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                        });
-                }
-            }
-            return result;
-        }
 
         [Obsolete("##", true)]
         private static WebRequest CreateInitUploadWebRequest(string url, ServerContext server, UploadData uploadData)
@@ -877,10 +820,18 @@ namespace SenseNet.Client
             return httpContent;
         }
 
+        public static Task ProcessWebResponseAsync(string url, HttpMethod method, ServerContext server,
+            Action<HttpResponseMessage> responseProcessor)
+        {
+            return ProcessWebResponseAsync(url, method ?? HttpMethod.Get, server, null, responseProcessor);
+        }
         public static async Task ProcessWebResponseAsync(string url, HttpMethod method, ServerContext server,
             HttpContent httpContent,
             Action<HttpResponseMessage> responseProcessor)
         {
+            if (method == null)
+                method = httpContent == null ? HttpMethod.Get : HttpMethod.Post;
+
             await ProcessWebRequestResponseAsync(url, method, server,
                 (handler, client, request) =>
                 {
@@ -889,15 +840,12 @@ namespace SenseNet.Client
                 }
                 , responseProcessor);
         }
-        public static Task ProcessWebResponseAsync(string url, HttpMethod method, ServerContext server,
-            Action<HttpResponseMessage> responseProcessor)
-        {
-            return ProcessWebRequestResponseAsync(url, method, server, null, responseProcessor);
-        }
         public static async Task ProcessWebRequestResponseAsync(string url, HttpMethod method, ServerContext server,
             Action<HttpClientHandler, HttpClient, HttpRequestMessage> requestProcessor,
             Action<HttpResponseMessage> responseProcessor)
         {
+            if (method == null)
+                throw new ArgumentNullException(nameof(method));
             if (server == null)
                 server = ClientContext.Current.Server;
 
@@ -920,10 +868,18 @@ namespace SenseNet.Client
                     {
                         response = await client.SendAsync(request).ConfigureAwait(false);
 
-                        //UNDONE: MISSING RESPONSE EXCEPTION HANDLER
-                        if (response.StatusCode != HttpStatusCode.OK && response.StatusCode != HttpStatusCode.NotFound)
+                        if (response.StatusCode == HttpStatusCode.NotFound)
+                        {
+                            response = null;
+                        }
+                        else
+                        //UNDONE: NOT TESTED: MISSING RESPONSE EXCEPTION HANDLER
+                        if (response.StatusCode != HttpStatusCode.OK)
                         {
                             // try parse error content as json
+                            var serverExceptionData = 
+                                GetExceptionData(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
+                            throw new ClientException(serverExceptionData);
                         }
                     }
                     catch (HttpRequestException ex)
