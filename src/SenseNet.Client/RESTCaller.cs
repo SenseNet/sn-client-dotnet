@@ -239,6 +239,7 @@ namespace SenseNet.Client
             }
         }
 
+        #region OBSOLETE
         /// <summary>
         /// Assembles an http request that gets a stream from the portal containing binary data.
         /// Use this inside a using block to asynchronously get the response stream.
@@ -249,7 +250,7 @@ namespace SenseNet.Client
         /// accessible to the current user will be served.</param>
         /// <param name="propertyName">Binary field name. Default is Binary.</param>
         /// <param name="server">Target server.</param>
-        [Obsolete("Use GetStreamResponseAsync")]
+        [Obsolete("Use GetStreamResponseAsync instead.")]
         public static HttpWebRequest GetStreamRequest(int id, string version = null, string propertyName = null, ServerContext server = null)
         {
             var url = $"{ServerContext.GetUrl(server)}/binaryhandler.ashx?nodeid={id}&propertyname={propertyName ?? "Binary"}";
@@ -258,7 +259,44 @@ namespace SenseNet.Client
 
             return GetRequest(url, server);
         }
+        [Obsolete("Do not use anymore.", true)]
+        private static HttpWebRequest GetRequest(string url, ServerContext server)
+        {
+            return GetRequest(new Uri(url), server);
+        }
+        [Obsolete("Do not use anymore.", true)]
+        private static HttpWebRequest GetRequest(Uri uri, ServerContext server)
+        {
+            // WebRequest.Create returns HttpWebRequest only if the url
+            // is an HTTP url. It may return FtpWebRequest also!
+            var myRequest = (HttpWebRequest)WebRequest.Create(uri);
 
+            myRequest.Timeout = -1;
+            myRequest.KeepAlive = false;
+            myRequest.ProtocolVersion = HttpVersion.Version10;
+
+            SetAuthenticationForRequest(myRequest, server);
+
+            return myRequest;
+        }
+        [Obsolete("Use this method with HttpRequestException type.")]
+        public static async Task<ClientException> GetClientExceptionAsync(WebException ex, string requestUrl = null, HttpMethod method = null, string body = null)
+        {
+            var responseString = await ReadResponseStringAsync(ex.Response).ConfigureAwait(false);
+            var exceptionData = GetExceptionData(responseString);
+
+            var ce = new ClientException(exceptionData, ex)
+            {
+                Response = responseString
+            };
+
+            ce.Data["Url"] = requestUrl;
+            ce.Data["Method"] = method?.Method ?? HttpMethod.Get.Method;
+            ce.Data["Body"] = body;
+
+            return ce;
+        }
+        #endregion
 
         public static Task GetStreamResponseAsync(int contentId, Action<HttpResponseMessage> responseProcessor)
         {
@@ -394,153 +432,6 @@ namespace SenseNet.Client
             return await UploadInternalAsync(binaryStream, uploadData, requestData, server, progressCallback).ConfigureAwait(false);
         }
 
-        [Obsolete("##", true)]
-        private static async Task<Content> UploadInternalAsync_OLD(Stream binaryStream, UploadData uploadData, ODataRequest requestData, ServerContext server = null, Action<int> progressCallback = null)
-        {
-            // force set values
-            uploadData.UseChunk = binaryStream.Length > ClientContext.Current.ChunkSizeInBytes;
-            if (uploadData.FileLength == 0)
-                uploadData.FileLength = binaryStream.Length;
-
-            requestData.Parameters.Add("create", "1");
-
-            dynamic uploadedContent = null;
-            var retryCount = 0;
-
-            // send initial request
-            while (retryCount < REQUEST_RETRY_COUNT)
-            {
-                try
-                {
-                    var myReq = CreateInitUploadWebRequest(requestData.ToString(), server, uploadData);
-
-                    SnTrace.Category(ClientContext.TraceCategory).Write("###>REQ: {0}", myReq.RequestUri);
-
-                    using (var wr = await myReq.GetResponseAsync())
-                    {
-                        uploadData.ChunkToken = await ReadResponseStringAsync(wr).ConfigureAwait(false);
-                    }
-
-                    // succesful request: skip out from retry loop
-                    break;
-                }
-                catch (WebException ex)
-                {
-                    if (retryCount >= REQUEST_RETRY_COUNT - 1)
-                    {
-                        var ce = new ClientException("Error during binary upload.", ex);
-
-                        ce.Data["SiteUrl"] = requestData.SiteUrl;
-                        ce.Data["Parent"] = requestData.ContentId != 0 ? requestData.ContentId.ToString() : requestData.Path;
-                        ce.Data["FileName"] = uploadData.FileName;
-                        ce.Data["ContentType"] = uploadData.ContentType;
-
-                        throw ce;
-                    }
-                    else
-                    {
-                        Thread.Sleep(50);
-                    }
-                }
-
-                retryCount++;
-            }
-
-            var boundary = "---------------------------" + DateTime.UtcNow.Ticks.ToString("x");
-            var trailer = Encoding.ASCII.GetBytes("\r\n--" + boundary + "--\r\n");
-
-            // send subsequent requests
-            var buffer = new byte[ClientContext.Current.ChunkSizeInBytes];
-            int bytesRead;
-            var start = 0;
-
-            // reuse previous request data, but remove unnecessary parameters
-            requestData.Parameters.Remove("create");
-
-            while ((bytesRead = binaryStream.Read(buffer, 0, buffer.Length)) != 0)
-            {
-                retryCount = 0;
-
-                //get the request object for the actual chunk
-                while (retryCount < REQUEST_RETRY_COUNT)
-                {
-                    Stream requestStream = null;
-                    HttpWebRequest chunkRequest;
-
-                    try
-                    {
-                        chunkRequest = CreateChunkUploadWebRequest(requestData.ToString(), server, uploadData, boundary, out requestStream);
-
-                        SnTrace.Category(ClientContext.TraceCategory).Write("###>REQ: {0}", chunkRequest.RequestUri);
-
-                        if (uploadData.UseChunk)
-                            chunkRequest.Headers.Set("Content-Range", string.Format("bytes {0}-{1}/{2}", start, start + bytesRead - 1, binaryStream.Length));
-
-                        //write the chunk into the request stream
-                        requestStream.Write(buffer, 0, bytesRead);
-                        requestStream.Write(trailer, 0, trailer.Length);
-
-                        await requestStream.FlushAsync().ConfigureAwait(false);
-                    }
-                    finally
-                    {
-                        if (requestStream != null)
-                            requestStream.Close();
-                    }
-
-                    //send the request
-                    try
-                    {
-                        using (var wr = await chunkRequest.GetResponseAsync())
-                        {
-                            var rs = await ReadResponseStringAsync(wr).ConfigureAwait(false);
-
-                            uploadedContent = JsonHelper.Deserialize(rs);
-                        }
-
-                        // successful request: skip out from the retry loop
-                        break;
-                    }
-                    catch (WebException ex)
-                    {
-                        if (retryCount >= REQUEST_RETRY_COUNT - 1)
-                        {
-                            var ce = new ClientException("Error during binary upload.", ex);
-
-                            ce.Data["SiteUrl"] = requestData.SiteUrl;
-                            ce.Data["Parent"] = requestData.ContentId != 0 ? requestData.ContentId.ToString() : requestData.Path;
-                            ce.Data["FileName"] = uploadData.FileName;
-                            ce.Data["ContentType"] = uploadData.ContentType;
-
-                            throw ce;
-                        }
-                        else
-                        {
-                            Thread.Sleep(50);
-                        }
-                    }
-
-                    retryCount++;
-                }
-
-                start += bytesRead;
-
-                // notify the caller about every chunk that was uploaded successfully
-                if (progressCallback != null)
-                    progressCallback(start);
-            }
-
-            if (uploadedContent == null)
-                return null;
-
-            int contentId = uploadedContent.Id;
-            var content = Content.Create(contentId);
-
-            content.Name = uploadedContent.Name;
-            content.Path = uploadedContent.Url;
-
-            return content;
-        }
         private static async Task<Content> UploadInternalAsync(Stream binaryStream, UploadData uploadData, ODataRequest requestData, ServerContext server = null, Action<int> progressCallback = null)
         {
             // force set values
@@ -635,83 +526,6 @@ namespace SenseNet.Client
 
         //============================================================================= Helper methods
 
-        [Obsolete("##", true)]
-        private static WebRequest CreateInitUploadWebRequest(string url, ServerContext server, UploadData uploadData)
-        {
-            var myRequest = GetRequest(url, server);
-            myRequest.Method = "POST";
-
-            var postDataBytes = Encoding.UTF8.GetBytes(uploadData.ToString());
-
-            myRequest.ContentLength = postDataBytes.Length;
-            myRequest.ContentType = UPLOAD_CONTENTTYPE;
-
-            using (var reqStream = myRequest.GetRequestStream())
-            {
-                reqStream.Write(postDataBytes, 0, postDataBytes.Length);
-            }
-
-            return myRequest;
-        }
-        [Obsolete("##", true)]
-        private static HttpWebRequest CreateChunkUploadWebRequest(string url, ServerContext server, UploadData uploadData, string boundary, out Stream requestStream)
-        {
-            var myRequest = GetRequest(url, server);
-
-            myRequest.Method = "POST";
-            myRequest.ContentType = "multipart/form-data; boundary=" + boundary;
-
-            myRequest.Headers.Add("Content-Disposition", "attachment; filename=\"" + Uri.EscapeUriString(uploadData.FileName) + "\"");
-
-            var boundarybytes = Encoding.ASCII.GetBytes("\r\n--" + boundary + "\r\n");
-
-            // we must not close the stream after this as we need to write the chunk into it in the caller method
-            requestStream = myRequest.GetRequestStream();
-
-            //write form data values
-            foreach (var kvp in uploadData.ToDictionary())
-            {
-                requestStream.Write(boundarybytes, 0, boundarybytes.Length);
-
-                var formitem = string.Format(UPLOAD_FORMDATA_TEMPLATE, kvp.Key, kvp.Value);
-                var formitembytes = Encoding.UTF8.GetBytes(formitem);
-
-                requestStream.Write(formitembytes, 0, formitembytes.Length);
-            }
-
-            //write a boundary
-            requestStream.Write(boundarybytes, 0, boundarybytes.Length);
-
-            //write file name and content type
-            var header = string.Format(UPLOAD_HEADER_TEMPLATE, "files[]", Uri.EscapeUriString(uploadData.FileName));
-            var headerbytes = Encoding.UTF8.GetBytes(header);
-
-            requestStream.Write(headerbytes, 0, headerbytes.Length);
-
-            return myRequest;
-        }
-
-        [Obsolete ("##", true)]
-        private static HttpWebRequest GetRequest(string url, ServerContext server)
-        {
-            return GetRequest(new Uri(url), server);
-        }
-        [Obsolete("##", true)]
-        private static HttpWebRequest GetRequest(Uri uri, ServerContext server)
-        {
-            // WebRequest.Create returns HttpWebRequest only if the url
-            // is an HTTP url. It may return FtpWebRequest also!
-            var myRequest = (HttpWebRequest)WebRequest.Create(uri);
-
-            myRequest.Timeout = -1;
-            myRequest.KeepAlive = false;
-            myRequest.ProtocolVersion = HttpVersion.Version10;
-
-            SetAuthenticationForRequest(myRequest, server);
-
-            return myRequest;
-        }
-
         private static async Task<string> ReadResponseStringAsync(WebResponse response)
         {
             if (response == null)
@@ -752,24 +566,6 @@ namespace SenseNet.Client
                 var usernamePassword = server.Username + ":" + server.Password;
                 myReq.Headers.Add("Authorization", "Basic " + Convert.ToBase64String(new ASCIIEncoding().GetBytes(usernamePassword)));
             }
-        }
-
-        [Obsolete("##")]
-        public static async Task<ClientException> GetClientExceptionAsync(WebException ex, string requestUrl = null, HttpMethod method = null, string body = null)
-        {
-            var responseString = await ReadResponseStringAsync(ex.Response).ConfigureAwait(false);
-            var exceptionData = GetExceptionData(responseString);
-
-            var ce = new ClientException(exceptionData, ex)
-            {
-                Response = responseString
-            };
-
-            ce.Data["Url"] = requestUrl;
-            ce.Data["Method"] = method?.Method ?? HttpMethod.Get.Method;
-            ce.Data["Body"] = body;
-
-            return ce;
         }
 
         /* ================================================================================ LOW LEVEL API */
