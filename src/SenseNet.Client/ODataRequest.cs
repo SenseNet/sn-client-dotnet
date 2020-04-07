@@ -185,7 +185,7 @@ namespace SenseNet.Client
                 url += "/" + PropertyName;
 
             // collect additional parameters
-            var urlParams = new List<KeyValuePair<string, string>>(); //Dictionary<string, string>();
+            var urlParams = new List<KeyValuePair<string, string>>();
 
             // version
             if (!string.IsNullOrEmpty(Version))

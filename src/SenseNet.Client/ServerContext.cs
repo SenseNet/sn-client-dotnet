@@ -30,12 +30,13 @@ namespace SenseNet.Client
         /// </summary>
         public string Url { get; set; }
         /// <summary>
-        /// Can be true in the development scenarios that means the server certificate validation is skipped.
+        /// Can be true in development scenarios that means server certificate validation is skipped.
         /// This value needs to be false (default) in production.
         /// </summary>
         public bool IsTrusted { get; set; }
         /// <summary>
-        /// Custom certificate validation method. Default is null that means: all certificate is trusted.
+        /// Custom certificate validation method. Default is null that means all certificates 
+        /// are trusted if the <see cref="IsTrusted"/> flag is set to True.
         /// </summary>
         public Func<HttpRequestMessage, X509Certificate2, X509Chain, SslPolicyErrors, bool> ServerCertificateCustomValidationCallback { get; set; }
 

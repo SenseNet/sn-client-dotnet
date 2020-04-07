@@ -198,7 +198,7 @@ namespace SenseNet.Client
                 {
                     if (response != null)
                         result = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                });
+                }).ConfigureAwait(false);
 
             return result;
         }
@@ -671,7 +671,7 @@ namespace SenseNet.Client
                     if (httpContent != null)
                         request.Content = httpContent;
                 }
-                , responseProcessor);
+                , responseProcessor).ConfigureAwait(false);
         }
         public static async Task ProcessWebRequestResponseAsync(string url, HttpMethod method, ServerContext server,
             Action<HttpClientHandler, HttpClient, HttpRequestMessage> requestProcessor,
@@ -797,6 +797,5 @@ namespace SenseNet.Client
 
             return null;
         }
-
     }
 }
