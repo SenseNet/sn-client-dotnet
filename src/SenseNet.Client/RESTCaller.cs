@@ -194,7 +194,7 @@ namespace SenseNet.Client
             SnTrace.Category(ClientContext.TraceCategory).Write("###>REQ: {0}", uri);
 
             await ProcessWebResponseAsync(uri.ToString(), method, server,
-                jsonBody != null ? CreateRequestBody(jsonBody) : null,
+                jsonBody != null ? new StringContent(jsonBody) : null,
                 async response =>
                 {
                     if (response != null)
@@ -638,25 +638,6 @@ namespace SenseNet.Client
         }
 
         /* ================================================================================ LOW LEVEL API */
-
-        //UNDONE: Why use StreamContent instead of StringContent?
-        public static HttpContent CreateRequestBody(string json)
-        {
-            // serialize json
-            var stream = new MemoryStream(); // it will be disposed later
-            using (var writer = new StreamWriter(stream, new UTF8Encoding(false), 1024, true))
-            {
-                writer.Write(json);
-                writer.Flush();
-            }
-
-            // create a request content
-            stream.Seek(0, SeekOrigin.Begin);
-            var httpContent = new StreamContent(stream);
-            httpContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-
-            return httpContent;
-        }
 
         public static Task ProcessWebResponseAsync(string url, HttpMethod method, ServerContext server,
             Action<HttpResponseMessage> responseProcessor, CancellationToken cancellationToken)
