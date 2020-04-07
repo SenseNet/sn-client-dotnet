@@ -280,35 +280,7 @@ namespace SenseNet.Client
             if (!string.IsNullOrEmpty(version))
                 url += "&version=" + version;
 
-            using (var handler = new HttpClientHandler())
-            {
-                if (server.IsTrusted)
-                    handler.ServerCertificateCustomValidationCallback =
-                        server.ServerCertificateCustomValidationCallback
-                            ?? ServerContext.DefaultServerCertificateCustomValidationCallback;
-
-                using (var client = new HttpClient(handler))
-                using (var request = new HttpRequestMessage(HttpMethod.Get, url))
-                {
-                    SetAuthenticationForRequest(handler, request, server);
-
-                    HttpResponseMessage response = null;
-                    try
-                    {
-                        response = await client.SendAsync(request).ConfigureAwait(false);
-                    }
-                    catch (WebException ex)
-                    {
-                        // a 404 result is not an error in case of simple get requests, so return silently
-                        var is404 = ex.Response is HttpWebResponse webResponse &&
-                                    webResponse.StatusCode == HttpStatusCode.NotFound;
-                        if (!is404)
-                            throw await GetClientExceptionAsync(ex, url, HttpMethod.Get, null).ConfigureAwait(false);
-                    }
-
-                    responseProcessor(response);
-                }
-            }
+            await ProcessWebResponseAsync(url, HttpMethod.Get, server, responseProcessor);
         }
 
         //============================================================================= Static POST methods
