@@ -35,12 +35,6 @@ namespace SenseNet.Client
     // ReSharper disable once InconsistentNaming
     public static class RESTCaller
     {
-        //// Retry feature is switched OFF. If it is needed, implement a configuration for this.
-        //private static int REQUEST_RETRY_COUNT = 1;
-        //private static readonly string UPLOAD_CONTENTTYPE = "application/x-www-form-urlencoded";
-        //private static readonly string UPLOAD_FORMDATA_TEMPLATE = "Content-Disposition: form-data; name=\"{0}\"\r\n\r\n{1}";
-        //private static readonly string UPLOAD_HEADER_TEMPLATE = "Content-Disposition: form-data; name=\"{0}\"; filename=\"{1}\"\r\n Content-Type: application/octet-stream\r\n\r\n";
-
         private static readonly string JsonContentMimeType = "application/json";
 
         //============================================================================= Static GET methods
