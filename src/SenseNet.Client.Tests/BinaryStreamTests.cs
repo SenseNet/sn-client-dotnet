@@ -1,9 +1,9 @@
 ﻿using System;
 using System.IO;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+// ReSharper disable StringLiteralTypo
 
 namespace SenseNet.Client.Tests
 {
@@ -21,14 +21,18 @@ namespace SenseNet.Client.Tests
         {
             var content = await Content.LoadAsync("/Root/System/Schema/ContentTypes/GenericContent");
 
+#pragma warning disable 618
             var request = RESTCaller.GetStreamRequest(content.Id);
+#pragma warning restore 618
             var response = await request.GetResponseAsync();
 
-            string ctd;
+            string ctd = null;
             using (var stream = response.GetResponseStream())
-            using (var reader = new StreamReader(stream))
-                ctd = reader.ReadToEnd();
+                if(stream != null)
+                    using (var reader = new StreamReader(stream))
+                        ctd = reader.ReadToEnd();
 
+            Assert.IsNotNull(ctd);
             Assert.IsTrue(ctd.Contains("<ContentType name=\"GenericContent\""));
         }
 
@@ -50,12 +54,12 @@ namespace SenseNet.Client.Tests
             Assert.IsTrue(ctd.Contains("<ContentType name=\"GenericContent\""));
         }
 
+        string _fileContent = "Lorem ipsum dolor sit amet...";
 
         [TestMethod]
-        public async Task Upload()
+        public async Task Upload_ByPath()
         {
             var uploadRootPath = "/Root/UploadTests";
-            var fileContent = "Lorem ipsum dolor sit amet...";
             var uploadFolder = await Content.LoadAsync(uploadRootPath).ConfigureAwait(false);
             if (uploadFolder == null)
             {
@@ -63,9 +67,9 @@ namespace SenseNet.Client.Tests
                 await uploadFolder.SaveAsync().ConfigureAwait(false);
             }
 
-            var fileName = Guid.NewGuid().ToString() + ".txt";
+            var fileName = Guid.NewGuid() + ".txt";
 
-            using (var uploadStream = Tools.GenerateStreamFromString(fileContent))
+            using (var uploadStream = Tools.GenerateStreamFromString(_fileContent))
                 // ACTION
                 await Content.UploadAsync(uploadRootPath, fileName, uploadStream, "File");
 
@@ -83,14 +87,12 @@ namespace SenseNet.Client.Tests
                     downloadedFileContent = reader.ReadToEnd();
             }, CancellationToken.None);
 
-            Assert.AreEqual(fileContent, downloadedFileContent);
+            Assert.AreEqual(_fileContent, downloadedFileContent);
         }
-
         [TestMethod]
-        public async Task Upload_Text()
+        public async Task Upload_ById()
         {
             var uploadRootPath = "/Root/UploadTests";
-            var fileContent = "Lorem ipsum dolor sit amet...";
             var uploadFolder = await Content.LoadAsync(uploadRootPath).ConfigureAwait(false);
             if (uploadFolder == null)
             {
@@ -98,13 +100,13 @@ namespace SenseNet.Client.Tests
                 await uploadFolder.SaveAsync().ConfigureAwait(false);
             }
 
-            //var file = Content.CreateNew(uploadFolder.Path, "File", Guid.NewGuid().ToString());
-            //await file.SaveAsync().ConfigureAwait(false);
+            var uploadRootId = uploadFolder.Id;
 
-            var fileName = Guid.NewGuid().ToString() + ".txt";
+            var fileName = Guid.NewGuid() + ".txt";
 
-            // ACTION
-            var uploaded = await Content.UploadTextAsync(uploadRootPath, fileName, fileContent, "File");
+            using (var uploadStream = Tools.GenerateStreamFromString(_fileContent))
+                // ACTION
+                await Content.UploadAsync(uploadRootId, fileName, uploadStream, "File");
 
             // ASSERT
             var filePath = RepositoryPath.Combine(uploadRootPath, fileName);
@@ -120,14 +122,80 @@ namespace SenseNet.Client.Tests
                     downloadedFileContent = reader.ReadToEnd();
             }, CancellationToken.None);
 
-            Assert.AreEqual(fileContent, downloadedFileContent);
+            Assert.AreEqual(_fileContent, downloadedFileContent);
+        }
+
+        [TestMethod]
+        public async Task Upload_Text_ByPath()
+        {
+            var uploadRootPath = "/Root/UploadTests";
+            var uploadFolder = await Content.LoadAsync(uploadRootPath).ConfigureAwait(false);
+            if (uploadFolder == null)
+            {
+                uploadFolder = Content.CreateNew("/Root", "SystemFolder", "UploadTests");
+                await uploadFolder.SaveAsync().ConfigureAwait(false);
+            }
+
+            var fileName = Guid.NewGuid() + ".txt";
+
+            // ACTION
+            await Content.UploadTextAsync(uploadRootPath, fileName, _fileContent, CancellationToken.None, "File");
+
+            // ASSERT
+            var filePath = RepositoryPath.Combine(uploadRootPath, fileName);
+            var content = await Content.LoadAsync(filePath);
+
+            string downloadedFileContent = null;
+            await RESTCaller.GetStreamResponseAsync(content.Id, async response =>
+            {
+                if (response == null)
+                    return;
+                using (var stream = await response.Content.ReadAsStreamAsync())
+                using (var reader = new StreamReader(stream))
+                    downloadedFileContent = reader.ReadToEnd();
+            }, CancellationToken.None);
+
+            Assert.AreEqual(_fileContent, downloadedFileContent);
+        }
+        [TestMethod]
+        public async Task Upload_Text_ById()
+        {
+            var uploadRootPath = "/Root/UploadTests";
+            var uploadFolder = await Content.LoadAsync(uploadRootPath).ConfigureAwait(false);
+            if (uploadFolder == null)
+            {
+                uploadFolder = Content.CreateNew("/Root", "SystemFolder", "UploadTests");
+                await uploadFolder.SaveAsync().ConfigureAwait(false);
+            }
+
+            var uploadRootId = uploadFolder.Id;
+
+            var fileName = Guid.NewGuid() + ".txt";
+
+            // ACTION
+            await Content.UploadTextAsync(uploadRootId, fileName, _fileContent, CancellationToken.None, "File");
+
+            // ASSERT
+            var filePath = RepositoryPath.Combine(uploadRootPath, fileName);
+            var content = await Content.LoadAsync(filePath);
+
+            string downloadedFileContent = null;
+            await RESTCaller.GetStreamResponseAsync(content.Id, async response =>
+            {
+                if (response == null)
+                    return;
+                using (var stream = await response.Content.ReadAsStreamAsync())
+                using (var reader = new StreamReader(stream))
+                    downloadedFileContent = reader.ReadToEnd();
+            }, CancellationToken.None);
+
+            Assert.AreEqual(_fileContent, downloadedFileContent);
         }
 
         [TestMethod]
         public async Task Upload_LowLevelApi()
         {
             var uploadRootPath = "/Root/UploadTests";
-            var fileContent = "Lorem ipsum dolor sit amet...";
             var uploadFolder = await Content.LoadAsync(uploadRootPath).ConfigureAwait(false);
             if (uploadFolder == null)
             {
@@ -139,7 +207,7 @@ namespace SenseNet.Client.Tests
             //await file.SaveAsync().ConfigureAwait(false);
 
             var fileName = Guid.NewGuid().ToString() + ".txt";
-            var uploadStream = Tools.GenerateStreamFromString(fileContent);
+            var uploadStream = Tools.GenerateStreamFromString(_fileContent);
 
             UploadData uploadData = new UploadData
             {
@@ -148,7 +216,7 @@ namespace SenseNet.Client.Tests
             };
 
             // ACTION
-            var uploaded = await RESTCaller.UploadAsync(uploadStream, uploadData, uploadFolder.Path).ConfigureAwait(false);
+            await RESTCaller.UploadAsync(uploadStream, uploadData, uploadFolder.Path).ConfigureAwait(false);
 
             // ASSERT
             var filePath = RepositoryPath.Combine(uploadRootPath, fileName);
@@ -164,7 +232,7 @@ namespace SenseNet.Client.Tests
                     downloadedFileContent = reader.ReadToEnd();
             }, CancellationToken.None);
 
-            Assert.AreEqual(fileContent, downloadedFileContent);
+            Assert.AreEqual(_fileContent, downloadedFileContent);
         }
     }
 }
