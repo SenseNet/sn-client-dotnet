@@ -7,7 +7,6 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using SenseNet.Diagnostics;
 
@@ -21,23 +20,26 @@ namespace SenseNet.Client
         /// <summary>
         /// PATCH method.
         /// </summary>
+        // ReSharper disable once InconsistentNaming
         public static readonly HttpMethod PATCH = new HttpMethod("PATCH");
         /// <summary>
         /// POST method.
         /// </summary>
+        // ReSharper disable once InconsistentNaming
         public static readonly HttpMethod POST = HttpMethod.Post;
     }
 
     /// <summary>
     /// Sends HTTP requests to the SenseNet OData REST API.
     /// </summary>
+    // ReSharper disable once InconsistentNaming
     public static class RESTCaller
     {
-        // Retry feature is switched OFF. If it is needed, implement a configuration for this.
-        private static int REQUEST_RETRY_COUNT = 1;
-        private static readonly string UPLOAD_CONTENTTYPE = "application/x-www-form-urlencoded";
-        private static readonly string UPLOAD_FORMDATA_TEMPLATE = "Content-Disposition: form-data; name=\"{0}\"\r\n\r\n{1}";
-        private static readonly string UPLOAD_HEADER_TEMPLATE = "Content-Disposition: form-data; name=\"{0}\"; filename=\"{1}\"\r\n Content-Type: application/octet-stream\r\n\r\n";
+        //// Retry feature is switched OFF. If it is needed, implement a configuration for this.
+        //private static int REQUEST_RETRY_COUNT = 1;
+        //private static readonly string UPLOAD_CONTENTTYPE = "application/x-www-form-urlencoded";
+        //private static readonly string UPLOAD_FORMDATA_TEMPLATE = "Content-Disposition: form-data; name=\"{0}\"\r\n\r\n{1}";
+        //private static readonly string UPLOAD_HEADER_TEMPLATE = "Content-Disposition: form-data; name=\"{0}\"; filename=\"{1}\"\r\n Content-Type: application/octet-stream\r\n\r\n";
 
         private static readonly string JsonContentMimeType = "application/json";
 
@@ -205,12 +207,6 @@ namespace SenseNet.Client
                 });
 
             return result;
-        }
-
-
-
-        private static void SerializeJsonIntoStream(string body, MemoryStream stream)
-        {
         }
 
         /// <summary>
@@ -474,7 +470,7 @@ namespace SenseNet.Client
             // Send subsequent requests
             var boundary = "---------------------------" + DateTime.UtcNow.Ticks.ToString("x");
             var uploadFormData = uploadData.ToKeyValuePairs();
-            var contentDispositionHeaderValue = new ContentDispositionHeaderValue("attachment") //UNDONE: reusable?
+            var contentDispositionHeaderValue = new ContentDispositionHeaderValue("attachment")
             {
                 FileName = uploadData.FileName
             };
@@ -631,7 +627,7 @@ namespace SenseNet.Client
 
                     requestProcessor?.Invoke(handler, client, request);
 
-                    HttpResponseMessage response = null;
+                    HttpResponseMessage response;
                     try
                     {
                         response = await client.SendAsync(request).ConfigureAwait(false);
@@ -656,7 +652,7 @@ namespace SenseNet.Client
                     }
                     catch (HttpRequestException ex)
                     {
-                        throw await GetClientExceptionAsync(ex, url, method, null).ConfigureAwait(false);
+                        throw await GetClientExceptionAsync(ex, url, method).ConfigureAwait(false);
                     }
 
                     responseProcessor(response);
