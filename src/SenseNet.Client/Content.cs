@@ -441,6 +441,60 @@ namespace SenseNet.Client
             return await RESTCaller.UploadAsync(stream, uploadData, parentId, server, progressCallback).ConfigureAwait(false);
         }
 
+
+        /// <summary>
+        /// Uploads a file to the server into the provided container.
+        /// </summary>
+        /// <param name="parentPath">Parent path.</param>
+        /// <param name="fileName">Name of the file to upload.</param>
+        /// <param name="fileText">File content.</param>
+        /// <param name="contentType">Content type of the file.</param>
+        /// <param name="propertyName">Name of the field to upload to. Default is Binary.</param>
+        /// <param name="server">Target server.</param>
+        /// <returns>The uploaded file content returned at the end of the upload request.</returns>
+        public static async Task<Content> UploadTextAsync(string parentPath, string fileName, string fileText, string contentType = null, string propertyName = null, ServerContext server = null)
+        {
+            var uploadData = new UploadData()
+            {
+                FileName = fileName,
+                ContentType = contentType,
+            };
+
+            if (!string.IsNullOrEmpty(contentType))
+                uploadData.ContentType = contentType;
+
+            if (!string.IsNullOrEmpty(propertyName))
+                uploadData.PropertyName = propertyName;
+
+            return await RESTCaller.UploadTextAsync(fileText, uploadData, parentPath, server).ConfigureAwait(false);
+        }
+        /// <summary>
+        /// Uploads a file to the server into the provided container.
+        /// </summary>
+        /// <param name="parentId">Parent id.</param>
+        /// <param name="fileName">Name of the file to upload.</param>
+        /// <param name="fileText">File content.</param>
+        /// <param name="contentType">Content type of the file.</param>
+        /// <param name="propertyName">Name of the field to upload to. Default is Binary.</param>
+        /// <param name="server">Target server.</param>
+        /// <returns>The uploaded file content returned at the end of the upload request.</returns>
+        public static async Task<Content> UploadTextAsync(int parentId, string fileName, string fileText, string contentType = null, string propertyName = null, ServerContext server = null)
+        {
+            var uploadData = new UploadData()
+            {
+                FileName = fileName,
+                ContentType = contentType,
+            };
+
+            if (!string.IsNullOrEmpty(contentType))
+                uploadData.ContentType = contentType;
+
+            if (!string.IsNullOrEmpty(propertyName))
+                uploadData.PropertyName = propertyName;
+
+            return await RESTCaller.UploadTextAsync(fileText, uploadData, parentId, server).ConfigureAwait(false);
+        }
+
         /// <summary>
         /// Uploads a file or a custom binary property of a content in the provided container.
         /// </summary>

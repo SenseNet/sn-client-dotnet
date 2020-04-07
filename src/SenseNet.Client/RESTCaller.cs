@@ -421,7 +421,6 @@ namespace SenseNet.Client
 
             return await UploadInternalAsync(binaryStream, uploadData, requestData, server, progressCallback).ConfigureAwait(false);
         }
-
         private static async Task<Content> UploadInternalAsync(Stream binaryStream, UploadData uploadData, ODataRequest requestData, ServerContext server = null, Action<int> progressCallback = null)
         {
             // force set values
@@ -501,6 +500,82 @@ namespace SenseNet.Client
                 // Notify the caller about every chunk that was uploaded successfully
                 progressCallback?.Invoke(start);
             }
+
+            if (uploadedContent == null)
+                return null;
+
+            int contentId = uploadedContent.Id;
+            var content = Content.Create(contentId);
+
+            content.Name = uploadedContent.Name;
+            content.Path = uploadedContent.Url;
+
+            return content;
+        }
+
+        /// <summary>
+        /// Uploads a file to the server into the provided container.
+        /// </summary>
+        /// <param name="text">File contents.</param>
+        /// <param name="uploadData">Upload parameters.</param>
+        /// <param name="parentId">Parent id.</param>
+        /// <param name="server">Target server.</param>
+        /// <returns>The uploaded file content returned at the end of the upload request.</returns>
+        public static async Task<Content> UploadTextAsync(string text, UploadData uploadData, int parentId,
+            ServerContext server = null)
+        {
+            var requestData = new ODataRequest(server)
+            {
+                ActionName = "Upload",
+                ContentId = parentId
+            };
+
+            return await UploadTextInternalAsync(text, uploadData, requestData, server).ConfigureAwait(false);
+        }
+        /// <summary>
+        /// Uploads a file to the server into the provided container.
+        /// </summary>
+        /// <param name="text">File contents.</param>
+        /// <param name="uploadData">Upload parameters.</param>
+        /// <param name="parentPath">Parent path.</param>
+        /// <param name="server">Target server.</param>
+        /// <returns>The uploaded file content returned at the end of the upload request.</returns>
+        public static async Task<Content> UploadTextAsync(string text, UploadData uploadData, string parentPath,
+            ServerContext server = null)
+        {
+            var requestData = new ODataRequest(server)
+            {
+                ActionName = "Upload",
+                Path = parentPath
+            };
+
+            return await UploadTextInternalAsync(text, uploadData, requestData, server).ConfigureAwait(false);
+        }
+        private static async Task<Content> UploadTextInternalAsync(string text, UploadData uploadData, ODataRequest requestData, ServerContext server = null)
+        {
+            // force set values
+            if(text.Length > ClientContext.Current.ChunkSizeInBytes)
+                throw new InvalidOperationException($"Cannot upload a text that longer than the chunk size " +
+                                                    $"({ClientContext.Current.ChunkSizeInBytes}).");
+            if (uploadData.FileLength == 0)
+                uploadData.FileLength = text.Length;
+            uploadData.FileText = text;
+
+            dynamic uploadedContent = null;
+
+            var model = JsonHelper.GetJsonPostModel(uploadData.ToDictionary());
+            var httpContent = new StringContent(model);
+            httpContent.Headers.ContentType = new MediaTypeHeaderValue(JsonContentMimeType);
+
+            await ProcessWebResponseAsync(requestData.ToString(), HttpMethod.Post, server, httpContent,
+                async response =>
+                {
+                    if (response != null)
+                    {
+                        var rs = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                        uploadedContent = JsonHelper.Deserialize(rs);
+                    }
+                });
 
             if (uploadedContent == null)
                 return null;

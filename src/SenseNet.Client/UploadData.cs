@@ -41,6 +41,10 @@ namespace SenseNet.Client
         /// Length of the file to be uploaded.
         /// </summary>
         public long FileLength { get; set; }
+        /// <summary>
+        /// Textual content of the file if the stream upload is not used.
+        /// </summary>
+        public string FileText { get; set; }
 
         /// <summary>
         /// Initializes a new UploadData object.
@@ -90,6 +94,9 @@ namespace SenseNet.Client
             dict.Add("UseChunk", UseChunk);
             dict.Add("Overwrite", Overwrite);
             dict.Add("FileLength", FileLength);
+
+            if (FileText != null)
+                dict.Add("FileText", FileText);
 
             if (ChunkToken != null)
                 dict.Add("ChunkToken", ChunkToken);

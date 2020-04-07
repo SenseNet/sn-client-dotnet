@@ -49,8 +49,81 @@ namespace SenseNet.Client.Tests
             Assert.IsTrue(ctd.Contains("<ContentType name=\"GenericContent\""));
         }
 
+
         [TestMethod]
         public async Task Upload()
+        {
+            var uploadRootPath = "/Root/UploadTests";
+            var fileContent = "Lorem ipsum dolor sit amet...";
+            var uploadFolder = await Content.LoadAsync(uploadRootPath).ConfigureAwait(false);
+            if (uploadFolder == null)
+            {
+                uploadFolder = Content.CreateNew("/Root", "SystemFolder", "UploadTests");
+                await uploadFolder.SaveAsync().ConfigureAwait(false);
+            }
+
+            var fileName = Guid.NewGuid().ToString() + ".txt";
+
+            using (var uploadStream = Tools.GenerateStreamFromString(fileContent))
+                // ACTION
+                await Content.UploadAsync(uploadRootPath, fileName, uploadStream, "File");
+
+            // ASSERT
+            var filePath = RepositoryPath.Combine(uploadRootPath, fileName);
+            var content = await Content.LoadAsync(filePath);
+
+            string downloadedFileContent = null;
+            await RESTCaller.GetStreamResponseAsync(content.Id, async response =>
+            {
+                if (response == null)
+                    return;
+                using (var stream = await response.Content.ReadAsStreamAsync())
+                using (var reader = new StreamReader(stream))
+                    downloadedFileContent = reader.ReadToEnd();
+            });
+
+            Assert.AreEqual(fileContent, downloadedFileContent);
+        }
+
+        [TestMethod]
+        public async Task Upload_Text()
+        {
+            var uploadRootPath = "/Root/UploadTests";
+            var fileContent = "Lorem ipsum dolor sit amet...";
+            var uploadFolder = await Content.LoadAsync(uploadRootPath).ConfigureAwait(false);
+            if (uploadFolder == null)
+            {
+                uploadFolder = Content.CreateNew("/Root", "SystemFolder", "UploadTests");
+                await uploadFolder.SaveAsync().ConfigureAwait(false);
+            }
+
+            //var file = Content.CreateNew(uploadFolder.Path, "File", Guid.NewGuid().ToString());
+            //await file.SaveAsync().ConfigureAwait(false);
+
+            var fileName = Guid.NewGuid().ToString() + ".txt";
+
+            // ACTION
+            var uploaded = await Content.UploadTextAsync(uploadRootPath, fileName, fileContent, "File");
+
+            // ASSERT
+            var filePath = RepositoryPath.Combine(uploadRootPath, fileName);
+            var content = await Content.LoadAsync(filePath);
+
+            string downloadedFileContent = null;
+            await RESTCaller.GetStreamResponseAsync(content.Id, async response =>
+            {
+                if (response == null)
+                    return;
+                using (var stream = await response.Content.ReadAsStreamAsync())
+                using (var reader = new StreamReader(stream))
+                    downloadedFileContent = reader.ReadToEnd();
+            });
+
+            Assert.AreEqual(fileContent, downloadedFileContent);
+        }
+
+        [TestMethod]
+        public async Task Upload_LowLevelApi()
         {
             var uploadRootPath = "/Root/UploadTests";
             var fileContent = "Lorem ipsum dolor sit amet...";
