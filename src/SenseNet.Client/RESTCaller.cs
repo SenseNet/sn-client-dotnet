@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using SenseNet.Diagnostics;
 
@@ -198,7 +199,7 @@ namespace SenseNet.Client
                 {
                     if (response != null)
                         result = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                }).ConfigureAwait(false);
+                }, CancellationToken.None).ConfigureAwait(false);
 
             return result;
         }
@@ -288,19 +289,19 @@ namespace SenseNet.Client
         }
         #endregion
 
-        public static Task GetStreamResponseAsync(int contentId, Action<HttpResponseMessage> responseProcessor)
+        public static Task GetStreamResponseAsync(int contentId, Action<HttpResponseMessage> responseProcessor, CancellationToken cancellationToken)
         {
-            return GetStreamResponseAsync(contentId, null, responseProcessor);
+            return GetStreamResponseAsync(contentId, null, responseProcessor, cancellationToken);
         }
-        public static Task GetStreamResponseAsync(int contentId, string version, Action<HttpResponseMessage> responseProcessor)
+        public static Task GetStreamResponseAsync(int contentId, string version, Action<HttpResponseMessage> responseProcessor, CancellationToken cancellationToken)
         {
-            return GetStreamResponseAsync(contentId, version, null, responseProcessor);
+            return GetStreamResponseAsync(contentId, version, null, responseProcessor, cancellationToken);
         }
-        public static Task GetStreamResponseAsync(int contentId, string version, string propertyName, Action<HttpResponseMessage> responseProcessor)
+        public static Task GetStreamResponseAsync(int contentId, string version, string propertyName, Action<HttpResponseMessage> responseProcessor, CancellationToken cancellationToken)
         {
-            return GetStreamResponseAsync(contentId, version, propertyName, null, responseProcessor);
+            return GetStreamResponseAsync(contentId, version, propertyName, null, responseProcessor, cancellationToken);
         }
-        public static async Task GetStreamResponseAsync(int contentId, string version, string propertyName, ServerContext server, Action<HttpResponseMessage> responseProcessor)
+        public static async Task GetStreamResponseAsync(int contentId, string version, string propertyName, ServerContext server, Action<HttpResponseMessage> responseProcessor, CancellationToken cancellationToken)
         {
             if (server == null)
                 server = ClientContext.Current.Server;
@@ -308,7 +309,7 @@ namespace SenseNet.Client
             if (!string.IsNullOrEmpty(version))
                 url += "&version=" + version;
 
-            await ProcessWebResponseAsync(url, HttpMethod.Get, server, responseProcessor);
+            await ProcessWebResponseAsync(url, HttpMethod.Get, server, responseProcessor, cancellationToken);
         }
 
         //============================================================================= Static POST methods
@@ -443,7 +444,7 @@ namespace SenseNet.Client
                     async response =>
                     {
                         uploadData.ChunkToken = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                    });
+                    }, CancellationToken.None);
             }
             catch (WebException ex)
             {
@@ -493,7 +494,7 @@ namespace SenseNet.Client
                     {
                         var rs = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                         uploadedContent = JsonHelper.Deserialize(rs);
-                    });
+                    }, CancellationToken.None);
 
                 start += bytesRead;
 
@@ -519,10 +520,11 @@ namespace SenseNet.Client
         /// <param name="text">File contents.</param>
         /// <param name="uploadData">Upload parameters.</param>
         /// <param name="parentId">Parent id.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <param name="server">Target server.</param>
         /// <returns>The uploaded file content returned at the end of the upload request.</returns>
         public static async Task<Content> UploadTextAsync(string text, UploadData uploadData, int parentId,
-            ServerContext server = null)
+            CancellationToken cancellationToken, ServerContext server = null)
         {
             var requestData = new ODataRequest(server)
             {
@@ -530,7 +532,7 @@ namespace SenseNet.Client
                 ContentId = parentId
             };
 
-            return await UploadTextInternalAsync(text, uploadData, requestData, server).ConfigureAwait(false);
+            return await UploadTextInternalAsync(text, uploadData, requestData, cancellationToken, server).ConfigureAwait(false);
         }
         /// <summary>
         /// Uploads a file to the server into the provided container.
@@ -538,10 +540,11 @@ namespace SenseNet.Client
         /// <param name="text">File contents.</param>
         /// <param name="uploadData">Upload parameters.</param>
         /// <param name="parentPath">Parent path.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <param name="server">Target server.</param>
         /// <returns>The uploaded file content returned at the end of the upload request.</returns>
         public static async Task<Content> UploadTextAsync(string text, UploadData uploadData, string parentPath,
-            ServerContext server = null)
+            CancellationToken cancellationToken, ServerContext server = null)
         {
             var requestData = new ODataRequest(server)
             {
@@ -549,9 +552,10 @@ namespace SenseNet.Client
                 Path = parentPath
             };
 
-            return await UploadTextInternalAsync(text, uploadData, requestData, server).ConfigureAwait(false);
+            return await UploadTextInternalAsync(text, uploadData, requestData, cancellationToken, server).ConfigureAwait(false);
         }
-        private static async Task<Content> UploadTextInternalAsync(string text, UploadData uploadData, ODataRequest requestData, ServerContext server = null)
+        private static async Task<Content> UploadTextInternalAsync(string text, UploadData uploadData, ODataRequest requestData,
+            CancellationToken cancellationToken, ServerContext server = null)
         {
             // force set values
             if(text.Length > ClientContext.Current.ChunkSizeInBytes)
@@ -575,7 +579,7 @@ namespace SenseNet.Client
                         var rs = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                         uploadedContent = JsonHelper.Deserialize(rs);
                     }
-                });
+                }, cancellationToken);
 
             if (uploadedContent == null)
                 return null;
@@ -635,6 +639,7 @@ namespace SenseNet.Client
 
         /* ================================================================================ LOW LEVEL API */
 
+        //UNDONE: Why use StreamContent instead of StringContent?
         public static HttpContent CreateRequestBody(string json)
         {
             // serialize json
@@ -654,13 +659,14 @@ namespace SenseNet.Client
         }
 
         public static Task ProcessWebResponseAsync(string url, HttpMethod method, ServerContext server,
-            Action<HttpResponseMessage> responseProcessor)
+            Action<HttpResponseMessage> responseProcessor, CancellationToken cancellationToken)
         {
-            return ProcessWebResponseAsync(url, method ?? HttpMethod.Get, server, null, responseProcessor);
+            return ProcessWebResponseAsync(url, method ?? HttpMethod.Get, server, null,
+                responseProcessor, cancellationToken);
         }
         public static async Task ProcessWebResponseAsync(string url, HttpMethod method, ServerContext server,
             HttpContent httpContent,
-            Action<HttpResponseMessage> responseProcessor)
+            Action<HttpResponseMessage> responseProcessor, CancellationToken cancellationToken)
         {
             if (method == null)
                 method = httpContent == null ? HttpMethod.Get : HttpMethod.Post;
@@ -671,11 +677,11 @@ namespace SenseNet.Client
                     if (httpContent != null)
                         request.Content = httpContent;
                 }
-                , responseProcessor).ConfigureAwait(false);
+                , responseProcessor, cancellationToken).ConfigureAwait(false);
         }
         public static async Task ProcessWebRequestResponseAsync(string url, HttpMethod method, ServerContext server,
             Action<HttpClientHandler, HttpClient, HttpRequestMessage> requestProcessor,
-            Action<HttpResponseMessage> responseProcessor)
+            Action<HttpResponseMessage> responseProcessor, CancellationToken cancellationToken)
         {
             if (method == null)
                 throw new ArgumentNullException(nameof(method));
@@ -699,7 +705,7 @@ namespace SenseNet.Client
                     HttpResponseMessage response;
                     try
                     {
-                        response = await client.SendAsync(request).ConfigureAwait(false);
+                        response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
 
                         if (!response.IsSuccessStatusCode)
                         {

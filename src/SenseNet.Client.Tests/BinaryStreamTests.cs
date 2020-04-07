@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -44,7 +45,7 @@ namespace SenseNet.Client.Tests
                 using(var stream = await response.Content.ReadAsStreamAsync())
                 using (var reader = new StreamReader(stream))
                     ctd = reader.ReadToEnd();
-            });
+            }, CancellationToken.None);
 
             Assert.IsTrue(ctd.Contains("<ContentType name=\"GenericContent\""));
         }
@@ -80,7 +81,7 @@ namespace SenseNet.Client.Tests
                 using (var stream = await response.Content.ReadAsStreamAsync())
                 using (var reader = new StreamReader(stream))
                     downloadedFileContent = reader.ReadToEnd();
-            });
+            }, CancellationToken.None);
 
             Assert.AreEqual(fileContent, downloadedFileContent);
         }
@@ -117,7 +118,7 @@ namespace SenseNet.Client.Tests
                 using (var stream = await response.Content.ReadAsStreamAsync())
                 using (var reader = new StreamReader(stream))
                     downloadedFileContent = reader.ReadToEnd();
-            });
+            }, CancellationToken.None);
 
             Assert.AreEqual(fileContent, downloadedFileContent);
         }
@@ -161,7 +162,7 @@ namespace SenseNet.Client.Tests
                 using (var stream = await response.Content.ReadAsStreamAsync())
                 using (var reader = new StreamReader(stream))
                     downloadedFileContent = reader.ReadToEnd();
-            });
+            }, CancellationToken.None);
 
             Assert.AreEqual(fileContent, downloadedFileContent);
         }

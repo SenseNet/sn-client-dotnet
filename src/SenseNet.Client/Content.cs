@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using SenseNet.Client.Security;
 
@@ -466,7 +467,7 @@ namespace SenseNet.Client
             if (!string.IsNullOrEmpty(propertyName))
                 uploadData.PropertyName = propertyName;
 
-            return await RESTCaller.UploadTextAsync(fileText, uploadData, parentPath, server).ConfigureAwait(false);
+            return await RESTCaller.UploadTextAsync(fileText, uploadData, parentPath, CancellationToken.None, server).ConfigureAwait(false);
         }
         /// <summary>
         /// Uploads a file to the server into the provided container.
@@ -492,7 +493,7 @@ namespace SenseNet.Client
             if (!string.IsNullOrEmpty(propertyName))
                 uploadData.PropertyName = propertyName;
 
-            return await RESTCaller.UploadTextAsync(fileText, uploadData, parentId, server).ConfigureAwait(false);
+            return await RESTCaller.UploadTextAsync(fileText, uploadData, parentId, CancellationToken.None, server).ConfigureAwait(false);
         }
 
         /// <summary>
