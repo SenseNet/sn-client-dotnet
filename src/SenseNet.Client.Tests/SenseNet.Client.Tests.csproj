@@ -114,6 +114,7 @@
     <Compile Include="Security\SetPermissionRequestTests.cs" />
     <Compile Include="ServerContextTests.cs" />
     <Compile Include="ToolsTests.cs" />
+    <Compile Include="UploadDataTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SenseNet.Client\SenseNet.Client.csproj">

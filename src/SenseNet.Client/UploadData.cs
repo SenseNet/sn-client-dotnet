@@ -95,11 +95,11 @@ namespace SenseNet.Client
             dict.Add("Overwrite", Overwrite);
             dict.Add("FileLength", FileLength);
 
-            if (FileText != null)
-                dict.Add("FileText", FileText);
-
             if (ChunkToken != null)
                 dict.Add("ChunkToken", ChunkToken);
+
+            if (FileText != null)
+                dict.Add("FileText", FileText);
 
             return dict;
         }
@@ -126,6 +126,9 @@ namespace SenseNet.Client
 
             if (ChunkToken != null)
                 result.Add("ChunkToken", ChunkToken);
+
+            if (FileText != null)
+                result.Add("FileText", FileText);
 
             return result;
         }
