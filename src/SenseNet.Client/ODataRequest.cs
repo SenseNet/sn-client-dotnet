@@ -41,6 +41,26 @@ namespace SenseNet.Client
         /// </summary>
         Disabled
     }
+
+    /// <summary>
+    /// Values for query total count of requested collection or not
+    /// </summary>
+    public enum InlineCountOptions
+    {
+        /// <summary>
+        /// Equivalent to "None" option.
+        /// </summary>
+        Default,
+        /// <summary>
+        /// Query the total count.
+        /// </summary>
+        AllPages,
+        /// <summary>
+        /// Do not query the total count.
+        /// </summary>
+        None
+    }
+
     public static class ODataRequestExtensions
     {
         public static void Add(this List<KeyValuePair<string, string>> list, string name, string value)
@@ -91,45 +111,72 @@ namespace SenseNet.Client
         /// </summary>
         public string ActionName { get; set; }
         /// <summary>
-        /// Version request parameter.
+        /// Gets or sets the "version-request" parameter.
         /// </summary>
         public string Version { get; set; }
 
         /// <summary>
-        /// Top query parameter.
+        /// Gets or sets the "top" query parameter.
         /// </summary>
         public int Top { get; set; }
         /// <summary>
-        /// Skip query parameter.
+        /// Gets or sets the "skip" query parameter.
         /// </summary>
         public int Skip { get; set; }
         /// <summary>
-        /// Count only query parameter.
+        /// Gets or sets the "count-only" query parameter.
         /// </summary>
         public bool CountOnly { get; set; }
 
         /// <summary>
-        /// List of selectable fields.
+        /// Gets or sets the list of selectable field names.
         /// </summary>
         public IEnumerable<string> Select { get; set; }
         /// <summary>
-        /// List of expandable fields.
+        /// Gets or sets the list of expandable field names.
         /// </summary>
         public IEnumerable<string> Expand { get; set; }
 
         /// <summary>
-        /// Whether this is a request that targets a single OData resource or a collection.
+        /// Gets or sets whether this is a request that targets a single OData resource or a collection.
         /// </summary>
         public bool IsCollectionRequest { get; set; }
         /// <summary>
-        /// Format of the requested metadata information. Default is None.
+        /// Gets or sets the format of the requested metadata information. Default is None.
         /// </summary>
         public MetadataFormat Metadata { get; set; }
 
         /// <summary>
-        /// Custom URL parameters.
+        /// Gets a container for any custom URL parameters.
         /// </summary>
         public List<KeyValuePair<string, string>> Parameters { get; }
+
+        /// <summary>
+        /// Gets or sets the total count request if the resource is a collection.
+        /// </summary>
+        public InlineCountOptions InlineCount { get; set; }
+        /// <summary>
+        /// Gets or sets a standard OData filter of the children.
+        /// </summary>
+        public string ChildrenFilter { get; set; }
+        /// <summary>
+        /// Gets or sets the value of the switch that controls the auto filtering.
+        /// </summary>
+        public FilterStatus AutoFilters { get; set; }
+        /// <summary>
+        /// Gets or sets the value of the switch that controls the lifespan filtering.
+        /// </summary>
+        public FilterStatus LifespanFilter { get; set; }
+        /// <summary>
+        /// Gets or sets the scenario name or null.
+        /// </summary>
+        public string Scenario { get; set; }
+        /// <summary>
+        /// Gets or sets the sorting of the children in priority order.
+        /// Every item can be an existing FieldName optionally followed by the sorting direction
+        /// (space + "asc" or "desc" e. g. "CreationDate desc")
+        /// </summary>
+        public string[] OrderBy { get; set; }
 
         //============================================================================= Constructors and overrides
 
@@ -211,6 +258,7 @@ namespace SenseNet.Client
                 urlParams.Add(item);
             }
 
+            //UNDONE: Test
             // always omit metadata if not requested explicitly
             switch (Metadata)
             {
@@ -225,9 +273,54 @@ namespace SenseNet.Client
                     break;
             }
 
+            //UNDONE: Test
+            // inlinecount
+            if (InlineCount == InlineCountOptions.AllPages)
+                urlParams.Add("$inlinecount", "allpages");
+
+            //UNDONE: Test
+            // filter
+            if (!string.IsNullOrEmpty(ChildrenFilter))
+                urlParams.Add("$filter", ChildrenFilter);
+
+            //UNDONE: Test
+            // autofilters
+            switch (AutoFilters)
+            {
+                case FilterStatus.Enabled:
+                    urlParams.Add("enableautofilters", "true");
+                    break;
+                case FilterStatus.Disabled:
+                    urlParams.Add("enableautofilters", "false");
+                    break;
+            }
+
+            //UNDONE: Test
+            // lifespanfilter
+            switch (LifespanFilter)
+            {
+                case FilterStatus.Enabled:
+                    urlParams.Add("enablelifespanfilter", "true");
+                    break;
+                case FilterStatus.Disabled:
+                    urlParams.Add("enablelifespanfilter", "false");
+                    break;
+            }
+
+            //UNDONE: Test
+            // scenario
+            if (!string.IsNullOrEmpty(Scenario))
+                urlParams.Add("scenario", Scenario);
+
+            //UNDONE: Test
+            // orderby
+            if (OrderBy != null && OrderBy.Length > 0)
+            {
+                urlParams.Add("$orderby", string.Join(",", OrderBy.Select(x=>x.Trim())));
+            }
+
             if (urlParams.Count == 0)
                 return url;
-
             return url + "?" + string.Join("&", urlParams.Select(dkv => $"{dkv.Key}={dkv.Value}"));
         }
 
