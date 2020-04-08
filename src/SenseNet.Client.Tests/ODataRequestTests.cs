@@ -86,5 +86,131 @@ namespace SenseNet.Client.Tests
             // ASSERT
             Assert.AreEqual(expected, actual);
         }
+
+        [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException))]
+        public void QueryString_BuildFromProperties_EmptyIsBuggy()
+        {
+            var req = new ODataRequest();
+
+            Assert.AreEqual("", req.ToString());
+        }
+        [TestMethod]
+        public void QueryString_BuildFromProperties_Defaults()
+        {
+            var expected = $"{ClientContext.Current.Server.Url}/OData.svc/('Root')?metadata=no";
+
+            var req = new ODataRequest { Path = "/Root" };
+
+            Assert.AreEqual(expected, req.ToString());
+        }
+        [TestMethod]
+        public void QueryString_BuildFromProperties_CollectionDefaults()
+        {
+            var expected = $"{ClientContext.Current.Server.Url}/OData.svc/Root?metadata=no";
+
+            var req = new ODataRequest { Path = "/Root", IsCollectionRequest = true };
+
+            Assert.AreEqual(expected, req.ToString());
+        }
+        [TestMethod]
+        public void QueryString_BuildFromProperties_PropertySet1()
+        {
+            var expected = $"{ClientContext.Current.Server.Url}/OData.svc/('Root')/Action1?version=V16.78D&" +
+                           $"$select=Id,Name,Field1,Field2&$expand=Field1,Field2&metadata=minimal";
+
+            var req = new ODataRequest
+            {
+                Path = "/Root",
+                //ContentId = 79,
+                IsCollectionRequest = false,
+                Metadata = MetadataFormat.Minimal,
+                ActionName = "Action1",
+                //PropertyName = "PropertyName",
+                CountOnly = false,
+                Expand = new[] {"Field1", "Field2"},
+                Select = new []{ "Id" , "Name" , "Field1" , "Field2" },
+                Version = "V16.78D"
+            };
+
+            Assert.AreEqual(expected, req.ToString());
+        }
+        [TestMethod]
+        public void QueryString_BuildFromProperties_PropertySet2()
+        {
+            var expected = $"{ClientContext.Current.Server.Url}/OData.svc/content(79)/PropertyName?version=V16.78D&" +
+                           $"$select=Id,Name,Field1,Field2&$expand=Field1,Field2&metadata=minimal";
+
+            var req = new ODataRequest
+            {
+                //Path = "/Root",
+                ContentId = 79,
+                IsCollectionRequest = false,
+                Metadata = MetadataFormat.Minimal,
+                //ActionName = "Action1",
+                PropertyName = "PropertyName",
+                CountOnly = false,
+                Expand = new[] { "Field1", "Field2" },
+                Select = new[] { "Id", "Name", "Field1", "Field2" },
+                Version = "V16.78D",
+            };
+
+            Assert.AreEqual(expected, req.ToString());
+        }
+        [TestMethod]
+        public void QueryString_BuildFromProperties_PropertySet3()
+        {
+            var expected = $"{ClientContext.Current.Server.Url}/OData.svc/Root?$top=7&$skip=78&" +
+                           $"$select=Id,Name&metadata=no&$inlinecount=allpages&$filter=isof('Folder')" +
+                           $"&enableautofilters=false&enablelifespanfilter=false&scenario=Scenario1&" +
+                           $"$orderby=Field1 desc,Field2,Field3 asc";
+
+            var req = new ODataRequest
+            {
+                Path = "/Root",
+                //ContentId = 79,
+                IsCollectionRequest = true,
+                Metadata = MetadataFormat.None,
+                //ActionName = "Action1",
+                //PropertyName = "PropertyName",
+                CountOnly = false,
+                AutoFilters = FilterStatus.Disabled,
+                LifespanFilter = FilterStatus.Disabled,
+                ChildrenFilter = "isof('Folder')",
+                InlineCount = InlineCountOptions.AllPages,
+                OrderBy = new[] { "Field1 desc", "Field2", "Field3 asc" },
+                Scenario = "Scenario1",
+                Select = new[] { "Id", "Name" },
+                Top = 7,
+                Skip = 78,
+            };
+
+            Assert.AreEqual(expected, req.ToString());
+        }
+        [TestMethod]
+        public void QueryString_BuildFromProperties_PropertySet4()
+        {
+            var expected = $"{ClientContext.Current.Server.Url}/OData.svc/Root/$count?metadata=no&" +
+                           $"$inlinecount=allpages&$filter=isof('Folder')&enableautofilters=false&" +
+                           $"enablelifespanfilter=false&scenario=Scenario1";
+
+            var req = new ODataRequest
+            {
+                Path = "/Root",
+                //ContentId = 79,
+                IsCollectionRequest = true,
+                //Metadata = MetadataFormat.None,
+                //ActionName = "Action1",
+                //PropertyName = "PropertyName",
+                CountOnly = true,
+                AutoFilters = FilterStatus.Disabled,
+                LifespanFilter = FilterStatus.Disabled,
+                ChildrenFilter = "isof('Folder')",
+                InlineCount = InlineCountOptions.AllPages,
+                Scenario = "Scenario1",
+            };
+
+            Assert.AreEqual(expected, req.ToString());
+        }
     }
 }
