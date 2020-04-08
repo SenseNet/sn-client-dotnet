@@ -250,12 +250,12 @@ namespace SenseNet.Client
 
             return GetRequest(url, server);
         }
-        [Obsolete("Do not use anymore.", true)]
+        [Obsolete("Do not use this method anymore.", true)]
         private static HttpWebRequest GetRequest(string url, ServerContext server)
         {
             return GetRequest(new Uri(url), server);
         }
-        [Obsolete("Do not use anymore.", true)]
+        [Obsolete("Do not use this method anymore.", true)]
         private static HttpWebRequest GetRequest(Uri uri, ServerContext server)
         {
             // WebRequest.Create returns HttpWebRequest only if the url
