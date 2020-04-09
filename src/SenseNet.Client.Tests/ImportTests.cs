@@ -21,7 +21,7 @@ namespace SenseNet.Client.Tests
             Initializer.InitializeServer();
         }
 
-        [TestMethod]
+        //[TestMethod]
         public async Task Import_Subfolders()
         {
             _errorCount = 0;
