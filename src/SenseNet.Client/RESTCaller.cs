@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,23 +21,22 @@ namespace SenseNet.Client
         /// <summary>
         /// PATCH method.
         /// </summary>
+        // ReSharper disable once InconsistentNaming
         public static readonly HttpMethod PATCH = new HttpMethod("PATCH");
         /// <summary>
         /// POST method.
         /// </summary>
+        // ReSharper disable once InconsistentNaming
         public static readonly HttpMethod POST = HttpMethod.Post;
     }
 
     /// <summary>
     /// Sends HTTP requests to the SenseNet OData REST API.
     /// </summary>
+    // ReSharper disable once InconsistentNaming
     public static class RESTCaller
     {
-        // Retry feature is switched OFF. If it is needed, implement a configuration for this.
-        private static int REQUEST_RETRY_COUNT = 1;
-        private static readonly string UPLOAD_CONTENTTYPE = "application/x-www-form-urlencoded";
-        private static readonly string UPLOAD_FORMDATA_TEMPLATE = "Content-Disposition: form-data; name=\"{0}\"\r\n\r\n{1}";
-        private static readonly string UPLOAD_HEADER_TEMPLATE = "Content-Disposition: form-data; name=\"{0}\"; filename=\"{1}\"\r\n Content-Type: application/octet-stream\r\n\r\n";
+        private static readonly string JsonContentMimeType = "application/json";
 
         //============================================================================= Static GET methods
 
@@ -177,77 +177,42 @@ namespace SenseNet.Client
             return await GetResponseStringAsync(requestData.GetUri(), server, method, body).ConfigureAwait(false);
         }
         /// <summary>
+        /// Gets the raw response of an OData request from the server.
+        /// </summary>
+        /// <param name="requestData">OData request parameters, for example select or expand.</param>
+        /// <param name="method">HTTP method (SenseNet.Client.HttpMethods class has a few predefined methods).</param>
+        /// <param name="body">Request body.</param>
+        /// <param name="server">Target server.</param>
+        /// <returns>Raw HTTP response.</returns>
+        public static async Task<string> GetResponseStringAsync(ODataRequest requestData, HttpMethod method = null,
+            string body = null, ServerContext server = null)
+        {
+            return await GetResponseStringAsync(requestData.GetUri(), server, method, body).ConfigureAwait(false);
+        }
+        /// <summary>
         /// Gets the raw response of a general HTTP request from the server.
         /// </summary>
         /// <param name="uri">Request URI.</param>
         /// <param name="server">Target server.</param>
         /// <param name="method">HTTP method (SenseNet.Client.HttpMethods class has a few predefined methods).</param>
-        /// <param name="body">Request body.</param>
+        /// <param name="jsonBody">Request body in JSON format.</param>
         /// <returns>Raw HTTP response.</returns>
-        public static async Task<string> GetResponseStringAsync(Uri uri, ServerContext server = null, HttpMethod method = null, string body = null)
+        public static async Task<string> GetResponseStringAsync(Uri uri, ServerContext server = null,
+            HttpMethod method = null, string jsonBody = null)
         {
-            var retryCount = 0;
+            string result = null;
 
-            while (retryCount < REQUEST_RETRY_COUNT)
-            {
-                SnTrace.Category(ClientContext.TraceCategory).Write("###>REQ: {0}", uri);
+            SnTrace.Category(ClientContext.TraceCategory).Write("###>REQ: {0}", uri);
 
-                var myRequest = GetRequest(uri, server);
-
-                if (method != null)
-                    myRequest.Method = method.Method;
-
-                if (!string.IsNullOrEmpty(body))
+            await ProcessWebResponseAsync(uri.ToString(), method, server,
+                jsonBody != null ? new StringContent(jsonBody) : null,
+                async response =>
                 {
-                    try
-                    {
-                        using (var requestWriter = new StreamWriter(myRequest.GetRequestStream()))
-                        {
-                            requestWriter.Write(body);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new ClientException("Error during writing to request stream: " + ex.Message, ex);
-                    }
-                }
-                else
-                {
-                    myRequest.ContentLength = 0;
-                }
+                    if (response != null)
+                        result = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                }, CancellationToken.None).ConfigureAwait(false);
 
-                try
-                {
-                    using (var wr = await myRequest.GetResponseAsync())
-                    {
-                        return await ReadResponseStringAsync(wr).ConfigureAwait(false);
-                    }
-                }
-                catch (WebException ex)
-                {
-                    // a 404 result is not an error in case of simple get requests, so return silently
-                    if (ex.Response is HttpWebResponse webResponse && webResponse.StatusCode == HttpStatusCode.NotFound && (method == null || method != HttpMethod.Post))
-                        return null;
-
-                    if (retryCount >= REQUEST_RETRY_COUNT - 1)
-                    {
-                        throw await GetClientExceptionAsync(ex, uri.ToString(), method, body).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        var responseString = await ReadResponseStringAsync(ex.Response).ConfigureAwait(false);
-
-                        Thread.Sleep(50);
-
-                        SnTrace.Category(ClientContext.TraceCategory).Write("###>REQ: {0} ERROR:{1}", uri,
-                            responseString.Replace(Environment.NewLine, " ").Replace("\r\n", " ") + " " + ex);
-                    }
-                }
-
-                retryCount++;
-            }
-
-            return string.Empty;
+            return result;
         }
 
         /// <summary>
@@ -264,7 +229,8 @@ namespace SenseNet.Client
             if (postData != null && method == null)
                 method = HttpMethod.Post;
 
-            var rs = await GetResponseStringAsync(requestData.GetUri(), server, method, postData == null ? null : JsonHelper.Serialize(postData)).ConfigureAwait(false);
+            var rs = await GetResponseStringAsync(requestData.GetUri(), server, method, postData == null ? null : JsonHelper.Serialize(postData))
+                .ConfigureAwait(false);
 
             try
             {
@@ -276,6 +242,7 @@ namespace SenseNet.Client
             }
         }
 
+        #region OBSOLETE
         /// <summary>
         /// Assembles an http request that gets a stream from the portal containing binary data.
         /// Use this inside a using block to asynchronously get the response stream.
@@ -286,6 +253,7 @@ namespace SenseNet.Client
         /// accessible to the current user will be served.</param>
         /// <param name="propertyName">Binary field name. Default is Binary.</param>
         /// <param name="server">Target server.</param>
+        [Obsolete("Use GetStreamResponseAsync instead.")]
         public static HttpWebRequest GetStreamRequest(int id, string version = null, string propertyName = null, ServerContext server = null)
         {
             var url = $"{ServerContext.GetUrl(server)}/binaryhandler.ashx?nodeid={id}&propertyname={propertyName ?? "Binary"}";
@@ -293,6 +261,68 @@ namespace SenseNet.Client
                 url += "&version=" + version;
 
             return GetRequest(url, server);
+        }
+        [Obsolete("Do not use this method anymore.", true)]
+        private static HttpWebRequest GetRequest(string url, ServerContext server)
+        {
+            return GetRequest(new Uri(url), server);
+        }
+        [Obsolete("Do not use this method anymore.", true)]
+        private static HttpWebRequest GetRequest(Uri uri, ServerContext server)
+        {
+            // WebRequest.Create returns HttpWebRequest only if the url
+            // is an HTTP url. It may return FtpWebRequest also!
+            var myRequest = (HttpWebRequest)WebRequest.Create(uri);
+
+            myRequest.Timeout = -1;
+            myRequest.KeepAlive = false;
+            myRequest.ProtocolVersion = HttpVersion.Version10;
+
+            SetAuthenticationForRequest(myRequest, server);
+
+            return myRequest;
+        }
+        [Obsolete("Use this method with HttpRequestException type.")]
+        public static async Task<ClientException> GetClientExceptionAsync(WebException ex, string requestUrl = null, HttpMethod method = null, string body = null)
+        {
+            var responseString = await ReadResponseStringAsync(ex.Response).ConfigureAwait(false);
+            var exceptionData = GetExceptionData(responseString);
+
+            var ce = new ClientException(exceptionData, ex)
+            {
+                Response = responseString
+            };
+
+            ce.Data["Url"] = requestUrl;
+            ce.Data["Method"] = method?.Method ?? HttpMethod.Get.Method;
+            ce.Data["Body"] = body;
+
+            return ce;
+        }
+        #endregion
+
+        public static Task GetStreamResponseAsync(int contentId, Action<HttpResponseMessage> responseProcessor, CancellationToken cancellationToken)
+        {
+            return GetStreamResponseAsync(contentId, null, responseProcessor, cancellationToken);
+        }
+        public static Task GetStreamResponseAsync(int contentId, string version, Action<HttpResponseMessage> responseProcessor, CancellationToken cancellationToken)
+        {
+            return GetStreamResponseAsync(contentId, version, null, responseProcessor, cancellationToken);
+        }
+        public static Task GetStreamResponseAsync(int contentId, string version, string propertyName, Action<HttpResponseMessage> responseProcessor, CancellationToken cancellationToken)
+        {
+            return GetStreamResponseAsync(contentId, version, propertyName, null, responseProcessor, cancellationToken);
+        }
+        public static async Task GetStreamResponseAsync(int contentId, string version, string propertyName, ServerContext server, Action<HttpResponseMessage> responseProcessor, CancellationToken cancellationToken)
+        {
+            if (server == null)
+                server = ClientContext.Current.Server;
+            var url = $"{ServerContext.GetUrl(server)}/binaryhandler.ashx?nodeid={contentId}&propertyname={propertyName ?? "Binary"}";
+            if (!string.IsNullOrEmpty(version))
+                url += "&version=" + version;
+
+            await ProcessWebResponseAsync(url, HttpMethod.Get, server, responseProcessor, cancellationToken)
+                .ConfigureAwait(false);
         }
 
         //============================================================================= Static POST methods
@@ -349,7 +379,8 @@ namespace SenseNet.Client
                 Path = path
             };
 
-            var rs = await GetResponseStringAsync(reqData.GetUri(), server, method, JsonHelper.GetJsonPostModel(postData)).ConfigureAwait(false);
+            var rs = await GetResponseStringAsync(reqData.GetUri(), server, method, JsonHelper.GetJsonPostModel(postData))
+                .ConfigureAwait(false);
 
             return JsonHelper.Deserialize(rs).d;
         }
@@ -360,7 +391,8 @@ namespace SenseNet.Client
                 ContentId = contentId
             };
 
-            var rs = await GetResponseStringAsync(reqData.GetUri(), server, method, JsonHelper.GetJsonPostModel(postData)).ConfigureAwait(false);
+            var rs = await GetResponseStringAsync(reqData.GetUri(), server, method, JsonHelper.GetJsonPostModel(postData))
+                .ConfigureAwait(false);
 
             return JsonHelper.Deserialize(rs).d;
         }
@@ -403,7 +435,8 @@ namespace SenseNet.Client
                 Path = parentPath
             };
 
-            return await UploadInternalAsync(binaryStream, uploadData, requestData, server, progressCallback).ConfigureAwait(false);
+            return await UploadInternalAsync(binaryStream, uploadData, requestData, server, progressCallback)
+                .ConfigureAwait(false);
         }
         private static async Task<Content> UploadInternalAsync(Stream binaryStream, UploadData uploadData, ODataRequest requestData, ServerContext server = null, Action<int> progressCallback = null)
         {
@@ -412,132 +445,77 @@ namespace SenseNet.Client
             if (uploadData.FileLength == 0)
                 uploadData.FileLength = binaryStream.Length;
 
-            requestData.Parameters["create"] = "1";
+            requestData.Parameters.Add("create", "1");
 
             dynamic uploadedContent = null;
-            var retryCount = 0;
 
-            // send initial request
-            while (retryCount < REQUEST_RETRY_COUNT)
+            // Get ChunkToken
+            try
             {
-                try
-                {
-                    var myReq = CreateInitUploadWebRequest(requestData.ToString(), server, uploadData);
+                SnTrace.Category(ClientContext.TraceCategory).Write("###>REQ: {0}", requestData);
 
-                    SnTrace.Category(ClientContext.TraceCategory).Write("###>REQ: {0}", myReq.RequestUri);
-
-                    using (var wr = await myReq.GetResponseAsync())
+                var httpContent = new StringContent(uploadData.ToString());
+                httpContent.Headers.ContentType = new MediaTypeHeaderValue(JsonContentMimeType);
+                await ProcessWebResponseAsync(requestData.ToString(), HttpMethod.Post, server, httpContent,
+                    async response =>
                     {
-                        uploadData.ChunkToken = await ReadResponseStringAsync(wr).ConfigureAwait(false);
-                    }
+                        uploadData.ChunkToken = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    }, CancellationToken.None).ConfigureAwait(false);
+            }
+            catch (WebException ex)
+            {
+                var ce = new ClientException("Error during binary upload.", ex);
 
-                    // succesful request: skip out from retry loop
-                    break;
-                }
-                catch (WebException ex)
-                {
-                    if (retryCount >= REQUEST_RETRY_COUNT - 1)
-                    {
-                        var ce = new ClientException("Error during binary upload.", ex);
+                ce.Data["SiteUrl"] = requestData.SiteUrl;
+                ce.Data["Parent"] = requestData.ContentId != 0 ? requestData.ContentId.ToString() : requestData.Path;
+                ce.Data["FileName"] = uploadData.FileName;
+                ce.Data["ContentType"] = uploadData.ContentType;
 
-                        ce.Data["SiteUrl"] = requestData.SiteUrl;
-                        ce.Data["Parent"] = requestData.ContentId != 0 ? requestData.ContentId.ToString() : requestData.Path;
-                        ce.Data["FileName"] = uploadData.FileName;
-                        ce.Data["ContentType"] = uploadData.ContentType;
-
-                        throw ce;
-                    }
-                    else
-                    {
-                        Thread.Sleep(50);
-                    }
-                }
-
-                retryCount++;
+                throw ce;
             }
 
-            var boundary = "---------------------------" + DateTime.UtcNow.Ticks.ToString("x");
-            var trailer = Encoding.ASCII.GetBytes("\r\n--" + boundary + "--\r\n");
+            // Reuse previous request data, but remove unnecessary parameters
+            requestData.Parameters.Remove("create");
 
-            // send subsequent requests
+            // Send subsequent requests
+            var boundary = "---------------------------" + DateTime.UtcNow.Ticks.ToString("x");
+            var uploadFormData = uploadData.ToKeyValuePairs();
+            var contentDispositionHeaderValue = new ContentDispositionHeaderValue("attachment")
+            {
+                FileName = uploadData.FileName
+            };
             var buffer = new byte[ClientContext.Current.ChunkSizeInBytes];
             int bytesRead;
             var start = 0;
 
-            // reuse previous request data, but remove unnecessary parameters
-            requestData.Parameters.Remove("create");
-
             while ((bytesRead = binaryStream.Read(buffer, 0, buffer.Length)) != 0)
             {
-                retryCount = 0;
+                // Prepare the current chunk request
+                var httpContent = new MultipartFormDataContent(boundary);
+                foreach (var item in uploadFormData)
+                    httpContent.Add(new StringContent(item.Value), item.Key);
+                httpContent.Headers.ContentDisposition = contentDispositionHeaderValue;
 
-                //get the request object for the actual chunk
-                while (retryCount < REQUEST_RETRY_COUNT)
-                {
-                    Stream requestStream = null;
-                    HttpWebRequest chunkRequest;
+                if (uploadData.UseChunk)
+                    httpContent.Headers.ContentRange = new ContentRangeHeaderValue(start, start + bytesRead - 1, binaryStream.Length);
 
-                    try
+                // Add the chunk as a stream into the request content
+                var postedStream = new MemoryStream(buffer, 0, bytesRead);
+                httpContent.Add(new StreamContent(postedStream), "files[]", uploadData.FileName);
+
+                // Process
+                await ProcessWebResponseAsync(requestData.ToString(), HttpMethod.Post, server,
+                    httpContent,
+                    async response =>
                     {
-                        chunkRequest = CreateChunkUploadWebRequest(requestData.ToString(), server, uploadData, boundary, out requestStream);
-
-                        SnTrace.Category(ClientContext.TraceCategory).Write("###>REQ: {0}", chunkRequest.RequestUri);
-
-                        if (uploadData.UseChunk)
-                            chunkRequest.Headers.Set("Content-Range", string.Format("bytes {0}-{1}/{2}", start, start + bytesRead - 1, binaryStream.Length));
-
-                        //write the chunk into the request stream
-                        requestStream.Write(buffer, 0, bytesRead);
-                        requestStream.Write(trailer, 0, trailer.Length);
-
-                        await requestStream.FlushAsync().ConfigureAwait(false);
-                    }
-                    finally
-                    {
-                        if (requestStream != null)
-                            requestStream.Close();
-                    }
-
-                    //send the request
-                    try
-                    {
-                        using (var wr = await chunkRequest.GetResponseAsync())
-                        {
-                            var rs = await ReadResponseStringAsync(wr).ConfigureAwait(false);
-
-                            uploadedContent = JsonHelper.Deserialize(rs);
-                        }
-
-                        // successful request: skip out from the retry loop
-                        break;
-                    }
-                    catch (WebException ex)
-                    {
-                        if (retryCount >= REQUEST_RETRY_COUNT - 1)
-                        {
-                            var ce = new ClientException("Error during binary upload.", ex);
-
-                            ce.Data["SiteUrl"] = requestData.SiteUrl;
-                            ce.Data["Parent"] = requestData.ContentId != 0 ? requestData.ContentId.ToString() : requestData.Path;
-                            ce.Data["FileName"] = uploadData.FileName;
-                            ce.Data["ContentType"] = uploadData.ContentType;
-
-                            throw ce;
-                        }
-                        else
-                        {
-                            Thread.Sleep(50);
-                        }
-                    }
-
-                    retryCount++;
-                }
+                        var rs = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                        uploadedContent = JsonHelper.Deserialize(rs);
+                    }, CancellationToken.None).ConfigureAwait(false);
 
                 start += bytesRead;
 
-                // notify the caller about every chunk that was uploaded successfully
-                if (progressCallback != null)
-                    progressCallback(start);
+                // Notify the caller about every chunk that was uploaded successfully
+                progressCallback?.Invoke(start);
             }
 
             if (uploadedContent == null)
@@ -552,106 +530,86 @@ namespace SenseNet.Client
             return content;
         }
 
-        //============================================================================= Helper methods
-
         /// <summary>
-        /// Parses an error response and wraps all the information in it into a ClientException.
+        /// Uploads a file to the server into the provided container.
         /// </summary>
-        /// <param name="ex">Original web exception.</param>
-        /// <param name="requestUrl">Request url that caused the web exception.</param>
-        /// <param name="method">Http method (e.g GET or POST)</param>
-        /// <param name="body">Request body.</param>
-        /// <returns>A client exception that contains parsed server info (e.g. OData exception type,
-        /// status code, original response text, etc.) and the original exception as an inner exception.</returns>
-        public static async Task<ClientException> GetClientExceptionAsync(WebException ex, string requestUrl = null, HttpMethod method = null, string body = null)
+        /// <param name="text">File contents.</param>
+        /// <param name="uploadData">Upload parameters.</param>
+        /// <param name="parentId">Parent id.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <param name="server">Target server.</param>
+        /// <returns>The uploaded file content returned at the end of the upload request.</returns>
+        public static async Task<Content> UploadTextAsync(string text, UploadData uploadData, int parentId,
+            CancellationToken cancellationToken, ServerContext server = null)
         {
-            var responseString = await ReadResponseStringAsync(ex.Response).ConfigureAwait(false);
-            var exceptionData = GetExceptionData(responseString);
-
-            var ce = new ClientException(exceptionData, ex)
+            var requestData = new ODataRequest(server)
             {
-                Response = responseString
+                ActionName = "Upload",
+                ContentId = parentId
             };
 
-            ce.Data["Url"] = requestUrl;
-            ce.Data["Method"] = method?.Method ?? HttpMethod.Get.Method;
-            ce.Data["Body"] = body;
-
-            return ce;
+            return await UploadTextInternalAsync(text, uploadData, requestData, cancellationToken, server).ConfigureAwait(false);
         }
-
-        private static WebRequest CreateInitUploadWebRequest(string url, ServerContext server, UploadData uploadData)
+        /// <summary>
+        /// Uploads a file to the server into the provided container.
+        /// </summary>
+        /// <param name="text">File contents.</param>
+        /// <param name="uploadData">Upload parameters.</param>
+        /// <param name="parentPath">Parent path.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <param name="server">Target server.</param>
+        /// <returns>The uploaded file content returned at the end of the upload request.</returns>
+        public static async Task<Content> UploadTextAsync(string text, UploadData uploadData, string parentPath,
+            CancellationToken cancellationToken, ServerContext server = null)
         {
-            var myRequest = GetRequest(url, server);
-            myRequest.Method = "POST";
-
-            var postDataBytes = Encoding.UTF8.GetBytes(uploadData.ToString());
-
-            myRequest.ContentLength = postDataBytes.Length;
-            myRequest.ContentType = UPLOAD_CONTENTTYPE;
-
-            using (var reqStream = myRequest.GetRequestStream())
+            var requestData = new ODataRequest(server)
             {
-                reqStream.Write(postDataBytes, 0, postDataBytes.Length);
-            }
+                ActionName = "Upload",
+                Path = parentPath
+            };
 
-            return myRequest;
+            return await UploadTextInternalAsync(text, uploadData, requestData, cancellationToken, server).ConfigureAwait(false);
         }
-        private static HttpWebRequest CreateChunkUploadWebRequest(string url, ServerContext server, UploadData uploadData, string boundary, out Stream requestStream)
+        private static async Task<Content> UploadTextInternalAsync(string text, UploadData uploadData, ODataRequest requestData,
+            CancellationToken cancellationToken, ServerContext server = null)
         {
-            var myRequest = GetRequest(url, server);
+            // force set values
+            if(text.Length > ClientContext.Current.ChunkSizeInBytes)
+                throw new InvalidOperationException($"Cannot upload a text that longer than the chunk size " +
+                                                    $"({ClientContext.Current.ChunkSizeInBytes}).");
+            if (uploadData.FileLength == 0)
+                uploadData.FileLength = text.Length;
+            uploadData.FileText = text;
 
-            myRequest.Method = "POST";
-            myRequest.ContentType = "multipart/form-data; boundary=" + boundary;
+            dynamic uploadedContent = null;
 
-            myRequest.Headers.Add("Content-Disposition", "attachment; filename=\"" + Uri.EscapeUriString(uploadData.FileName) + "\"");
+            var model = JsonHelper.GetJsonPostModel(uploadData.ToDictionary());
+            var httpContent = new StringContent(model);
+            httpContent.Headers.ContentType = new MediaTypeHeaderValue(JsonContentMimeType);
 
-            var boundarybytes = Encoding.ASCII.GetBytes("\r\n--" + boundary + "\r\n");
+            await ProcessWebResponseAsync(requestData.ToString(), HttpMethod.Post, server, httpContent,
+                async response =>
+                {
+                    if (response != null)
+                    {
+                        var rs = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                        uploadedContent = JsonHelper.Deserialize(rs);
+                    }
+                }, cancellationToken).ConfigureAwait(false);
 
-            // we must not close the stream after this as we need to write the chunk into it in the caller method
-            requestStream = myRequest.GetRequestStream();
+            if (uploadedContent == null)
+                return null;
 
-            //write form data values
-            foreach (var kvp in uploadData.ToDictionary())
-            {
-                requestStream.Write(boundarybytes, 0, boundarybytes.Length);
+            int contentId = uploadedContent.Id;
+            var content = Content.Create(contentId);
 
-                var formitem = string.Format(UPLOAD_FORMDATA_TEMPLATE, kvp.Key, kvp.Value);
-                var formitembytes = Encoding.UTF8.GetBytes(formitem);
+            content.Name = uploadedContent.Name;
+            content.Path = uploadedContent.Url;
 
-                requestStream.Write(formitembytes, 0, formitembytes.Length);
-            }
-
-            //write a boundary
-            requestStream.Write(boundarybytes, 0, boundarybytes.Length);
-
-            //write file name and content type
-            var header = string.Format(UPLOAD_HEADER_TEMPLATE, "files[]", Uri.EscapeUriString(uploadData.FileName));
-            var headerbytes = Encoding.UTF8.GetBytes(header);
-
-            requestStream.Write(headerbytes, 0, headerbytes.Length);
-
-            return myRequest;
+            return content;
         }
 
-        private static HttpWebRequest GetRequest(string url, ServerContext server)
-        {
-            return GetRequest(new Uri(url), server);
-        }
-        private static HttpWebRequest GetRequest(Uri uri, ServerContext server)
-        {
-            // WebRequest.Create returns HttpWebRequest only if the url
-            // is an HTTP url. It may return FtpWebRequest also!
-            var myRequest = (HttpWebRequest)WebRequest.Create(uri);
-
-            myRequest.Timeout = -1;
-            myRequest.KeepAlive = false;
-            myRequest.ProtocolVersion = HttpVersion.Version10;
-
-            SetAuthenticationForRequest(myRequest, server);
-
-            return myRequest;
-        }
+        //============================================================================= Helper methods
 
         private static async Task<string> ReadResponseStringAsync(WebResponse response)
         {
@@ -693,6 +651,133 @@ namespace SenseNet.Client
                 var usernamePassword = server.Username + ":" + server.Password;
                 myReq.Headers.Add("Authorization", "Basic " + Convert.ToBase64String(new ASCIIEncoding().GetBytes(usernamePassword)));
             }
+        }
+
+        /* ================================================================================ LOW LEVEL API */
+
+        public static Task ProcessWebResponseAsync(string url, HttpMethod method, ServerContext server,
+            Action<HttpResponseMessage> responseProcessor, CancellationToken cancellationToken)
+        {
+            return ProcessWebResponseAsync(url, method ?? HttpMethod.Get, server, null,
+                responseProcessor, cancellationToken);
+        }
+        public static async Task ProcessWebResponseAsync(string url, HttpMethod method, ServerContext server,
+            HttpContent httpContent,
+            Action<HttpResponseMessage> responseProcessor, CancellationToken cancellationToken)
+        {
+            if (method == null)
+                method = httpContent == null ? HttpMethod.Get : HttpMethod.Post;
+
+            await ProcessWebRequestResponseAsync(url, method, server,
+                (handler, client, request) =>
+                {
+                    if (httpContent != null)
+                        request.Content = httpContent;
+                }
+                , responseProcessor, cancellationToken).ConfigureAwait(false);
+        }
+        public static async Task ProcessWebRequestResponseAsync(string url, HttpMethod method, ServerContext server,
+            Action<HttpClientHandler, HttpClient, HttpRequestMessage> requestProcessor,
+            Action<HttpResponseMessage> responseProcessor, CancellationToken cancellationToken)
+        {
+            if (method == null)
+                throw new ArgumentNullException(nameof(method));
+            if (server == null)
+                server = ClientContext.Current.Server;
+
+            using (var handler = new HttpClientHandler())
+            {
+                if (server.IsTrusted)
+                    handler.ServerCertificateCustomValidationCallback =
+                        server.ServerCertificateCustomValidationCallback
+                        ?? ServerContext.DefaultServerCertificateCustomValidationCallback;
+
+                using (var client = new HttpClient(handler))
+                using (var request = new HttpRequestMessage(method, url))
+                {
+                    SetAuthenticationForRequest(handler, request, server);
+
+                    requestProcessor?.Invoke(handler, client, request);
+
+                    HttpResponseMessage response;
+                    try
+                    {
+                        response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
+
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            if (response.StatusCode == HttpStatusCode.NotFound)
+                            {
+                                if(method != HttpMethod.Post)
+                                    response = null;
+                                else
+                                    throw new ClientException("Content not found", HttpStatusCode.NotFound);
+                            }
+                            else
+                            {
+                                // try parse error content as json
+                                var exceptionData = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                                var serverExceptionData = GetExceptionData(exceptionData);
+                                throw new ClientException(serverExceptionData, response.StatusCode);
+                            }
+                        }
+                    }
+                    catch (HttpRequestException ex)
+                    {
+                        throw await GetClientExceptionAsync(ex, url, method).ConfigureAwait(false);
+                    }
+
+                    responseProcessor(response);
+                }
+            }
+        }
+
+        private static void SetAuthenticationForRequest(HttpClientHandler handler, HttpRequestMessage request, ServerContext server)
+        {
+            if (server == null)
+                server = ClientContext.Current.Server;
+
+            // use token authentication
+            if (!string.IsNullOrEmpty(server.Authentication.AccessToken))
+            {
+                request.Headers.Add("Authorization", "Bearer " + server.Authentication.AccessToken);
+                return;
+            }
+
+            if (string.IsNullOrEmpty(server.Username))
+            {
+                // use NTLM authentication
+                handler.Credentials = CredentialCache.DefaultCredentials;
+            }
+            else
+            {
+                // use basic authentication
+                var usernamePassword = server.Username + ":" + server.Password;
+                request.Headers.Add("Authorization", "Basic " + Convert.ToBase64String(new ASCIIEncoding().GetBytes(usernamePassword)));
+            }
+        }
+
+        /// <summary>
+        /// Parses an error response and wraps all the information in it into a ClientException.
+        /// </summary>
+        /// <param name="ex">Original web exception.</param>
+        /// <param name="requestUrl">Request url that caused the web exception.</param>
+        /// <param name="method">Http method (e.g GET or POST)</param>
+        /// <param name="body">Request body.</param>
+        /// <returns>A client exception that contains parsed server info (e.g. OData exception type,
+        /// status code, original response text, etc.) and the original exception as an inner exception.</returns>
+        public static Task<ClientException> GetClientExceptionAsync(HttpRequestException ex, string requestUrl = null, HttpMethod method = null, string body = null)
+        {
+            var ce = new ClientException("A request exception occured.", ex)
+            {
+                Response = string.Empty
+            };
+
+            ce.Data["Url"] = requestUrl;
+            ce.Data["Method"] = method?.Method ?? HttpMethod.Get.Method;
+            ce.Data["Body"] = body;
+
+            return Task.FromResult(ce);
         }
 
         private static ErrorData GetExceptionData(string responseText)

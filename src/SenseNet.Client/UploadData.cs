@@ -41,6 +41,10 @@ namespace SenseNet.Client
         /// Length of the file to be uploaded.
         /// </summary>
         public long FileLength { get; set; }
+        /// <summary>
+        /// Textual content of the file if the stream upload is not used.
+        /// </summary>
+        public string FileText { get; set; }
 
         /// <summary>
         /// Initializes a new UploadData object.
@@ -94,7 +98,39 @@ namespace SenseNet.Client
             if (ChunkToken != null)
                 dict.Add("ChunkToken", ChunkToken);
 
+            if (FileText != null)
+                dict.Add("FileText", FileText);
+
             return dict;
+        }
+
+        public List<KeyValuePair<string, string>> ToKeyValuePairs()
+        {
+            var result = new List<KeyValuePair<string, string>>(10);
+
+            // leave out null values, but string.Empty is preserved
+            if (FileName != null)
+                result.Add("FileName", FileName);
+
+            if (ContentId > 0)
+                result.Add("ContentId", ContentId.ToString());
+
+            if (ContentType != null)
+                result.Add("ContentType", ContentType);
+            if (PropertyName != null)
+                result.Add("PropertyName", PropertyName);
+
+            result.Add("UseChunk", UseChunk.ToString());
+            result.Add("Overwrite", Overwrite.ToString());
+            result.Add("FileLength", FileLength.ToString());
+
+            if (ChunkToken != null)
+                result.Add("ChunkToken", ChunkToken);
+
+            if (FileText != null)
+                result.Add("FileText", FileText);
+
+            return result;
         }
     }
 }

@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using SenseNet.Client.Security;
 
@@ -172,7 +173,7 @@ namespace SenseNet.Client
                 BindingFlags.NonPublic | BindingFlags.Instance, 
                 null, new[] { typeof (ServerContext) }, null);
 
-            dynamic dc = ctor.Invoke(new object[] { server }) as T;
+            dynamic dc = ctor?.Invoke(new object[] { server }) as T;
 
             if (dc == null)
                 throw new ClientException("Constructor not found or type could not be initialized. " + typeof(T).FullName);
@@ -219,7 +220,7 @@ namespace SenseNet.Client
         }
         /// <summary>
         /// Loads a content from the server. Use this method to specify a detailed 
-        /// content request, for example wich fields you want to expand or select.
+        /// content request, for example which fields you want to expand or select.
         /// </summary>
         /// <param name="requestData">Detailed information that will be sent as part of the request.</param>
         /// <param name="server">Target server.</param>
@@ -441,6 +442,68 @@ namespace SenseNet.Client
             return await RESTCaller.UploadAsync(stream, uploadData, parentId, server, progressCallback).ConfigureAwait(false);
         }
 
+
+        /// <summary>
+        /// Uploads a file to the server into the provided container.
+        /// </summary>
+        /// <param name="parentPath">Parent path.</param>
+        /// <param name="fileName">Name of the file to upload.</param>
+        /// <param name="fileText">File content.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <param name="contentType">Content type of the file.</param>
+        /// <param name="propertyName">Name of the field to upload to. Default is Binary.</param>
+        /// <param name="server">Target server.</param>
+        /// <returns>The uploaded file content returned at the end of the upload request.</returns>
+        public static async Task<Content> UploadTextAsync(string parentPath, string fileName, string fileText,
+            CancellationToken cancellationToken,
+            string contentType = null, string propertyName = null, ServerContext server = null)
+        {
+            var uploadData = new UploadData()
+            {
+                FileName = fileName,
+                ContentType = contentType,
+            };
+
+            if (!string.IsNullOrEmpty(contentType))
+                uploadData.ContentType = contentType;
+
+            if (!string.IsNullOrEmpty(propertyName))
+                uploadData.PropertyName = propertyName;
+
+            return await RESTCaller.UploadTextAsync(fileText, uploadData, parentPath, cancellationToken, server)
+                .ConfigureAwait(false);
+        }
+        /// <summary>
+        /// Uploads a file to the server into the provided container.
+        /// </summary>
+        /// <param name="parentId">Parent id.</param>
+        /// <param name="fileName">Name of the file to upload.</param>
+        /// <param name="fileText">File content.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <param name="contentType">Content type of the file.</param>
+        /// <param name="propertyName">Name of the field to upload to. Default is Binary.</param>
+        /// <param name="server">Target server.</param>
+        /// <returns>The uploaded file content returned at the end of the upload request.</returns>
+        public static async Task<Content> UploadTextAsync(int parentId, string fileName, string fileText,
+            CancellationToken cancellationToken,
+            string contentType = null, string propertyName = null, ServerContext server = null)
+        {
+            var uploadData = new UploadData()
+            {
+                FileName = fileName,
+                ContentType = contentType,
+            };
+
+            if (!string.IsNullOrEmpty(contentType))
+                uploadData.ContentType = contentType;
+
+            if (!string.IsNullOrEmpty(propertyName))
+                uploadData.PropertyName = propertyName;
+
+            return await RESTCaller.UploadTextAsync(fileText, uploadData, parentId, cancellationToken, server)
+                .ConfigureAwait(false);
+        }
+
         /// <summary>
         /// Uploads a file or a custom binary property of a content in the provided container.
         /// </summary>
@@ -478,7 +541,8 @@ namespace SenseNet.Client
                 .ConfigureAwait(false);
 
             // call the common method that contains the part that is the same for all implementations
-            await SaveAndFinalizeBlobInternalAsync(responseText, fileSize, blobCallback, fileName, propertyName, server).ConfigureAwait(false);
+            await SaveAndFinalizeBlobInternalAsync(responseText, fileSize, blobCallback, fileName, propertyName, server)
+                .ConfigureAwait(false);
         }
         /// <summary>
         /// Uploads a file or a custom binary property of a content in the provided container.
@@ -515,7 +579,8 @@ namespace SenseNet.Client
                 .ConfigureAwait(false);
 
             // call the common method that contains the part that is the same for all implementations
-            await SaveAndFinalizeBlobInternalAsync(responseText, fileSize, blobCallback, fileName, propertyName, server).ConfigureAwait(false);
+            await SaveAndFinalizeBlobInternalAsync(responseText, fileSize, blobCallback, fileName, propertyName, server)
+                .ConfigureAwait(false);
         }
         private static async Task SaveAndFinalizeBlobInternalAsync(string initResponse, long fileSize,
             Func<int, int, string, Task> blobCallback, string fileName = null,
@@ -580,6 +645,79 @@ namespace SenseNet.Client
             var response = JsonHelper.Deserialize(responseText);
 
             return response.token;
+        }
+
+        /// <summary>
+        /// Deletes the content by Path.
+        /// </summary>
+        /// <param name="path">Path of the <see cref="Content"/> to delete.</param>
+        /// <param name="permanent">Delete the content permanently or into the Trash.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <param name="server">Target server. If null, the first one will be used from the configuration.</param>
+        /// <returns>A task that represents an asynchronous operation.</returns>
+        public static async Task DeleteAsync(string path, bool permanent, CancellationToken cancellationToken,
+            ServerContext server = null)
+        {
+            await DeleteAsync(new[] {path}, permanent, cancellationToken, server).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Deletes one or more content by Path.
+        /// </summary>
+        /// <param name="paths">Paths of the <see cref="Content"/> objects to delete.</param>
+        /// <param name="permanent">Delete the content permanently or into the Trash.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <param name="server">Target server. If null, the first one will be used from the configuration.</param>
+        /// <returns>A task that represents an asynchronous operation.</returns>
+        public static async Task DeleteAsync(string[] paths, bool permanent, CancellationToken cancellationToken,
+            ServerContext server = null)
+        {
+            await DeleteAsync(paths.Cast<object>().ToArray(), permanent, cancellationToken, server).ConfigureAwait(false);
+        }
+        /// <summary>
+        /// Deletes the content by Id.
+        /// </summary>
+        /// <param name="id">Id of the <see cref="Content"/> to delete.</param>
+        /// <param name="permanent">Delete the content permanently or into the Trash.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <param name="server">Target server. If null, the first one will be used from the configuration.</param>
+        /// <returns>A task that represents an asynchronous operation.</returns>
+        public static async Task DeleteAsync(int id, bool permanent, CancellationToken cancellationToken,
+            ServerContext server = null)
+        {
+            await DeleteAsync(new[] { id }, permanent, cancellationToken, server).ConfigureAwait(false);
+        }
+        /// <summary>
+        /// Deletes one or more content by Id.
+        /// </summary>
+        /// <param name="ids">Paths of the <see cref="Content"/> objects to delete.</param>
+        /// <param name="permanent">Delete the content permanently or into the Trash.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <param name="server">Target server. If null, the first one will be used from the configuration.</param>
+        /// <returns>A task that represents an asynchronous operation.</returns>
+        public static async Task DeleteAsync(int[] ids, bool permanent, CancellationToken cancellationToken,
+            ServerContext server = null)
+        {
+            await DeleteAsync(ids.Cast<object>().ToArray(), permanent, cancellationToken, server).ConfigureAwait(false);
+        }
+        /// <summary>
+        /// Deletes one or more content by Id or Path.
+        /// </summary>
+        /// <param name="idsOrPaths">One or more id or path of the <see cref="Content"/> objects to delete.</param>
+        /// <param name="permanent">Delete the content permanently or into the Trash.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <param name="server">Target server. If null, the first one will be used from the configuration.</param>
+        /// <returns>A task that represents an asynchronous operation.</returns>
+        public static async Task DeleteAsync(object[] idsOrPaths, bool permanent, CancellationToken cancellationToken,
+            ServerContext server = null)
+        {
+            await RESTCaller.GetResponseStringAsync("/Root", "DeleteBatch", HttpMethod.Post, 
+                    JsonHelper.GetJsonPostModel(new
+                    {
+                        permanent,
+                        paths = idsOrPaths
+                    }), server)
+                    .ConfigureAwait(false);
         }
 
         //============================================================================= Instance API

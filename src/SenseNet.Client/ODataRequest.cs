@@ -43,6 +43,41 @@ namespace SenseNet.Client
     }
 
     /// <summary>
+    /// Values for query total count of requested collection or not
+    /// </summary>
+    public enum InlineCountOptions
+    {
+        /// <summary>
+        /// Equivalent to "None" option.
+        /// </summary>
+        Default,
+        /// <summary>
+        /// Query the total count.
+        /// </summary>
+        AllPages,
+        /// <summary>
+        /// Do not query the total count.
+        /// </summary>
+        None
+    }
+
+    public static class ODataRequestExtensions
+    {
+        public static void Add(this List<KeyValuePair<string, string>> list, string name, string value)
+        {
+            list.Add(new KeyValuePair<string, string>(name, value));
+        }
+
+        public static bool Remove(this List<KeyValuePair<string, string>> list, string name)
+        {
+            var items = list.Where(x => x.Key == name).ToArray();
+            foreach(var item in items)
+                list.Remove(item);
+            return items.Length > 0;
+        }
+    }
+
+    /// <summary>
     /// Encapsulates all parameters that an OData REST API request can handle. Use it
     /// for constructing advanced OData requests.
     /// </summary>
@@ -76,45 +111,72 @@ namespace SenseNet.Client
         /// </summary>
         public string ActionName { get; set; }
         /// <summary>
-        /// Version request parameter.
+        /// Gets or sets the "version-request" parameter.
         /// </summary>
         public string Version { get; set; }
 
         /// <summary>
-        /// Top query parameter.
+        /// Gets or sets the "top" query parameter.
         /// </summary>
         public int Top { get; set; }
         /// <summary>
-        /// Skip query parameter.
+        /// Gets or sets the "skip" query parameter.
         /// </summary>
         public int Skip { get; set; }
         /// <summary>
-        /// Count only query parameter.
+        /// Gets or sets the "count-only" query parameter.
         /// </summary>
         public bool CountOnly { get; set; }
 
         /// <summary>
-        /// List of selectable fields.
+        /// Gets or sets the list of selectable field names.
         /// </summary>
         public IEnumerable<string> Select { get; set; }
         /// <summary>
-        /// List of expandable fields.
+        /// Gets or sets the list of expandable field names.
         /// </summary>
         public IEnumerable<string> Expand { get; set; }
 
         /// <summary>
-        /// Whether this is a request that targets a single OData resource or a collection.
+        /// Gets or sets whether this is a request that targets a single OData resource or a collection.
         /// </summary>
         public bool IsCollectionRequest { get; set; }
         /// <summary>
-        /// Format of the requested metadata information. Default is None.
+        /// Gets or sets the format of the requested metadata information. Default is None.
         /// </summary>
         public MetadataFormat Metadata { get; set; }
 
         /// <summary>
-        /// Custom URL parameters.
+        /// Gets a container for any custom URL parameters.
         /// </summary>
-        public IDictionary<string, string> Parameters { get; }
+        public List<KeyValuePair<string, string>> Parameters { get; }
+
+        /// <summary>
+        /// Gets or sets the total count request if the resource is a collection.
+        /// </summary>
+        public InlineCountOptions InlineCount { get; set; }
+        /// <summary>
+        /// Gets or sets a standard OData filter of the children.
+        /// </summary>
+        public string ChildrenFilter { get; set; }
+        /// <summary>
+        /// Gets or sets the value of the switch that controls the auto filtering.
+        /// </summary>
+        public FilterStatus AutoFilters { get; set; }
+        /// <summary>
+        /// Gets or sets the value of the switch that controls the lifespan filtering.
+        /// </summary>
+        public FilterStatus LifespanFilter { get; set; }
+        /// <summary>
+        /// Gets or sets the scenario name or null.
+        /// </summary>
+        public string Scenario { get; set; }
+        /// <summary>
+        /// Gets or sets the sorting of the children in priority order.
+        /// Every item can be an existing FieldName optionally followed by the sorting direction
+        /// (space + "asc" or "desc" e. g. "CreationDate desc")
+        /// </summary>
+        public string[] OrderBy { get; set; }
 
         //============================================================================= Constructors and overrides
 
@@ -129,7 +191,7 @@ namespace SenseNet.Client
         public ODataRequest(ServerContext server)
         {
             // set default values
-            Parameters = new Dictionary<string, string>();
+            Parameters = new List<KeyValuePair<string, string>>();
             Metadata = MetadataFormat.None;
             SiteUrl = ServerContext.GetUrl(server);
 
@@ -170,7 +232,7 @@ namespace SenseNet.Client
                 url += "/" + PropertyName;
 
             // collect additional parameters
-            var urlParams = new Dictionary<string, string>();
+            var urlParams = new List<KeyValuePair<string, string>>();
 
             // version
             if (!string.IsNullOrEmpty(Version))
@@ -185,22 +247,22 @@ namespace SenseNet.Client
 
             // select
             if (Select != null)
-                urlParams["$select"] = string.Join(",", Select);
+                urlParams.Add("$select", string.Join(",", Select));
             // expand
             if (Expand != null)
-                urlParams["$expand"] = string.Join(",", Expand);
+                urlParams.Add("$expand", string.Join(",", Expand));
 
             // copy custom parameters
-            foreach (var key in Parameters.Keys)
+            foreach (var item in Parameters)
             {
-                urlParams.Add(key, Parameters[key]);
+                urlParams.Add(item);
             }
 
             // always omit metadata if not requested explicitly
             switch (Metadata)
             {
                 case MetadataFormat.Minimal: 
-                    urlParams.Add(PARAM_METADATA, "minimal"); 
+                    urlParams.Add(PARAM_METADATA, "minimal");
                     break;
                 case MetadataFormat.Full: 
                     // do not provide the parameter, full is the default on the server
@@ -210,9 +272,48 @@ namespace SenseNet.Client
                     break;
             }
 
+            // inlinecount
+            if (InlineCount == InlineCountOptions.AllPages)
+                urlParams.Add("$inlinecount", "allpages");
+
+            // filter
+            if (!string.IsNullOrEmpty(ChildrenFilter))
+                urlParams.Add("$filter", ChildrenFilter);
+
+            // autofilters
+            switch (AutoFilters)
+            {
+                case FilterStatus.Enabled:
+                    urlParams.Add("enableautofilters", "true");
+                    break;
+                case FilterStatus.Disabled:
+                    urlParams.Add("enableautofilters", "false");
+                    break;
+            }
+
+            // lifespanfilter
+            switch (LifespanFilter)
+            {
+                case FilterStatus.Enabled:
+                    urlParams.Add("enablelifespanfilter", "true");
+                    break;
+                case FilterStatus.Disabled:
+                    urlParams.Add("enablelifespanfilter", "false");
+                    break;
+            }
+
+            // scenario
+            if (!string.IsNullOrEmpty(Scenario))
+                urlParams.Add("scenario", Scenario);
+
+            // orderby
+            if (OrderBy != null && OrderBy.Length > 0)
+            {
+                urlParams.Add("$orderby", string.Join(",", OrderBy.Select(x=>x.Trim())));
+            }
+
             if (urlParams.Count == 0)
                 return url;
-
             return url + "?" + string.Join("&", urlParams.Select(dkv => $"{dkv.Key}={dkv.Value}"));
         }
 
@@ -248,7 +349,7 @@ namespace SenseNet.Client
                 {
                     var path1 = path.Substring(0, lastSlash);
                     var path2 = path.Substring(lastSlash + 1);
-                    path = $"{path1}/('{path2}')";
+                    path = $"{path1}('{path2}')";
                 }
                 else
                 {

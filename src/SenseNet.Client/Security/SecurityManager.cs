@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
 
@@ -48,7 +49,8 @@ namespace SenseNet.Client.Security
                 ActionName = "HasPermission"
             };
 
-            requestData.Parameters.Add("permissions", string.Join(",", permissions));
+            foreach (var permission in permissions)
+                requestData.Parameters.Add("permissions", permission);
 
             if (!string.IsNullOrEmpty(user))
                 requestData.Parameters.Add("user", user);

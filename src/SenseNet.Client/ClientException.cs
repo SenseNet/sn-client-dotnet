@@ -27,11 +27,30 @@ namespace SenseNet.Client
         /// <summary>
         /// Initializes a new instance of the ClientException class.
         /// </summary>
+        public ClientException(string message, HttpStatusCode statusCode, Exception innerException = null) : base(message, innerException)
+        {
+            StatusCode = statusCode;
+            ErrorData = ErrorData.Empty;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the ClientException class.
+        /// </summary>
         public ClientException(ErrorData errorData, Exception innerException = null) : base(GetMessage(errorData), innerException)
         {
             ErrorData = errorData ?? ErrorData.Empty;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the ClientException class.
+        /// </summary>
+        public ClientException(ErrorData errorData, HttpStatusCode statusCode, Exception innerException = null) : base(GetMessage(errorData), innerException)
+        {
+            StatusCode = statusCode;
+            ErrorData = errorData ?? ErrorData.Empty;
+        }
+
+        private HttpStatusCode? _statusCode;
         /// <summary>
         /// The HTTP error status code of the response.
         /// </summary>
@@ -39,6 +58,9 @@ namespace SenseNet.Client
         {
             get
             {
+                if (_statusCode != null)
+                    return _statusCode.Value;
+
                 if (InnerException is WebException wex && wex.Response is HttpWebResponse webResponse)
                 {
                     return webResponse.StatusCode;
@@ -46,6 +68,7 @@ namespace SenseNet.Client
 
                 return HttpStatusCode.OK;
             }
+            private set => _statusCode = value;
         }
 
         /// <summary>

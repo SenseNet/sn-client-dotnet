@@ -67,7 +67,7 @@ namespace SenseNet.Client.Tests
             Initializer.InitializeServer();
 
             var root = Content.LoadAsync(RootPath).Result;
-            root?.DeleteAsync().Wait();
+            root?.DeleteAsync().ConfigureAwait(false).GetAwaiter().GetResult();
         }
     }
 }
