@@ -4,6 +4,21 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace SenseNet.Client.Tests
 {
+    internal class ServerSwindler : IDisposable
+    {
+        private readonly ServerContext[] _original;
+        public ServerSwindler()
+        {
+            _original = ClientContext.Current.Servers;
+        }
+
+        public void Dispose()
+        {
+            ClientContext.Current.RemoveAllServers();
+            ClientContext.Current.AddServers(_original);
+        }
+    }
+
     [TestClass]
     public class ODataRequestTests
     {
@@ -11,30 +26,39 @@ namespace SenseNet.Client.Tests
         [ExpectedException(typeof(InvalidOperationException))]
         public void NoServer_Error()
         {
-            ClientContext.Current.RemoveAllServers();
+            using (new ServerSwindler())
+            {
+                ClientContext.Current.RemoveAllServers();
 
-            // this will fail, because there is no server configured or provided
-            var _ = new ODataRequest();
+                // this will fail, because there is no server configured or provided
+                var _ = new ODataRequest();
+            }
         }
         [TestMethod]
         [ExpectedException(typeof(InvalidOperationException))]
         public void ServerWithoutUrl_Error()
         {
-            ClientContext.Current.RemoveAllServers();
+            using (new ServerSwindler())
+            {
+                ClientContext.Current.RemoveAllServers();
 
-            // this will fail, because the server does not contain a url
-            var _ = new ODataRequest(new ServerContext());
+                // this will fail, because the server does not contain a url
+                var _ = new ODataRequest(new ServerContext());
+            }
         }
         [TestMethod]
         public void ServerWithUrl()
         {
-            ClientContext.Current.RemoveAllServers();
-
-            // this should work: the url is defined
-            var _ = new ODataRequest(new ServerContext
+            using (new ServerSwindler())
             {
-                Url = "example.com"
-            });
+                ClientContext.Current.RemoveAllServers();
+
+                // this should work: the url is defined
+                var _ = new ODataRequest(new ServerContext
+                {
+                    Url = "example.com"
+                });
+            }
         }
 
         [TestMethod]
