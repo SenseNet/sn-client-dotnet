@@ -258,7 +258,6 @@ namespace SenseNet.Client
                 urlParams.Add(item);
             }
 
-            //UNDONE: Test
             // always omit metadata if not requested explicitly
             switch (Metadata)
             {
@@ -273,17 +272,14 @@ namespace SenseNet.Client
                     break;
             }
 
-            //UNDONE: Test
             // inlinecount
             if (InlineCount == InlineCountOptions.AllPages)
                 urlParams.Add("$inlinecount", "allpages");
 
-            //UNDONE: Test
             // filter
             if (!string.IsNullOrEmpty(ChildrenFilter))
                 urlParams.Add("$filter", ChildrenFilter);
 
-            //UNDONE: Test
             // autofilters
             switch (AutoFilters)
             {
@@ -295,7 +291,6 @@ namespace SenseNet.Client
                     break;
             }
 
-            //UNDONE: Test
             // lifespanfilter
             switch (LifespanFilter)
             {
@@ -307,12 +302,10 @@ namespace SenseNet.Client
                     break;
             }
 
-            //UNDONE: Test
             // scenario
             if (!string.IsNullOrEmpty(Scenario))
                 urlParams.Add("scenario", Scenario);
 
-            //UNDONE: Test
             // orderby
             if (OrderBy != null && OrderBy.Length > 0)
             {
