@@ -176,8 +176,19 @@ namespace SenseNet.Client
 
             return await GetResponseStringAsync(requestData.GetUri(), server, method, body).ConfigureAwait(false);
         }
-
-
+        /// <summary>
+        /// Gets the raw response of an OData request from the server.
+        /// </summary>
+        /// <param name="requestData">OData request parameters, for example select or expand.</param>
+        /// <param name="method">HTTP method (SenseNet.Client.HttpMethods class has a few predefined methods).</param>
+        /// <param name="body">Request body.</param>
+        /// <param name="server">Target server.</param>
+        /// <returns>Raw HTTP response.</returns>
+        public static async Task<string> GetResponseStringAsync(ODataRequest requestData, HttpMethod method = null,
+            string body = null, ServerContext server = null)
+        {
+            return await GetResponseStringAsync(requestData.GetUri(), server, method, body).ConfigureAwait(false);
+        }
         /// <summary>
         /// Gets the raw response of a general HTTP request from the server.
         /// </summary>
