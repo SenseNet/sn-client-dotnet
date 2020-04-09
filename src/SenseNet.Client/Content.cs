@@ -173,7 +173,7 @@ namespace SenseNet.Client
                 BindingFlags.NonPublic | BindingFlags.Instance, 
                 null, new[] { typeof (ServerContext) }, null);
 
-            dynamic dc = ctor.Invoke(new object[] { server }) as T;
+            dynamic dc = ctor?.Invoke(new object[] { server }) as T;
 
             if (dc == null)
                 throw new ClientException("Constructor not found or type could not be initialized. " + typeof(T).FullName);
@@ -220,7 +220,7 @@ namespace SenseNet.Client
         }
         /// <summary>
         /// Loads a content from the server. Use this method to specify a detailed 
-        /// content request, for example wich fields you want to expand or select.
+        /// content request, for example which fields you want to expand or select.
         /// </summary>
         /// <param name="requestData">Detailed information that will be sent as part of the request.</param>
         /// <param name="server">Target server.</param>
@@ -642,6 +642,79 @@ namespace SenseNet.Client
             var response = JsonHelper.Deserialize(responseText);
 
             return response.token;
+        }
+
+        /// <summary>
+        /// Deletes the content by Path.
+        /// </summary>
+        /// <param name="path">Path of the <see cref="Content"/> to delete.</param>
+        /// <param name="permanent">Delete the content permanently or into the Trash.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <param name="server">Target server. If null, the first one will be used from the configuration.</param>
+        /// <returns>A task that represents an asynchronous operation.</returns>
+        public static async Task DeleteAsync(string path, bool permanent, CancellationToken cancellationToken,
+            ServerContext server = null)
+        {
+            await DeleteAsync(new[] {path}, permanent, cancellationToken, server);
+        }
+
+        /// <summary>
+        /// Deletes one or more content by Path.
+        /// </summary>
+        /// <param name="paths">Paths of the <see cref="Content"/> objects to delete.</param>
+        /// <param name="permanent">Delete the content permanently or into the Trash.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <param name="server">Target server. If null, the first one will be used from the configuration.</param>
+        /// <returns>A task that represents an asynchronous operation.</returns>
+        public static async Task DeleteAsync(string[] paths, bool permanent, CancellationToken cancellationToken,
+            ServerContext server = null)
+        {
+            await DeleteAsync(paths.Cast<object>().ToArray(), permanent, cancellationToken, server);
+        }
+        /// <summary>
+        /// Deletes the content by Id.
+        /// </summary>
+        /// <param name="id">Id of the <see cref="Content"/> to delete.</param>
+        /// <param name="permanent">Delete the content permanently or into the Trash.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <param name="server">Target server. If null, the first one will be used from the configuration.</param>
+        /// <returns>A task that represents an asynchronous operation.</returns>
+        public static async Task DeleteAsync(int id, bool permanent, CancellationToken cancellationToken,
+            ServerContext server = null)
+        {
+            await DeleteAsync(new[] { id }, permanent, cancellationToken, server);
+        }
+        /// <summary>
+        /// Deletes one or more content by Id.
+        /// </summary>
+        /// <param name="ids">Paths of the <see cref="Content"/> objects to delete.</param>
+        /// <param name="permanent">Delete the content permanently or into the Trash.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <param name="server">Target server. If null, the first one will be used from the configuration.</param>
+        /// <returns>A task that represents an asynchronous operation.</returns>
+        public static async Task DeleteAsync(int[] ids, bool permanent, CancellationToken cancellationToken,
+            ServerContext server = null)
+        {
+            await DeleteAsync(ids.Cast<object>().ToArray(), permanent, cancellationToken, server);
+        }
+        /// <summary>
+        /// Deletes one or more content by Id or Path.
+        /// </summary>
+        /// <param name="idsOrPaths">One or more id or path of the <see cref="Content"/> objects to delete.</param>
+        /// <param name="permanent">Delete the content permanently or into the Trash.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <param name="server">Target server. If null, the first one will be used from the configuration.</param>
+        /// <returns>A task that represents an asynchronous operation.</returns>
+        public static async Task DeleteAsync(object[] idsOrPaths, bool permanent, CancellationToken cancellationToken,
+            ServerContext server = null)
+        {
+            await RESTCaller.GetResponseStringAsync("/Root", "DeleteBatch", HttpMethod.Post, 
+                    JsonHelper.GetJsonPostModel(new
+                    {
+                        permanent,
+                        paths = idsOrPaths
+                    }), server)
+                    .ConfigureAwait(false);
         }
 
         //============================================================================= Instance API
