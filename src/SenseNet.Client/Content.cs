@@ -500,7 +500,8 @@ namespace SenseNet.Client
             if (!string.IsNullOrEmpty(propertyName))
                 uploadData.PropertyName = propertyName;
 
-            return await RESTCaller.UploadTextAsync(fileText, uploadData, parentId, cancellationToken, server).ConfigureAwait(false);
+            return await RESTCaller.UploadTextAsync(fileText, uploadData, parentId, cancellationToken, server)
+                .ConfigureAwait(false);
         }
 
         /// <summary>
@@ -540,7 +541,8 @@ namespace SenseNet.Client
                 .ConfigureAwait(false);
 
             // call the common method that contains the part that is the same for all implementations
-            await SaveAndFinalizeBlobInternalAsync(responseText, fileSize, blobCallback, fileName, propertyName, server).ConfigureAwait(false);
+            await SaveAndFinalizeBlobInternalAsync(responseText, fileSize, blobCallback, fileName, propertyName, server)
+                .ConfigureAwait(false);
         }
         /// <summary>
         /// Uploads a file or a custom binary property of a content in the provided container.
@@ -577,7 +579,8 @@ namespace SenseNet.Client
                 .ConfigureAwait(false);
 
             // call the common method that contains the part that is the same for all implementations
-            await SaveAndFinalizeBlobInternalAsync(responseText, fileSize, blobCallback, fileName, propertyName, server).ConfigureAwait(false);
+            await SaveAndFinalizeBlobInternalAsync(responseText, fileSize, blobCallback, fileName, propertyName, server)
+                .ConfigureAwait(false);
         }
         private static async Task SaveAndFinalizeBlobInternalAsync(string initResponse, long fileSize,
             Func<int, int, string, Task> blobCallback, string fileName = null,
@@ -655,7 +658,7 @@ namespace SenseNet.Client
         public static async Task DeleteAsync(string path, bool permanent, CancellationToken cancellationToken,
             ServerContext server = null)
         {
-            await DeleteAsync(new[] {path}, permanent, cancellationToken, server);
+            await DeleteAsync(new[] {path}, permanent, cancellationToken, server).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -669,7 +672,7 @@ namespace SenseNet.Client
         public static async Task DeleteAsync(string[] paths, bool permanent, CancellationToken cancellationToken,
             ServerContext server = null)
         {
-            await DeleteAsync(paths.Cast<object>().ToArray(), permanent, cancellationToken, server);
+            await DeleteAsync(paths.Cast<object>().ToArray(), permanent, cancellationToken, server).ConfigureAwait(false);
         }
         /// <summary>
         /// Deletes the content by Id.
@@ -682,7 +685,7 @@ namespace SenseNet.Client
         public static async Task DeleteAsync(int id, bool permanent, CancellationToken cancellationToken,
             ServerContext server = null)
         {
-            await DeleteAsync(new[] { id }, permanent, cancellationToken, server);
+            await DeleteAsync(new[] { id }, permanent, cancellationToken, server).ConfigureAwait(false);
         }
         /// <summary>
         /// Deletes one or more content by Id.
@@ -695,7 +698,7 @@ namespace SenseNet.Client
         public static async Task DeleteAsync(int[] ids, bool permanent, CancellationToken cancellationToken,
             ServerContext server = null)
         {
-            await DeleteAsync(ids.Cast<object>().ToArray(), permanent, cancellationToken, server);
+            await DeleteAsync(ids.Cast<object>().ToArray(), permanent, cancellationToken, server).ConfigureAwait(false);
         }
         /// <summary>
         /// Deletes one or more content by Id or Path.

@@ -229,7 +229,8 @@ namespace SenseNet.Client
             if (postData != null && method == null)
                 method = HttpMethod.Post;
 
-            var rs = await GetResponseStringAsync(requestData.GetUri(), server, method, postData == null ? null : JsonHelper.Serialize(postData)).ConfigureAwait(false);
+            var rs = await GetResponseStringAsync(requestData.GetUri(), server, method, postData == null ? null : JsonHelper.Serialize(postData))
+                .ConfigureAwait(false);
 
             try
             {
@@ -320,7 +321,8 @@ namespace SenseNet.Client
             if (!string.IsNullOrEmpty(version))
                 url += "&version=" + version;
 
-            await ProcessWebResponseAsync(url, HttpMethod.Get, server, responseProcessor, cancellationToken);
+            await ProcessWebResponseAsync(url, HttpMethod.Get, server, responseProcessor, cancellationToken)
+                .ConfigureAwait(false);
         }
 
         //============================================================================= Static POST methods
@@ -377,7 +379,8 @@ namespace SenseNet.Client
                 Path = path
             };
 
-            var rs = await GetResponseStringAsync(reqData.GetUri(), server, method, JsonHelper.GetJsonPostModel(postData)).ConfigureAwait(false);
+            var rs = await GetResponseStringAsync(reqData.GetUri(), server, method, JsonHelper.GetJsonPostModel(postData))
+                .ConfigureAwait(false);
 
             return JsonHelper.Deserialize(rs).d;
         }
@@ -388,7 +391,8 @@ namespace SenseNet.Client
                 ContentId = contentId
             };
 
-            var rs = await GetResponseStringAsync(reqData.GetUri(), server, method, JsonHelper.GetJsonPostModel(postData)).ConfigureAwait(false);
+            var rs = await GetResponseStringAsync(reqData.GetUri(), server, method, JsonHelper.GetJsonPostModel(postData))
+                .ConfigureAwait(false);
 
             return JsonHelper.Deserialize(rs).d;
         }
@@ -431,7 +435,8 @@ namespace SenseNet.Client
                 Path = parentPath
             };
 
-            return await UploadInternalAsync(binaryStream, uploadData, requestData, server, progressCallback).ConfigureAwait(false);
+            return await UploadInternalAsync(binaryStream, uploadData, requestData, server, progressCallback)
+                .ConfigureAwait(false);
         }
         private static async Task<Content> UploadInternalAsync(Stream binaryStream, UploadData uploadData, ODataRequest requestData, ServerContext server = null, Action<int> progressCallback = null)
         {
@@ -455,7 +460,7 @@ namespace SenseNet.Client
                     async response =>
                     {
                         uploadData.ChunkToken = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                    }, CancellationToken.None);
+                    }, CancellationToken.None).ConfigureAwait(false);
             }
             catch (WebException ex)
             {
@@ -505,7 +510,7 @@ namespace SenseNet.Client
                     {
                         var rs = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                         uploadedContent = JsonHelper.Deserialize(rs);
-                    }, CancellationToken.None);
+                    }, CancellationToken.None).ConfigureAwait(false);
 
                 start += bytesRead;
 
@@ -590,7 +595,7 @@ namespace SenseNet.Client
                         var rs = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                         uploadedContent = JsonHelper.Deserialize(rs);
                     }
-                }, cancellationToken);
+                }, cancellationToken).ConfigureAwait(false);
 
             if (uploadedContent == null)
                 return null;

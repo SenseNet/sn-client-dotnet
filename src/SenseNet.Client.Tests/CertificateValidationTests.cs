@@ -49,7 +49,7 @@ namespace SenseNet.Client.Tests
 
             // ACTION-1
             _serverCertificateCustomValidationCallbackCalled = false;
-            var content = await Content.LoadAsync("/Root", regularServer);
+            var content = await Content.LoadAsync("/Root", regularServer).ConfigureAwait(false);
             // ASSERT-1
             Assert.IsFalse(_serverCertificateCustomValidationCallbackCalled);
 

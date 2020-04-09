@@ -50,7 +50,8 @@ namespace SenseNet.Client.Tests
         {
             // ------------------------------------ load by path
 
-            var admins = await Content.LoadReferencesAsync(Constants.Group.AdministratorsPath, "Members", new[] { "Id", "Path" }).ConfigureAwait(false);
+            var admins = await Content.LoadReferencesAsync(Constants.Group.AdministratorsPath, "Members", new[] { "Id", "Path" })
+                .ConfigureAwait(false);
             var admin = admins.FirstOrDefault();
 
             Assert.IsNotNull(admin);

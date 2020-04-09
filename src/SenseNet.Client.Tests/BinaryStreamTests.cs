@@ -19,12 +19,12 @@ namespace SenseNet.Client.Tests
         [TestMethod]
         public async Task Download_OldSchool()
         {
-            var content = await Content.LoadAsync("/Root/System/Schema/ContentTypes/GenericContent");
+            var content = await Content.LoadAsync("/Root/System/Schema/ContentTypes/GenericContent").ConfigureAwait(false);
 
 #pragma warning disable 618
             var request = RESTCaller.GetStreamRequest(content.Id);
 #pragma warning restore 618
-            var response = await request.GetResponseAsync();
+            var response = await request.GetResponseAsync().ConfigureAwait(false);
 
             string ctd = null;
             using (var stream = response.GetResponseStream())
@@ -39,17 +39,17 @@ namespace SenseNet.Client.Tests
         [TestMethod]
         public async Task Download()
         {
-            var content = await Content.LoadAsync("/Root/System/Schema/ContentTypes/GenericContent");
+            var content = await Content.LoadAsync("/Root/System/Schema/ContentTypes/GenericContent").ConfigureAwait(false);
 
             string ctd = null;
             await RESTCaller.GetStreamResponseAsync(content.Id, async response =>
             {
                 if (response == null)
                     return;
-                using(var stream = await response.Content.ReadAsStreamAsync())
+                using(var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false))
                 using (var reader = new StreamReader(stream))
                     ctd = reader.ReadToEnd();
-            }, CancellationToken.None);
+            }, CancellationToken.None).ConfigureAwait(false);
 
             Assert.IsTrue(ctd.Contains("<ContentType name=\"GenericContent\""));
         }
@@ -71,18 +71,18 @@ namespace SenseNet.Client.Tests
 
             using (var uploadStream = Tools.GenerateStreamFromString(_fileContent))
                 // ACTION
-                await Content.UploadAsync(uploadRootPath, fileName, uploadStream, "File");
+                await Content.UploadAsync(uploadRootPath, fileName, uploadStream, "File").ConfigureAwait(false);
 
             // ASSERT
             var filePath = RepositoryPath.Combine(uploadRootPath, fileName);
-            var content = await Content.LoadAsync(filePath);
+            var content = await Content.LoadAsync(filePath).ConfigureAwait(false);
 
             string downloadedFileContent = null;
             await RESTCaller.GetStreamResponseAsync(content.Id, async response =>
             {
                 if (response == null)
                     return;
-                using (var stream = await response.Content.ReadAsStreamAsync())
+                using (var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false))
                 using (var reader = new StreamReader(stream))
                     downloadedFileContent = reader.ReadToEnd();
             }, CancellationToken.None);
@@ -106,21 +106,21 @@ namespace SenseNet.Client.Tests
 
             using (var uploadStream = Tools.GenerateStreamFromString(_fileContent))
                 // ACTION
-                await Content.UploadAsync(uploadRootId, fileName, uploadStream, "File");
+                await Content.UploadAsync(uploadRootId, fileName, uploadStream, "File").ConfigureAwait(false);
 
             // ASSERT
             var filePath = RepositoryPath.Combine(uploadRootPath, fileName);
-            var content = await Content.LoadAsync(filePath);
+            var content = await Content.LoadAsync(filePath).ConfigureAwait(false);
 
             string downloadedFileContent = null;
             await RESTCaller.GetStreamResponseAsync(content.Id, async response =>
             {
                 if (response == null)
                     return;
-                using (var stream = await response.Content.ReadAsStreamAsync())
+                using (var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false))
                 using (var reader = new StreamReader(stream))
                     downloadedFileContent = reader.ReadToEnd();
-            }, CancellationToken.None);
+            }, CancellationToken.None).ConfigureAwait(false);
 
             Assert.AreEqual(_fileContent, downloadedFileContent);
         }
@@ -139,21 +139,22 @@ namespace SenseNet.Client.Tests
             var fileName = Guid.NewGuid() + ".txt";
 
             // ACTION
-            await Content.UploadTextAsync(uploadRootPath, fileName, _fileContent, CancellationToken.None, "File");
+            await Content.UploadTextAsync(uploadRootPath, fileName, _fileContent, CancellationToken.None, "File")
+                .ConfigureAwait(false);
 
             // ASSERT
             var filePath = RepositoryPath.Combine(uploadRootPath, fileName);
-            var content = await Content.LoadAsync(filePath);
+            var content = await Content.LoadAsync(filePath).ConfigureAwait(false);
 
             string downloadedFileContent = null;
             await RESTCaller.GetStreamResponseAsync(content.Id, async response =>
             {
                 if (response == null)
                     return;
-                using (var stream = await response.Content.ReadAsStreamAsync())
+                using (var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false))
                 using (var reader = new StreamReader(stream))
                     downloadedFileContent = reader.ReadToEnd();
-            }, CancellationToken.None);
+            }, CancellationToken.None).ConfigureAwait(false);
 
             Assert.AreEqual(_fileContent, downloadedFileContent);
         }
@@ -173,11 +174,12 @@ namespace SenseNet.Client.Tests
             var fileName = Guid.NewGuid() + ".txt";
 
             // ACTION
-            await Content.UploadTextAsync(uploadRootId, fileName, _fileContent, CancellationToken.None, "File");
+            await Content.UploadTextAsync(uploadRootId, fileName, _fileContent, CancellationToken.None, "File")
+                .ConfigureAwait(false);
 
             // ASSERT
             var filePath = RepositoryPath.Combine(uploadRootPath, fileName);
-            var content = await Content.LoadAsync(filePath);
+            var content = await Content.LoadAsync(filePath).ConfigureAwait(false);
 
             string downloadedFileContent = null;
             await RESTCaller.GetStreamResponseAsync(content.Id, async response =>
@@ -187,7 +189,7 @@ namespace SenseNet.Client.Tests
                 using (var stream = await response.Content.ReadAsStreamAsync())
                 using (var reader = new StreamReader(stream))
                     downloadedFileContent = reader.ReadToEnd();
-            }, CancellationToken.None);
+            }, CancellationToken.None).ConfigureAwait(false);
 
             Assert.AreEqual(_fileContent, downloadedFileContent);
         }
@@ -220,17 +222,17 @@ namespace SenseNet.Client.Tests
 
             // ASSERT
             var filePath = RepositoryPath.Combine(uploadRootPath, fileName);
-            var content = await Content.LoadAsync(filePath);
+            var content = await Content.LoadAsync(filePath).ConfigureAwait(false);
 
             string downloadedFileContent = null;
             await RESTCaller.GetStreamResponseAsync(content.Id, async response =>
             {
                 if (response == null)
                     return;
-                using (var stream = await response.Content.ReadAsStreamAsync())
+                using (var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false))
                 using (var reader = new StreamReader(stream))
                     downloadedFileContent = reader.ReadToEnd();
-            }, CancellationToken.None);
+            }, CancellationToken.None).ConfigureAwait(false);
 
             Assert.AreEqual(_fileContent, downloadedFileContent);
         }
