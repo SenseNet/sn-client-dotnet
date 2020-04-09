@@ -7,18 +7,6 @@ using Newtonsoft.Json.Linq;
 
 namespace SenseNet.Client.Tests
 {
-    internal static class Extensions
-    {
-        public static ConfiguredTaskAwaitable C(this Task task)
-        {
-            return task.ConfigureAwait(false);
-        }
-        public static ConfiguredTaskAwaitable<T> C<T>(this Task<T> task)
-        {
-            return task.ConfigureAwait(false);
-        }
-    }
-
     [TestClass]
     public class ContentTests
     {
@@ -32,9 +20,9 @@ namespace SenseNet.Client.Tests
         public async Task Content_Create()
         {
             var content = Content.CreateNew("/Root", "Folder", Guid.NewGuid().ToString());
-            await content.SaveAsync().C();
+            await content.SaveAsync().ConfigureAwait(false);
 
-            content = await Content.LoadAsync(content.Id).C();
+            content = await Content.LoadAsync(content.Id).ConfigureAwait(false);
             Assert.IsNotNull(content, "Content was not created.");
         }
         [TestMethod]
@@ -44,15 +32,15 @@ namespace SenseNet.Client.Tests
 
             var content0 = Content.CreateNew("/Root", "Folder", Guid.NewGuid().ToString());
             content0["Index"] = 42;
-            await content0.SaveAsync().C();
+            await content0.SaveAsync().ConfigureAwait(false);
             var contentId = content0.Id;
 
-            var content1 = await Content.LoadAsync(contentId).C();
+            var content1 = await Content.LoadAsync(contentId).ConfigureAwait(false);
             //var indexBefore = ((JValue)content1["Index"]).Value<int>();
             content1["Index"] = 142;
-            await content1.SaveAsync().C();
+            await content1.SaveAsync().ConfigureAwait(false);
 
-            var content2 = await Content.LoadAsync(contentId).C();
+            var content2 = await Content.LoadAsync(contentId).ConfigureAwait(false);
             var indexAfter = ((JValue)content2["Index"]).Value<int>();
 
             Assert.AreEqual(142, indexAfter);
@@ -67,19 +55,19 @@ namespace SenseNet.Client.Tests
             for (int i = 0; i < count; i++)
             {
                 var content = Content.CreateNew("/Root", "Folder", Guid.NewGuid().ToString());
-                await content.SaveAsync().C();
+                await content.SaveAsync().ConfigureAwait(false);
                 paths[i] = content.Path;
                 ids[i] = content.Id;
             }
 
             // ACTION
-            var contentToDelete = await Content.LoadAsync(paths[1]).C();
-            await contentToDelete.DeleteAsync().C();
+            var contentToDelete = await Content.LoadAsync(paths[1]).ConfigureAwait(false);
+            await contentToDelete.DeleteAsync().ConfigureAwait(false);
 
             // ASSERT
-            Assert.IsNotNull(await Content.LoadAsync(paths[0]).C());
-            Assert.IsNull(await Content.LoadAsync(paths[1]).C());
-            Assert.IsNotNull(await Content.LoadAsync(paths[2]).C());
+            Assert.IsNotNull(await Content.LoadAsync(paths[0]).ConfigureAwait(false));
+            Assert.IsNull(await Content.LoadAsync(paths[1]).ConfigureAwait(false));
+            Assert.IsNotNull(await Content.LoadAsync(paths[2]).ConfigureAwait(false));
         }
 
         [TestMethod]
@@ -91,18 +79,18 @@ namespace SenseNet.Client.Tests
             for (int i = 0; i < count; i++)
             {
                 var content = Content.CreateNew("/Root", "Folder", Guid.NewGuid().ToString());
-                await content.SaveAsync().C();
+                await content.SaveAsync().ConfigureAwait(false);
                 paths[i] = content.Path;
                 ids[i] = content.Id;
             }
 
             // ACTION
-            await Content.DeleteAsync(paths[1], true, CancellationToken.None).C();
+            await Content.DeleteAsync(paths[1], true, CancellationToken.None).ConfigureAwait(false);
 
             // ASSERT
-            Assert.IsNotNull(await Content.LoadAsync(paths[0]).C());
-            Assert.IsNull(await Content.LoadAsync(paths[1]).C());
-            Assert.IsNotNull(await Content.LoadAsync(paths[2]).C());
+            Assert.IsNotNull(await Content.LoadAsync(paths[0]).ConfigureAwait(false));
+            Assert.IsNull(await Content.LoadAsync(paths[1]).ConfigureAwait(false));
+            Assert.IsNotNull(await Content.LoadAsync(paths[2]).ConfigureAwait(false));
         }
         [TestMethod]
         public async Task Content_Delete_ById()
@@ -113,18 +101,18 @@ namespace SenseNet.Client.Tests
             for (int i = 0; i < count; i++)
             {
                 var content = Content.CreateNew("/Root", "Folder", Guid.NewGuid().ToString());
-                await content.SaveAsync().C();
+                await content.SaveAsync().ConfigureAwait(false);
                 paths[i] = content.Path;
                 ids[i] = content.Id;
             }
 
             // ACTION
-            await Content.DeleteAsync(ids[1], true, CancellationToken.None).C();
+            await Content.DeleteAsync(ids[1], true, CancellationToken.None).ConfigureAwait(false);
 
             // ASSERT
-            Assert.IsNotNull(await Content.LoadAsync(paths[0]).C());
-            Assert.IsNull(await Content.LoadAsync(paths[1]).C());
-            Assert.IsNotNull(await Content.LoadAsync(paths[2]).C());
+            Assert.IsNotNull(await Content.LoadAsync(paths[0]).ConfigureAwait(false));
+            Assert.IsNull(await Content.LoadAsync(paths[1]).ConfigureAwait(false));
+            Assert.IsNotNull(await Content.LoadAsync(paths[2]).ConfigureAwait(false));
         }
         [TestMethod]
         public async Task Content_DeleteBatch_ByPaths()
@@ -135,17 +123,17 @@ namespace SenseNet.Client.Tests
             for (int i = 0; i < count; i++)
             {
                 var content = Content.CreateNew("/Root", "Folder", Guid.NewGuid().ToString());
-                await content.SaveAsync().C();
+                await content.SaveAsync().ConfigureAwait(false);
                 paths[i] = content.Path;
                 ids[i] = content.Id;
             }
 
             // ACTION
-            await Content.DeleteAsync(paths, true, CancellationToken.None).C();
+            await Content.DeleteAsync(paths, true, CancellationToken.None).ConfigureAwait(false);
 
             // ASSERT
             foreach (var path in paths)
-                Assert.IsNull(await Content.LoadAsync(path).C());
+                Assert.IsNull(await Content.LoadAsync(path).ConfigureAwait(false));
         }
         [TestMethod]
         public async Task Content_DeleteBatch_ByIds()
@@ -156,17 +144,17 @@ namespace SenseNet.Client.Tests
             for (int i = 0; i < count; i++)
             {
                 var content = Content.CreateNew("/Root", "Folder", Guid.NewGuid().ToString());
-                await content.SaveAsync().C();
+                await content.SaveAsync().ConfigureAwait(false);
                 paths[i] = content.Path;
                 ids[i] = content.Id;
             }
 
             // ACTION
-            await Content.DeleteAsync(ids, true, CancellationToken.None).C();
+            await Content.DeleteAsync(ids, true, CancellationToken.None).ConfigureAwait(false);
 
             // ASSERT
             foreach (var path in paths)
-                Assert.IsNull(await Content.LoadAsync(path).C());
+                Assert.IsNull(await Content.LoadAsync(path).ConfigureAwait(false));
         }
         [TestMethod]
         public async Task Content_DeleteBatch_ByIdsAndPaths()
@@ -177,18 +165,18 @@ namespace SenseNet.Client.Tests
             for (int i = 0; i < count; i++)
             {
                 var content = Content.CreateNew("/Root", "Folder", Guid.NewGuid().ToString());
-                await content.SaveAsync().C();
+                await content.SaveAsync().ConfigureAwait(false);
                 paths[i] = content.Path;
                 ids[i] = content.Id;
             }
 
             // ACTION
             await Content.DeleteAsync(new object[] {ids[0], paths[1], ids[2], paths[3], ids[4]}, 
-                true, CancellationToken.None).C();
+                true, CancellationToken.None).ConfigureAwait(false);
 
             // ASSERT
             foreach (var path in paths)
-                Assert.IsNull(await Content.LoadAsync(path).C());
+                Assert.IsNull(await Content.LoadAsync(path).ConfigureAwait(false));
         }
     }
 }
