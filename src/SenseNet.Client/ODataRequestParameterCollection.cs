@@ -82,6 +82,7 @@ namespace SenseNet.Client
 
         private void CheckItem(KeyValuePair<string, string> item)
         {
+            //UNDONE ? set the matching request property instead of throwing an error
             if(_builtinParameters.Keys.Contains(item.Key))
                 throw new InvalidOperationException($"Invalid dynamic parameter usage. Use the \"{_builtinParameters[item.Key]}\" property of the ODataRequest.");
         }

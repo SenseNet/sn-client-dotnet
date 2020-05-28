@@ -182,7 +182,7 @@ namespace SenseNet.Client.Tests
         [TestMethod]
         public async Task Content_HasPermission()
         {
-            var content = await Content.LoadAsync(2);
+            var content = await Content.LoadAsync(2).ConfigureAwait(false);
 
             // ACTION
             var result = await content.HasPermissionAsync(new []{Permission.Open, Permission.Approve},
