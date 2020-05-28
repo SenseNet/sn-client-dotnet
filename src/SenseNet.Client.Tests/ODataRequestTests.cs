@@ -76,7 +76,7 @@ namespace SenseNet.Client.Tests
             request.Parameters.Add("Id", "1");
             request.Parameters.Add("Name", "Value");
 
-            var expected = "https://example.com/OData.svc/Root('MyContent')?Id=1&Name=Value&metadata=no";
+            var expected = "https://example.com/OData.svc/Root('MyContent')?metadata=no&Id=1&Name=Value";
 
             // ACTION
             var actual = request.ToString();
@@ -102,7 +102,36 @@ namespace SenseNet.Client.Tests
             request.Parameters.Add("Id", "3");
             request.Parameters.Add("Name", "Value");
 
-            var expected = "https://example.com/OData.svc/Root('MyContent')?Id=1&Id=2&Id=3&Name=Value&metadata=no";
+            var expected = "https://example.com/OData.svc/Root('MyContent')?metadata=no&Id=1&Id=2&Id=3&Name=Value";
+
+            // ACTION
+            var actual = request.ToString();
+
+            // ASSERT
+            Assert.AreEqual(expected, actual);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException))]
+        public void QueryString_ParameterArray2()
+        {
+            var request = new ODataRequest(new ServerContext
+            {
+                Url = "https://example.com",
+            })
+            {
+                Path = "/Root/MyContent",
+                IsCollectionRequest = true
+            };
+            request.Top = 10;
+            request.ActionName = "Action1";
+            request.Metadata = MetadataFormat.None;
+
+
+            request.Parameters.Add("metadata", "no");
+            request.Parameters.Add("$top", "11");
+
+            var expected = "https://example.com/OData.svc/Root('MyContent')?metadata=no&$top=10";
 
             // ACTION
             var actual = request.ToString();

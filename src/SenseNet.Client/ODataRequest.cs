@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
 
 namespace SenseNet.Client
 {
@@ -72,7 +71,7 @@ namespace SenseNet.Client
         public static bool Remove(this List<KeyValuePair<string, string>> list, string name)
         {
             var items = list.Where(x => x.Key == name).ToArray();
-            foreach(var item in items)
+            foreach (var item in items)
                 list.Remove(item);
             return items.Length > 0;
         }
@@ -105,6 +104,24 @@ namespace SenseNet.Client
             public static readonly string Version = "version";
             public static readonly string Scenario = "scenario";
         }
+
+        private Dictionary<string, string> _builtinParameters = new Dictionary<string, string>
+        {
+            { P.Top, nameof(Top) },
+            { P.Skip, nameof(Skip) },
+            { P.Expand, nameof(Expand) },
+            { P.Select, nameof(Select) },
+            { P.Filter, nameof(ChildrenFilter) },
+            { P.InlineCount, nameof(InlineCount) },
+            //TODO: Implement and use "Format" property if needed.
+            //{ P.Format, nameof(Format) },
+            { P.CountOnly, nameof(CountOnly) },
+            { P.Metadata, nameof(Metadata) },
+            { P.AutoFilters, nameof(AutoFilters) },
+            { P.LifespanFilter, nameof(LifespanFilter) },
+            { P.Version, nameof(Version) },
+            { P.Scenario, nameof(Scenario) },
+        };
 
         //============================================================================= Properties
 
@@ -168,7 +185,7 @@ namespace SenseNet.Client
         /// <summary>
         /// Gets a container for any custom URL parameters.
         /// </summary>
-        public List<KeyValuePair<string, string>> Parameters { get; }
+        public ODataRequestParameterCollection Parameters { get; }
 
         /// <summary>
         /// Gets or sets the total count request if the resource is a collection.
@@ -210,7 +227,7 @@ namespace SenseNet.Client
         public ODataRequest(ServerContext server)
         {
             // set default values
-            Parameters = new List<KeyValuePair<string, string>>();
+            Parameters = new ODataRequestParameterCollection(_builtinParameters);
             Metadata = MetadataFormat.None;
             SiteUrl = ServerContext.GetUrl(server);
 
@@ -255,52 +272,52 @@ namespace SenseNet.Client
 
             // version
             if (!string.IsNullOrEmpty(Version))
-                urlParams.Add(P.Version, Version);
+                AddParam(urlParams, P.Version, Version);
 
             // top
             if (Top > 0)
-                urlParams.Add(P.Top, Top.ToString());
+                AddParam(urlParams, P.Top, Top.ToString());
             // skip
             if (Skip > 0)
-                urlParams.Add(P.Skip, Skip.ToString());
+                AddParam(urlParams, P.Skip, Skip.ToString());
 
             // select
             if (Select != null)
-                urlParams.Add(P.Select, string.Join(",", Select));
+                AddParam(urlParams, P.Select, string.Join(",", Select));
             // expand
             if (Expand != null)
-                urlParams.Add(P.Expand, string.Join(",", Expand));
+                AddParam(urlParams, P.Expand, string.Join(",", Expand));
 
             // always omit metadata if not requested explicitly
             switch (Metadata)
             {
                 case MetadataFormat.Minimal: 
-                    urlParams.Add(P.Metadata, "minimal");
+                    AddParam(urlParams, P.Metadata, "minimal");
                     break;
                 case MetadataFormat.Full: 
                     // do not provide the parameter, full is the default on the server
                     break;
                 default:
-                    urlParams.Add(P.Metadata, "no");
+                    AddParam(urlParams, P.Metadata, "no");
                     break;
             }
 
             // inlinecount
             if (InlineCount == InlineCountOptions.AllPages)
-                urlParams.Add(P.InlineCount, "allpages");
+                AddParam(urlParams, P.InlineCount, "allpages");
 
             // filter
             if (!string.IsNullOrEmpty(ChildrenFilter))
-                urlParams.Add(P.Filter, ChildrenFilter);
+                AddParam(urlParams, P.Filter, ChildrenFilter);
 
             // autofilters
             switch (AutoFilters)
             {
                 case FilterStatus.Enabled:
-                    urlParams.Add(P.AutoFilters, "true");
+                    AddParam(urlParams, P.AutoFilters, "true");
                     break;
                 case FilterStatus.Disabled:
-                    urlParams.Add(P.AutoFilters, "false");
+                    AddParam(urlParams, P.AutoFilters, "false");
                     break;
             }
 
@@ -308,21 +325,21 @@ namespace SenseNet.Client
             switch (LifespanFilter)
             {
                 case FilterStatus.Enabled:
-                    urlParams.Add(P.LifespanFilter, "true");
+                    AddParam(urlParams, P.LifespanFilter, "true");
                     break;
                 case FilterStatus.Disabled:
-                    urlParams.Add(P.LifespanFilter, "false");
+                    AddParam(urlParams, P.LifespanFilter, "false");
                     break;
             }
 
             // scenario
             if (!string.IsNullOrEmpty(Scenario))
-                urlParams.Add(P.Scenario, Scenario);
+                AddParam(urlParams, P.Scenario, Scenario);
 
             // orderby
             if (OrderBy != null && OrderBy.Length > 0)
             {
-                urlParams.Add(P.OrderBy, string.Join(",", OrderBy.Select(x=>x.Trim())));
+                AddParam(urlParams, P.OrderBy, string.Join(",", OrderBy.Select(x=>x.Trim())));
             }
 
             // copy custom parameters
@@ -334,6 +351,11 @@ namespace SenseNet.Client
             if (urlParams.Count == 0)
                 return url;
             return url + "?" + string.Join("&", urlParams.Select(dkv => $"{dkv.Key}={dkv.Value}"));
+        }
+
+        private void AddParam(List<KeyValuePair<string, string>> list, string name, string value)
+        {
+            list.Add(new KeyValuePair<string, string>(name, value));
         }
 
         //============================================================================= Instance API
