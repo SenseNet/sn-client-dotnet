@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace SenseNet.Client
 {
@@ -84,8 +85,26 @@ namespace SenseNet.Client
     public class ODataRequest
     {
         private static readonly string SERVICE_NAME = "OData.svc";
-        private static readonly string PARAM_METADATA = "metadata";
-        private static readonly string PARAM_COUNT = "$count";
+
+        private static class P
+        {
+            public static readonly string Top = "$top";
+            public static readonly string Skip = "$skip";
+            public static readonly string Expand = "$expand";
+            public static readonly string Select = "$select";
+            public static readonly string Filter = "$filter";
+            public static readonly string OrderBy = "$orderby";
+            public static readonly string InlineCount = "$inlinecount";
+            public static readonly string Format = "$format";
+
+            public static readonly string CountOnly = "$count";
+
+            public static readonly string Metadata = "metadata";
+            public static readonly string AutoFilters = "enableautofilters";
+            public static readonly string LifespanFilter = "enablelifespanfilter";
+            public static readonly string Version = "version";
+            public static readonly string Scenario = "scenario";
+        }
 
         //============================================================================= Properties
 
@@ -225,7 +244,7 @@ namespace SenseNet.Client
 
             // add property or action (if count is provided, actionname or property does not make sense)
             if (CountOnly)
-                url += "/" + PARAM_COUNT;
+                url += "/" + P.CountOnly;
             else if (!string.IsNullOrEmpty(ActionName))
                 url += "/" + ActionName;
             else if (!string.IsNullOrEmpty(PropertyName))
@@ -236,58 +255,52 @@ namespace SenseNet.Client
 
             // version
             if (!string.IsNullOrEmpty(Version))
-                urlParams.Add("version", Version);
+                urlParams.Add(P.Version, Version);
 
             // top
             if (Top > 0)
-                urlParams.Add("$top", Top.ToString());
+                urlParams.Add(P.Top, Top.ToString());
             // skip
             if (Skip > 0)
-                urlParams.Add("$skip", Skip.ToString());
+                urlParams.Add(P.Skip, Skip.ToString());
 
             // select
             if (Select != null)
-                urlParams.Add("$select", string.Join(",", Select));
+                urlParams.Add(P.Select, string.Join(",", Select));
             // expand
             if (Expand != null)
-                urlParams.Add("$expand", string.Join(",", Expand));
-
-            // copy custom parameters
-            foreach (var item in Parameters)
-            {
-                urlParams.Add(item);
-            }
+                urlParams.Add(P.Expand, string.Join(",", Expand));
 
             // always omit metadata if not requested explicitly
             switch (Metadata)
             {
                 case MetadataFormat.Minimal: 
-                    urlParams.Add(PARAM_METADATA, "minimal");
+                    urlParams.Add(P.Metadata, "minimal");
                     break;
                 case MetadataFormat.Full: 
                     // do not provide the parameter, full is the default on the server
                     break;
                 default:
-                    urlParams.Add(PARAM_METADATA, "no");
+                    urlParams.Add(P.Metadata, "no");
                     break;
             }
 
             // inlinecount
             if (InlineCount == InlineCountOptions.AllPages)
-                urlParams.Add("$inlinecount", "allpages");
+                urlParams.Add(P.InlineCount, "allpages");
 
             // filter
             if (!string.IsNullOrEmpty(ChildrenFilter))
-                urlParams.Add("$filter", ChildrenFilter);
+                urlParams.Add(P.Filter, ChildrenFilter);
 
             // autofilters
             switch (AutoFilters)
             {
                 case FilterStatus.Enabled:
-                    urlParams.Add("enableautofilters", "true");
+                    urlParams.Add(P.AutoFilters, "true");
                     break;
                 case FilterStatus.Disabled:
-                    urlParams.Add("enableautofilters", "false");
+                    urlParams.Add(P.AutoFilters, "false");
                     break;
             }
 
@@ -295,21 +308,27 @@ namespace SenseNet.Client
             switch (LifespanFilter)
             {
                 case FilterStatus.Enabled:
-                    urlParams.Add("enablelifespanfilter", "true");
+                    urlParams.Add(P.LifespanFilter, "true");
                     break;
                 case FilterStatus.Disabled:
-                    urlParams.Add("enablelifespanfilter", "false");
+                    urlParams.Add(P.LifespanFilter, "false");
                     break;
             }
 
             // scenario
             if (!string.IsNullOrEmpty(Scenario))
-                urlParams.Add("scenario", Scenario);
+                urlParams.Add(P.Scenario, Scenario);
 
             // orderby
             if (OrderBy != null && OrderBy.Length > 0)
             {
-                urlParams.Add("$orderby", string.Join(",", OrderBy.Select(x=>x.Trim())));
+                urlParams.Add(P.OrderBy, string.Join(",", OrderBy.Select(x=>x.Trim())));
+            }
+
+            // copy custom parameters
+            foreach (var item in Parameters)
+            {
+                urlParams.Add(item);
             }
 
             if (urlParams.Count == 0)
