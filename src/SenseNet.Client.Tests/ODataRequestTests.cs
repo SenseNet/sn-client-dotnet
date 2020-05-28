@@ -112,32 +112,39 @@ namespace SenseNet.Client.Tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(InvalidOperationException))]
-        public void QueryString_ParameterArray2()
+        public void QueryString_ParameterArray_AddInvalid()
         {
-            var request = new ODataRequest(new ServerContext
+            void ParamTest(string name, string value)
             {
-                Url = "https://example.com",
-            })
-            {
-                Path = "/Root/MyContent",
-                IsCollectionRequest = true
-            };
-            request.Top = 10;
-            request.ActionName = "Action1";
-            request.Metadata = MetadataFormat.None;
+                try
+                {
+                    var request = new ODataRequest(new ServerContext { Url = "https://example.com" })
+                        { Path = "/Root/MyContent", IsCollectionRequest = true };
 
+                    request.Parameters.Add(name, value);
+                    Assert.Fail("The expected InvalidOperationException was not thrown.");
+                }
+                catch (InvalidOperationException) { /* ignored */ }
+            }
 
-            request.Parameters.Add("metadata", "no");
-            request.Parameters.Add("$top", "11");
+            ParamTest("$top", "value");
+            ParamTest("$skip", "value");
+            ParamTest("$expand", "value");
+            ParamTest("$select", "value");
+            ParamTest("$filter", "value");
+            ParamTest("$orderby", "value");
+            ParamTest("$inlinecount", "value");
+            //ParamTest("$format", "value");
+            ParamTest("$count", "value");
+            ParamTest("metadata", "value");
+            ParamTest("enableautofilters", "value");
+            ParamTest("enablelifespanfilter", "value");
+            ParamTest("version", "value");
+            ParamTest("scenario", "value");
 
-            var expected = "https://example.com/OData.svc/Root('MyContent')?metadata=no&$top=10";
-
-            // ACTION
-            var actual = request.ToString();
-
-            // ASSERT
-            Assert.AreEqual(expected, actual);
+            ParamTest("query", "value");
+            ParamTest("permissions", "value");
+            ParamTest("user", "value");
         }
 
         [TestMethod]

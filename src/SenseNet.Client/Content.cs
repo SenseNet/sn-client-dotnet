@@ -326,11 +326,9 @@ namespace SenseNet.Client
             {
                 Path = path,
                 IsCollectionRequest = true,
+                ContentQuery = query,
                 CountOnly = true
             };
-
-            if (!string.IsNullOrEmpty(query))
-                request.Parameters.Add("query", query);
 
             return await RESTCaller.GetCountAsync(request, server).ConfigureAwait(false);
         }
@@ -377,9 +375,8 @@ namespace SenseNet.Client
                 Skip = settings.Skip,
                 AutoFilters = settings.EnableAutofilters,
                 LifespanFilter = settings.EnableLifespanFilter,
+                ContentQuery = queryText
             };
-
-            oDataRequest.Parameters.Add("query", Uri.EscapeDataString(queryText));
 
             return await Content.LoadCollectionAsync(oDataRequest, server).ConfigureAwait(false);
         }

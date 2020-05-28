@@ -103,15 +103,20 @@ namespace SenseNet.Client
             public static readonly string LifespanFilter = "enablelifespanfilter";
             public static readonly string Version = "version";
             public static readonly string Scenario = "scenario";
+
+            public static readonly string ContentQuery = "query";
+            public static readonly string Permissions = "permissions";
+            public static readonly string User = "user";
         }
 
-        private Dictionary<string, string> _builtinParameters = new Dictionary<string, string>
+        private readonly Dictionary<string, string> _builtinParameters = new Dictionary<string, string>
         {
             { P.Top, nameof(Top) },
             { P.Skip, nameof(Skip) },
             { P.Expand, nameof(Expand) },
             { P.Select, nameof(Select) },
             { P.Filter, nameof(ChildrenFilter) },
+            { P.OrderBy, nameof(OrderBy) },
             { P.InlineCount, nameof(InlineCount) },
             //TODO: Implement and use "Format" property if needed.
             //{ P.Format, nameof(Format) },
@@ -121,6 +126,10 @@ namespace SenseNet.Client
             { P.LifespanFilter, nameof(LifespanFilter) },
             { P.Version, nameof(Version) },
             { P.Scenario, nameof(Scenario) },
+
+            { P.ContentQuery, nameof(ContentQuery) },
+            { P.Permissions, nameof(Permissions) },
+            { P.User, nameof(User) },
         };
 
         //============================================================================= Properties
@@ -181,6 +190,19 @@ namespace SenseNet.Client
         /// Gets or sets the format of the requested metadata information. Default is None.
         /// </summary>
         public MetadataFormat Metadata { get; set; }
+
+        /// <summary>
+        /// Gets or sets a Content Query.
+        /// </summary>
+        public string ContentQuery { get; set; }
+        /// <summary>
+        /// Gets or sets a set of permission names.
+        /// </summary>
+        public string[] Permissions { get; set; }
+        /// <summary>
+        /// Gets or sets the path of a User
+        /// </summary>
+        public string User { get; set; }
 
         /// <summary>
         /// Gets a container for any custom URL parameters.
@@ -270,6 +292,7 @@ namespace SenseNet.Client
             // collect additional parameters
             var urlParams = new List<KeyValuePair<string, string>>();
 
+            //UNDONE: sort parameters (metadata is the first)
             // version
             if (!string.IsNullOrEmpty(Version))
                 AddParam(urlParams, P.Version, Version);
@@ -341,6 +364,19 @@ namespace SenseNet.Client
             {
                 AddParam(urlParams, P.OrderBy, string.Join(",", OrderBy.Select(x=>x.Trim())));
             }
+
+            // query
+            if (!string.IsNullOrEmpty(ContentQuery))
+                AddParam(urlParams, P.ContentQuery, Uri.EscapeDataString(ContentQuery)); //UNDONE: ? escape all string param values
+
+            // permissions
+            if (Permissions != null && Permissions.Length > 0)
+                AddParam(urlParams, P.Permissions, string.Join(",", Permissions));
+
+            // user
+            if (!string.IsNullOrEmpty(User))
+                AddParam(urlParams, P.User, User);
+
 
             // copy custom parameters
             foreach (var item in Parameters)
