@@ -292,7 +292,6 @@ namespace SenseNet.Client
             // collect additional parameters
             var urlParams = new List<KeyValuePair<string, string>>();
 
-            //UNDONE: sort parameters (metadata is the first)
             // always omit metadata if not requested explicitly
             switch (Metadata)
             {
