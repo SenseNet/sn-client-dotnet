@@ -36,7 +36,7 @@ namespace SenseNet.Client
         /// <summary>
         /// Initializes a new instance of the ClientException class.
         /// </summary>
-        public ClientException(ErrorData errorData, Exception innerException = null) : base(GetMessage(errorData), innerException)
+        public ClientException(ErrorData errorData, Exception innerException = null) : base(GetMessage(errorData, null), innerException)
         {
             ErrorData = errorData ?? ErrorData.Empty;
         }
@@ -44,7 +44,7 @@ namespace SenseNet.Client
         /// <summary>
         /// Initializes a new instance of the ClientException class.
         /// </summary>
-        public ClientException(ErrorData errorData, HttpStatusCode statusCode, Exception innerException = null) : base(GetMessage(errorData), innerException)
+        public ClientException(ErrorData errorData, HttpStatusCode statusCode, Exception innerException = null) : base(GetMessage(errorData, statusCode), innerException)
         {
             StatusCode = statusCode;
             ErrorData = errorData ?? ErrorData.Empty;
@@ -76,11 +76,15 @@ namespace SenseNet.Client
         /// </summary>
         public string Response { get; internal set; }
 
-        private static string GetMessage(ErrorData errorData)
+        private static string GetMessage(ErrorData errorData, HttpStatusCode? httpStatusCode)
         {
-            return errorData != null && !string.IsNullOrEmpty(errorData.Message.Value)
-                ? errorData.Message.Value
-                : "Error during client operation.";
+            if (errorData == null || string.IsNullOrEmpty(errorData.Message.Value))
+                return "Error during client operation.";
+
+            if(!httpStatusCode.HasValue)
+                return errorData.Message.Value;
+
+            return $"The server returned an error (HttpStatus: {httpStatusCode.Value}): {errorData.Message.Value}";
         }
     }
 
