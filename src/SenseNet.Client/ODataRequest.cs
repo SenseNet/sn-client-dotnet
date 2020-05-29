@@ -293,24 +293,6 @@ namespace SenseNet.Client
             var urlParams = new List<KeyValuePair<string, string>>();
 
             //UNDONE: sort parameters (metadata is the first)
-            // version
-            if (!string.IsNullOrEmpty(Version))
-                AddParam(urlParams, P.Version, Version);
-
-            // top
-            if (Top > 0)
-                AddParam(urlParams, P.Top, Top.ToString());
-            // skip
-            if (Skip > 0)
-                AddParam(urlParams, P.Skip, Skip.ToString());
-
-            // select
-            if (Select != null)
-                AddParam(urlParams, P.Select, string.Join(",", Select));
-            // expand
-            if (Expand != null)
-                AddParam(urlParams, P.Expand, string.Join(",", Expand));
-
             // always omit metadata if not requested explicitly
             switch (Metadata)
             {
@@ -325,13 +307,27 @@ namespace SenseNet.Client
                     break;
             }
 
-            // inlinecount
-            if (InlineCount == InlineCountOptions.AllPages)
-                AddParam(urlParams, P.InlineCount, "allpages");
-
+            // top
+            if (Top > 0)
+                AddParam(urlParams, P.Top, Top.ToString());
+            // skip
+            if (Skip > 0)
+                AddParam(urlParams, P.Skip, Skip.ToString());
+            // expand
+            if (Expand != null)
+                AddParam(urlParams, P.Expand, string.Join(",", Expand));
+            // select
+            if (Select != null)
+                AddParam(urlParams, P.Select, string.Join(",", Select));
             // filter
             if (!string.IsNullOrEmpty(ChildrenFilter))
                 AddParam(urlParams, P.Filter, ChildrenFilter);
+            // orderby
+            if (OrderBy != null && OrderBy.Length > 0)
+                AddParam(urlParams, P.OrderBy, string.Join(",", OrderBy.Select(x=>x.Trim())));
+            // inlinecount
+            if (InlineCount == InlineCountOptions.AllPages)
+                AddParam(urlParams, P.InlineCount, "allpages");
 
             // autofilters
             switch (AutoFilters)
@@ -355,28 +351,21 @@ namespace SenseNet.Client
                     break;
             }
 
+            // version
+            if (!string.IsNullOrEmpty(Version))
+                AddParam(urlParams, P.Version, Version);
             // scenario
             if (!string.IsNullOrEmpty(Scenario))
                 AddParam(urlParams, P.Scenario, Scenario);
-
-            // orderby
-            if (OrderBy != null && OrderBy.Length > 0)
-            {
-                AddParam(urlParams, P.OrderBy, string.Join(",", OrderBy.Select(x=>x.Trim())));
-            }
-
             // query
             if (!string.IsNullOrEmpty(ContentQuery))
                 AddParam(urlParams, P.ContentQuery, Uri.EscapeDataString(ContentQuery)); //UNDONE: ? escape all string param values
-
             // permissions
             if (Permissions != null && Permissions.Length > 0)
                 AddParam(urlParams, P.Permissions, string.Join(",", Permissions));
-
             // user
             if (!string.IsNullOrEmpty(User))
                 AddParam(urlParams, P.User, User);
-
 
             // copy custom parameters
             foreach (var item in Parameters)

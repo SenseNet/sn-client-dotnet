@@ -176,8 +176,8 @@ namespace SenseNet.Client.Tests
         [TestMethod]
         public void QueryString_BuildFromProperties_PropertySet1()
         {
-            var expected = $"{ClientContext.Current.Server.Url}/OData.svc/('Root')/Action1?version=V16.78D&" +
-                           $"$select=Id,Name,Field1,Field2&$expand=Field1,Field2&metadata=minimal";
+            var expected = $"{ClientContext.Current.Server.Url}/OData.svc/('Root')/Action1?" +
+                           $"metadata=minimal&$expand=Field1,Field2&$select=Id,Name,Field1,Field2&version=V16.78D";
 
             var req = new ODataRequest
             {
@@ -198,8 +198,8 @@ namespace SenseNet.Client.Tests
         [TestMethod]
         public void QueryString_BuildFromProperties_PropertySet2()
         {
-            var expected = $"{ClientContext.Current.Server.Url}/OData.svc/content(79)/PropertyName?version=V16.78D&" +
-                           $"$select=Id,Name,Field1,Field2&$expand=Field1,Field2&metadata=minimal";
+            var expected = $"{ClientContext.Current.Server.Url}/OData.svc/content(79)/PropertyName?" +
+                           $"metadata=minimal&$expand=Field1,Field2&$select=Id,Name,Field1,Field2&version=V16.78D";
 
             var req = new ODataRequest
             {
@@ -220,10 +220,10 @@ namespace SenseNet.Client.Tests
         [TestMethod]
         public void QueryString_BuildFromProperties_PropertySet3()
         {
-            var expected = $"{ClientContext.Current.Server.Url}/OData.svc/Root?$top=7&$skip=78&" +
-                           $"$select=Id,Name&metadata=no&$inlinecount=allpages&$filter=isof('Folder')" +
-                           $"&enableautofilters=false&enablelifespanfilter=false&scenario=Scenario1&" +
-                           $"$orderby=Field1 desc,Field2,Field3 asc";
+            var expected = $"{ClientContext.Current.Server.Url}/OData.svc/Root?" +
+                           $"metadata=no&$top=7&$skip=78&$select=Id,Name&$filter=isof('Folder')&" +
+                           $"$orderby=Field1 desc,Field2,Field3 asc&$inlinecount=allpages&" +
+                           $"enableautofilters=false&enablelifespanfilter=false&scenario=Scenario1";
 
             var req = new ODataRequest
             {
@@ -250,9 +250,9 @@ namespace SenseNet.Client.Tests
         [TestMethod]
         public void QueryString_BuildFromProperties_PropertySet4()
         {
-            var expected = $"{ClientContext.Current.Server.Url}/OData.svc/Root/$count?metadata=no&" +
-                           $"$inlinecount=allpages&$filter=isof('Folder')&enableautofilters=false&" +
-                           $"enablelifespanfilter=false&scenario=Scenario1";
+            var expected = $"{ClientContext.Current.Server.Url}/OData.svc/Root/$count?" +
+                           $"metadata=no&$filter=isof('Folder')&$inlinecount=allpages&" +
+                           $"enableautofilters=false&enablelifespanfilter=false&scenario=Scenario1";
 
             var req = new ODataRequest
             {
