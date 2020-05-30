@@ -109,6 +109,74 @@ namespace SenseNet.Client
             public static readonly string User = "user";
         }
 
+        private bool AddWellKnownItem(KeyValuePair<string, string> item)
+        {
+            if (item.Key == P.Top) { Top = int.Parse(item.Value); return true; }
+            if (item.Key == P.Skip) { Skip = int.Parse(item.Value); return true; }
+            if (item.Key == P.Expand) { Expand = item.Value.Split(',').Select(x => x.Trim()).ToArray(); return true; }
+            if (item.Key == P.Select) { Select = item.Value.Split(',').Select(x => x.Trim()).ToArray(); return true; }
+            if (item.Key == P.Filter) { ChildrenFilter = item.Value; return true; }
+            if (item.Key == P.OrderBy) { OrderBy = item.Value.Split(',').Select(x => x.Trim()).ToArray(); return true; }
+            if (item.Key == P.InlineCount) { InlineCount = (InlineCountOptions)Enum.Parse(typeof(InlineCountOptions), item.Value, true); return true; }
+            if (item.Key == P.CountOnly) { CountOnly = item.Value.ToLower() == "true"; return true; }
+            if (item.Key == P.Version) { Version = item.Value; return true; }
+            if (item.Key == P.Scenario) { Scenario = item.Value; return true; }
+            if (item.Key == P.ContentQuery) { ContentQuery = item.Value; return true; }
+            if (item.Key == P.Permissions) { Permissions = item.Value.Split(',').Select(x => x.Trim()).ToArray(); return true; }
+            if (item.Key == P.User) { User = item.Value; return true; }
+            if (item.Key == P.AutoFilters)
+            {
+                var value = item.Value;
+                if (value.ToLowerInvariant() == "true")
+                    value = "enabled";
+                if (value.ToLowerInvariant() == "false")
+                    value = "disabled";
+                AutoFilters = (FilterStatus)Enum.Parse(typeof(FilterStatus), value, true); return true;
+            }
+            if (item.Key == P.LifespanFilter)
+            {
+                var value = item.Value;
+                if (value.ToLowerInvariant() == "true")
+                    value = "enabled";
+                if (value.ToLowerInvariant() == "false")
+                    value = "disabled";
+                LifespanFilter = (FilterStatus)Enum.Parse(typeof(FilterStatus), value, true); return true;
+            }
+            if (item.Key == P.Metadata)
+            {
+                var value = item.Value;
+                if (value.ToLowerInvariant() == "no")
+                    value = "none";
+                Metadata = (MetadataFormat)Enum.Parse(typeof(MetadataFormat), value, true); return true;
+            }
+            //TODO: Implement and use "Format" property if needed.
+            //if (item.Key == P.Format) { Format = ?; return true; }
+
+            return false;
+        }
+        private bool RemoveWellKnownItem(KeyValuePair<string, string> item)
+        {
+            if (item.Key == P.Top) { Top = default; return true; }
+            if (item.Key == P.Skip) { Skip = default; return true; }
+            if (item.Key == P.Expand) { Expand = default; return true; }
+            if (item.Key == P.Select) { Select = default; return true; }
+            if (item.Key == P.Filter) { ChildrenFilter = default; return true; }
+            if (item.Key == P.OrderBy) { OrderBy = default; return true; }
+            if (item.Key == P.InlineCount) { InlineCount = default; return true; }
+            if (item.Key == P.CountOnly) { CountOnly = default; return true; }
+            if (item.Key == P.Metadata) { Metadata = default; return true; }
+            if (item.Key == P.AutoFilters) { AutoFilters = default; return true; }
+            if (item.Key == P.LifespanFilter) { LifespanFilter = default; return true; }
+            if (item.Key == P.Version) { Version = default; return true; }
+            if (item.Key == P.Scenario) { Scenario = default; return true; }
+            if (item.Key == P.ContentQuery) { ContentQuery = default; return true; }
+            if (item.Key == P.Permissions) { Permissions = default; return true; }
+            if (item.Key == P.User) { User = default; return true; }
+            //TODO: Implement and use "Format" property if needed.
+            //if (item.Key == P.Format) { Format = default; return true; }
+
+            return false;
+        }
         private readonly Dictionary<string, string> _builtinParameters = new Dictionary<string, string>
         {
             { P.Top, nameof(Top) },
@@ -126,7 +194,6 @@ namespace SenseNet.Client
             { P.LifespanFilter, nameof(LifespanFilter) },
             { P.Version, nameof(Version) },
             { P.Scenario, nameof(Scenario) },
-
             { P.ContentQuery, nameof(ContentQuery) },
             { P.Permissions, nameof(Permissions) },
             { P.User, nameof(User) },
@@ -249,7 +316,7 @@ namespace SenseNet.Client
         public ODataRequest(ServerContext server)
         {
             // set default values
-            Parameters = new ODataRequestParameterCollection(_builtinParameters);
+            Parameters = new ODataRequestParameterCollection(AddWellKnownItem, RemoveWellKnownItem);
             Metadata = MetadataFormat.None;
             SiteUrl = ServerContext.GetUrl(server);
 

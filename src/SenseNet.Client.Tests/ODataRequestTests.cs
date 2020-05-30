@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using SenseNet.Tests.Accessors;
 
 namespace SenseNet.Client.Tests
 {
@@ -112,39 +112,47 @@ namespace SenseNet.Client.Tests
         }
 
         [TestMethod]
-        public void QueryString_ParameterArray_AddInvalid()
+        public void QueryString_ParameterArray_AddWellKnown()
         {
-            void ParamTest(string name, string value)
+            void ParamTest(string name, string value, string propertyName, object propertyValue)
             {
-                try
-                {
-                    var request = new ODataRequest(new ServerContext { Url = "https://example.com" })
-                        { Path = "/Root/MyContent", IsCollectionRequest = true };
+                var request = new ODataRequest(new ServerContext { Url = "https://example.com" })
+                    { Path = "/Root/MyContent", IsCollectionRequest = true };
 
-                    request.Parameters.Add(name, value);
-                    Assert.Fail("The expected InvalidOperationException was not thrown.");
+                request.Parameters.Add(name, value);
+
+                var requestAcc = new ObjectAccessor(request);
+                var propValue = requestAcc.GetProperty(propertyName);
+                if (propertyValue is string[] stringArrayValue)
+                {
+                    propertyValue = string.Join(",", stringArrayValue);
+                    propValue = string.Join(",", (string[])propValue);
                 }
-                catch (InvalidOperationException) { /* ignored */ }
+
+                Assert.AreEqual(0, request.Parameters.Count);
+                Assert.AreEqual(propertyValue, propValue);
             }
 
-            ParamTest("$top", "value");
-            ParamTest("$skip", "value");
-            ParamTest("$expand", "value");
-            ParamTest("$select", "value");
-            ParamTest("$filter", "value");
-            ParamTest("$orderby", "value");
-            ParamTest("$inlinecount", "value");
-            //ParamTest("$format", "value");
-            ParamTest("$count", "value");
-            ParamTest("metadata", "value");
-            ParamTest("enableautofilters", "value");
-            ParamTest("enablelifespanfilter", "value");
-            ParamTest("version", "value");
-            ParamTest("scenario", "value");
-
-            ParamTest("query", "value");
-            ParamTest("permissions", "value");
-            ParamTest("user", "value");
+            ParamTest("$top", "5", "Top", 5);
+            ParamTest("$skip", "10", "Skip", 10);
+            ParamTest("$expand", "a, b ,c/d", "Expand", new[] {"a", "b", "c/d"});
+            ParamTest("$select", "a, b ,c/d", "Select", new[] { "a", "b", "c/d" });
+            ParamTest("$filter", "isof(Folder)", "ChildrenFilter", "isof(Folder)");
+            ParamTest("$orderby", "A Desc,B", "OrderBy", new[] { "A Desc", "B" });
+            ParamTest("$inlinecount", "allpages", "InlineCount", InlineCountOptions.AllPages);
+            ////ParamTest("$format", "value");
+            //ParamTest("$count", "true");
+            ParamTest("metadata", "no", "Metadata", MetadataFormat.None);
+            ParamTest("metadata", "minimal", "Metadata", MetadataFormat.Minimal);
+            ParamTest("enableautofilters", "true", "AutoFilters", FilterStatus.Enabled);
+            ParamTest("enableautofilters", "false", "AutoFilters", FilterStatus.Disabled);
+            ParamTest("enablelifespanfilter", "true", "LifespanFilter", FilterStatus.Enabled);
+            ParamTest("enablelifespanfilter", "false", "LifespanFilter", FilterStatus.Disabled);
+            ParamTest("version", "V1.0.P", "Version", "V1.0.P");
+            ParamTest("scenario", "Scenario1", "Scenario", "Scenario1");
+            ParamTest("query", "+A:a +B:b .COUNTONLY", "ContentQuery", "+A:a +B:b .COUNTONLY");
+            ParamTest("permissions", "Open, Approve", "Permissions", new[] { "Open", "Approve" });
+            ParamTest("user", "/root///user1", "User", "/root///user1");
         }
 
         [TestMethod]
