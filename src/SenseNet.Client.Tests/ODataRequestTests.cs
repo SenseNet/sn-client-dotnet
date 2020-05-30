@@ -154,6 +154,68 @@ namespace SenseNet.Client.Tests
             ParamTest("permissions", "Open, Approve", "Permissions", new[] { "Open", "Approve" });
             ParamTest("user", "/root///user1", "User", "/root///user1");
         }
+        [TestMethod]
+        public void QueryString_ParameterArray_RemoveWellKnownByName()
+        {
+            void ParamTest(string name, string value, string propertyName, object propertyValue)
+            {
+                var request = new ODataRequest(new ServerContext { Url = "https://example.com" })
+                { Path = "/Root/MyContent", IsCollectionRequest = true };
+
+                request.Parameters.Add(name, value);
+
+                var requestAcc = new ObjectAccessor(request);
+                var propValue = requestAcc.GetProperty(propertyName);
+                if (propertyValue is string[] stringArrayValue)
+                {
+                    propertyValue = string.Join(",", stringArrayValue);
+                    propValue = string.Join(",", (string[])propValue);
+                }
+
+                Assert.AreEqual(0, request.Parameters.Count);
+                Assert.AreEqual(propertyValue, propValue);
+
+                request.Parameters.Remove(name);
+
+                propValue = requestAcc.GetProperty(propertyName);
+
+                object defaultValue = null;
+                if (propertyValue is bool)
+                    defaultValue = default(bool);
+                if (propertyValue is int)
+                    defaultValue = default(int);
+                if (propertyValue is InlineCountOptions)
+                    defaultValue = default(InlineCountOptions);
+                if (propertyValue is MetadataFormat)
+                    defaultValue = default(MetadataFormat);
+                if (propertyValue is FilterStatus)
+                    defaultValue = default(FilterStatus);
+
+                Assert.AreEqual(0, request.Parameters.Count);
+                Assert.AreEqual(defaultValue, propValue);
+            }
+
+            ParamTest("$top", "5", "Top", 5);
+            ParamTest("$skip", "10", "Skip", 10);
+            ParamTest("$expand", "a, b ,c/d", "Expand", new[] { "a", "b", "c/d" });
+            ParamTest("$select", "a, b ,c/d", "Select", new[] { "a", "b", "c/d" });
+            ParamTest("$filter", "isof(Folder)", "ChildrenFilter", "isof(Folder)");
+            ParamTest("$orderby", "A Desc,B", "OrderBy", new[] { "A Desc", "B" });
+            ParamTest("$inlinecount", "allpages", "InlineCount", InlineCountOptions.AllPages);
+            ////ParamTest("$format", "value");
+            //ParamTest("$count", "true");
+            ParamTest("metadata", "no", "Metadata", MetadataFormat.None);
+            ParamTest("metadata", "minimal", "Metadata", MetadataFormat.Minimal);
+            ParamTest("enableautofilters", "true", "AutoFilters", FilterStatus.Enabled);
+            ParamTest("enableautofilters", "false", "AutoFilters", FilterStatus.Disabled);
+            ParamTest("enablelifespanfilter", "true", "LifespanFilter", FilterStatus.Enabled);
+            ParamTest("enablelifespanfilter", "false", "LifespanFilter", FilterStatus.Disabled);
+            ParamTest("version", "V1.0.P", "Version", "V1.0.P");
+            ParamTest("scenario", "Scenario1", "Scenario", "Scenario1");
+            ParamTest("query", "+A:a +B:b .COUNTONLY", "ContentQuery", "+A:a +B:b .COUNTONLY");
+            ParamTest("permissions", "Open, Approve", "Permissions", new[] { "Open", "Approve" });
+            ParamTest("user", "/root///user1", "User", "/root///user1");
+        }
 
         [TestMethod]
         [ExpectedException(typeof(InvalidOperationException))]

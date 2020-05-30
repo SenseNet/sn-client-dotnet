@@ -322,12 +322,6 @@ namespace SenseNet.Client
 
             if (string.IsNullOrEmpty(SiteUrl))
                 throw new InvalidOperationException("SiteUrl is missing. Please configure or provide a server context.");
-
-            //InlineCount = InlineCount.None;
-            //Sort = new SortInfo[0];
-            //Select = new List<string>();
-            //Expand = new List<string>();
-            //AutofiltersEnabled = FilterStatus.Disabled;
         }
 
         /// <summary>
@@ -338,8 +332,6 @@ namespace SenseNet.Client
             // validation
             if (ContentId == 0 && string.IsNullOrEmpty(Path))
                 throw new InvalidOperationException("Invalid request properties: either content id or path must be provided.");
-            //if (ContentId > 0 && !string.IsNullOrEmpty(Path))
-            //    throw new InvalidOperationException("Invalid request properties: both content id and path are provided.");
             if (string.IsNullOrEmpty(Path) && IsCollectionRequest)
                 throw new InvalidOperationException("Invalid request properties: cannot create a collection request without a path.");
             if (!string.IsNullOrEmpty(ActionName) && !string.IsNullOrEmpty(PropertyName))
@@ -425,7 +417,7 @@ namespace SenseNet.Client
                 AddParam(urlParams, P.Scenario, Scenario);
             // query
             if (!string.IsNullOrEmpty(ContentQuery))
-                AddParam(urlParams, P.ContentQuery, Uri.EscapeDataString(ContentQuery)); //UNDONE: ? escape all string param values
+                AddParam(urlParams, P.ContentQuery, Uri.EscapeDataString(ContentQuery));
             // permissions
             if (Permissions != null && Permissions.Length > 0)
                 AddParam(urlParams, P.Permissions, string.Join(",", Permissions));
@@ -435,15 +427,12 @@ namespace SenseNet.Client
 
             // copy custom parameters
             foreach (var item in Parameters)
-            {
                 urlParams.Add(item);
-            }
 
             if (urlParams.Count == 0)
                 return url;
             return url + "?" + string.Join("&", urlParams.Select(dkv => $"{dkv.Key}={dkv.Value}"));
         }
-
         private void AddParam(List<KeyValuePair<string, string>> list, string name, string value)
         {
             list.Add(new KeyValuePair<string, string>(name, value));
