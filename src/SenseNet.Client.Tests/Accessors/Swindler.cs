@@ -2,7 +2,8 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace SenseNet.ODataTests.Accessors
+// ReSharper disable once CheckNamespace
+namespace SenseNet.Tests.Accessors
 {
     public class Swindler<T> : IDisposable
     {
