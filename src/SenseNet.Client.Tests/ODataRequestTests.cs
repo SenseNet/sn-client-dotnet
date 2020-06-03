@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using SenseNet.Tests.Accessors;
 
 namespace SenseNet.Client.Tests
 {
@@ -76,7 +76,7 @@ namespace SenseNet.Client.Tests
             request.Parameters.Add("Id", "1");
             request.Parameters.Add("Name", "Value");
 
-            var expected = "https://example.com/OData.svc/Root('MyContent')?Id=1&Name=Value&metadata=no";
+            var expected = "https://example.com/OData.svc/Root('MyContent')?metadata=no&Id=1&Name=Value";
 
             // ACTION
             var actual = request.ToString();
@@ -102,13 +102,119 @@ namespace SenseNet.Client.Tests
             request.Parameters.Add("Id", "3");
             request.Parameters.Add("Name", "Value");
 
-            var expected = "https://example.com/OData.svc/Root('MyContent')?Id=1&Id=2&Id=3&Name=Value&metadata=no";
+            var expected = "https://example.com/OData.svc/Root('MyContent')?metadata=no&Id=1&Id=2&Id=3&Name=Value";
 
             // ACTION
             var actual = request.ToString();
 
             // ASSERT
             Assert.AreEqual(expected, actual);
+        }
+
+        [TestMethod]
+        public void QueryString_ParameterArray_AddWellKnown()
+        {
+            void ParamTest(string name, string value, string propertyName, object propertyValue)
+            {
+                var request = new ODataRequest(new ServerContext { Url = "https://example.com" })
+                    { Path = "/Root/MyContent", IsCollectionRequest = true };
+
+                request.Parameters.Add(name, value);
+
+                var requestAcc = new ObjectAccessor(request);
+                var propValue = requestAcc.GetProperty(propertyName);
+                if (propertyValue is string[] stringArrayValue)
+                {
+                    propertyValue = string.Join(",", stringArrayValue);
+                    propValue = string.Join(",", (string[])propValue);
+                }
+
+                Assert.AreEqual(0, request.Parameters.Count);
+                Assert.AreEqual(propertyValue, propValue);
+            }
+
+            ParamTest("$top", "5", "Top", 5);
+            ParamTest("$skip", "10", "Skip", 10);
+            ParamTest("$expand", "a, b ,c/d", "Expand", new[] {"a", "b", "c/d"});
+            ParamTest("$select", "a, b ,c/d", "Select", new[] { "a", "b", "c/d" });
+            ParamTest("$filter", "isof(Folder)", "ChildrenFilter", "isof(Folder)");
+            ParamTest("$orderby", "A Desc,B", "OrderBy", new[] { "A Desc", "B" });
+            ParamTest("$inlinecount", "allpages", "InlineCount", InlineCountOptions.AllPages);
+            ////ParamTest("$format", "value");
+            //ParamTest("$count", "true");
+            ParamTest("metadata", "no", "Metadata", MetadataFormat.None);
+            ParamTest("metadata", "minimal", "Metadata", MetadataFormat.Minimal);
+            ParamTest("enableautofilters", "true", "AutoFilters", FilterStatus.Enabled);
+            ParamTest("enableautofilters", "false", "AutoFilters", FilterStatus.Disabled);
+            ParamTest("enablelifespanfilter", "true", "LifespanFilter", FilterStatus.Enabled);
+            ParamTest("enablelifespanfilter", "false", "LifespanFilter", FilterStatus.Disabled);
+            ParamTest("version", "V1.0.P", "Version", "V1.0.P");
+            ParamTest("scenario", "Scenario1", "Scenario", "Scenario1");
+            ParamTest("query", "+A:a +B:b .COUNTONLY", "ContentQuery", "+A:a +B:b .COUNTONLY");
+            ParamTest("permissions", "Open, Approve", "Permissions", new[] { "Open", "Approve" });
+            ParamTest("user", "/root///user1", "User", "/root///user1");
+        }
+        [TestMethod]
+        public void QueryString_ParameterArray_RemoveWellKnownByName()
+        {
+            void ParamTest(string name, string value, string propertyName, object propertyValue)
+            {
+                var request = new ODataRequest(new ServerContext { Url = "https://example.com" })
+                { Path = "/Root/MyContent", IsCollectionRequest = true };
+
+                request.Parameters.Add(name, value);
+
+                var requestAcc = new ObjectAccessor(request);
+                var propValue = requestAcc.GetProperty(propertyName);
+                if (propertyValue is string[] stringArrayValue)
+                {
+                    propertyValue = string.Join(",", stringArrayValue);
+                    propValue = string.Join(",", (string[])propValue);
+                }
+
+                Assert.AreEqual(0, request.Parameters.Count);
+                Assert.AreEqual(propertyValue, propValue);
+
+                request.Parameters.Remove(name);
+
+                propValue = requestAcc.GetProperty(propertyName);
+
+                object defaultValue = null;
+                if (propertyValue is bool)
+                    defaultValue = default(bool);
+                if (propertyValue is int)
+                    defaultValue = default(int);
+                if (propertyValue is InlineCountOptions)
+                    defaultValue = default(InlineCountOptions);
+                if (propertyValue is MetadataFormat)
+                    defaultValue = default(MetadataFormat);
+                if (propertyValue is FilterStatus)
+                    defaultValue = default(FilterStatus);
+
+                Assert.AreEqual(0, request.Parameters.Count);
+                Assert.AreEqual(defaultValue, propValue);
+            }
+
+            ParamTest("$top", "5", "Top", 5);
+            ParamTest("$skip", "10", "Skip", 10);
+            ParamTest("$expand", "a, b ,c/d", "Expand", new[] { "a", "b", "c/d" });
+            ParamTest("$select", "a, b ,c/d", "Select", new[] { "a", "b", "c/d" });
+            ParamTest("$filter", "isof(Folder)", "ChildrenFilter", "isof(Folder)");
+            ParamTest("$orderby", "A Desc,B", "OrderBy", new[] { "A Desc", "B" });
+            ParamTest("$inlinecount", "allpages", "InlineCount", InlineCountOptions.AllPages);
+            ////ParamTest("$format", "value");
+            //ParamTest("$count", "true");
+            ParamTest("metadata", "no", "Metadata", MetadataFormat.None);
+            ParamTest("metadata", "minimal", "Metadata", MetadataFormat.Minimal);
+            ParamTest("enableautofilters", "true", "AutoFilters", FilterStatus.Enabled);
+            ParamTest("enableautofilters", "false", "AutoFilters", FilterStatus.Disabled);
+            ParamTest("enablelifespanfilter", "true", "LifespanFilter", FilterStatus.Enabled);
+            ParamTest("enablelifespanfilter", "false", "LifespanFilter", FilterStatus.Disabled);
+            ParamTest("version", "V1.0.P", "Version", "V1.0.P");
+            ParamTest("scenario", "Scenario1", "Scenario", "Scenario1");
+            ParamTest("query", "+A:a +B:b .COUNTONLY", "ContentQuery", "+A:a +B:b .COUNTONLY");
+            ParamTest("permissions", "Open, Approve", "Permissions", new[] { "Open", "Approve" });
+            ParamTest("user", "/root///user1", "User", "/root///user1");
         }
 
         [TestMethod]
@@ -140,8 +246,8 @@ namespace SenseNet.Client.Tests
         [TestMethod]
         public void QueryString_BuildFromProperties_PropertySet1()
         {
-            var expected = $"{ClientContext.Current.Server.Url}/OData.svc/('Root')/Action1?version=V16.78D&" +
-                           $"$select=Id,Name,Field1,Field2&$expand=Field1,Field2&metadata=minimal";
+            var expected = $"{ClientContext.Current.Server.Url}/OData.svc/('Root')/Action1?" +
+                           $"metadata=minimal&$expand=Field1,Field2&$select=Id,Name,Field1,Field2&version=V16.78D";
 
             var req = new ODataRequest
             {
@@ -162,8 +268,8 @@ namespace SenseNet.Client.Tests
         [TestMethod]
         public void QueryString_BuildFromProperties_PropertySet2()
         {
-            var expected = $"{ClientContext.Current.Server.Url}/OData.svc/content(79)/PropertyName?version=V16.78D&" +
-                           $"$select=Id,Name,Field1,Field2&$expand=Field1,Field2&metadata=minimal";
+            var expected = $"{ClientContext.Current.Server.Url}/OData.svc/content(79)/PropertyName?" +
+                           $"metadata=minimal&$expand=Field1,Field2&$select=Id,Name,Field1,Field2&version=V16.78D";
 
             var req = new ODataRequest
             {
@@ -184,10 +290,10 @@ namespace SenseNet.Client.Tests
         [TestMethod]
         public void QueryString_BuildFromProperties_PropertySet3()
         {
-            var expected = $"{ClientContext.Current.Server.Url}/OData.svc/Root?$top=7&$skip=78&" +
-                           $"$select=Id,Name&metadata=no&$inlinecount=allpages&$filter=isof('Folder')" +
-                           $"&enableautofilters=false&enablelifespanfilter=false&scenario=Scenario1&" +
-                           $"$orderby=Field1 desc,Field2,Field3 asc";
+            var expected = $"{ClientContext.Current.Server.Url}/OData.svc/Root?" +
+                           $"metadata=no&$top=7&$skip=78&$select=Id,Name&$filter=isof('Folder')&" +
+                           $"$orderby=Field1 desc,Field2,Field3 asc&$inlinecount=allpages&" +
+                           $"enableautofilters=false&enablelifespanfilter=false&scenario=Scenario1";
 
             var req = new ODataRequest
             {
@@ -214,9 +320,9 @@ namespace SenseNet.Client.Tests
         [TestMethod]
         public void QueryString_BuildFromProperties_PropertySet4()
         {
-            var expected = $"{ClientContext.Current.Server.Url}/OData.svc/Root/$count?metadata=no&" +
-                           $"$inlinecount=allpages&$filter=isof('Folder')&enableautofilters=false&" +
-                           $"enablelifespanfilter=false&scenario=Scenario1";
+            var expected = $"{ClientContext.Current.Server.Url}/OData.svc/Root/$count?" +
+                           $"metadata=no&$filter=isof('Folder')&$inlinecount=allpages&" +
+                           $"enableautofilters=false&enablelifespanfilter=false&scenario=Scenario1";
 
             var req = new ODataRequest
             {

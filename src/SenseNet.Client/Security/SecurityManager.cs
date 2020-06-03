@@ -46,14 +46,10 @@ namespace SenseNet.Client.Security
             var requestData = new ODataRequest(server)
             {
                 ContentId = contentId,
-                ActionName = "HasPermission"
+                ActionName = "HasPermission",
+                Permissions = permissions,
+                User = user
             };
-
-            foreach (var permission in permissions)
-                requestData.Parameters.Add("permissions", permission);
-
-            if (!string.IsNullOrEmpty(user))
-                requestData.Parameters.Add("user", user);
 
             var result = await RESTCaller.GetResponseStringAsync(requestData.GetUri(), server).ConfigureAwait(false);
 

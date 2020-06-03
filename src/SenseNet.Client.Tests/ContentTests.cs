@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json.Linq;
+using SenseNet.Client.Security;
 
 namespace SenseNet.Client.Tests
 {
@@ -177,6 +178,18 @@ namespace SenseNet.Client.Tests
             // ASSERT
             foreach (var path in paths)
                 Assert.IsNull(await Content.LoadAsync(path).ConfigureAwait(false));
+        }
+        [TestMethod]
+        public async Task Content_HasPermission()
+        {
+            var content = await Content.LoadAsync(2).ConfigureAwait(false);
+
+            // ACTION
+            var result = await content.HasPermissionAsync(new []{Permission.Open, Permission.Approve},
+                Constants.User.AdminPath).ConfigureAwait(false);
+
+            // ASSERT
+            Assert.IsTrue(result);
         }
     }
 }

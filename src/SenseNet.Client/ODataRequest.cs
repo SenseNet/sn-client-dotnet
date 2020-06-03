@@ -71,7 +71,7 @@ namespace SenseNet.Client
         public static bool Remove(this List<KeyValuePair<string, string>> list, string name)
         {
             var items = list.Where(x => x.Key == name).ToArray();
-            foreach(var item in items)
+            foreach (var item in items)
                 list.Remove(item);
             return items.Length > 0;
         }
@@ -84,8 +84,120 @@ namespace SenseNet.Client
     public class ODataRequest
     {
         private static readonly string SERVICE_NAME = "OData.svc";
-        private static readonly string PARAM_METADATA = "metadata";
-        private static readonly string PARAM_COUNT = "$count";
+
+        private static class P
+        {
+            public static readonly string Top = "$top";
+            public static readonly string Skip = "$skip";
+            public static readonly string Expand = "$expand";
+            public static readonly string Select = "$select";
+            public static readonly string Filter = "$filter";
+            public static readonly string OrderBy = "$orderby";
+            public static readonly string InlineCount = "$inlinecount";
+            public static readonly string Format = "$format";
+
+            public static readonly string CountOnly = "$count";
+
+            public static readonly string Metadata = "metadata";
+            public static readonly string AutoFilters = "enableautofilters";
+            public static readonly string LifespanFilter = "enablelifespanfilter";
+            public static readonly string Version = "version";
+            public static readonly string Scenario = "scenario";
+
+            public static readonly string ContentQuery = "query";
+            public static readonly string Permissions = "permissions";
+            public static readonly string User = "user";
+        }
+
+        private bool AddWellKnownItem(KeyValuePair<string, string> item)
+        {
+            if (item.Key == P.Top) { Top = int.Parse(item.Value); return true; }
+            if (item.Key == P.Skip) { Skip = int.Parse(item.Value); return true; }
+            if (item.Key == P.Expand) { Expand = item.Value.Split(',').Select(x => x.Trim()).ToArray(); return true; }
+            if (item.Key == P.Select) { Select = item.Value.Split(',').Select(x => x.Trim()).ToArray(); return true; }
+            if (item.Key == P.Filter) { ChildrenFilter = item.Value; return true; }
+            if (item.Key == P.OrderBy) { OrderBy = item.Value.Split(',').Select(x => x.Trim()).ToArray(); return true; }
+            if (item.Key == P.InlineCount) { InlineCount = (InlineCountOptions)Enum.Parse(typeof(InlineCountOptions), item.Value, true); return true; }
+            if (item.Key == P.CountOnly) { CountOnly = item.Value.ToLower() == "true"; return true; }
+            if (item.Key == P.Version) { Version = item.Value; return true; }
+            if (item.Key == P.Scenario) { Scenario = item.Value; return true; }
+            if (item.Key == P.ContentQuery) { ContentQuery = item.Value; return true; }
+            if (item.Key == P.Permissions) { Permissions = item.Value.Split(',').Select(x => x.Trim()).ToArray(); return true; }
+            if (item.Key == P.User) { User = item.Value; return true; }
+            if (item.Key == P.AutoFilters)
+            {
+                var value = item.Value;
+                if (value.ToLowerInvariant() == "true")
+                    value = "enabled";
+                if (value.ToLowerInvariant() == "false")
+                    value = "disabled";
+                AutoFilters = (FilterStatus)Enum.Parse(typeof(FilterStatus), value, true); return true;
+            }
+            if (item.Key == P.LifespanFilter)
+            {
+                var value = item.Value;
+                if (value.ToLowerInvariant() == "true")
+                    value = "enabled";
+                if (value.ToLowerInvariant() == "false")
+                    value = "disabled";
+                LifespanFilter = (FilterStatus)Enum.Parse(typeof(FilterStatus), value, true); return true;
+            }
+            if (item.Key == P.Metadata)
+            {
+                var value = item.Value;
+                if (value.ToLowerInvariant() == "no")
+                    value = "none";
+                Metadata = (MetadataFormat)Enum.Parse(typeof(MetadataFormat), value, true); return true;
+            }
+            //TODO: Implement and use "Format" property if needed.
+            //if (item.Key == P.Format) { Format = ?; return true; }
+
+            return false;
+        }
+        private bool RemoveWellKnownItem(KeyValuePair<string, string> item)
+        {
+            if (item.Key == P.Top) { Top = default; return true; }
+            if (item.Key == P.Skip) { Skip = default; return true; }
+            if (item.Key == P.Expand) { Expand = default; return true; }
+            if (item.Key == P.Select) { Select = default; return true; }
+            if (item.Key == P.Filter) { ChildrenFilter = default; return true; }
+            if (item.Key == P.OrderBy) { OrderBy = default; return true; }
+            if (item.Key == P.InlineCount) { InlineCount = default; return true; }
+            if (item.Key == P.CountOnly) { CountOnly = default; return true; }
+            if (item.Key == P.Metadata) { Metadata = default; return true; }
+            if (item.Key == P.AutoFilters) { AutoFilters = default; return true; }
+            if (item.Key == P.LifespanFilter) { LifespanFilter = default; return true; }
+            if (item.Key == P.Version) { Version = default; return true; }
+            if (item.Key == P.Scenario) { Scenario = default; return true; }
+            if (item.Key == P.ContentQuery) { ContentQuery = default; return true; }
+            if (item.Key == P.Permissions) { Permissions = default; return true; }
+            if (item.Key == P.User) { User = default; return true; }
+            //TODO: Implement and use "Format" property if needed.
+            //if (item.Key == P.Format) { Format = default; return true; }
+
+            return false;
+        }
+        private readonly Dictionary<string, string> _builtinParameters = new Dictionary<string, string>
+        {
+            { P.Top, nameof(Top) },
+            { P.Skip, nameof(Skip) },
+            { P.Expand, nameof(Expand) },
+            { P.Select, nameof(Select) },
+            { P.Filter, nameof(ChildrenFilter) },
+            { P.OrderBy, nameof(OrderBy) },
+            { P.InlineCount, nameof(InlineCount) },
+            //TODO: Implement and use "Format" property if needed.
+            //{ P.Format, nameof(Format) },
+            { P.CountOnly, nameof(CountOnly) },
+            { P.Metadata, nameof(Metadata) },
+            { P.AutoFilters, nameof(AutoFilters) },
+            { P.LifespanFilter, nameof(LifespanFilter) },
+            { P.Version, nameof(Version) },
+            { P.Scenario, nameof(Scenario) },
+            { P.ContentQuery, nameof(ContentQuery) },
+            { P.Permissions, nameof(Permissions) },
+            { P.User, nameof(User) },
+        };
 
         //============================================================================= Properties
 
@@ -147,9 +259,22 @@ namespace SenseNet.Client
         public MetadataFormat Metadata { get; set; }
 
         /// <summary>
+        /// Gets or sets a Content Query.
+        /// </summary>
+        public string ContentQuery { get; set; }
+        /// <summary>
+        /// Gets or sets a set of permission names.
+        /// </summary>
+        public string[] Permissions { get; set; }
+        /// <summary>
+        /// Gets or sets the path of a User
+        /// </summary>
+        public string User { get; set; }
+
+        /// <summary>
         /// Gets a container for any custom URL parameters.
         /// </summary>
-        public List<KeyValuePair<string, string>> Parameters { get; }
+        public ODataRequestParameterCollection Parameters { get; }
 
         /// <summary>
         /// Gets or sets the total count request if the resource is a collection.
@@ -191,18 +316,12 @@ namespace SenseNet.Client
         public ODataRequest(ServerContext server)
         {
             // set default values
-            Parameters = new List<KeyValuePair<string, string>>();
+            Parameters = new ODataRequestParameterCollection(AddWellKnownItem, RemoveWellKnownItem);
             Metadata = MetadataFormat.None;
             SiteUrl = ServerContext.GetUrl(server);
 
             if (string.IsNullOrEmpty(SiteUrl))
                 throw new InvalidOperationException("SiteUrl is missing. Please configure or provide a server context.");
-
-            //InlineCount = InlineCount.None;
-            //Sort = new SortInfo[0];
-            //Select = new List<string>();
-            //Expand = new List<string>();
-            //AutofiltersEnabled = FilterStatus.Disabled;
         }
 
         /// <summary>
@@ -213,8 +332,6 @@ namespace SenseNet.Client
             // validation
             if (ContentId == 0 && string.IsNullOrEmpty(Path))
                 throw new InvalidOperationException("Invalid request properties: either content id or path must be provided.");
-            //if (ContentId > 0 && !string.IsNullOrEmpty(Path))
-            //    throw new InvalidOperationException("Invalid request properties: both content id and path are provided.");
             if (string.IsNullOrEmpty(Path) && IsCollectionRequest)
                 throw new InvalidOperationException("Invalid request properties: cannot create a collection request without a path.");
             if (!string.IsNullOrEmpty(ActionName) && !string.IsNullOrEmpty(PropertyName))
@@ -225,7 +342,7 @@ namespace SenseNet.Client
 
             // add property or action (if count is provided, actionname or property does not make sense)
             if (CountOnly)
-                url += "/" + PARAM_COUNT;
+                url += "/" + P.CountOnly;
             else if (!string.IsNullOrEmpty(ActionName))
                 url += "/" + ActionName;
             else if (!string.IsNullOrEmpty(PropertyName))
@@ -234,60 +351,50 @@ namespace SenseNet.Client
             // collect additional parameters
             var urlParams = new List<KeyValuePair<string, string>>();
 
-            // version
-            if (!string.IsNullOrEmpty(Version))
-                urlParams.Add("version", Version);
-
-            // top
-            if (Top > 0)
-                urlParams.Add("$top", Top.ToString());
-            // skip
-            if (Skip > 0)
-                urlParams.Add("$skip", Skip.ToString());
-
-            // select
-            if (Select != null)
-                urlParams.Add("$select", string.Join(",", Select));
-            // expand
-            if (Expand != null)
-                urlParams.Add("$expand", string.Join(",", Expand));
-
-            // copy custom parameters
-            foreach (var item in Parameters)
-            {
-                urlParams.Add(item);
-            }
-
             // always omit metadata if not requested explicitly
             switch (Metadata)
             {
                 case MetadataFormat.Minimal: 
-                    urlParams.Add(PARAM_METADATA, "minimal");
+                    AddParam(urlParams, P.Metadata, "minimal");
                     break;
                 case MetadataFormat.Full: 
                     // do not provide the parameter, full is the default on the server
                     break;
                 default:
-                    urlParams.Add(PARAM_METADATA, "no");
+                    AddParam(urlParams, P.Metadata, "no");
                     break;
             }
 
-            // inlinecount
-            if (InlineCount == InlineCountOptions.AllPages)
-                urlParams.Add("$inlinecount", "allpages");
-
+            // top
+            if (Top > 0)
+                AddParam(urlParams, P.Top, Top.ToString());
+            // skip
+            if (Skip > 0)
+                AddParam(urlParams, P.Skip, Skip.ToString());
+            // expand
+            if (Expand != null)
+                AddParam(urlParams, P.Expand, string.Join(",", Expand));
+            // select
+            if (Select != null)
+                AddParam(urlParams, P.Select, string.Join(",", Select));
             // filter
             if (!string.IsNullOrEmpty(ChildrenFilter))
-                urlParams.Add("$filter", ChildrenFilter);
+                AddParam(urlParams, P.Filter, ChildrenFilter);
+            // orderby
+            if (OrderBy != null && OrderBy.Length > 0)
+                AddParam(urlParams, P.OrderBy, string.Join(",", OrderBy.Select(x=>x.Trim())));
+            // inlinecount
+            if (InlineCount == InlineCountOptions.AllPages)
+                AddParam(urlParams, P.InlineCount, "allpages");
 
             // autofilters
             switch (AutoFilters)
             {
                 case FilterStatus.Enabled:
-                    urlParams.Add("enableautofilters", "true");
+                    AddParam(urlParams, P.AutoFilters, "true");
                     break;
                 case FilterStatus.Disabled:
-                    urlParams.Add("enableautofilters", "false");
+                    AddParam(urlParams, P.AutoFilters, "false");
                     break;
             }
 
@@ -295,26 +402,40 @@ namespace SenseNet.Client
             switch (LifespanFilter)
             {
                 case FilterStatus.Enabled:
-                    urlParams.Add("enablelifespanfilter", "true");
+                    AddParam(urlParams, P.LifespanFilter, "true");
                     break;
                 case FilterStatus.Disabled:
-                    urlParams.Add("enablelifespanfilter", "false");
+                    AddParam(urlParams, P.LifespanFilter, "false");
                     break;
             }
 
+            // version
+            if (!string.IsNullOrEmpty(Version))
+                AddParam(urlParams, P.Version, Version);
             // scenario
             if (!string.IsNullOrEmpty(Scenario))
-                urlParams.Add("scenario", Scenario);
+                AddParam(urlParams, P.Scenario, Scenario);
+            // query
+            if (!string.IsNullOrEmpty(ContentQuery))
+                AddParam(urlParams, P.ContentQuery, Uri.EscapeDataString(ContentQuery));
+            // permissions
+            if (Permissions != null && Permissions.Length > 0)
+                AddParam(urlParams, P.Permissions, string.Join(",", Permissions));
+            // user
+            if (!string.IsNullOrEmpty(User))
+                AddParam(urlParams, P.User, User);
 
-            // orderby
-            if (OrderBy != null && OrderBy.Length > 0)
-            {
-                urlParams.Add("$orderby", string.Join(",", OrderBy.Select(x=>x.Trim())));
-            }
+            // copy custom parameters
+            foreach (var item in Parameters)
+                urlParams.Add(item);
 
             if (urlParams.Count == 0)
                 return url;
             return url + "?" + string.Join("&", urlParams.Select(dkv => $"{dkv.Key}={dkv.Value}"));
+        }
+        private void AddParam(List<KeyValuePair<string, string>> list, string name, string value)
+        {
+            list.Add(new KeyValuePair<string, string>(name, value));
         }
 
         //============================================================================= Instance API

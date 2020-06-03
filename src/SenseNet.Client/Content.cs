@@ -326,11 +326,9 @@ namespace SenseNet.Client
             {
                 Path = path,
                 IsCollectionRequest = true,
+                ContentQuery = query,
                 CountOnly = true
             };
-
-            if (!string.IsNullOrEmpty(query))
-                request.Parameters.Add("query", query);
 
             return await RESTCaller.GetCountAsync(request, server).ConfigureAwait(false);
         }
@@ -368,23 +366,19 @@ namespace SenseNet.Client
             if (settings == null)
                 settings = QuerySettings.Default;
 
-            var oreq = new ODataRequest(server)
+            var oDataRequest = new ODataRequest(server)
             {
                 Path = "/Root",
                 Select = select,
                 Expand = expand,
                 Top = settings.Top,
-                Skip = settings.Skip
+                Skip = settings.Skip,
+                AutoFilters = settings.EnableAutofilters,
+                LifespanFilter = settings.EnableLifespanFilter,
+                ContentQuery = queryText
             };
 
-            oreq.Parameters.Add("query", Uri.EscapeDataString(queryText));
-
-            if (settings.EnableAutofilters != FilterStatus.Default)
-                oreq.Parameters.Add("enableautofilters", settings.EnableAutofilters.ToString().ToLower());
-            if (settings.EnableLifespanFilter != FilterStatus.Default)
-                oreq.Parameters.Add("enablelifespanfilter", settings.EnableLifespanFilter.ToString().ToLower());
-
-            return await Content.LoadCollectionAsync(oreq, server).ConfigureAwait(false);
+            return await Content.LoadCollectionAsync(oDataRequest, server).ConfigureAwait(false);
         }
 
         /// <summary>
