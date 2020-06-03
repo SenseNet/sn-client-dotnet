@@ -91,7 +91,6 @@ namespace SenseNet.Client.Tests
 
             int id = admin.Id;
             string path = admin.Path;
-            DateTime cd = admin.CreationDate;
 
             Assert.AreEqual(Constants.User.AdminId, id);
             Assert.AreEqual(Constants.User.AdminPath, path);
