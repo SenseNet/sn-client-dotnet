@@ -1,6 +1,6 @@
 ﻿namespace SenseNet.Client.Authentication
 {
-    internal class AuthorityInfo
+    public class AuthorityInfo
     {
         public static AuthorityInfo Empty = new AuthorityInfo();
 
