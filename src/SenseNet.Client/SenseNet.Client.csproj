@@ -17,6 +17,7 @@
     <PackageIconUrl>https://raw.githubusercontent.com/SenseNet/sn-resources/master/images/sn-icon/sensenet-icon-64.png</PackageIconUrl>
     <Authors>kavics,aniko,lajos,tusmester</Authors>
     <Copyright>Copyright © Sense/Net Inc.</Copyright>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -24,7 +25,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="IdentityModel" Version="4.1.1" />
     <PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="3.1.6" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.6" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
     <PackageReference Include="SenseNet.Tools" Version="3.2.2" />
   </ItemGroup>
