@@ -269,6 +269,32 @@ namespace SenseNet.Client
         }
 
         /// <summary>
+        /// Loads a single referenced content from a reference field.
+        /// </summary>
+        /// <param name="id">Content id.</param>
+        /// <param name="fieldName">Reference field name.</param>
+        /// <param name="select">Field names of the referenced content to select.</param>
+        /// <param name="server">Target server.</param>
+        public static async Task<Content> LoadReferenceAsync(int id, string fieldName,
+            string[] select = null, ServerContext server = null)
+        {
+            return (await LoadReferencesAsync(id, fieldName, select, server)
+                .ConfigureAwait(false)).FirstOrDefault();
+        }
+        /// <summary>
+        /// Loads a single referenced content from a reference field.
+        /// </summary>
+        /// <param name="path">Content path.</param>
+        /// <param name="fieldName">Reference field name.</param>
+        /// <param name="select">Field names of the referenced content to select.</param>
+        /// <param name="server">Target server.</param>
+        public static async Task<Content> LoadReferenceAsync(string path, string fieldName,
+            string[] select = null, ServerContext server = null)
+        {
+            return (await LoadReferencesAsync(path, fieldName, select, server)
+                .ConfigureAwait(false)).FirstOrDefault();
+        }
+        /// <summary>
         /// Loads referenced content from a reference field.
         /// </summary>
         /// <param name="id">Content id.</param>
@@ -306,11 +332,13 @@ namespace SenseNet.Client
             };
 
             dynamic content = await Content.LoadAsync(oreq, server).ConfigureAwait(false);
+            var refValue = content[fieldName];
 
-            // we assume that this is an array of content json objects
-            var items = (JArray)content[fieldName];
+            // we assume that this is either an array of content json objects or a single object
+            if (refValue is JArray refArray)
+                return refArray.Select(c => CreateFromResponse(c, server));
 
-            return items.Select(c => CreateFromResponse(c, server));
+            return new List<Content>{ CreateFromResponse(refValue, server) };
         }
 
         /// <summary>

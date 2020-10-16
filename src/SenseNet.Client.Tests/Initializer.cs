@@ -18,9 +18,7 @@ namespace SenseNet.Client.Tests
             {
                 new ServerContext
                 {
-                    Url = "https://localhost:5001",
-                    Username = "builtin\\admin",
-                    Password = "admin"
+                    Url = "https://localhost:44362"
                 }
             });
 
