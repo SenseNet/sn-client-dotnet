@@ -1,6 +1,5 @@
 # sensenet Client library for .Net
 
-[![Join the chat at https://gitter.im/SenseNet/sn-client-dotnet](https://badges.gitter.im/SenseNet/sn-client-dotnet.svg)](https://gitter.im/SenseNet/sn-client-dotnet?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![NuGet](https://img.shields.io/nuget/v/SenseNet.Client.svg)](https://www.nuget.org/packages/SenseNet.Client)
 
 This component lets you work with the [sensenet](https://github.com/SenseNet/sensenet) Content Repository (create or manage content, execute queries, etc.) by providing a **C# client API** for the main content operations.
@@ -22,6 +21,10 @@ await Content.UploadAsync(parentId, fileName, stream);
 var results = await Content.QueryAsync(queryText);
 ````
 
-See the details and more examples [here](http://wiki.sensenet.com/Client_library).
-
 *This article can also be read in [Brazilian Portuguese](README-pt-BR.md).*
+
+# sensenet as a service (SNaaS) - use sensenet from the cloud
+
+For a monthly subscription fee, we store all your content and data, relieving you of all maintenance-related tasks and installation, ensuring easy onboarding, easy updates, and patches.
+
+https://www.sensenet.com/pricing
