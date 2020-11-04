@@ -4,7 +4,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>SenseNet.Client</RootNamespace>
     <PackageId>SenseNet.Client</PackageId>
-    <Version>2.0.8</Version>
+    <Version>2.0.8.1</Version>
     <Company>Sense/Net Inc.</Company>
     <Description>A .Net client for sensenet that makes it easy to use the REST API of the Content Repository.</Description>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -30,7 +30,7 @@
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="3.1.7" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.7" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
-    <PackageReference Include="SenseNet.Tools" Version="3.2.5" />
+    <PackageReference Include="SenseNet.Tools" Version="3.2.6" />
   </ItemGroup>
 
 </Project>
