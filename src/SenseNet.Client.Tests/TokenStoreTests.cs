@@ -42,8 +42,10 @@ namespace SenseNet.Client.Tests
 
             var token = await ts.GetTokenAsync(server, "secret");
             var token2 = await ts.GetTokenAsync(server, "secret");
+            var token3 = await ts.GetTokenAsync(server, "client", "secret");
 
             Assert.AreEqual(token, token2);
+            Assert.AreEqual(token2, token3);
         }
     }
 }
