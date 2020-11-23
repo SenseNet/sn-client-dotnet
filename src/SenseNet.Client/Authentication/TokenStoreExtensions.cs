@@ -9,7 +9,7 @@ namespace SenseNet.Extensions.DependencyInjection
         public static IServiceCollection AddSenseNetClientTokenStore(this IServiceCollection services)
         {
             services.AddSingleton<ITokenProvider, IdentityServerTokenProvider>();
-            services.AddSingleton<TokenStore>();
+            services.AddSingleton<ITokenStore, TokenStore>();
 
             return services;
         }

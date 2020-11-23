@@ -1,16 +1,32 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using IdentityModel.Client;
 using Microsoft.Extensions.Logging;
 
 namespace SenseNet.Client.Authentication
 {
+    /// <summary>
+    /// Defines methods for getting the authority and token for a repository.
+    /// </summary>
     public interface ITokenProvider
     {
-        Task<TokenInfo> GetTokenFromAuthorityAsync(AuthorityInfo authorityInfo, string secret);
-        Task<AuthorityInfo> GetAuthorityInfoAsync(ServerContext server);
+        /// <summary>
+        /// Gets tokens from an authority using the specified secret.
+        /// </summary>
+        /// <param name="authorityInfo">The authority to send the token request to.</param>
+        /// <param name="secret">A secret corresponding to the client id in the authority info.</param>
+        /// <param name="cancel">The token to monitor for cancellation requests.</param>
+        /// <returns>Tokens for accessing the repository. Currently only the access token is available.</returns>
+        Task<TokenInfo> GetTokenFromAuthorityAsync(AuthorityInfo authorityInfo, 
+            string secret, CancellationToken cancel = default);
+        /// <summary>
+        /// Gets the publicly available authority information for a repository.
+        /// </summary>
+        /// <param name="server">A server object containing the repository url.</param>
+        /// <param name="cancel">The token to monitor for cancellation requests.</param>
+        /// <returns>The authority related to the repository.</returns>
+        Task<AuthorityInfo> GetAuthorityInfoAsync(ServerContext server, CancellationToken cancel = default);
     }
 
     internal class IdentityServerTokenProvider : ITokenProvider
@@ -22,16 +38,19 @@ namespace SenseNet.Client.Authentication
             _logger = logger;
         }
 
-        public async Task<TokenInfo> GetTokenFromAuthorityAsync(AuthorityInfo authorityInfo, string secret)
+        public async Task<TokenInfo> GetTokenFromAuthorityAsync(AuthorityInfo authorityInfo, string secret,
+            CancellationToken cancel = default)
         {
             using var client = new System.Net.Http.HttpClient();
-            var disco = await client.GetDiscoveryDocumentAsync(authorityInfo.Authority).ConfigureAwait(false);
+            var disco = await client.GetDiscoveryDocumentAsync(authorityInfo.Authority, cancel)
+                .ConfigureAwait(false);
+
             if (disco.IsError)
             {
                 _logger?.LogError($"Error during discovery document request to authority {authorityInfo.Authority}.");
                 return null;
             }
-
+            
             //TODO: Request REFRESH token too and use that to renew the access token after expiration.
             // Currently the token response does not contain the refresh token, it needs to be requested.
 
@@ -43,7 +62,7 @@ namespace SenseNet.Client.Authentication
                 ClientId = authorityInfo.ClientId,
                 ClientSecret = secret,
                 Scope = "sensenet"
-            });
+            }, cancel);
 
             if (tokenResponse.IsError)
             {
@@ -53,7 +72,7 @@ namespace SenseNet.Client.Authentication
 
             return tokenResponse.ToTokenInfo();
         }
-        public async Task<AuthorityInfo> GetAuthorityInfoAsync(ServerContext server)
+        public async Task<AuthorityInfo> GetAuthorityInfoAsync(ServerContext server, CancellationToken cancel = default)
         {
             var req = new ODataRequest(server)
             {
@@ -64,6 +83,10 @@ namespace SenseNet.Client.Authentication
             // The client type is hardcoded because the real client id
             // is provided by the repository using the request below.
             req.Parameters.Add("clientType", "client");
+
+            //TODO: remove this assertion when the GetResponse method below
+            // is able to receive a cancellation token.
+            cancel.ThrowIfCancellationRequested();
 
             try
             {
@@ -81,7 +104,7 @@ namespace SenseNet.Client.Authentication
                 _logger?.LogError($"Could not access repository {server.Url} for getting the authority url. {ex.Message}");
             }
 
-            return AuthorityInfo.Empty;
+            return new AuthorityInfo();
         }
     }
 }
