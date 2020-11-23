@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -10,7 +11,7 @@ namespace SenseNet.Client.Tests
 {
     internal class TestTokenProvider : ITokenProvider
     {
-        public Task<AuthorityInfo> GetAuthorityInfoAsync(ServerContext server)
+        public Task<AuthorityInfo> GetAuthorityInfoAsync(ServerContext server, CancellationToken cancel = default)
         {
             return Task.FromResult(new AuthorityInfo
             {
@@ -19,7 +20,7 @@ namespace SenseNet.Client.Tests
             });
         }
 
-        public Task<TokenInfo> GetTokenFromAuthorityAsync(AuthorityInfo authorityInfo, string secret)
+        public Task<TokenInfo> GetTokenFromAuthorityAsync(AuthorityInfo authorityInfo, string secret, CancellationToken cancel = default)
         {
             return Task.FromResult(new TokenInfo
             {
@@ -40,12 +41,10 @@ namespace SenseNet.Client.Tests
                 Url = "https://localhost:44362"
             };
 
-            var token = await ts.GetTokenAsync(server, "secret");
-            var token2 = await ts.GetTokenAsync(server, "secret");
-            var token3 = await ts.GetTokenAsync(server, "client", "secret");
+            var token1 = await ts.GetTokenAsync(server, "client", "secret");
+            var token2 = await ts.GetTokenAsync(server, "client", "secret");
 
-            Assert.AreEqual(token, token2);
-            Assert.AreEqual(token2, token3);
+            Assert.AreEqual(token1, token2);
         }
     }
 }
