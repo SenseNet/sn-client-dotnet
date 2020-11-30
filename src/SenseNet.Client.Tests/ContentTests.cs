@@ -191,5 +191,16 @@ namespace SenseNet.Client.Tests
             // ASSERT
             Assert.IsTrue(result);
         }
+
+        [TestMethod]
+        public async Task Content_Field_UrlParameters()
+        {
+            var folder = Content.CreateNew("/Root", "SystemFolder", Guid.NewGuid().ToString());
+            await folder.SaveAsync().ConfigureAwait(false);
+
+            var content = Content.CreateNew(folder.Path, "Link", Guid.NewGuid().ToString());
+            content["Url"] = "https://example.com?a=b&c=d";
+            await content.SaveAsync();
+        }
     }
 }
