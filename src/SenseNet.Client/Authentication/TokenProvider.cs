@@ -66,7 +66,9 @@ namespace SenseNet.Client.Authentication
 
             if (tokenResponse.IsError)
             {
-                _logger?.LogError($"Error during requesting client credentials from authority {authorityInfo.Authority}.");
+                _logger?.LogError(tokenResponse.Exception, "Error during requesting client credentials " +
+                                                           $"from authority {authorityInfo.Authority}." +
+                                                           $"ClientId: {authorityInfo.ClientId}");
                 return null;
             }
 
@@ -101,7 +103,7 @@ namespace SenseNet.Client.Authentication
             }
             catch (Exception ex)
             {
-                _logger?.LogError($"Could not access repository {server.Url} for getting the authority url. {ex.Message}");
+                _logger?.LogError(ex, $"Could not access repository {server.Url} for getting the authority url.");
             }
 
             return new AuthorityInfo();
