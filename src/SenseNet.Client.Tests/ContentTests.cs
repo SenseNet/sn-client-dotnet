@@ -198,9 +198,14 @@ namespace SenseNet.Client.Tests
             var folder = Content.CreateNew("/Root", "SystemFolder", Guid.NewGuid().ToString());
             await folder.SaveAsync().ConfigureAwait(false);
 
+            const string url = "https://example.com?a=b&c=d";
             var content = Content.CreateNew(folder.Path, "Link", Guid.NewGuid().ToString());
-            content["Url"] = "https://example.com?a=b&c=d";
+            content["Url"] = url;
             await content.SaveAsync();
+
+            dynamic reloaded = await Content.LoadAsync(content.Id);
+
+            Assert.AreEqual(url, (string)reloaded.Url);
         }
     }
 }
