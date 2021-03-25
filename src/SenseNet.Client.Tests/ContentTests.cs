@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -219,26 +218,26 @@ namespace SenseNet.Client.Tests
                 Select = new[] {"Id", "Name", "Path", "AllRoles" }
             });
 
-            Assert.AreEqual(4, userPartial.ResponseFieldNames.Length);
-            Assert.IsTrue(userPartial.ResponseFieldNames.Contains("AllRoles"));
-            Assert.IsFalse(userPartial.ResponseFieldNames.Contains("Password"));
+            Assert.AreEqual(4, userPartial.FieldNames.Length);
+            Assert.IsTrue(userPartial.FieldNames.Contains("AllRoles"));
+            Assert.IsFalse(userPartial.FieldNames.Contains("Password"));
 
             // load all fields
             var user = await Content.LoadAsync("/Root/IMS/BuiltIn/Portal/Admin");
 
-            Assert.IsTrue(user.ResponseFieldNames.Length > 80);
-            Assert.IsTrue(user.ResponseFieldNames.Contains("AllRoles"));
-            Assert.IsTrue(user.ResponseFieldNames.Contains("Password"));
+            Assert.IsTrue(user.FieldNames.Length > 80);
+            Assert.IsTrue(user.FieldNames.Contains("AllRoles"));
+            Assert.IsTrue(user.FieldNames.Contains("Password"));
 
             // create new content
             var newContent = Content.CreateNew("/Root/System", "SystemFolder", Guid.NewGuid().ToString());
 
-            Assert.AreEqual(0, newContent.ResponseFieldNames.Length);
+            Assert.AreEqual(0, newContent.FieldNames.Length);
 
             // save it: field name list should be updated with all fields
             await newContent.SaveAsync();
 
-            Assert.IsTrue(newContent.ResponseFieldNames.Length > 60);
+            Assert.IsTrue(newContent.FieldNames.Length > 60);
         }
     }
 }

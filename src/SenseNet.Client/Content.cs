@@ -56,7 +56,7 @@ namespace SenseNet.Client
         /// </summary>
         public string Name { get; set; }
 
-        public string[] ResponseFieldNames { get; private set; } = Array.Empty<string>();
+        public string[] FieldNames { get; private set; } = Array.Empty<string>();
 
         //============================================================================= Technical properties
 
@@ -107,7 +107,7 @@ namespace SenseNet.Client
                 if (jo.Properties().Any(p => p.Name == "Name"))
                     Name = _responseContent.Name;
 
-                ResponseFieldNames = jo.Properties().Select(p => p.Name).OrderBy(pn => pn).ToArray();
+                FieldNames = jo.Properties().Select(p => p.Name).OrderBy(pn => pn).ToArray();
             }
 
             Existing = true;
