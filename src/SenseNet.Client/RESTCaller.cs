@@ -522,7 +522,7 @@ namespace SenseNet.Client
                 return null;
 
             int contentId = uploadedContent.Id;
-            var content = Content.Create(contentId);
+            var content = Content.Create(contentId, server);
 
             content.Name = uploadedContent.Name;
             content.Path = uploadedContent.Url;

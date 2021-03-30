@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Runtime.CompilerServices;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -206,6 +206,38 @@ namespace SenseNet.Client.Tests
             dynamic reloaded = await Content.LoadAsync(content.Id);
 
             Assert.AreEqual(url, (string)reloaded.Url);
+        }
+
+        [TestMethod]
+        public async Task Content_ResponseFieldNames()
+        {
+            // load a small set of fields
+            var userPartial = await Content.LoadAsync(new ODataRequest
+            {
+                Path = "/Root/IMS/BuiltIn/Portal/Admin",
+                Select = new[] {"Id", "Name", "Path", "AllRoles" }
+            });
+
+            Assert.AreEqual(4, userPartial.FieldNames.Length);
+            Assert.IsTrue(userPartial.FieldNames.Contains("AllRoles"));
+            Assert.IsFalse(userPartial.FieldNames.Contains("Password"));
+
+            // load all fields
+            var user = await Content.LoadAsync("/Root/IMS/BuiltIn/Portal/Admin");
+
+            Assert.IsTrue(user.FieldNames.Length > 80);
+            Assert.IsTrue(user.FieldNames.Contains("AllRoles"));
+            Assert.IsTrue(user.FieldNames.Contains("Password"));
+
+            // create new content
+            var newContent = Content.CreateNew("/Root/System", "SystemFolder", Guid.NewGuid().ToString());
+
+            Assert.AreEqual(0, newContent.FieldNames.Length);
+
+            // save it: field name list should be updated with all fields
+            await newContent.SaveAsync();
+
+            Assert.IsTrue(newContent.FieldNames.Length > 60);
         }
     }
 }

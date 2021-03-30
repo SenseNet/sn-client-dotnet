@@ -56,6 +56,8 @@ namespace SenseNet.Client
         /// </summary>
         public string Name { get; set; }
 
+        public string[] FieldNames { get; private set; } = Array.Empty<string>();
+
         //============================================================================= Technical properties
 
         private bool Existing { get; set; }
@@ -93,17 +95,19 @@ namespace SenseNet.Client
             _responseContent = responseContent;
             _fields = new Dictionary<string, object>();
 
-            var jo = _responseContent as JObject;
-
             // fill local properties from the response object
-            if (jo != null)
+            if (_responseContent is JObject jo)
             {
                 if (jo.Properties().Any(p => p.Name == "Id"))
                     Id = _responseContent.Id;
+                if (jo.Properties().Any(p => p.Name == "ParentId"))
+                    ParentId = _responseContent.ParentId;
                 if (jo.Properties().Any(p => p.Name == "Path"))
                     Path = _responseContent.Path;
                 if (jo.Properties().Any(p => p.Name == "Name"))
                     Name = _responseContent.Name;
+
+                FieldNames = jo.Properties().Select(p => p.Name).OrderBy(pn => pn).ToArray();
             }
 
             Existing = true;
@@ -337,6 +341,9 @@ namespace SenseNet.Client
             // we assume that this is either an array of content json objects or a single object
             if (refValue is JArray refArray)
                 return refArray.Select(c => CreateFromResponse(c, server));
+
+            if (refValue is JValue refJValue && !refJValue.HasValues)
+                return Array.Empty<Content>();
 
             return new List<Content>{ CreateFromResponse(refValue, server) };
         }
