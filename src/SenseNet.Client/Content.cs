@@ -342,6 +342,9 @@ namespace SenseNet.Client
             if (refValue is JArray refArray)
                 return refArray.Select(c => CreateFromResponse(c, server));
 
+            if (refValue is JValue refJValue && !refJValue.HasValues)
+                return Array.Empty<Content>();
+
             return new List<Content>{ CreateFromResponse(refValue, server) };
         }
 
