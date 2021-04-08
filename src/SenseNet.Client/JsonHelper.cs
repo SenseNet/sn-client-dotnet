@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace SenseNet.Client
 {
@@ -46,7 +45,7 @@ namespace SenseNet.Client
         /// <returns>A dynamic JObject deserialized from the JSON string.</returns>
         public static dynamic Deserialize(string json)
         {
-            return JsonConvert.DeserializeObject(json, JsonHelper.JsonSerializerSettings) as JObject;
+            return JsonConvert.DeserializeObject(json, JsonHelper.JsonSerializerSettings);
         }
 
         /// <summary>
