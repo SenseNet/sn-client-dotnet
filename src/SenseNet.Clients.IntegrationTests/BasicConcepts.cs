@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json.Linq;
@@ -570,7 +571,7 @@ namespace SenseNet.Clients.IntegrationTests
             Assert.Inconclusive();
         }
 
-        /* ====================================================================================== Lifespan */
+        /* ====================================================================================== Actions */
 
         [TestMethod]
         [Description("Exploring actions")]
@@ -615,6 +616,48 @@ namespace SenseNet.Clients.IntegrationTests
 
             // ASSERT
             Assert.Inconclusive();
+        }
+
+        /* ====================================================================================== Schema */
+
+        [TestMethod]
+        [Description("Get schema")]
+        public async Task IntT_BasicConcepts_GetSchema()
+        {
+            // ACTION for doc
+            string schema = await RESTCaller.GetResponseStringAsync("/Root", "GetSchema");
+
+            // ASSERT
+            Assert.Inconclusive();
+        }
+        [TestMethod]
+        [Description("Change the schema")]
+        public async Task IntT_BasicConcepts_GetCtd()
+        {
+            /*
+            // WARNING This code cannot run if the #1064 does not exist.
+            // ACTION for doc
+            string ctd = null;
+            await RESTCaller.GetStreamResponseAsync(1064, async message =>
+            {
+                ctd = await message.Content.ReadAsStringAsync();
+            }, CancellationToken.None);
+            */
+
+            // IMPROVED TEST
+            var content = await Content.LoadAsync("/Root/System/Schema/ContentTypes/GenericContent/File").ConfigureAwait(false);
+            var fileId = content.Id;
+
+            // ACTION
+            string ctd = null;
+            await RESTCaller.GetStreamResponseAsync(fileId, async message =>
+            {
+                ctd = await message.Content.ReadAsStringAsync().ConfigureAwait(false);
+            }, CancellationToken.None).ConfigureAwait(false);
+
+            // ASSERT
+            Assert.IsTrue(ctd.StartsWith("<?xml") || ctd.StartsWith("<ContentType"));
+            Assert.IsTrue(ctd.Trim().EndsWith("</ContentType>"));
         }
 
         /*
