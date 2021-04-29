@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SenseNet.Client;
+using SenseNet.Diagnostics;
 
 namespace SenseNet.Clients.IntegrationTests
 {
@@ -24,7 +25,8 @@ namespace SenseNet.Clients.IntegrationTests
             });
 
             EnsureBasicStructureAsync().ConfigureAwait(false).GetAwaiter().GetResult();
-
+            
+            SnTrace.Test.Enabled = true;
         }
         private static async Task EnsureBasicStructureAsync()
         {

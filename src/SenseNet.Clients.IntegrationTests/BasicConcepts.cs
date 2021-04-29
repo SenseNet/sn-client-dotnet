@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json.Linq;
 using SenseNet.Client;
+using SenseNet.Diagnostics;
 
 namespace SenseNet.Clients.IntegrationTests
 {
@@ -100,6 +101,15 @@ namespace SenseNet.Clients.IntegrationTests
         [Description("$inlinecount query option")]
         public async Task IntT_BasicConcepts_ChildrenInlineCount()
         {
+            //UNDONE:- Feature request: should returns a collection with property: TotalCount
+            //var result3 = await Content.LoadCollectionAsync(new ODataRequest
+            //{
+            //    Path = "/Root/IMS/BuiltIn/Portal",
+            //    Top = 3,
+            //    Skip = 4,
+            //    InlineCount = InlineCountOptions.AllPages // Default, AllPages, None
+            //});
+
             // ACTION for doc
             var result = await RESTCaller.GetResponseJsonAsync(new ODataRequest
             {
@@ -119,6 +129,124 @@ namespace SenseNet.Clients.IntegrationTests
             Assert.AreNotEqual(0, inlineCount);
             Assert.AreNotEqual(array.Length, inlineCount);
         }
+        [TestMethod]
+        [Description("Select")]
+        public async Task IntT_BasicConcepts_Select()
+        {
+            // ACTION for doc
+            dynamic content = await RESTCaller.GetContentAsync(new ODataRequest
+            {
+                Path = "/Root/Content/IT",
+                Select = new[] { "DisplayName", "Description" }
+            });
+
+            // ASSERT-1
+            var responseString = await RESTCaller.GetResponseStringAsync(new ODataRequest
+            {
+                Path = "/Root/Content/IT",
+                Select = new[] { "DisplayName", "Description" }
+            });
+            Assert.AreEqual("{\"d\":{\"DisplayName\":\"IT\",\"Description\":null}}", responseString.RemoveWhitespaces());
+
+            // ASSERT-2
+            var responseJson = await RESTCaller.GetResponseJsonAsync(new ODataRequest
+            {
+                Path = "/Root/Content/IT",
+                Select = new[] { "DisplayName", "Description" }
+            });
+            var displayName = responseJson.d.DisplayName.ToString();
+            var description = responseJson.d.Description.ToString();
+            Assert.AreEqual(displayName, content.DisplayName.ToString());
+            Assert.AreEqual(description, content.Description.ToString());
+        }
+        [TestMethod]
+        [Description("Expand")]
+        public async Task IntT_BasicConcepts_Expand_CreatedBy()
+        {
+            // ACTION for doc
+            dynamic content = await RESTCaller.GetContentAsync(new ODataRequest
+            {
+                Path = "/Root/Content/IT",
+                Expand = new[] { "CreatedBy" },
+            });
+            //Console.WriteLine(content.CreatedBy.Name);
+
+            // ASSERT
+            Assert.AreEqual("Admin", content.CreatedBy.Name.ToString());
+        }
+        [TestMethod]
+        [Description("Expand")]
+        public async Task IntT_BasicConcepts_Expand_CreatedByCreatedBy()
+        {
+            // ACTION for doc
+            dynamic content = await RESTCaller.GetContentAsync(new ODataRequest
+            {
+                Path = "/Root/Content/IT",
+                Expand = new[] { "CreatedBy/CreatedBy" },
+            });
+            //Console.WriteLine(content.CreatedBy.CreatedBy.Name);
+
+            // ASSERT
+            Assert.AreEqual("Admin", content.CreatedBy.CreatedBy.Name.ToString());
+        }
+        [TestMethod]
+        [Description("")]
+        public async Task IntT_BasicConcepts_Expand_CreatedByName()
+        {
+            // ACTION for doc
+            dynamic content = await RESTCaller.GetContentAsync(new ODataRequest
+            {
+                Path = "/Root/Content/IT",
+                Expand = new[] { "CreatedBy" },
+                Select = new[] { "Name", "CreatedBy/Name" }
+            });
+            //Console.WriteLine(content.CreatedBy.Name);
+
+            // ASSERT
+            Assert.AreEqual("Admin", content.CreatedBy.Name.ToString());
+        }
+        [TestMethod]
+        [Description("")]
+        public async Task IntT_BasicConcepts_Expand_AllowedChildTypes()
+        {
+            // ACTION for doc
+            dynamic content = await RESTCaller.GetContentAsync(new ODataRequest
+            {
+                Path = "/Root/Content/IT",
+                Expand = new[] { "AllowedChildTypes" }
+            });
+            //Console.WriteLine(content.AllowedChildTypes.Count);
+
+            // ASSERT
+            Assert.AreEqual(0, content.AllowedChildTypes.Count);
+
+            // ACTION-2
+            dynamic content2 = await RESTCaller.GetContentAsync(new ODataRequest
+            {
+                Path = "/Root/Content",
+                Expand = new[] { "AllowedChildTypes" }
+            });
+
+            // ASSERT-2
+            Assert.AreEqual(10, content2.AllowedChildTypes.Count);
+            Assert.AreEqual("Folder", content2.AllowedChildTypes[0].Name.ToString());
+        }
+        [TestMethod]
+        [Description("")]
+        public async Task IntT_BasicConcepts_Expand_Actions()
+        {
+            // ACTION for doc
+            dynamic content = await RESTCaller.GetContentAsync(new ODataRequest
+            {
+                Path = "/Root/Content/IT",
+                Expand = new[] { "Actions" }
+            });
+            //Console.WriteLine(content.Actions.Count);
+
+            // ASSERT
+            Assert.AreEqual(59, content.Actions.Count);
+            Assert.AreEqual("Add", content.Actions[0].Name.ToString());
+        }
         /*
         [TestMethod]
         [Description("")]
@@ -127,6 +255,7 @@ namespace SenseNet.Clients.IntegrationTests
             // ACTION for doc
 
             // ASSERT
+            Assert.Inconclusive();
         }
         */
     }
