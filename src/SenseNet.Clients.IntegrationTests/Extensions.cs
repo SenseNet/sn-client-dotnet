@@ -15,5 +15,10 @@ namespace SenseNet.Clients.IntegrationTests
                 .Replace("\r", "")
                 .Replace("\n", "");
         }
+
+        public static string ToSequenceString(this IEnumerable<object> objects)
+        {
+            return string.Join(", ", objects.Select(x => x.ToString()));
+        }
     }
 }

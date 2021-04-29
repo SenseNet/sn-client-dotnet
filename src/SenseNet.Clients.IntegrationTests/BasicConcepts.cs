@@ -11,6 +11,8 @@ namespace SenseNet.Clients.IntegrationTests
     [TestClass]
     public class BasicConcepts : ClientIntegrationTestBase
     {
+        /* ====================================================================================== Entry */
+
         [TestMethod]
         [Description("Get a single content by Id")]
         public async Task IntT_BasicConcepts_GetSingleContentById()
@@ -61,14 +63,9 @@ namespace SenseNet.Clients.IntegrationTests
             // ASSERT
             Assert.AreEqual("IT", response.RemoveWhitespaces());
         }
-        //[TestMethod]
-        //[Description("Accessing binary stream")]
-        //public async Task IntT_BasicConcepts_GetBinaryStream()
-        //{
-        //    // ACTION for doc
 
-        //    // ASSERT
-        //}
+        /* ====================================================================================== Collection */
+
         [TestMethod]
         [Description("Children of a content (collection)")]
         public async Task IntT_BasicConcepts_GetChildren()
@@ -129,8 +126,11 @@ namespace SenseNet.Clients.IntegrationTests
             Assert.AreNotEqual(0, inlineCount);
             Assert.AreNotEqual(array.Length, inlineCount);
         }
+
+        /* ====================================================================================== Select and expand */
+
         [TestMethod]
-        [Description("Select")]
+        [Description("Select. GetContentAsync GetResponseStringAsync GetResponseJsonAsync")]
         public async Task IntT_BasicConcepts_Select()
         {
             // ACTION for doc
@@ -160,7 +160,7 @@ namespace SenseNet.Clients.IntegrationTests
             Assert.AreEqual(description, content.Description.ToString());
         }
         [TestMethod]
-        [Description("Expand")]
+        [Description("Expand CreatedBy")]
         public async Task IntT_BasicConcepts_Expand_CreatedBy()
         {
             // ACTION for doc
@@ -175,7 +175,7 @@ namespace SenseNet.Clients.IntegrationTests
             Assert.AreEqual("Admin", content.CreatedBy.Name.ToString());
         }
         [TestMethod]
-        [Description("Expand")]
+        [Description("Expand CreatedBy.CreatedBy")]
         public async Task IntT_BasicConcepts_Expand_CreatedByCreatedBy()
         {
             // ACTION for doc
@@ -190,7 +190,7 @@ namespace SenseNet.Clients.IntegrationTests
             Assert.AreEqual("Admin", content.CreatedBy.CreatedBy.Name.ToString());
         }
         [TestMethod]
-        [Description("")]
+        [Description("Expand CreatedBy.Name")]
         public async Task IntT_BasicConcepts_Expand_CreatedByName()
         {
             // ACTION for doc
@@ -206,7 +206,7 @@ namespace SenseNet.Clients.IntegrationTests
             Assert.AreEqual("Admin", content.CreatedBy.Name.ToString());
         }
         [TestMethod]
-        [Description("")]
+        [Description("Expand AllowedChildTypes")]
         public async Task IntT_BasicConcepts_Expand_AllowedChildTypes()
         {
             // ACTION for doc
@@ -232,7 +232,7 @@ namespace SenseNet.Clients.IntegrationTests
             Assert.AreEqual("Folder", content2.AllowedChildTypes[0].Name.ToString());
         }
         [TestMethod]
-        [Description("")]
+        [Description("Expand Actions")]
         public async Task IntT_BasicConcepts_Expand_Actions()
         {
             // ACTION for doc
@@ -247,15 +247,385 @@ namespace SenseNet.Clients.IntegrationTests
             Assert.AreEqual(59, content.Actions.Count);
             Assert.AreEqual("Add", content.Actions[0].Name.ToString());
         }
+
+        /* ====================================================================================== Ordering and Pagination */
+
+        [TestMethod]
+        [Description("")]
+        public async Task IntT_BasicConcepts_OrderBy_DisplayName()
+        {
+            // ACTION for doc
+            var result = await Content.LoadCollectionAsync(new ODataRequest
+            {
+                Path = "/Root/Content/IT/Document_Library",
+                Parameters = { { "$orderby", "DisplayName" } }
+            });
+            //foreach (var content in result)
+            //    Console.WriteLine(content.DisplayName);
+
+            // ASSERT
+            var names = result.Select(x => ((dynamic) x).DisplayName.ToString()).ToArray();
+            Assert.AreEqual("Calgary, Chicago, Munich", names.ToSequenceString());
+        }
+        [TestMethod]
+        [Description("Order by a field in an explicit direction")]
+        public async Task IntT_BasicConcepts_OrderBy_Id_Asc()
+        {
+            // ACTION for doc
+            var result = await Content.LoadCollectionAsync(new ODataRequest
+            {
+                Path = "/Root/Content/IT/Document_Library",
+                Parameters = { { "$orderby", "Id asc" } }
+            });
+            //foreach (var content in result)
+            //    Console.WriteLine(content.Id);
+
+            // ASSERT
+            var ids = result.Select(x => ((dynamic)x).Id.ToString()).ToArray();
+            var names = result.Select(x => ((dynamic)x).DisplayName.ToString()).ToArray();
+            Assert.AreEqual("Chicago, Calgary, Munich", names.ToSequenceString());
+        }
+        [TestMethod]
+        [Description("Order by a field in reverse order")]
+        public async Task IntT_BasicConcepts_OrderBy_CreationDate_Desc()
+        {
+            // ACTION for doc
+            var result = await Content.LoadCollectionAsync(new ODataRequest
+            {
+                Path = "/Root/Content/IT/Document_Library",
+                Parameters = { { "$orderby", "CreationDate desc" } }
+            });
+            //foreach (var content in result)
+            //    Console.WriteLine(content.CreationDate);
+
+            // ASSERT
+            var names = result.Select(x => ((dynamic)x).DisplayName.ToString()).ToArray();
+            Assert.AreEqual("Chicago, Calgary, Munich", names.ToSequenceString());
+        }
+        [TestMethod]
+        [Description("Order by a multiple fields")]
+        public async Task IntT_BasicConcepts_OrderBy_DisplayNameAndName()
+        {
+            // ACTION for doc
+            var result = await Content.LoadCollectionAsync(new ODataRequest
+            {
+                Path = "/Root/Content/IT/Document_Library",
+                OrderBy = new[] { "ModificationDate desc", "DisplayName", "Name" }
+            });
+            //foreach (var content in result)
+            //    Console.WriteLine(content.Name);
+
+            // ASSERT
+            var names = result.Select(x => ((dynamic)x).DisplayName.ToString()).ToArray();
+            Assert.AreEqual("Calgary, Chicago, Munich", names.ToSequenceString());
+        }
+        [TestMethod]
+        [Description("")]
+        public async Task IntT_BasicConcepts_Top()
+        {
+            // ACTION for doc
+            var result = await Content.LoadCollectionAsync(new ODataRequest
+            {
+                Path = "/Root/Content/IT/Document_Library",
+                Top = 5,
+            });
+            //foreach (var content in result)
+            //    Console.WriteLine(content.Name);
+
+            // ASSERT
+            Assert.IsTrue(result.Count() <= 5);
+        }
+        [TestMethod]
+        [Description("")]
+        public async Task IntT_BasicConcepts_Skip()
+        {
+            // ACTION for doc
+            var result = await Content.LoadCollectionAsync(new ODataRequest
+            {
+                Path = "/Root/Content/IT/Document_Library",
+                Skip = 5,
+            });
+            //foreach (var content in result)
+            //    Console.WriteLine(content.Name);
+
+            // ASSERT
+            Assert.Inconclusive();
+        }
+        [TestMethod]
+        [Description("")]
+        public async Task IntT_BasicConcepts_Pagination()
+        {
+            // ACTION for doc
+
+            var result = await Content.LoadCollectionAsync(new ODataRequest
+            {
+                Path = "/Root/Content/IT/Document_Library",
+                Top = 3,
+                Skip = 3
+            });
+            //foreach (var content in result)
+            //    Console.WriteLine(content.Name);
+
+            // ASSERT
+            Assert.Inconclusive();
+        }
+
+        /* ====================================================================================== Search and filtering */
+
+        [TestMethod]
+        [Description("Filtering by Field value")]
+        public async Task IntT_BasicConcepts_Filter_Id()
+        {
+            // ACTION for doc
+            var result = await Content.LoadCollectionAsync(new ODataRequest
+            {
+                Path = "/Root/Content/IT/Document_Library",
+                Parameters = { { "$filter", "Id gt 11" } },
+            });
+            //foreach (var content in result)
+            //    Console.WriteLine(content.Id);
+
+            // ASSERT
+            Assert.Inconclusive();
+        }
+        [TestMethod]
+        [Description("")]
+        public async Task IntT_BasicConcepts_Filter_substringof()
+        {
+            // ACTION for doc
+            var result = await Content.LoadCollectionAsync(new ODataRequest
+            {
+                Path = "/Root/Content/IT/Document_Library",
+                Parameters = { { "$filter", "substringof('Lorem', Description) eq true" } },
+            });
+            //foreach (var content in result)
+            //    Console.WriteLine(content.Description);
+
+            // ASSERT
+            Assert.Inconclusive();
+        }
+        [TestMethod]
+        [Description("")]
+        public async Task IntT_BasicConcepts_Filter_startswith()
+        {
+            // ACTION for doc
+            var result = await Content.LoadCollectionAsync(new ODataRequest
+            {
+                Path = "/Root/Content/IT/Document_Library",
+                Parameters = { { "$filter", "startswith(Name, 'Document') eq true" } },
+            });
+            //foreach (var content in result)
+            //    Console.WriteLine(content.Name);
+
+            // ASSERT
+            Assert.Inconclusive();
+        }
+        [TestMethod]
+        [Description("")]
+        public async Task IntT_BasicConcepts_Filter_endswith()
+        {
+            // ACTION for doc
+            var result = await Content.LoadCollectionAsync(new ODataRequest
+            {
+                Path = "/Root/Content/IT/Document_Library",
+                Parameters = { { "$filter", "endswith(Name, 'Library') eq true" } },
+            });
+            //foreach (var content in result)
+            //    Console.WriteLine(content.Id);
+
+            // ASSERT
+            Assert.Inconclusive();
+        }
+        [TestMethod]
+        [Description("Filtering by Date")]
+        public async Task IntT_BasicConcepts_Filter_DateTime()
+        {
+            // ACTION for doc
+            var result = await Content.LoadCollectionAsync(new ODataRequest
+            {
+                Path = "/Root/Content/IT/Document_Library",
+                Parameters = { { "$filter", "CreationDate gt datetime'2019-03-26T03:55:00'" } },
+            });
+            //foreach (var content in result)
+            //    Console.WriteLine(content.CreationDate);
+
+            // ASSERT
+            Assert.Inconclusive();
+        }
+        [TestMethod]
+        [Description("Filtering by an exact Type")]
+        public async Task IntT_BasicConcepts_Filter_ContentType()
+        {
+            // ACTION for doc
+            var result = await Content.LoadCollectionAsync(new ODataRequest
+            {
+                Path = "/Root/Content/IT/Document_Library",
+                Parameters = { { "$filter", "ContentType eq 'Folder'" } },
+            });
+            //foreach (dynamic content in result)
+            //    Console.WriteLine(content.Type);
+
+            // ASSERT
+            Assert.Inconclusive();
+        }
+        [TestMethod]
+        [Description("Filtering by Type family")]
+        public async Task IntT_BasicConcepts_Filter_isof()
+        {
+            // ACTION for doc
+
+            var result = await Content.LoadCollectionAsync(new ODataRequest
+            {
+                Path = "/Root/Content/IT/Document_Library",
+                ChildrenFilter = "isof('Folder')",
+            });
+            //foreach (dynamic content in result)
+            //    Console.WriteLine(content.Type);
+
+            // ASSERT
+            Assert.Inconclusive();
+        }
+
+        /* ====================================================================================== Metadata */
+
+        [TestMethod]
+        [Description("Metadata")]
+        public async Task IntT_BasicConcepts_MetadataFormat()
+        {
+            var content = 
+                // ACTION for doc
+                await Content.LoadAsync(new ODataRequest
+                {
+                    Path = "/Root/Content/IT",
+                    Metadata = MetadataFormat.None,
+                });
+
+            // ASSERT
+            Assert.Inconclusive();
+        }
+        [TestMethod]
+        [Description("$metadata")]
+        public async Task IntT_BasicConcepts_GlobalMetadata()
+        {
+            var url = ClientContext.Current.Server.Url;
+
+            var response = 
+                // ACTION for doc
+                await RESTCaller.GetResponseStringAsync(
+                    new Uri(url + "/OData.svc/$metadata"));
+
+            // ASSERT
+            Assert.Inconclusive();
+        }
+        [TestMethod]
+        [Description("")]
+        public async Task IntT_BasicConcepts_LocalMetadata()
+        {
+            var url = ClientContext.Current.Server.Url;
+
+            var response =
+                // ACTION for doc
+                await RESTCaller.GetResponseStringAsync(
+                    new Uri(url + "/OData.svc/Root/Content/IT/Document_Library/$metadata"));
+
+            // ASSERT
+            Assert.Inconclusive();
+        }
+
+        /* ====================================================================================== Metadata */
+
+        [TestMethod]
+        [Description("Accessing system content")]
+        public async Task IntT_BasicConcepts_AutoFilters()
+        {
+            // ACTION for doc
+            var result = await Content.LoadCollectionAsync(new ODataRequest
+            {
+                Path = "/Root/Content/IT",
+                AutoFilters = FilterStatus.Disabled,
+            });
+            //foreach(var content in result)
+            //    Console.WriteLine(content.Name);
+
+            // ASSERT
+            Assert.Inconclusive();
+        }
+
+        /* ====================================================================================== Lifespan */
+
+        [TestMethod]
+        [Description("Filter content by lifespan validity")]
+        public async Task IntT_BasicConcepts_LifespanFilter()
+        {
+            // ACTION for doc
+            var result = await Content.LoadCollectionAsync(new ODataRequest
+            {
+                Path = "/Root/Content/IT",
+                LifespanFilter = FilterStatus.Enabled,
+            });
+            //foreach (var content in result)
+            //    Console.WriteLine(content.Name);
+
+            // ASSERT
+            Assert.Inconclusive();
+        }
+
+        /* ====================================================================================== Lifespan */
+
+        [TestMethod]
+        [Description("Exploring actions")]
+        public async Task IntT_BasicConcepts_Actions()
+        {
+            // ACTION for doc
+            dynamic content = await RESTCaller.GetContentAsync(new ODataRequest
+            {
+                Path = "/Root/Content/IT",
+                Expand = new[] { "Actions" },
+                Select = new[] { "Actions" },
+            });
+            //foreach(var item in content.Actions)
+            //    Console.WriteLine(item.Name);
+
+            // ASSERT
+            Assert.Inconclusive();
+        }
+        [TestMethod]
+        [Description("Scenario")]
+        public async Task IntT_BasicConcepts_Scenario()
+        {
+            //UNDONE:- Feature request: scenario filter of Actions
+            //dynamic content8 = await Content.LoadAsync(new ODataRequest
+            //{
+            //    Path = "/Root/IMS",
+            //    Expand = new[] { "Actions" },
+            //    Select = new[] { "Name", "Actions" },
+            //    Scenario = "UserMenu",
+            //});
+
+            // ACTION for doc
+            dynamic content = await RESTCaller.GetContentAsync(new ODataRequest
+            {
+                Path = "/Root/Content/IT",
+                Expand = new[] { "Actions" },
+                Select = new[] { "Actions" },
+                Parameters = { { "scenario", "ContextMenu" } }
+            });
+            //foreach(var item in content.Actions)
+            //    Console.WriteLine(item.Name);
+
+            // ASSERT
+            Assert.Inconclusive();
+        }
+
         /*
         [TestMethod]
         [Description("")]
         public async Task IntT_BasicConcepts_()
         {
-            // ACTION for doc
+           // ACTION for doc
 
-            // ASSERT
-            Assert.Inconclusive();
+           // ASSERT
+           Assert.Inconclusive();
         }
         */
     }

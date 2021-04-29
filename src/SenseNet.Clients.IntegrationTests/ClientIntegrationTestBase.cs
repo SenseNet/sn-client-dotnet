@@ -25,7 +25,8 @@ namespace SenseNet.Clients.IntegrationTests
             });
 
             EnsureBasicStructureAsync().ConfigureAwait(false).GetAwaiter().GetResult();
-            
+
+            SnTrace.Custom.Enabled = true;
             SnTrace.Test.Enabled = true;
         }
         private static async Task EnsureBasicStructureAsync()
@@ -48,6 +49,12 @@ namespace SenseNet.Clients.IntegrationTests
                 c = Content.CreateNew("/Root/Content/IT", "DocumentLibrary", "Document_Library");
                 await c.SaveAsync();
             }
+            c = await Content.LoadAsync("/Root/Content/IT/Document_Library/Chicago");
+            if (c == null)
+            {
+                c = Content.CreateNew("/Root/Content/IT/Document_Library", "Folder", "Chicago");
+                await c.SaveAsync();
+            }
             c = await Content.LoadAsync("/Root/Content/IT/Document_Library/Calgary");
             if (c == null)
             {
@@ -58,6 +65,12 @@ namespace SenseNet.Clients.IntegrationTests
             if (c == null)
             {
                 c = Content.CreateNew("/Root/Content/IT/Document_Library/Calgary", "File", "BusinessPlan.docx");
+                await c.SaveAsync();
+            }
+            c = await Content.LoadAsync("/Root/Content/IT/Document_Library/Munich");
+            if (c == null)
+            {
+                c = Content.CreateNew("/Root/Content/IT/Document_Library", "Folder", "Munich");
                 await c.SaveAsync();
             }
             c = await Content.LoadAsync("/Root/IMS/Public");
