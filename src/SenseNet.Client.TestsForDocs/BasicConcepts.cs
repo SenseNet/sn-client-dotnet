@@ -130,7 +130,8 @@ namespace SenseNet.Client.TestsForDocs
         /* ====================================================================================== Select and expand */
 
         [TestMethod]
-        [Description("Select. GetContentAsync GetResponseStringAsync GetResponseJsonAsync")]
+        [Description("Select")]
+        // GetContentAsync GetResponseStringAsync GetResponseJsonAsync
         public async Task Docs_BasicConcepts_Select()
         {
             // ACTION for doc
@@ -160,7 +161,7 @@ namespace SenseNet.Client.TestsForDocs
             Assert.AreEqual(description, content.Description.ToString());
         }
         [TestMethod]
-        [Description("Expand CreatedBy")]
+        [Description("Expand 1")]
         public async Task Docs_BasicConcepts_Expand_CreatedBy()
         {
             // ACTION for doc
@@ -175,7 +176,7 @@ namespace SenseNet.Client.TestsForDocs
             Assert.AreEqual("Admin", content.CreatedBy.Name.ToString());
         }
         [TestMethod]
-        [Description("Expand CreatedBy.CreatedBy")]
+        [Description("Expand 2")]
         public async Task Docs_BasicConcepts_Expand_CreatedByCreatedBy()
         {
             // ACTION for doc
@@ -190,7 +191,7 @@ namespace SenseNet.Client.TestsForDocs
             Assert.AreEqual("Admin", content.CreatedBy.CreatedBy.Name.ToString());
         }
         [TestMethod]
-        [Description("Expand CreatedBy.Name")]
+        [Description("Expand 3")]
         public async Task Docs_BasicConcepts_Expand_CreatedByName()
         {
             // ACTION for doc
@@ -206,7 +207,7 @@ namespace SenseNet.Client.TestsForDocs
             Assert.AreEqual("Admin", content.CreatedBy.Name.ToString());
         }
         [TestMethod]
-        [Description("Expand AllowedChildTypes")]
+        [Description("Expand 4")]
         public async Task Docs_BasicConcepts_Expand_AllowedChildTypes()
         {
             // ACTION for doc
@@ -232,7 +233,7 @@ namespace SenseNet.Client.TestsForDocs
             Assert.AreEqual("Folder", content2.AllowedChildTypes[0].Name.ToString());
         }
         [TestMethod]
-        [Description("Expand Actions")]
+        [Description("Expand 5")]
         public async Task Docs_BasicConcepts_Expand_Actions()
         {
             // ACTION for doc
@@ -320,7 +321,7 @@ namespace SenseNet.Client.TestsForDocs
             Assert.AreEqual("Calgary, Chicago, Munich", names.ToSequenceString());
         }
         [TestMethod]
-        [Description("")]
+        [Description("Top")]
         public async Task Docs_BasicConcepts_Top()
         {
             // ACTION for doc
@@ -336,7 +337,7 @@ namespace SenseNet.Client.TestsForDocs
             Assert.IsTrue(result.Count() <= 5);
         }
         [TestMethod]
-        [Description("")]
+        [Description("Skip")]
         public async Task Docs_BasicConcepts_Skip()
         {
             // ACTION for doc
@@ -352,7 +353,7 @@ namespace SenseNet.Client.TestsForDocs
             Assert.Inconclusive();
         }
         [TestMethod]
-        [Description("")]
+        [Description("Pagination")]
         public async Task Docs_BasicConcepts_Pagination()
         {
             // ACTION for doc
@@ -373,7 +374,7 @@ namespace SenseNet.Client.TestsForDocs
         /* ====================================================================================== Search and filtering */
 
         [TestMethod]
-        [Description("Filtering by Field value")]
+        [Description("Filtering by Field value 1")]
         public async Task Docs_BasicConcepts_Filter_Id()
         {
             // ACTION for doc
@@ -389,7 +390,7 @@ namespace SenseNet.Client.TestsForDocs
             Assert.Inconclusive();
         }
         [TestMethod]
-        [Description("")]
+        [Description("Filtering by Field value 2")]
         public async Task Docs_BasicConcepts_Filter_substringof()
         {
             // ACTION for doc
@@ -405,7 +406,7 @@ namespace SenseNet.Client.TestsForDocs
             Assert.Inconclusive();
         }
         [TestMethod]
-        [Description("")]
+        [Description("Filtering by Field value 3")]
         public async Task Docs_BasicConcepts_Filter_startswith()
         {
             // ACTION for doc
@@ -421,7 +422,7 @@ namespace SenseNet.Client.TestsForDocs
             Assert.Inconclusive();
         }
         [TestMethod]
-        [Description("")]
+        [Description("Filtering by Field value 4")]
         public async Task Docs_BasicConcepts_Filter_endswith()
         {
             // ACTION for doc
@@ -504,7 +505,7 @@ namespace SenseNet.Client.TestsForDocs
             Assert.Inconclusive();
         }
         [TestMethod]
-        [Description("$metadata")]
+        [Description("$metadata 1")]
         public async Task Docs_BasicConcepts_GlobalMetadata()
         {
             var url = ClientContext.Current.Server.Url;
@@ -518,7 +519,7 @@ namespace SenseNet.Client.TestsForDocs
             Assert.Inconclusive();
         }
         [TestMethod]
-        [Description("")]
+        [Description("$metadata 2")]
         public async Task Docs_BasicConcepts_LocalMetadata()
         {
             var url = ClientContext.Current.Server.Url;
