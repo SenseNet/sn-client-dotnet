@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SenseNet.Client;
 using SenseNet.Diagnostics;
 
-namespace SenseNet.Clients.IntegrationTests
+namespace SenseNet.Client.TestsForDocs.Infrastructure
 {
     [TestClass]
     public class ClientIntegrationTestBase

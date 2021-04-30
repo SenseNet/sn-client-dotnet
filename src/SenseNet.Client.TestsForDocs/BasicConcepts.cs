@@ -4,10 +4,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json.Linq;
-using SenseNet.Client;
-using SenseNet.Diagnostics;
+using SenseNet.Client.TestsForDocs.Infrastructure;
 
-namespace SenseNet.Clients.IntegrationTests
+namespace SenseNet.Client.TestsForDocs
 {
     [TestClass]
     public class BasicConcepts : ClientIntegrationTestBase
@@ -16,7 +15,7 @@ namespace SenseNet.Clients.IntegrationTests
 
         [TestMethod]
         [Description("Get a single content by Id")]
-        public async Task IntT_BasicConcepts_GetSingleContentById()
+        public async Task Docs_BasicConcepts_GetSingleContentById()
         {
             var content =
                 // ACTION for doc
@@ -28,7 +27,7 @@ namespace SenseNet.Clients.IntegrationTests
         }
         [TestMethod]
         [Description("Get a single content by Path")]
-        public async Task IntT_BasicConcepts_GetSingleContentByPath()
+        public async Task Docs_BasicConcepts_GetSingleContentByPath()
         {
             var content =
                 // ACTION for doc
@@ -40,7 +39,7 @@ namespace SenseNet.Clients.IntegrationTests
         }
         [TestMethod]
         [Description("Addressing a single property of a content")]
-        public async Task IntT_BasicConcepts_GetSingleProperty()
+        public async Task Docs_BasicConcepts_GetSingleProperty()
         {
             var response =
                 // ACTION for doc
@@ -52,7 +51,7 @@ namespace SenseNet.Clients.IntegrationTests
         }
         [TestMethod]
         [Description("Addressing a property value")]
-        public async Task IntT_BasicConcepts_GetSinglePropertyValue()
+        public async Task Docs_BasicConcepts_GetSinglePropertyValue()
         {
             var url = ClientContext.Current.Server.Url;
 
@@ -69,7 +68,7 @@ namespace SenseNet.Clients.IntegrationTests
 
         [TestMethod]
         [Description("Children of a content (collection)")]
-        public async Task IntT_BasicConcepts_GetChildren()
+        public async Task Docs_BasicConcepts_GetChildren()
         {
             var result = 
                 // ACTION for doc
@@ -82,7 +81,7 @@ namespace SenseNet.Clients.IntegrationTests
         }
         [TestMethod]
         [Description("Count of a collection")]
-        public async Task IntT_BasicConcepts_ChildrenCount()
+        public async Task Docs_BasicConcepts_ChildrenCount()
         {
             var children =
                 await Content.LoadCollectionAsync("/Root/Content");
@@ -97,7 +96,7 @@ namespace SenseNet.Clients.IntegrationTests
         }
         [TestMethod]
         [Description("$inlinecount query option")]
-        public async Task IntT_BasicConcepts_ChildrenInlineCount()
+        public async Task Docs_BasicConcepts_ChildrenInlineCount()
         {
             //UNDONE:- Feature request: should returns a collection with property: TotalCount
             //var result3 = await Content.LoadCollectionAsync(new ODataRequest
@@ -132,7 +131,7 @@ namespace SenseNet.Clients.IntegrationTests
 
         [TestMethod]
         [Description("Select. GetContentAsync GetResponseStringAsync GetResponseJsonAsync")]
-        public async Task IntT_BasicConcepts_Select()
+        public async Task Docs_BasicConcepts_Select()
         {
             // ACTION for doc
             dynamic content = await RESTCaller.GetContentAsync(new ODataRequest
@@ -162,7 +161,7 @@ namespace SenseNet.Clients.IntegrationTests
         }
         [TestMethod]
         [Description("Expand CreatedBy")]
-        public async Task IntT_BasicConcepts_Expand_CreatedBy()
+        public async Task Docs_BasicConcepts_Expand_CreatedBy()
         {
             // ACTION for doc
             dynamic content = await RESTCaller.GetContentAsync(new ODataRequest
@@ -177,7 +176,7 @@ namespace SenseNet.Clients.IntegrationTests
         }
         [TestMethod]
         [Description("Expand CreatedBy.CreatedBy")]
-        public async Task IntT_BasicConcepts_Expand_CreatedByCreatedBy()
+        public async Task Docs_BasicConcepts_Expand_CreatedByCreatedBy()
         {
             // ACTION for doc
             dynamic content = await RESTCaller.GetContentAsync(new ODataRequest
@@ -192,7 +191,7 @@ namespace SenseNet.Clients.IntegrationTests
         }
         [TestMethod]
         [Description("Expand CreatedBy.Name")]
-        public async Task IntT_BasicConcepts_Expand_CreatedByName()
+        public async Task Docs_BasicConcepts_Expand_CreatedByName()
         {
             // ACTION for doc
             dynamic content = await RESTCaller.GetContentAsync(new ODataRequest
@@ -208,7 +207,7 @@ namespace SenseNet.Clients.IntegrationTests
         }
         [TestMethod]
         [Description("Expand AllowedChildTypes")]
-        public async Task IntT_BasicConcepts_Expand_AllowedChildTypes()
+        public async Task Docs_BasicConcepts_Expand_AllowedChildTypes()
         {
             // ACTION for doc
             dynamic content = await RESTCaller.GetContentAsync(new ODataRequest
@@ -234,7 +233,7 @@ namespace SenseNet.Clients.IntegrationTests
         }
         [TestMethod]
         [Description("Expand Actions")]
-        public async Task IntT_BasicConcepts_Expand_Actions()
+        public async Task Docs_BasicConcepts_Expand_Actions()
         {
             // ACTION for doc
             dynamic content = await RESTCaller.GetContentAsync(new ODataRequest
@@ -253,7 +252,7 @@ namespace SenseNet.Clients.IntegrationTests
 
         [TestMethod]
         [Description("")]
-        public async Task IntT_BasicConcepts_OrderBy_DisplayName()
+        public async Task Docs_BasicConcepts_OrderBy_DisplayName()
         {
             // ACTION for doc
             var result = await Content.LoadCollectionAsync(new ODataRequest
@@ -270,7 +269,7 @@ namespace SenseNet.Clients.IntegrationTests
         }
         [TestMethod]
         [Description("Order by a field in an explicit direction")]
-        public async Task IntT_BasicConcepts_OrderBy_Id_Asc()
+        public async Task Docs_BasicConcepts_OrderBy_Id_Asc()
         {
             // ACTION for doc
             var result = await Content.LoadCollectionAsync(new ODataRequest
@@ -288,7 +287,7 @@ namespace SenseNet.Clients.IntegrationTests
         }
         [TestMethod]
         [Description("Order by a field in reverse order")]
-        public async Task IntT_BasicConcepts_OrderBy_CreationDate_Desc()
+        public async Task Docs_BasicConcepts_OrderBy_CreationDate_Desc()
         {
             // ACTION for doc
             var result = await Content.LoadCollectionAsync(new ODataRequest
@@ -305,7 +304,7 @@ namespace SenseNet.Clients.IntegrationTests
         }
         [TestMethod]
         [Description("Order by a multiple fields")]
-        public async Task IntT_BasicConcepts_OrderBy_DisplayNameAndName()
+        public async Task Docs_BasicConcepts_OrderBy_DisplayNameAndName()
         {
             // ACTION for doc
             var result = await Content.LoadCollectionAsync(new ODataRequest
@@ -322,7 +321,7 @@ namespace SenseNet.Clients.IntegrationTests
         }
         [TestMethod]
         [Description("")]
-        public async Task IntT_BasicConcepts_Top()
+        public async Task Docs_BasicConcepts_Top()
         {
             // ACTION for doc
             var result = await Content.LoadCollectionAsync(new ODataRequest
@@ -338,7 +337,7 @@ namespace SenseNet.Clients.IntegrationTests
         }
         [TestMethod]
         [Description("")]
-        public async Task IntT_BasicConcepts_Skip()
+        public async Task Docs_BasicConcepts_Skip()
         {
             // ACTION for doc
             var result = await Content.LoadCollectionAsync(new ODataRequest
@@ -354,7 +353,7 @@ namespace SenseNet.Clients.IntegrationTests
         }
         [TestMethod]
         [Description("")]
-        public async Task IntT_BasicConcepts_Pagination()
+        public async Task Docs_BasicConcepts_Pagination()
         {
             // ACTION for doc
 
@@ -375,7 +374,7 @@ namespace SenseNet.Clients.IntegrationTests
 
         [TestMethod]
         [Description("Filtering by Field value")]
-        public async Task IntT_BasicConcepts_Filter_Id()
+        public async Task Docs_BasicConcepts_Filter_Id()
         {
             // ACTION for doc
             var result = await Content.LoadCollectionAsync(new ODataRequest
@@ -391,7 +390,7 @@ namespace SenseNet.Clients.IntegrationTests
         }
         [TestMethod]
         [Description("")]
-        public async Task IntT_BasicConcepts_Filter_substringof()
+        public async Task Docs_BasicConcepts_Filter_substringof()
         {
             // ACTION for doc
             var result = await Content.LoadCollectionAsync(new ODataRequest
@@ -407,7 +406,7 @@ namespace SenseNet.Clients.IntegrationTests
         }
         [TestMethod]
         [Description("")]
-        public async Task IntT_BasicConcepts_Filter_startswith()
+        public async Task Docs_BasicConcepts_Filter_startswith()
         {
             // ACTION for doc
             var result = await Content.LoadCollectionAsync(new ODataRequest
@@ -423,7 +422,7 @@ namespace SenseNet.Clients.IntegrationTests
         }
         [TestMethod]
         [Description("")]
-        public async Task IntT_BasicConcepts_Filter_endswith()
+        public async Task Docs_BasicConcepts_Filter_endswith()
         {
             // ACTION for doc
             var result = await Content.LoadCollectionAsync(new ODataRequest
@@ -439,7 +438,7 @@ namespace SenseNet.Clients.IntegrationTests
         }
         [TestMethod]
         [Description("Filtering by Date")]
-        public async Task IntT_BasicConcepts_Filter_DateTime()
+        public async Task Docs_BasicConcepts_Filter_DateTime()
         {
             // ACTION for doc
             var result = await Content.LoadCollectionAsync(new ODataRequest
@@ -455,7 +454,7 @@ namespace SenseNet.Clients.IntegrationTests
         }
         [TestMethod]
         [Description("Filtering by an exact Type")]
-        public async Task IntT_BasicConcepts_Filter_ContentType()
+        public async Task Docs_BasicConcepts_Filter_ContentType()
         {
             // ACTION for doc
             var result = await Content.LoadCollectionAsync(new ODataRequest
@@ -471,7 +470,7 @@ namespace SenseNet.Clients.IntegrationTests
         }
         [TestMethod]
         [Description("Filtering by Type family")]
-        public async Task IntT_BasicConcepts_Filter_isof()
+        public async Task Docs_BasicConcepts_Filter_isof()
         {
             // ACTION for doc
 
@@ -491,7 +490,7 @@ namespace SenseNet.Clients.IntegrationTests
 
         [TestMethod]
         [Description("Metadata")]
-        public async Task IntT_BasicConcepts_MetadataFormat()
+        public async Task Docs_BasicConcepts_MetadataFormat()
         {
             var content = 
                 // ACTION for doc
@@ -506,7 +505,7 @@ namespace SenseNet.Clients.IntegrationTests
         }
         [TestMethod]
         [Description("$metadata")]
-        public async Task IntT_BasicConcepts_GlobalMetadata()
+        public async Task Docs_BasicConcepts_GlobalMetadata()
         {
             var url = ClientContext.Current.Server.Url;
 
@@ -520,7 +519,7 @@ namespace SenseNet.Clients.IntegrationTests
         }
         [TestMethod]
         [Description("")]
-        public async Task IntT_BasicConcepts_LocalMetadata()
+        public async Task Docs_BasicConcepts_LocalMetadata()
         {
             var url = ClientContext.Current.Server.Url;
 
@@ -537,7 +536,7 @@ namespace SenseNet.Clients.IntegrationTests
 
         [TestMethod]
         [Description("Accessing system content")]
-        public async Task IntT_BasicConcepts_AutoFilters()
+        public async Task Docs_BasicConcepts_AutoFilters()
         {
             // ACTION for doc
             var result = await Content.LoadCollectionAsync(new ODataRequest
@@ -556,7 +555,7 @@ namespace SenseNet.Clients.IntegrationTests
 
         [TestMethod]
         [Description("Filter content by lifespan validity")]
-        public async Task IntT_BasicConcepts_LifespanFilter()
+        public async Task Docs_BasicConcepts_LifespanFilter()
         {
             // ACTION for doc
             var result = await Content.LoadCollectionAsync(new ODataRequest
@@ -575,7 +574,7 @@ namespace SenseNet.Clients.IntegrationTests
 
         [TestMethod]
         [Description("Exploring actions")]
-        public async Task IntT_BasicConcepts_Actions()
+        public async Task Docs_BasicConcepts_Actions()
         {
             // ACTION for doc
             dynamic content = await RESTCaller.GetContentAsync(new ODataRequest
@@ -592,7 +591,7 @@ namespace SenseNet.Clients.IntegrationTests
         }
         [TestMethod]
         [Description("Scenario")]
-        public async Task IntT_BasicConcepts_Scenario()
+        public async Task Docs_BasicConcepts_Scenario()
         {
             //UNDONE:- Feature request: scenario filter of Actions
             //dynamic content8 = await Content.LoadAsync(new ODataRequest
@@ -622,7 +621,7 @@ namespace SenseNet.Clients.IntegrationTests
 
         [TestMethod]
         [Description("Get schema")]
-        public async Task IntT_BasicConcepts_GetSchema()
+        public async Task Docs_BasicConcepts_GetSchema()
         {
             // ACTION for doc
             string schema = await RESTCaller.GetResponseStringAsync("/Root", "GetSchema");
@@ -632,7 +631,7 @@ namespace SenseNet.Clients.IntegrationTests
         }
         [TestMethod]
         [Description("Change the schema")]
-        public async Task IntT_BasicConcepts_GetCtd()
+        public async Task Docs_BasicConcepts_GetCtd()
         {
             /*
             // WARNING This code cannot run if the #1064 does not exist.
@@ -659,17 +658,5 @@ namespace SenseNet.Clients.IntegrationTests
             Assert.IsTrue(ctd.StartsWith("<?xml") || ctd.StartsWith("<ContentType"));
             Assert.IsTrue(ctd.Trim().EndsWith("</ContentType>"));
         }
-
-        /*
-        [TestMethod]
-        [Description("")]
-        public async Task IntT_BasicConcepts_()
-        {
-           // ACTION for doc
-
-           // ASSERT
-           Assert.Inconclusive();
-        }
-        */
     }
 }
