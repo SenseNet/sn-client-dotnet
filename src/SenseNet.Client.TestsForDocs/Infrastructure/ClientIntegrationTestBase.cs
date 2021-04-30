@@ -42,6 +42,7 @@ namespace SenseNet.Client.TestsForDocs.Infrastructure
             if (c == null)
             {
                 c = Content.CreateNew("/Root/Content/IT", "DocumentLibrary", "Document_Library");
+                c["Description"] = "Document library of IT";
                 await c.SaveAsync();
             }
             c = await Content.LoadAsync("/Root/Content/IT/Document_Library/Chicago");
