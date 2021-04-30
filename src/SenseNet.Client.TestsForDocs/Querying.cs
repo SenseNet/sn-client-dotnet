@@ -215,7 +215,7 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Query by choice field (localized value)")]
         public async Task Docs_Querying_ChoiceField_LocalizedValue()
         {
-            throw new NotImplementedException();
+            //UNDONE: Not documented and not implemented
             // ACTION for doc
 
             // ASSERT
@@ -225,7 +225,7 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Query by choice field (value)")]
         public async Task Docs_Querying_ChoiceField_Value()
         {
-            throw new NotImplementedException();
+            //UNDONE: Not documented and not implemented
             // ACTION for doc
 
             // ASSERT
