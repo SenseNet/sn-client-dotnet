@@ -542,6 +542,15 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Operators 2")]
         public async Task Docs_Querying_Operators_And()
         {
+            // ALIGN
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Chicago", "Folder");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Munich", "Folder", c =>
+            {
+                c["Description"] = "Document library of IT";
+            });
+
             /*
             // WARNING This code cannot run if the Ingredients field does not exist.
             // ACTION for doc

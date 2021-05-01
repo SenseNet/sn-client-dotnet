@@ -1,9 +1,12 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SenseNet.Diagnostics;
 
 namespace SenseNet.Client.TestsForDocs.Infrastructure
 {
+    //UNDONE:- Feature request: find a solution for the tests to get a raw response.
+    //UNDONE:- Feature request: find a solution for the tests to get a final request url instead of making the request.
     [TestClass]
     public class ClientIntegrationTestBase
     {
@@ -94,6 +97,34 @@ namespace SenseNet.Client.TestsForDocs.Infrastructure
                 Username = "builtin\\admin",
                 Password = "admin"
             });
+        }
+
+        protected Task<Content> EnsureContentAsync(string path, string typeName)
+        {
+            return EnsureContentAsync(path, typeName, null);
+        }
+        protected async Task<Content> EnsureContentAsync(string path, string typeName, Action<Content> setProperties)
+        {
+            var content = await Content.LoadAsync(path);
+            if (content == null)
+            {
+                var parentPath = RepositoryPath.GetParentPath(path);
+                var name = RepositoryPath.GetFileName(path);
+                content = Content.CreateNew(parentPath, typeName, name);
+                if (setProperties == null)
+                {
+                    await content.SaveAsync();
+                    return content;
+                }
+            }
+
+            if (setProperties != null)
+            {
+                setProperties(content);
+                await content.SaveAsync();
+            }
+
+            return content;
         }
     }
 }

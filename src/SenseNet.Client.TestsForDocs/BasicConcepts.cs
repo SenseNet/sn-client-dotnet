@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -98,6 +99,8 @@ namespace SenseNet.Client.TestsForDocs
         [Description("$inlinecount query option")]
         public async Task Docs_BasicConcepts_ChildrenInlineCount()
         {
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+
             //UNDONE:- Feature request: should returns a collection with property: TotalCount
             //var result3 = await Content.LoadCollectionAsync(new ODataRequest
             //{
@@ -255,6 +258,9 @@ namespace SenseNet.Client.TestsForDocs
         [Description("")]
         public async Task Docs_BasicConcepts_OrderBy_DisplayName()
         {
+            // ALIGN
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+
             // ACTION for doc
             var result = await Content.LoadCollectionAsync(new ODataRequest
             {
@@ -266,12 +272,17 @@ namespace SenseNet.Client.TestsForDocs
 
             // ASSERT
             var names = result.Select(x => ((dynamic) x).DisplayName.ToString()).ToArray();
-            Assert.AreEqual("Calgary, Chicago, Munich", names.ToSequenceString());
+            Assert.IsTrue(names.Length > 2);
+            for (int i = 1; i < names.Length; i++)
+                Assert.IsTrue(string.CompareOrdinal(names[i], names[i - 1]) >= 0, $"names[{i}] < names[{i - 1}]");
         }
         [TestMethod]
         [Description("Order by a field in an explicit direction")]
         public async Task Docs_BasicConcepts_OrderBy_Id_Asc()
         {
+            // ALIGN
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+
             // ACTION for doc
             var result = await Content.LoadCollectionAsync(new ODataRequest
             {
@@ -282,14 +293,30 @@ namespace SenseNet.Client.TestsForDocs
             //    Console.WriteLine(content.Id);
 
             // ASSERT
-            var ids = result.Select(x => ((dynamic)x).Id.ToString()).ToArray();
-            var names = result.Select(x => ((dynamic)x).DisplayName.ToString()).ToArray();
-            Assert.AreEqual("Chicago, Calgary, Munich", names.ToSequenceString());
+            var ids = result.Select(x => (int)((dynamic)x).Id).ToArray();
+            Assert.IsTrue(ids.Length > 2);
+            for (int i = 1; i < ids.Length; i++)
+                Assert.IsTrue(ids[i] >= ids[i - 1], $"ids[{i}] < ids[{i - 1}]");
         }
         [TestMethod]
         [Description("Order by a field in reverse order")]
         public async Task Docs_BasicConcepts_OrderBy_CreationDate_Desc()
         {
+            // ALIGN
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Chicago", "Folder");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Munich", "Folder");
+
+            var date = DateTime.Today.AddDays(-1);
+            var children = await Content.LoadCollectionAsync("/Root/Content/IT/Document_Library");
+            foreach (Content child in children)
+            {
+                child["CreationDate"] = date;
+                await child.SaveAsync();
+                date = date.AddHours(1);
+            }
+
             // ACTION for doc
             var result = await Content.LoadCollectionAsync(new ODataRequest
             {
@@ -300,13 +327,30 @@ namespace SenseNet.Client.TestsForDocs
             //    Console.WriteLine(content.CreationDate);
 
             // ASSERT
-            var names = result.Select(x => ((dynamic)x).DisplayName.ToString()).ToArray();
-            Assert.AreEqual("Chicago, Calgary, Munich", names.ToSequenceString());
+            var dates = result.Select(x => (DateTime)((dynamic)x).CreationDate).ToArray();
+            Assert.IsTrue(dates.Length > 2);
+            for (int i = 1; i < dates.Length; i++)
+                Assert.IsTrue(dates[i] <= dates[i - 1], $"dates[{i}] > dates[{i - 1}]");
         }
         [TestMethod]
         [Description("Order by a multiple fields")]
         public async Task Docs_BasicConcepts_OrderBy_DisplayNameAndName()
         {
+            // ALIGN
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Chicago", "Folder");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Munich", "Folder");
+
+            var date = DateTime.Today.AddDays(-1);
+            var children = await Content.LoadCollectionAsync("/Root/Content/IT/Document_Library");
+            foreach (Content child in children)
+            {
+                child["ModificationDate"] = date;
+                await child.SaveAsync();
+                date = date.AddHours(1);
+            }
+
             // ACTION for doc
             var result = await Content.LoadCollectionAsync(new ODataRequest
             {
@@ -317,13 +361,18 @@ namespace SenseNet.Client.TestsForDocs
             //    Console.WriteLine(content.Name);
 
             // ASSERT
-            var names = result.Select(x => ((dynamic)x).DisplayName.ToString()).ToArray();
-            Assert.AreEqual("Calgary, Chicago, Munich", names.ToSequenceString());
+            var dates = result.Select(x => (DateTime)((dynamic)x).ModificationDate).ToArray();
+            Assert.IsTrue(dates.Length > 2);
+            for (int i = 1; i < dates.Length; i++)
+                Assert.IsTrue(dates[i] <= dates[i - 1], $"dates[{i}] > dates[{i - 1}]");
         }
         [TestMethod]
         [Description("Top")]
         public async Task Docs_BasicConcepts_Top()
         {
+            // ALIGN
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+
             // ACTION for doc
             var result = await Content.LoadCollectionAsync(new ODataRequest
             {
@@ -340,6 +389,9 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Skip")]
         public async Task Docs_BasicConcepts_Skip()
         {
+            // ALIGN
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+
             // ACTION for doc
             var result = await Content.LoadCollectionAsync(new ODataRequest
             {
@@ -356,8 +408,10 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Pagination")]
         public async Task Docs_BasicConcepts_Pagination()
         {
-            // ACTION for doc
+            // ALIGN
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
 
+            // ACTION for doc
             var result = await Content.LoadCollectionAsync(new ODataRequest
             {
                 Path = "/Root/Content/IT/Document_Library",
@@ -377,6 +431,9 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Filtering by Field value 1")]
         public async Task Docs_BasicConcepts_Filter_Id()
         {
+            // ALIGN
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+
             // ACTION for doc
             var result = await Content.LoadCollectionAsync(new ODataRequest
             {
@@ -393,6 +450,9 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Filtering by Field value 2")]
         public async Task Docs_BasicConcepts_Filter_substringof()
         {
+            // ALIGN
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+
             // ACTION for doc
             var result = await Content.LoadCollectionAsync(new ODataRequest
             {
@@ -409,6 +469,9 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Filtering by Field value 3")]
         public async Task Docs_BasicConcepts_Filter_startswith()
         {
+            // ALIGN
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+
             // ACTION for doc
             var result = await Content.LoadCollectionAsync(new ODataRequest
             {
@@ -425,6 +488,9 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Filtering by Field value 4")]
         public async Task Docs_BasicConcepts_Filter_endswith()
         {
+            // ALIGN
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+
             // ACTION for doc
             var result = await Content.LoadCollectionAsync(new ODataRequest
             {
@@ -441,6 +507,9 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Filtering by Date")]
         public async Task Docs_BasicConcepts_Filter_DateTime()
         {
+            // ALIGN
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+
             // ACTION for doc
             var result = await Content.LoadCollectionAsync(new ODataRequest
             {
@@ -457,6 +526,9 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Filtering by an exact Type")]
         public async Task Docs_BasicConcepts_Filter_ContentType()
         {
+            // ALIGN
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+
             // ACTION for doc
             var result = await Content.LoadCollectionAsync(new ODataRequest
             {
@@ -473,8 +545,10 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Filtering by Type family")]
         public async Task Docs_BasicConcepts_Filter_isof()
         {
-            // ACTION for doc
+            // ALIGN
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
 
+            // ACTION for doc
             var result = await Content.LoadCollectionAsync(new ODataRequest
             {
                 Path = "/Root/Content/IT/Document_Library",
@@ -522,6 +596,9 @@ namespace SenseNet.Client.TestsForDocs
         [Description("$metadata 2")]
         public async Task Docs_BasicConcepts_LocalMetadata()
         {
+            // ALIGN
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+
             var url = ClientContext.Current.Server.Url;
 
             var response =
