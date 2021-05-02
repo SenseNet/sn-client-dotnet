@@ -19,7 +19,7 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Enable versioning")]
         public async Task Docs_Collaboration_Versioning_EnableVersioning()
         {
-            //UNDONE:- Feature request: use a textual language element instead of an integer array
+            //UNDONE:- Feature request: use a textual language element instead of an integer array for InheritableVersioningMode
             try
             {
                 // ACTION for doc
@@ -89,6 +89,7 @@ namespace SenseNet.Client.TestsForDocs
                 Console.WriteLine(content.Version);
 
                 // ASSERT
+                var message = Console.GetStringBuilder().ToString();
                 Assert.Inconclusive();
             }
             finally
@@ -120,6 +121,7 @@ namespace SenseNet.Client.TestsForDocs
                 Console.WriteLine(result);
 
                 // ASSERT
+                var message = Console.GetStringBuilder().ToString();
                 Assert.Inconclusive();
             }
             finally
@@ -154,6 +156,7 @@ namespace SenseNet.Client.TestsForDocs
                 Console.WriteLine(result);
 
                 // ASSERT
+                var message = Console.GetStringBuilder().ToString();
                 Assert.Inconclusive();
             }
             finally
@@ -190,6 +193,7 @@ namespace SenseNet.Client.TestsForDocs
                 Console.WriteLine($"Locked: {locked}, LockedBy: {lockedBy}");
 
                 // ASSERT
+                var message = Console.GetStringBuilder().ToString();
                 Assert.Inconclusive();
             }
             finally
@@ -223,6 +227,7 @@ namespace SenseNet.Client.TestsForDocs
                 Console.WriteLine(result);
 
                 // ASSERT
+                var message = Console.GetStringBuilder().ToString();
                 Assert.Inconclusive();
             }
             finally
@@ -256,6 +261,7 @@ namespace SenseNet.Client.TestsForDocs
                 Console.WriteLine(result);
 
                 // ASSERT
+                var message = Console.GetStringBuilder().ToString();
                 Assert.Inconclusive();
             }
             finally
@@ -289,6 +295,7 @@ namespace SenseNet.Client.TestsForDocs
                 Console.WriteLine(result);
 
                 // ASSERT
+                var message = Console.GetStringBuilder().ToString();
                 Assert.Inconclusive();
             }
             finally
@@ -319,6 +326,7 @@ namespace SenseNet.Client.TestsForDocs
                 Console.WriteLine(result);
 
                 // ASSERT
+                var message = Console.GetStringBuilder().ToString();
                 Assert.Inconclusive();
             }
             finally
@@ -346,6 +354,7 @@ namespace SenseNet.Client.TestsForDocs
                 Console.WriteLine(result);
 
                 // ASSERT
+                var message = Console.GetStringBuilder().ToString();
                 Assert.Inconclusive();
             }
             finally
@@ -374,6 +383,7 @@ namespace SenseNet.Client.TestsForDocs
                 Console.WriteLine(result);
 
                 // ASSERT
+                var message = Console.GetStringBuilder().ToString();
                 Assert.Inconclusive();
             }
             finally
@@ -386,5 +396,155 @@ namespace SenseNet.Client.TestsForDocs
 
         /* ====================================================================================== Approval */
 
+        [TestMethod]
+        [Description("Enable simple approval")]
+        public async Task Docs_Collaboration_Approval_Enable()
+        {
+            //UNDONE:- Feature request: use a textual language element instead of an integer array for InheritableApprovingMode
+            //UNDONE:- Feature request: use a textual language element instead of an integer array for InheritableVersioningMode
+            // ALIGN
+            // ReSharper disable once InconsistentNaming
+            await using var Console = new StringWriter();
+            try
+            {
+                // ACTION for doc
+                var content = await Content.LoadAsync("/Root/Content/IT");
+                content["InheritableApprovingMode"] = new[] { 2 };
+                content["InheritableVersioningMode"] = new[] { 3 };
+                await content.SaveAsync();
+
+                // ASSERT
+                var message = Console.GetStringBuilder().ToString();
+                Assert.Inconclusive();
+            }
+            finally
+            {
+                var content = await Content.LoadAsync("/Root/Content/IT");
+                content["InheritableApprovingMode"] = new[] { 0 };
+                content["InheritableVersioningMode"] = new[] { 0 };
+                await content.SaveAsync();
+            }
+        }
+        [TestMethod]
+        [Description("Approve a content")]
+        public async Task Docs_Collaboration_Approval_Approve()
+        {
+            Assert.Inconclusive();
+            //UNDONE:---- ERROR: The server returned an error (HttpStatus: InternalServerError): Currently this action is not allowed on this content.
+            // ALIGN
+            // ReSharper disable once InconsistentNaming
+            await using var Console = new StringWriter();
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File");
+            try
+            {
+                // ACTION for doc
+                var result = await RESTCaller.GetResponseJsonAsync(method: HttpMethod.Post, requestData: new ODataRequest
+                {
+                    IsCollectionRequest = false,
+                    Path = "/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx",
+                    ActionName = "Approve",
+                });
+                Console.WriteLine(result);
+
+                // ASSERT
+                var message = Console.GetStringBuilder().ToString();
+                Assert.Inconclusive();
+            }
+            finally
+            {
+                var c = await Content.LoadAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx");
+                if (c != null)
+                    await c.DeleteAsync(true);
+            }
+        }
+        [TestMethod]
+        [Description("Reject a content")]
+        public async Task Docs_Collaboration_Approval_Reject()
+        {
+            Assert.Inconclusive();
+            //UNDONE:---- ERROR: The server returned an error (HttpStatus: InternalServerError): Currently this action is not allowed on this content.
+            // ALIGN
+            // ReSharper disable once InconsistentNaming
+            await using var Console = new StringWriter();
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File");
+            try
+            {
+                // ACTION for doc
+                var body = @"models=[{""rejectReason"": ""Reject reason""}]";
+                var result = await RESTCaller.GetResponseStringAsync(
+                    "/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "Reject", HttpMethod.Post, body);
+                Console.WriteLine(result);
+
+                // ASSERT
+                var message = Console.GetStringBuilder().ToString();
+                Assert.Inconclusive();
+            }
+            finally
+            {
+                var c = await Content.LoadAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx");
+                if (c != null)
+                    await c.DeleteAsync(true);
+            }
+        }
+
+        /* ====================================================================================== Saved queries */
+
+        [TestMethod]
+        [Description("Save a query")]
+        public async Task Docs_Collaboration_SavedQueries_SavePublic()
+        {
+            // ACTION for doc
+            var body = @"models=[{
+                ""query"": ""+TypeIs:File +InTree:/Root/Content/IT"",
+                ""displayName"": ""Public query"",
+                ""queryType"": ""Public""}]";
+            var result = await RESTCaller.GetResponseStringAsync(
+                "/Root/Content/IT/Document_Library", "SaveQuery", HttpMethod.Post, body);
+            Console.WriteLine(result);
+
+            // ASSERT
+            Assert.Inconclusive();
+        }
+        [TestMethod]
+        [Description("Save a private query")]
+        public async Task Docs_Collaboration_SavedQueries_SavePrivate()
+        {
+            Assert.Inconclusive();
+            //UNDONE:---- ERROR: The server returned an error (HttpStatus: InternalServerError): User profile could not be created.
+            // ACTION for doc
+            var body = @"models=[{
+                ""query"": ""+TypeIs:File +InTree:/Root/Content/IT"",
+                ""displayName"": ""My query"",
+                ""queryType"": ""Private""}]";
+            var result = await RESTCaller.GetResponseStringAsync(
+                "/Root/Content/IT/Document_Library", "SaveQuery", HttpMethod.Post, body);
+            Console.WriteLine(result);
+
+            // ASSERT
+            Assert.Inconclusive();
+        }
+        [TestMethod]
+        [Description("Get saved queries")]
+        public async Task Docs_Collaboration_SavedQueries_Get()
+        {
+            Assert.Inconclusive();
+            //UNDONE:---- ERROR: (every second run if the test filter is: 'Docs_Collaboration_') Invalid response. Request: https://localhost:44362/OData.svc/Root/Content/IT/Document_Library/Calgary('BusinessPlan.docx')/GetQueries?metadata=no&onlyPublic=true. Response: 
+            // ACTION for doc
+            var result = await RESTCaller.GetResponseJsonAsync(new ODataRequest
+            {
+                IsCollectionRequest = false,
+                Path = "/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx",
+                ActionName = "GetQueries",
+                Parameters = { { "onlyPublic", "true" } }
+            });
+            Console.WriteLine(result);
+
+            // ASSERT
+            Assert.Inconclusive();
+        }
     }
 }
