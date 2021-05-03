@@ -255,7 +255,7 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Query by an exact date")]
         public async Task Docs_Querying_Date_Day()
         {
-            //UNDONE: Not documented and not implemented. REST:/OData.svc/Root/Content?query=CreationDate%3A'2019-02-15'
+            //UNDONE: Not documented and not implemented. REST:/OData.svc/Root/Content?query=CreationDate%3A'2019-02-15' ("Query by an exact date": don't work)
             // ACTION for doc
 
             // ASSERT

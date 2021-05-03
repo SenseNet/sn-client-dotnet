@@ -338,6 +338,7 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Delete multiple content at once")]
         public async Task Docs_ContentManagement_Delete_Multiple()
         {
+            //UNDONE:- Missing batch delete operation (delete multiple content at once) Content.Delete(params int[] idsToDelete) + Content.Delete(params string[] pathsToDelete)
             // ACTION for doc
             // There is no multiple-delete operation yet.
 

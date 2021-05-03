@@ -16,6 +16,7 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Get permission entries of a content")]
         public async Task Docs_Permissions_Main_GetPermissions_CurrentUser()
         {
+            //UNDONE:- Feature request: Content.GetPermissionAsync
             // ACTION for doc
             var result = await RESTCaller.GetResponseStringAsync("/Root/Content/IT", "GetPermissions");
 
@@ -26,6 +27,7 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Get full access control list of a content")]
         public async Task Docs_Permissions_Main_GetAcl()
         {
+            //UNDONE:- Feature request: Content.GetAcl()
             // ACTION for doc
             //UNDONE: Missing doc and test. REST: GET /OData.svc/Root/Content('IT')/GetAcl
 
@@ -36,6 +38,7 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Get a permissions entry of a specific user or group")]
         public async Task Docs_Permissions_Main_GetPermissions_Specific()
         {
+            //UNDONE:- Feature request: Content.GetPermissionAsync(identity)
             // ACTION for doc
             var req = new ODataRequest
             {
@@ -148,6 +151,7 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Allow a user to save a content")]
         public async Task Docs_Permissions_Management_AllowUser()
         {
+            //UNDONE:- Feature request: content.SetPermissionAsync(...)
             Assert.Inconclusive();
             //UNDONE: this test has not run yet
             // ACTION for doc
@@ -270,6 +274,7 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Get all identities connected to a content")]
         public async Task Docs_Permissions_PermissionQueries_GetRelatedIdentities()
         {
+            //UNDONE:- Feature request: PermissionQueries methods
             Assert.Inconclusive();
             //UNDONE: this test has not run yet
             // ACTION for doc
