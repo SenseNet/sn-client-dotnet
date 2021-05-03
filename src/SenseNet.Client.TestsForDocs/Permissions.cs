@@ -295,7 +295,7 @@ namespace SenseNet.Client.TestsForDocs
             Assert.Inconclusive();
         }
         [TestMethod]
-        [Description("")]
+        [Description("Count number of permissions settings per identity")]
         public async Task Docs_Permissions_PermissionQueries_GetRelatedPermissions()
         {
             Assert.Inconclusive();
@@ -314,7 +314,7 @@ namespace SenseNet.Client.TestsForDocs
             Assert.Inconclusive();
         }
         [TestMethod]
-        [Description("")]
+        [Description("Get content with permission settings for a specific identity")]
         public async Task Docs_Permissions_PermissionQueries_GetRelatedItems()
         {
             Assert.Inconclusive();
@@ -338,7 +338,7 @@ namespace SenseNet.Client.TestsForDocs
             Assert.Inconclusive();
         }
         [TestMethod]
-        [Description("")]
+        [Description("Get identities related to a permission in a subtree")]
         public async Task Docs_Permissions_PermissionQueries_GetRelatedIdentitiesByPermissions()
         {
             Assert.Inconclusive();
@@ -361,7 +361,7 @@ namespace SenseNet.Client.TestsForDocs
             Assert.Inconclusive();
         }
         [TestMethod]
-        [Description("")]
+        [Description("Get contents related to a permission in a container")]
         public async Task Docs_Permissions_PermissionQueries_GetRelatedItemsOneLevel()
         {
             Assert.Inconclusive();
@@ -384,7 +384,7 @@ namespace SenseNet.Client.TestsForDocs
             Assert.Inconclusive();
         }
         [TestMethod]
-        [Description("")]
+        [Description("Get list of users allowed to do something")]
         public async Task Docs_Permissions_PermissionQueries_GetAllowedUsers()
         {
             Assert.Inconclusive();
@@ -403,7 +403,7 @@ namespace SenseNet.Client.TestsForDocs
             Assert.Inconclusive();
         }
         [TestMethod]
-        [Description("")]
+        [Description("List of group memberships of a user")]
         public async Task Docs_Permissions_PermissionQueries_GetParentGroups()
         {
             Assert.Inconclusive();
