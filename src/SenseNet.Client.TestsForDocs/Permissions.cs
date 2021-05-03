@@ -14,7 +14,7 @@ namespace SenseNet.Client.TestsForDocs
 
         [TestMethod]
         [Description("Get permission entries of a content")]
-        public async Task Permissions_Main_GetPermissions_CurrentUser()
+        public async Task Docs_Permissions_Main_GetPermissions_CurrentUser()
         {
             // ACTION for doc
             var result = await RESTCaller.GetResponseStringAsync("/Root/Content/IT", "GetPermissions");
@@ -24,7 +24,7 @@ namespace SenseNet.Client.TestsForDocs
         }
         [TestMethod]
         [Description("Get full access control list of a content")]
-        public async Task Permissions_Main_GetAcl()
+        public async Task Docs_Permissions_Main_GetAcl()
         {
             // ACTION for doc
             //UNDONE: Missing doc and test. REST: GET /OData.svc/Root/Content('IT')/GetAcl
@@ -34,7 +34,7 @@ namespace SenseNet.Client.TestsForDocs
         }
         [TestMethod]
         [Description("Get a permissions entry of a specific user or group")]
-        public async Task Permissions_Main_GetPermissions_Specific()
+        public async Task Docs_Permissions_Main_GetPermissions_Specific()
         {
             // ACTION for doc
             var req = new ODataRequest
@@ -50,7 +50,7 @@ namespace SenseNet.Client.TestsForDocs
         }
         [TestMethod]
         [Description("Check user access")]
-        public async Task Permissions_Main_CheckPermission()
+        public async Task Docs_Permissions_Main_CheckPermission()
         {
             // ACTION for doc
             var content = await Content.LoadAsync("/Root/Content/IT").ConfigureAwait(false);
@@ -61,7 +61,7 @@ namespace SenseNet.Client.TestsForDocs
         }
         [TestMethod]
         [Description("How can I check why a user cannot access a content?")]
-        public async Task Permissions_Main_HasPermission_Open()
+        public async Task Docs_Permissions_Main_HasPermission_Open()
         {
             // ALIGN
             var user = Content.CreateNew("/Root/IMS/Public", "User", "devdog");
@@ -88,7 +88,7 @@ namespace SenseNet.Client.TestsForDocs
         }
         [TestMethod]
         [Description("How can I check why a user cannot save a content?")]
-        public async Task Permissions_Main_HasPermission_Save()
+        public async Task Docs_Permissions_Main_HasPermission_Save()
         {
             //UNDONE: BUG: HasPermissionAsync method does not thrown any exception if the target user does not exist.
             // ALIGN
@@ -116,7 +116,7 @@ namespace SenseNet.Client.TestsForDocs
         }
         [TestMethod]
         [Description("Check if I can see the permission settings")]
-        public async Task Permissions_Main_HasPermission_See()
+        public async Task Docs_Permissions_Main_HasPermission_See()
         {
             // ALIGN
             var user = Content.CreateNew("/Root/IMS/Public", "User", "devdog");
@@ -146,7 +146,7 @@ namespace SenseNet.Client.TestsForDocs
 
         [TestMethod]
         [Description("Allow a user to save a content")]
-        public async Task Permissions_Management_AllowUser()
+        public async Task Docs_Permissions_Management_AllowUser()
         {
             Assert.Inconclusive();
             //UNDONE: this test has not run yet
@@ -167,7 +167,7 @@ namespace SenseNet.Client.TestsForDocs
         }
         [TestMethod]
         [Description("Allow a group (role) to approve content in a document library")]
-        public async Task Permissions_Management_AllowGroup()
+        public async Task Docs_Permissions_Management_AllowGroup()
         {
             Assert.Inconclusive();
             //UNDONE: this test has not run yet
@@ -188,7 +188,7 @@ namespace SenseNet.Client.TestsForDocs
         }
         [TestMethod]
         [Description("Prohibit a user from deleting content from a folder")]
-        public async Task Permissions_Management_Deny()
+        public async Task Docs_Permissions_Management_Deny()
         {
             Assert.Inconclusive();
             //UNDONE: this test has not run yet
@@ -209,7 +209,7 @@ namespace SenseNet.Client.TestsForDocs
         }
         [TestMethod]
         [Description("Break inheritance")]
-        public async Task Permissions_Management_Break()
+        public async Task Docs_Permissions_Management_Break()
         {
             Assert.Inconclusive();
             //UNDONE: this test has not run yet
@@ -222,7 +222,7 @@ namespace SenseNet.Client.TestsForDocs
         }
         [TestMethod]
         [Description("Local only")]
-        public async Task Permissions_Management_LocalOnly()
+        public async Task Docs_Permissions_Management_LocalOnly()
         {
             Assert.Inconclusive();
             //UNDONE: this test has not run yet
@@ -244,7 +244,7 @@ namespace SenseNet.Client.TestsForDocs
         }
         [TestMethod]
         [Description("Using custom permissions")]
-        public async Task Permissions_Management_Custom()
+        public async Task Docs_Permissions_Management_Custom()
         {
             Assert.Inconclusive();
             //UNDONE: this test has not run yet
@@ -268,7 +268,7 @@ namespace SenseNet.Client.TestsForDocs
 
         [TestMethod]
         [Description("Get all identities connected to a content")]
-        public async Task Permissions_PermissionQueries_GetRelatedIdentities()
+        public async Task Docs_Permissions_PermissionQueries_GetRelatedIdentities()
         {
             Assert.Inconclusive();
             //UNDONE: this test has not run yet
@@ -291,7 +291,7 @@ namespace SenseNet.Client.TestsForDocs
         }
         [TestMethod]
         [Description("")]
-        public async Task Permissions_PermissionQueries_GetRelatedPermissions()
+        public async Task Docs_Permissions_PermissionQueries_GetRelatedPermissions()
         {
             Assert.Inconclusive();
             //UNDONE: this test has not run yet
@@ -310,7 +310,7 @@ namespace SenseNet.Client.TestsForDocs
         }
         [TestMethod]
         [Description("")]
-        public async Task Permissions_PermissionQueries_GetRelatedItems()
+        public async Task Docs_Permissions_PermissionQueries_GetRelatedItems()
         {
             Assert.Inconclusive();
             //UNDONE: this test has not run yet
@@ -334,7 +334,7 @@ namespace SenseNet.Client.TestsForDocs
         }
         [TestMethod]
         [Description("")]
-        public async Task Permissions_PermissionQueries_GetRelatedIdentitiesByPermissions()
+        public async Task Docs_Permissions_PermissionQueries_GetRelatedIdentitiesByPermissions()
         {
             Assert.Inconclusive();
             //UNDONE: this test has not run yet
@@ -357,7 +357,7 @@ namespace SenseNet.Client.TestsForDocs
         }
         [TestMethod]
         [Description("")]
-        public async Task Permissions_PermissionQueries_GetRelatedItemsOneLevel()
+        public async Task Docs_Permissions_PermissionQueries_GetRelatedItemsOneLevel()
         {
             Assert.Inconclusive();
             //UNDONE: this test has not run yet
@@ -380,7 +380,7 @@ namespace SenseNet.Client.TestsForDocs
         }
         [TestMethod]
         [Description("")]
-        public async Task Permissions_PermissionQueries_GetAllowedUsers()
+        public async Task Docs_Permissions_PermissionQueries_GetAllowedUsers()
         {
             Assert.Inconclusive();
             //UNDONE: this test has not run yet
@@ -399,7 +399,7 @@ namespace SenseNet.Client.TestsForDocs
         }
         [TestMethod]
         [Description("")]
-        public async Task Permissions_PermissionQueries_GetParentGroups()
+        public async Task Docs_Permissions_PermissionQueries_GetParentGroups()
         {
             Assert.Inconclusive();
             //UNDONE: this test has not run yet

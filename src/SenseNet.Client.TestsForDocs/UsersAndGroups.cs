@@ -13,7 +13,7 @@ namespace SenseNet.Client.TestsForDocs
 
         [TestMethod]
         [Description("Creating users")]
-        public async Task UsersAndGroups_Main_CreateUser()
+        public async Task Docs_UsersAndGroups_Main_CreateUser()
         {
             try
             {
@@ -37,7 +37,7 @@ namespace SenseNet.Client.TestsForDocs
         }
         [TestMethod]
         [Description("Disable a user")]
-        public async Task UsersAndGroups_Main_DisableUser()
+        public async Task Docs_UsersAndGroups_Main_DisableUser()
         {
             // ALIGN
             var c = Content.CreateNew("/Root/IMS/Public", "User", "editormanatee");
@@ -65,7 +65,7 @@ namespace SenseNet.Client.TestsForDocs
         }
         [TestMethod]
         [Description("Creating roles (groups)")]
-        public async Task UsersAndGroups_Main_CreateGroup()
+        public async Task Docs_UsersAndGroups_Main_CreateGroup()
         {
             try
             {
@@ -93,7 +93,7 @@ namespace SenseNet.Client.TestsForDocs
 
         [TestMethod]
         [Description("Load members of a group")]
-        public async Task UsersAndGroups_GroupMembership_Load()
+        public async Task Docs_UsersAndGroups_GroupMembership_Load()
         {
             Assert.Inconclusive();
             //UNDONE:---- ERROR: Cannot perform runtime binding on a null reference
@@ -115,7 +115,7 @@ namespace SenseNet.Client.TestsForDocs
         }
         [TestMethod]
         [Description("Add members to a group")]
-        public async Task UsersAndGroups_GroupMembership_Add()
+        public async Task Docs_UsersAndGroups_GroupMembership_Add()
         {
             Assert.Inconclusive();
             //UNDONE:---- ERROR: Content not found
@@ -130,7 +130,7 @@ namespace SenseNet.Client.TestsForDocs
         }
         [TestMethod]
         [Description("Remove members from a group")]
-        public async Task UsersAndGroups_GroupMembership_Remove()
+        public async Task Docs_UsersAndGroups_GroupMembership_Remove()
         {
             Assert.Inconclusive();
             //UNDONE:---- ERROR: Content not found
@@ -145,7 +145,7 @@ namespace SenseNet.Client.TestsForDocs
         }
         [TestMethod]
         [Description("Get all group memberships (roles) of a user")]
-        public async Task UsersAndGroups_GroupMembership_GetRolesOfUser()
+        public async Task Docs_UsersAndGroups_GroupMembership_GetRolesOfUser()
         {
             // ACTION for doc
             //UNDONE: Missing doc and test. REST: GET /OData.svc/Root/IMS/Public('devdog')?$select=AllRoles&$expand=AllRoles
@@ -155,7 +155,7 @@ namespace SenseNet.Client.TestsForDocs
         }
         [TestMethod]
         [Description("Get the list of groups where the user is directly added as a member")]
-        public async Task UsersAndGroups_GroupMembership_GetDirectRolesOfUser()
+        public async Task Docs_UsersAndGroups_GroupMembership_GetDirectRolesOfUser()
         {
             // ACTION for doc
             //UNDONE: Missing doc and test. REST: GET /OData.svc/Root/IMS/Public('devdog')?$select=DirectRoles&$expand=DirectRoles
@@ -165,7 +165,7 @@ namespace SenseNet.Client.TestsForDocs
         }
         [TestMethod]
         [Description("Get the list of workspaces where the given user is member")]
-        public async Task UsersAndGroups_GroupMembership_GetWorkspacesOfUser()
+        public async Task Docs_UsersAndGroups_GroupMembership_GetWorkspacesOfUser()
         {
             // ACTION for doc
             //UNDONE: Missing doc and test. REST: GET /OData.svc/Root/Content?query=%2BType%3AGroup %2BMembers%3A{{Id%3A1163}} .AUTOFILTERS%3AOFF&$select=Workspace/DisplayName&$expand=Workspace

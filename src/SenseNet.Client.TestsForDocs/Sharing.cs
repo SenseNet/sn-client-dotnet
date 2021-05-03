@@ -12,7 +12,7 @@ namespace SenseNet.Client.TestsForDocs
 
         [TestMethod]
         [Description("Share with a user")]
-        public async Task Sharing_Main_Share()
+        public async Task Docs_Sharing_Main_Share()
         {
             Assert.Inconclusive();
             //UNDONE: this test has not run yet
@@ -31,7 +31,7 @@ namespace SenseNet.Client.TestsForDocs
         }
         [TestMethod]
         [Description("Share content with external users via email")]
-        public async Task Sharing_Main_ShareWithEmail()
+        public async Task Docs_Sharing_Main_ShareWithEmail()
         {
             Assert.Inconclusive();
             //UNDONE: this test has not run yet
@@ -50,7 +50,7 @@ namespace SenseNet.Client.TestsForDocs
         }
         [TestMethod]
         [Description("Sharing levels")]
-        public async Task Sharing_Main_Levels()
+        public async Task Docs_Sharing_Main_Levels()
         {
             Assert.Inconclusive();
             //UNDONE: this test has not run yet
@@ -69,7 +69,7 @@ namespace SenseNet.Client.TestsForDocs
         }
         [TestMethod]
         [Description("Remove sharing")]
-        public async Task Sharing_Main_Remove()
+        public async Task Docs_Sharing_Main_Remove()
         {
             Assert.Inconclusive();
             //UNDONE: this test has not run yet
@@ -84,7 +84,7 @@ namespace SenseNet.Client.TestsForDocs
         }
         [TestMethod]
         [Description("Getting sharing entries for a content")]
-        public async Task Sharing_Main_GetSharing()
+        public async Task Docs_Sharing_Main_GetSharing()
         {
             Assert.Inconclusive();
             //UNDONE: this test has not run yet
@@ -98,7 +98,7 @@ namespace SenseNet.Client.TestsForDocs
         }
         [TestMethod]
         [Description("Content shared with a specific user")]
-        public async Task Sharing_Main_GetSharedWith()
+        public async Task Docs_Sharing_Main_GetSharedWith()
         {
             Assert.Inconclusive();
             //UNDONE: this test has not run yet
@@ -112,7 +112,7 @@ namespace SenseNet.Client.TestsForDocs
         }
         [TestMethod]
         [Description("Content shared by a specific user")]
-        public async Task Sharing_Main_GetSharedBy()
+        public async Task Docs_Sharing_Main_GetSharedBy()
         {
             Assert.Inconclusive();
             //UNDONE: this test has not run yet
@@ -126,7 +126,7 @@ namespace SenseNet.Client.TestsForDocs
         }
         [TestMethod]
         [Description("Notifications")]
-        public async Task Sharing_Main_Notifications()
+        public async Task Docs_Sharing_Main_Notifications()
         {
             Assert.Inconclusive();
             //UNDONE: this test has not run yet
