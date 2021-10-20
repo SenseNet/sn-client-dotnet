@@ -683,53 +683,52 @@ namespace SenseNet.Client
         {
             if (method == null)
                 throw new ArgumentNullException(nameof(method));
-            if (server == null)
-                server = ClientContext.Current.Server;
+            
+            server ??= ClientContext.Current.Server;
 
-            using (var handler = new HttpClientHandler())
+            using var handler = new HttpClientHandler();
+
+            if (server.IsTrusted)
+                handler.ServerCertificateCustomValidationCallback =
+                    server.ServerCertificateCustomValidationCallback
+                    ?? ServerContext.DefaultServerCertificateCustomValidationCallback;
+
+            using var client = new HttpClient(handler);
+            using var request = new HttpRequestMessage(method, url);
+
+            // this will close the connection instead of keeping it alive
+            request.Version = HttpVersion.Version10;
+
+            SetAuthenticationForRequest(handler, request, server);
+
+            requestProcessor?.Invoke(handler, client, request);
+
+            try
             {
-                if (server.IsTrusted)
-                    handler.ServerCertificateCustomValidationCallback =
-                        server.ServerCertificateCustomValidationCallback
-                        ?? ServerContext.DefaultServerCertificateCustomValidationCallback;
+                using var response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
 
-                using (var client = new HttpClient(handler))
-                using (var request = new HttpRequestMessage(method, url))
+                if (!response.IsSuccessStatusCode)
                 {
-                    SetAuthenticationForRequest(handler, request, server);
-
-                    requestProcessor?.Invoke(handler, client, request);
-
-                    HttpResponseMessage response;
-                    try
+                    if (response.StatusCode == HttpStatusCode.NotFound)
                     {
-                        response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
-
-                        if (!response.IsSuccessStatusCode)
-                        {
-                            if (response.StatusCode == HttpStatusCode.NotFound)
-                            {
-                                if(method != HttpMethod.Post)
-                                    response = null;
-                                else
-                                    throw new ClientException("Content not found", HttpStatusCode.NotFound);
-                            }
-                            else
-                            {
-                                // try parse error content as json
-                                var exceptionData = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                                var serverExceptionData = GetExceptionData(exceptionData);
-                                throw new ClientException(serverExceptionData, response.StatusCode);
-                            }
-                        }
+                        if (method == HttpMethod.Post)
+                            throw new ClientException("Content not found", HttpStatusCode.NotFound);
                     }
-                    catch (HttpRequestException ex)
+                    else
                     {
-                        throw await GetClientExceptionAsync(ex, url, method).ConfigureAwait(false);
+                        // try parse error content as json
+                        var exceptionData =
+                            await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                        var serverExceptionData = GetExceptionData(exceptionData);
+                        throw new ClientException(serverExceptionData, response.StatusCode);
                     }
-
-                    responseProcessor(response);
                 }
+
+                responseProcessor(response);
+            }
+            catch (HttpRequestException ex)
+            {
+                throw await GetClientExceptionAsync(ex, url, method).ConfigureAwait(false);
             }
         }
 
