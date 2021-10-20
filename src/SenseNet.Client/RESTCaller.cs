@@ -9,6 +9,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using AngleSharp;
 using SenseNet.Diagnostics;
 
 namespace SenseNet.Client
@@ -785,13 +786,50 @@ namespace SenseNet.Client
             if (string.IsNullOrEmpty(responseText))
                 return null;
 
+            responseText = responseText.Trim();
+
             try
             {
-                // Try to deserialize the response as an object that contains
-                // well-formatted information about the error (e.g. type).
-                var er = JsonHelper.Deserialize<ErrorResponse>(responseText);
-                if (er != null)
-                    return er.ErrorData;
+                if (responseText.StartsWith("{"))
+                {
+                    // Try to deserialize the response as an object that contains
+                    // well-formatted information about the error (e.g. type).
+                    var er = JsonHelper.Deserialize<ErrorResponse>(responseText);
+                    if (er != null)
+                        return er.ErrorData;
+                }
+                else if (responseText.StartsWith("<"))
+                {
+                    // parse HTML
+                    var context = BrowsingContext.New(AngleSharp.Configuration.Default);
+
+                    // Create a virtual request to specify the document to load.
+                    var htmlDocument = context.OpenAsync(req =>
+                    {
+                        req.Content(responseText)
+                            .Header("charset", "UTF-8");
+                    }).GetAwaiter().GetResult();
+
+                    return new ErrorData
+                    {
+                        ErrorCode = string.Empty,
+                        Message = new ErrorMessage
+                        {
+                            Value = htmlDocument.Title
+                        }
+                    };
+                }
+                else
+                {
+                    return new ErrorData
+                    {
+                        ErrorCode = string.Empty,
+                        Message = new ErrorMessage
+                        {
+                            Value = responseText.Substring(0, Math.Min(500, responseText.Length - 1))
+                        }
+                    };
+                }
             }
             catch (Exception)
             {
