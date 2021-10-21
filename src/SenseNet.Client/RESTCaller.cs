@@ -460,15 +460,34 @@ namespace SenseNet.Client
             {
                 SnTrace.Category(ClientContext.TraceCategory).Write("###>REQ: {0}", requestData);
 
-                server.Logger?.LogTrace($"Uploading initial data of {uploadData.FileName}.");
+                var retryCount = 0;
 
-                var httpContent = new StringContent(uploadData.ToString());
-                httpContent.Headers.ContentType = new MediaTypeHeaderValue(JsonContentMimeType);
-                await ProcessWebResponseAsync(requestData.ToString(), HttpMethod.Post, server, httpContent,
-                    response =>
+                await Retrier.RetryAsync(10, 1000, async () =>
+                {
+                    retryCount++;
+                    var retryText = retryCount > 1 ? $" (retry {retryCount})" : string.Empty;
+                    server.Logger?.LogTrace($"Uploading initial data of {uploadData.FileName}{retryText}.");
+
+                    var httpContent = new StringContent(uploadData.ToString());
+                    httpContent.Headers.ContentType = new MediaTypeHeaderValue(JsonContentMimeType);
+                    await ProcessWebResponseAsync(requestData.ToString(), HttpMethod.Post, server, httpContent,
+                        response =>
+                        {
+                            uploadData.ChunkToken = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+                        }, CancellationToken.None).ConfigureAwait(false);
+                }, (i, exception) =>
+                {
+                    // choose the exceptions when we can retry the operation
+                    return exception switch
                     {
-                        uploadData.ChunkToken = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-                    }, CancellationToken.None).ConfigureAwait(false);
+                        null => true,
+                        ClientException cex when
+                            (int)cex.StatusCode == 429 ||
+                            cex.ErrorData?.ExceptionType == "NodeIsOutOfDateException"
+                            => false,
+                        _ => throw exception
+                    };
+                });
             }
             catch (WebException ex)
             {
@@ -762,7 +781,7 @@ namespace SenseNet.Client
                         var serverExceptionData = GetExceptionData(exceptionData);
 
                         server.Logger?.LogTrace($"Error response: {response.StatusCode} " +
-                                                $"{serverExceptionData?.Message} {serverExceptionData?.ExceptionType}");
+                                                $"{serverExceptionData?.Message?.Value} {serverExceptionData?.ExceptionType}");
 
                         throw new ClientException(serverExceptionData, response.StatusCode);
                     }
