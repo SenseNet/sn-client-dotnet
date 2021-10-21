@@ -10,7 +10,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using AngleSharp;
+using Microsoft.Extensions.Logging;
 using SenseNet.Diagnostics;
+using SenseNet.Tools;
 
 namespace SenseNet.Client
 {
@@ -204,13 +206,14 @@ namespace SenseNet.Client
             string result = null;
 
             SnTrace.Category(ClientContext.TraceCategory).Write("###>REQ: {0}", uri);
+            //server?.Logger?.LogTrace($"Sending {method} request to {uri}");
 
             await ProcessWebResponseAsync(uri.ToString(), method, server,
                 jsonBody != null ? new StringContent(jsonBody) : null,
-                async response =>
+                response =>
                 {
                     if (response != null)
-                        result = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                        result = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
                 }, CancellationToken.None).ConfigureAwait(false);
 
             return result;
@@ -441,6 +444,8 @@ namespace SenseNet.Client
         }
         private static async Task<Content> UploadInternalAsync(Stream binaryStream, UploadData uploadData, ODataRequest requestData, ServerContext server = null, Action<int> progressCallback = null)
         {
+            server ??= ClientContext.Current.Server;
+
             // force set values
             uploadData.UseChunk = binaryStream.Length > ClientContext.Current.ChunkSizeInBytes;
             if (uploadData.FileLength == 0)
@@ -455,22 +460,28 @@ namespace SenseNet.Client
             {
                 SnTrace.Category(ClientContext.TraceCategory).Write("###>REQ: {0}", requestData);
 
+                server.Logger?.LogTrace($"Uploading initial data of {uploadData.FileName}.");
+
                 var httpContent = new StringContent(uploadData.ToString());
                 httpContent.Headers.ContentType = new MediaTypeHeaderValue(JsonContentMimeType);
                 await ProcessWebResponseAsync(requestData.ToString(), HttpMethod.Post, server, httpContent,
-                    async response =>
+                    response =>
                     {
-                        uploadData.ChunkToken = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                        uploadData.ChunkToken = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
                     }, CancellationToken.None).ConfigureAwait(false);
             }
             catch (WebException ex)
             {
-                var ce = new ClientException("Error during binary upload.", ex);
-
-                ce.Data["SiteUrl"] = requestData.SiteUrl;
-                ce.Data["Parent"] = requestData.ContentId != 0 ? requestData.ContentId.ToString() : requestData.Path;
-                ce.Data["FileName"] = uploadData.FileName;
-                ce.Data["ContentType"] = uploadData.ContentType;
+                var ce = new ClientException("Error during binary upload.", ex)
+                {
+                    Data =
+                    {
+                        ["SiteUrl"] = requestData.SiteUrl,
+                        ["Parent"] = requestData.ContentId != 0 ? requestData.ContentId.ToString() : requestData.Path,
+                        ["FileName"] = uploadData.FileName,
+                        ["ContentType"] = uploadData.ContentType
+                    }
+                };
 
                 throw ce;
             }
@@ -488,30 +499,55 @@ namespace SenseNet.Client
             var buffer = new byte[ClientContext.Current.ChunkSizeInBytes];
             int bytesRead;
             var start = 0;
+            var chunkCount = 0;
 
-            while ((bytesRead = binaryStream.Read(buffer, 0, buffer.Length)) != 0)
+            while ((bytesRead = await binaryStream.ReadAsync(buffer, 0, buffer.Length)) != 0)
             {
-                // Prepare the current chunk request
-                var httpContent = new MultipartFormDataContent(boundary);
-                foreach (var item in uploadFormData)
-                    httpContent.Add(new StringContent(item.Value), item.Key);
-                httpContent.Headers.ContentDisposition = contentDispositionHeaderValue;
+                chunkCount++;
+                var retryCount = 0;
 
-                if (uploadData.UseChunk)
-                    httpContent.Headers.ContentRange = new ContentRangeHeaderValue(start, start + bytesRead - 1, binaryStream.Length);
+                await Retrier.RetryAsync(10, 1000, async () =>
+                {
+                    retryCount++;
+                    var retryText = retryCount > 1 ? $" (retry {retryCount})" : string.Empty;
+                    server.Logger?.LogTrace($"Uploading chunk {chunkCount}{retryText}: {bytesRead} bytes of {uploadData.FileName}.");
 
-                // Add the chunk as a stream into the request content
-                var postedStream = new MemoryStream(buffer, 0, bytesRead);
-                httpContent.Add(new StreamContent(postedStream), "files[]", uploadData.FileName);
+                    // Prepare the current chunk request
+                    using var httpContent = new MultipartFormDataContent(boundary);
+                    foreach (var item in uploadFormData)
+                        httpContent.Add(new StringContent(item.Value), item.Key);
+                    httpContent.Headers.ContentDisposition = contentDispositionHeaderValue;
 
-                // Process
-                await ProcessWebResponseAsync(requestData.ToString(), HttpMethod.Post, server,
-                    httpContent,
-                    async response =>
+                    if (uploadData.UseChunk)
+                        httpContent.Headers.ContentRange =
+                            new ContentRangeHeaderValue(start, start + bytesRead - 1, binaryStream.Length);
+
+                    // Add the chunk as a stream into the request content
+                    var postedStream = new MemoryStream(buffer, 0, bytesRead);
+                    httpContent.Add(new StreamContent(postedStream), "files[]", uploadData.FileName);
+
+                    // Process
+                    await ProcessWebResponseAsync(requestData.ToString(), HttpMethod.Post, server,
+                        httpContent,
+                        response =>
+                        {
+                            var rs = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+                            uploadedContent = JsonHelper.Deserialize(rs);
+                        }, CancellationToken.None).ConfigureAwait(false);
+
+                }, (i, exception) =>
+                {
+                    // choose the exceptions when we can retry the operation
+                    return exception switch
                     {
-                        var rs = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                        uploadedContent = JsonHelper.Deserialize(rs);
-                    }, CancellationToken.None).ConfigureAwait(false);
+                        null => true,
+                        ClientException cex when 
+                            (int)cex.StatusCode == 429 ||
+                            cex.ErrorData?.ExceptionType == "NodeIsOutOfDateException"
+                            => false,
+                        _ => throw exception
+                    };
+                });
 
                 start += bytesRead;
 
@@ -587,6 +623,8 @@ namespace SenseNet.Client
             var model = JsonHelper.GetJsonPostModel(uploadData.ToDictionary());
             var httpContent = new StringContent(model);
             httpContent.Headers.ContentType = new MediaTypeHeaderValue(JsonContentMimeType);
+
+            server?.Logger?.LogTrace($"Uploading text content to the {uploadData.PropertyName} field of {uploadData.FileName}");
 
             await ProcessWebResponseAsync(requestData.ToString(), HttpMethod.Post, server, httpContent,
                 async response =>
@@ -713,6 +751,8 @@ namespace SenseNet.Client
                     {
                         if (method == HttpMethod.Post)
                             throw new ClientException("Content not found", HttpStatusCode.NotFound);
+
+                        server.Logger?.LogTrace($"Error response {response.StatusCode} when sending a {method} request to {url}.");
                     }
                     else
                     {
@@ -720,6 +760,10 @@ namespace SenseNet.Client
                         var exceptionData =
                             await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                         var serverExceptionData = GetExceptionData(exceptionData);
+
+                        server.Logger?.LogTrace($"Error response: {response.StatusCode} " +
+                                                $"{serverExceptionData?.Message} {serverExceptionData?.ExceptionType}");
+
                         throw new ClientException(serverExceptionData, response.StatusCode);
                     }
                 }
@@ -768,14 +812,16 @@ namespace SenseNet.Client
         /// status code, original response text, etc.) and the original exception as an inner exception.</returns>
         public static Task<ClientException> GetClientExceptionAsync(HttpRequestException ex, string requestUrl = null, HttpMethod method = null, string body = null)
         {
-            var ce = new ClientException("A request exception occured.", ex)
+            var ce = new ClientException("A request exception occurred.", ex)
             {
-                Response = string.Empty
+                Response = string.Empty,
+                Data =
+                {
+                    ["Url"] = requestUrl,
+                    ["Method"] = method?.Method ?? HttpMethod.Get.Method,
+                    ["Body"] = body
+                }
             };
-
-            ce.Data["Url"] = requestUrl;
-            ce.Data["Method"] = method?.Method ?? HttpMethod.Get.Method;
-            ce.Data["Body"] = body;
 
             return Task.FromResult(ce);
         }

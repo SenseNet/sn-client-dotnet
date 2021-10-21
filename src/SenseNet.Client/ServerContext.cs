@@ -2,6 +2,7 @@
 using System.Net.Http;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
+using Microsoft.Extensions.Logging;
 
 namespace SenseNet.Client
 {
@@ -41,6 +42,8 @@ namespace SenseNet.Client
         public Func<HttpRequestMessage, X509Certificate2, X509Chain, SslPolicyErrors, bool> ServerCertificateCustomValidationCallback { get; set; }
 
         public AuthenticationInfo Authentication { get; } = new AuthenticationInfo();
+
+        public ILogger Logger { get; set; }
 
         //============================================================================= Static API
 
