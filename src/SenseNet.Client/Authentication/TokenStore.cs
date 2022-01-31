@@ -1,4 +1,6 @@
 ﻿using System;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Caching.Memory;
@@ -72,7 +74,23 @@ namespace SenseNet.Client.Authentication
 
             //TODO: determine access token cache expiration based on the token expiration
             if (!string.IsNullOrEmpty(accessToken))
+            {
                 _cache.Set(tokenCacheKey, accessToken, TimeSpan.FromMinutes(10));
+
+                try
+                {
+                    // parse token and log user
+                    var handler = new JwtSecurityTokenHandler();
+                    var token = handler.ReadJwtToken(accessToken);
+                    var sub = token.Claims.FirstOrDefault(c => c.Type == "client_sub")?.Value ?? "unknown";
+
+                    _logger?.LogTrace($"Token acquired for user {sub}.");
+                }
+                catch (Exception ex)
+                {
+                    _logger?.LogWarning(ex, $"Could not read access token: {ex.Message}");
+                }
+            }
 
             return accessToken;
         }
