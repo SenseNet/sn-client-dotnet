@@ -82,7 +82,7 @@ namespace SenseNet.Client
             requestData.IsCollectionRequest = false;
 
             var rs = await GetResponseStringAsync(requestData.GetUri(), server).ConfigureAwait(false);
-            if (rs == null)
+            if (string.IsNullOrEmpty(rs))
                 return null;
 
             return Content.CreateFromResponse(JsonHelper.Deserialize(rs).d, server);
