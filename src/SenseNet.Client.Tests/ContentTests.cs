@@ -2,9 +2,11 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json.Linq;
 using SenseNet.Client.Security;
+using SenseNet.Extensions.DependencyInjection;
 
 namespace SenseNet.Client.Tests
 {
@@ -238,6 +240,33 @@ namespace SenseNet.Client.Tests
             await newContent.SaveAsync();
 
             Assert.IsTrue(newContent.FieldNames.Length > 60);
+        }
+
+        [TestMethod]
+        public async Task Content_Exists()
+        {
+            var server = await GetServerAsync();
+
+            var exists1 = await Content.ExistsAsync("/Root", server);
+            Assert.IsTrue(exists1);
+
+            var exists2 = await Content.ExistsAsync("/Root/asdf", server);
+            Assert.IsFalse(exists2);
+        }
+
+        private static Task<ServerContext> GetServerAsync()
+        {
+            var services = new ServiceCollection();
+
+            services.AddLogging()
+                .AddSenseNetRepository(options =>
+                {
+                    options.Url = "https://localhost:44362";
+                });
+
+            var provider = services.BuildServiceProvider();
+            var scf = provider.GetService<IServerContextFactory>();
+            return scf.GetServerAsync();
         }
     }
 }
