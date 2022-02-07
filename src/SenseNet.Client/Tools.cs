@@ -32,22 +32,24 @@ namespace SenseNet.Client
         /// </summary>
         /// <param name="path">The path to create containers for.</param>
         /// <param name="containerTypeName">Optional: content type name of created containers. Default is Folder.</param>
+        /// <param name="server">Target server.</param>
         /// <returns>The newly created container. If it already exists, this method returns null.</returns>
-        public static async Task<Content> EnsurePathAsync(string path, string containerTypeName = null)
+        public static async Task<Content> EnsurePathAsync(string path, string containerTypeName = null,
+            ServerContext server = null)
         {
             if (string.IsNullOrEmpty(path) || string.CompareOrdinal(path, "/Root") == 0)
                 return null;
 
-            if (await Content.ExistsAsync(path).ConfigureAwait(false))
+            if (await Content.ExistsAsync(path, server).ConfigureAwait(false))
                 return null;
 
             var parentPath = RepositoryPath.GetParentPath(path);
 
             // ensure parent
-            await EnsurePathAsync(parentPath, containerTypeName).ConfigureAwait(false);
+            await EnsurePathAsync(parentPath, containerTypeName, server).ConfigureAwait(false);
 
             var name = RepositoryPath.GetFileName(path);
-            var folder = Content.CreateNew(parentPath, containerTypeName ?? "Folder", name);
+            var folder = Content.CreateNew(parentPath, containerTypeName ?? "Folder", name, null, server);
 
             try
             {

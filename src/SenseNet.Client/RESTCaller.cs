@@ -646,11 +646,11 @@ namespace SenseNet.Client
             server?.Logger?.LogTrace($"Uploading text content to the {uploadData.PropertyName} field of {uploadData.FileName}");
 
             await ProcessWebResponseAsync(requestData.ToString(), HttpMethod.Post, server, httpContent,
-                async response =>
+                response =>
                 {
                     if (response != null)
                     {
-                        var rs = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                        var rs = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
                         uploadedContent = JsonHelper.Deserialize(rs);
                     }
                 }, cancellationToken).ConfigureAwait(false);
@@ -659,7 +659,7 @@ namespace SenseNet.Client
                 return null;
 
             int contentId = uploadedContent.Id;
-            var content = Content.Create(contentId);
+            var content = Content.Create(contentId, server);
 
             content.Name = uploadedContent.Name;
             content.Path = uploadedContent.Url;
