@@ -630,9 +630,11 @@ namespace SenseNet.Client
             CancellationToken cancellationToken, ServerContext server = null)
         {
             // force set values
-            if(text.Length > ClientContext.Current.ChunkSizeInBytes)
-                throw new InvalidOperationException($"Cannot upload a text that longer than the chunk size " +
-                                                    $"({ClientContext.Current.ChunkSizeInBytes}).");
+            if(Encoding.UTF8.GetBytes(text).Length > ClientContext.Current.ChunkSizeInBytes)
+                throw new InvalidOperationException("Cannot upload a text bigger than the chunk size " +
+                                                    $"({ClientContext.Current.ChunkSizeInBytes} bytes). " +
+                                                    "This method uploads whole text files. Use the regular UploadAsync method " +
+                                                    "for uploading big files in chunks.");
             if (uploadData.FileLength == 0)
                 uploadData.FileLength = text.Length;
             uploadData.FileText = text;
