@@ -473,7 +473,8 @@ namespace SenseNet.Client
 
 
         /// <summary>
-        /// Uploads a file to the server into the provided container.
+        /// Uploads a short text file to the server into the provided container.
+        /// The contents cannot be bigger than the configured chunk size.
         /// </summary>
         /// <param name="parentPath">Parent path.</param>
         /// <param name="fileName">Name of the file to upload.</param>
@@ -503,7 +504,8 @@ namespace SenseNet.Client
                 .ConfigureAwait(false);
         }
         /// <summary>
-        /// Uploads a file to the server into the provided container.
+        /// Uploads a short text file to the server into the provided container.
+        /// The contents cannot be bigger than the configured chunk size.
         /// </summary>
         /// <param name="parentId">Parent id.</param>
         /// <param name="fileName">Name of the file to upload.</param>
