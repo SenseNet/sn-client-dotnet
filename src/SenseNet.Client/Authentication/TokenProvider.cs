@@ -47,7 +47,7 @@ namespace SenseNet.Client.Authentication
 
             if (disco.IsError)
             {
-                _logger?.LogError($"Error during discovery document request to authority {authorityInfo.Authority}.");
+                _logger?.LogError(disco.Exception, $"Error during discovery document request to authority {authorityInfo.Authority}. {disco.Error}");
                 return null;
             }
             
@@ -68,7 +68,7 @@ namespace SenseNet.Client.Authentication
             {
                 _logger?.LogError(tokenResponse.Exception, "Error during requesting client credentials " +
                                                            $"from authority {authorityInfo.Authority}." +
-                                                           $"ClientId: {authorityInfo.ClientId}");
+                                                           $"ClientId: {authorityInfo.ClientId}. {tokenResponse.Error}");
                 return null;
             }
 
