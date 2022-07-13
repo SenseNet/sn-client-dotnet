@@ -1,4 +1,7 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
 
@@ -27,6 +30,23 @@ namespace SenseNet.Client.Tests
             var pairs = JsonConvert.SerializeObject(uploadData.ToKeyValuePairs().ToDictionary(x=>x.Key, x=>x.Value));
 
             Assert.AreEqual(dict, pairs);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(InvalidOperationException))]
+        public async Task Upload_Text_TooBig()
+        {
+            var orig = ClientContext.Current.ChunkSizeInBytes;
+
+            try
+            {
+                ClientContext.Current.ChunkSizeInBytes = 10;
+                await Content.UploadTextAsync(1, "example.txt", "too long text", CancellationToken.None);
+            }
+            finally
+            {
+                ClientContext.Current.ChunkSizeInBytes = orig;
+            }
         }
     }
 }
