@@ -60,6 +60,8 @@ namespace SenseNet.Client.Authentication
 
                 if (!string.IsNullOrEmpty(authInfo.Authority))
                     _cache.Set(authInfoCacheKey, authInfo, TimeSpan.FromMinutes(30));
+                else
+                    _logger?.LogTrace($"Authority info is empty for server {server.Url}");
             }
 
             if (string.IsNullOrEmpty(authInfo.Authority))

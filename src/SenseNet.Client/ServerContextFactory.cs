@@ -2,6 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SenseNet.Client.Authentication;
 
@@ -44,15 +45,17 @@ namespace SenseNet.Client
     internal class ServerContextFactory : IServerContextFactory
     {
         private readonly ITokenStore _tokenStore;
+        private readonly ILogger<ServerContextFactory> _logger;
         private readonly ServerContextOptions _serverContextOptions;
         private readonly RepositoryOptions _repositoryOptions;
         private readonly SemaphoreSlim _asyncLock = new SemaphoreSlim(1, 1);
         private readonly IDictionary<string, ServerContext> _servers = new Dictionary<string, ServerContext>();
 
         public ServerContextFactory(ITokenStore tokenStore, IOptions<ServerContextOptions> serverContextOptions,
-            IOptions<RepositoryOptions> repositoryOptions)
+            IOptions<RepositoryOptions> repositoryOptions, ILogger<ServerContextFactory> logger)
         {
             _tokenStore = tokenStore;
+            _logger = logger;
             _serverContextOptions = serverContextOptions.Value;
             _repositoryOptions = repositoryOptions.Value;
         }
@@ -60,8 +63,7 @@ namespace SenseNet.Client
         [SuppressMessage("ReSharper", "InconsistentlySynchronizedField")]
         public async Task<ServerContext> GetServerAsync(string name)
         {
-            if (name == null)
-                name = ServerContextOptions.DefaultServerName;
+            name ??= ServerContextOptions.DefaultServerName;
 
             if (_servers.TryGetValue(name, out var server))
                 return server;
@@ -105,6 +107,9 @@ namespace SenseNet.Client
 
             server.Authentication.AccessToken = await _tokenStore.GetTokenAsync(server,
                 options.Authentication.ClientId, options.Authentication.ClientSecret);
+
+            if (string.IsNullOrEmpty(server.Authentication.AccessToken))
+                _logger.LogWarning($"Could not obtain authentication token value for {server.Url}");
 
             return server;
         }
