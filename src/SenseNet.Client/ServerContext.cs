@@ -45,8 +45,31 @@ namespace SenseNet.Client
 
         public ILogger Logger { get; set; }
 
-        //============================================================================= Static API
+        /// <summary>
+        /// Creates a new server context object filled with the properties of the current instance.
+        /// </summary>
+        internal ServerContext Clone()
+        {
+            var server = new ServerContext
+            {
+                Username = this.Username,
+                Password = this.Password,
+                Url = this.Url,
+                IsTrusted = this.IsTrusted,
+                Logger = this.Logger,
+                ServerCertificateCustomValidationCallback = this.ServerCertificateCustomValidationCallback,
+                Authentication =
+                {
+                    AccessToken = this.Authentication.AccessToken,
+                    RefreshToken = this.Authentication.RefreshToken
+                }
+            };
 
+            return server;
+        }
+
+        //============================================================================= Static API
+        
         /// <summary>
         /// Gets a URL from a server instance for sending requests. In case of a null
         /// instance the first one from the currently configured list will be used.
@@ -54,8 +77,7 @@ namespace SenseNet.Client
         /// <param name="server">Server context object.</param>
         public static string GetUrl(ServerContext server)
         {
-            if (server == null)
-                server = ClientContext.Current.Server;
+            server ??= ClientContext.Current.Server;
             return server.Url;
         }
 

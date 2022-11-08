@@ -31,15 +31,11 @@ namespace SenseNet.Client
     public interface IServerContextFactory
     {
         /// <summary>
-        /// Gets the default server context.
-        /// </summary>
-        Task<ServerContext> GetServerAsync();
-
-        /// <summary>
         /// Gets a named server context.
         /// </summary>
-        /// <param name="name">Server context name.</param>
-        Task<ServerContext> GetServerAsync(string name);
+        /// <param name="name">Server context name if there are multiple repositories to connect to.</param>
+        /// <param name="token">Optional custom authentication token.</param>
+        Task<ServerContext> GetServerAsync(string name = null, string token = null);
     }
     
     internal class ServerContextFactory : IServerContextFactory
@@ -61,20 +57,33 @@ namespace SenseNet.Client
         }
         
         [SuppressMessage("ReSharper", "InconsistentlySynchronizedField")]
-        public async Task<ServerContext> GetServerAsync(string name)
+        public async Task<ServerContext> GetServerAsync(string name = null, string token = null)
         {
+            ServerContext CloneWithToken(ServerContext original)
+            {
+                // we return with a fresh object every time
+                var clonedServer = original.Clone();
+
+                // set token only if provided, do not overwrite cached value if no token is present
+                if (!string.IsNullOrEmpty(token))
+                    clonedServer.Authentication.AccessToken = token;
+
+                return clonedServer;
+            }
+
             name ??= ServerContextOptions.DefaultServerName;
 
             if (_servers.TryGetValue(name, out var server))
-                return server;
+                CloneWithToken(server);
 
             await _asyncLock.WaitAsync();
 
             try
             {
                 if (_servers.TryGetValue(name, out server))
-                    return server;
+                    return CloneWithToken(server);
 
+                // cache the authenticated server
                 server = await GetAuthenticatedServerAsync(name).ConfigureAwait(false);
 
                 if (server != null)
@@ -85,15 +94,9 @@ namespace SenseNet.Client
                 _asyncLock.Release();
             }
 
-            return server;
+            return CloneWithToken(server);
         }
-
-        public Task<ServerContext> GetServerAsync()
-        {
-            // default server context
-            return GetServerAsync(ServerContextOptions.DefaultServerName);
-        }
-
+        
         private async Task<ServerContext> GetAuthenticatedServerAsync(string name)
         {
             // Check if a named server was configured. Fallback to default options.
@@ -104,6 +107,11 @@ namespace SenseNet.Client
             {
                 Url = options.Url.AppendSchema()
             };
+
+            // do not try to authenticate if the values are not provided
+            if (string.IsNullOrEmpty(options.Authentication.ClientId) ||
+                string.IsNullOrEmpty(options.Authentication.ClientSecret)) 
+                return server;
 
             server.Authentication.AccessToken = await _tokenStore.GetTokenAsync(server,
                 options.Authentication.ClientId, options.Authentication.ClientSecret);
