@@ -1,7 +1,9 @@
 ﻿using System;
+using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 namespace SenseNet.Client
@@ -44,6 +46,49 @@ namespace SenseNet.Client
         public AuthenticationInfo Authentication { get; } = new AuthenticationInfo();
 
         public ILogger Logger { get; set; }
+
+        /// <summary>
+        /// Gets the current user content based on the available authentication token.
+        /// If there is no token or it is invalid, the method returns the Visitor user.
+        /// </summary>
+        /// <param name="select">Fields to select.</param>
+        /// <param name="expand">Fields to expand.</param>
+        public Task<Content> GetCurrentUserAsync(string[] select = null, string[] expand = null)
+        {
+            ODataRequest request = null;
+
+            if (!string.IsNullOrEmpty(Authentication?.AccessToken))
+            {
+                // The token contains the user id in the SUB claim.
+                try
+                {
+                    var handler = new JwtSecurityTokenHandler();
+                    var jwtSecurityToken = handler.ReadJwtToken(Authentication.AccessToken);
+
+                    if (int.TryParse(jwtSecurityToken.Subject, out var contentId))
+                        request = new ODataRequest(this)
+                        {
+                            ContentId = contentId,
+                            Select = select,
+                            Expand = expand
+                        };
+                }
+                catch (Exception ex)
+                {
+                    Logger?.LogTrace(ex, "Error during JWT access token conversion.");
+                }
+            }
+
+            // no token or invalid: load Visitor
+            request ??= new ODataRequest(this)
+            {
+                Path = Constants.User.VisitorPath,
+                Select = select,
+                Expand = expand
+            };
+
+            return Content.LoadAsync(request, this);
+        }
 
         /// <summary>
         /// Creates a new server context object filled with the properties of the current instance.

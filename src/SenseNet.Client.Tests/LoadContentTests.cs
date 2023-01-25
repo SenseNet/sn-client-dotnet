@@ -182,5 +182,35 @@ namespace SenseNet.Client.Tests
 
             Assert.IsTrue(count > 0 && count <= 5);
         }
+
+        [TestMethod]
+        public async Task GetCurrentUser()
+        {
+            var server = ClientContext.Current.Server;
+            var originalToken = server.Authentication.AccessToken;
+            
+            try
+            {
+                // first check as Visitor
+                server.Authentication.AccessToken = null;
+                var visitor = await server.GetCurrentUserAsync();
+
+                Assert.AreEqual("Visitor", visitor.Name);
+            }
+            finally
+            {
+                server.Authentication.AccessToken = originalToken;
+            }
+
+            // we assume that the global test user is the Admin
+            dynamic currentUser = await server.GetCurrentUserAsync();
+            Assert.AreEqual("Admin", currentUser.Name);
+
+            // check if expansion works
+            currentUser = await server.GetCurrentUserAsync(new []{ "Id", "Name", "Path", "CreatedBy/Id", "CreatedBy/Name" },
+                new []{ "CreatedBy" });
+
+            Assert.AreEqual("Admin", (string)currentUser.CreatedBy.Name);
+        }
     }
 }
