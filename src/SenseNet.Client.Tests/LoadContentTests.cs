@@ -129,6 +129,46 @@ namespace SenseNet.Client.Tests
         }
 
         [TestMethod]
+        public async Task LoadReferences_DynamicProperty_MultiRef_WithFilter()
+        {
+            // This request loads references and expands their reference field.
+            var members = (await Content.LoadReferencesAsync(new ODataRequest
+            {
+                Path = Constants.Group.AdministratorsPath,
+                PropertyName = "Members",
+                Expand = new[] { "CreatedBy" },
+                Select = new[] { "Id", "Name", "Path", "Index", "Type", 
+                    "CreatedBy/Id", "CreatedBy/Name", "CreatedBy/Path", "CreatedBy/Type", "CreatedBy/CreationDate", "CreatedBy/Index" },
+                OrderBy = new []{ "Id" },
+                Top = 1,
+                Skip = 1
+            })).ToArray();
+
+            // there are actually 2 members but we skipped one in the filter above
+            Assert.AreEqual(1, members.Length);
+
+            dynamic content = members[0];
+            string createdByName = content.CreatedBy.Name;
+
+            Assert.AreEqual("Developers", content.Name);
+            Assert.AreEqual("Group", (string)content.Type);
+            Assert.IsTrue(content.Index > -1);
+            Assert.AreEqual("Admin", createdByName);
+        }
+        [TestMethod]
+        public async Task LoadReferences_DynamicProperty_SingleRef()
+        {
+            // Single will make sure that the array contains only 1 element
+            var reference = (await Content.LoadReferencesAsync(new ODataRequest
+            {
+                Path = Constants.User.AdminPath,
+                PropertyName = "CreatedBy",
+            })).Single();
+
+            Assert.AreEqual("Admin", reference.Name);
+        }
+
+        [TestMethod]
         public async Task Load_PropertyAccess_DateTime()
         {
             var content = await Content.LoadAsync(Constants.User.AdminId).ConfigureAwait(false);

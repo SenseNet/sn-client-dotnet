@@ -349,6 +349,33 @@ namespace SenseNet.Client
         }
 
         /// <summary>
+        /// Loads referenced content from a reference field.
+        /// </summary>
+        /// <param name="requestData">Detailed information that will be sent as part of the request.
+        /// For example Top, Skip, Select, Expand</param>
+        /// <param name="server">Target server.</param>
+        public static async Task<IEnumerable<Content>> LoadReferencesAsync(ODataRequest requestData, ServerContext server = null)
+        {
+            if (string.IsNullOrEmpty(requestData.PropertyName))
+                throw new ClientException("Please provide a reference field name as the PropertyName in request data.");
+            
+            var responseText = await RESTCaller.GetResponseStringAsync(requestData.GetUri(), server).ConfigureAwait(false);
+            if (string.IsNullOrEmpty(responseText))
+                return Array.Empty<Content>();
+
+            var refValue = JsonHelper.Deserialize(responseText).d.results;
+            refValue ??= JsonHelper.Deserialize(responseText).d;
+
+            // we assume that this is either an array of content json objects or a single object
+            return refValue switch
+            {
+                JArray refArray => refArray.Select(c => CreateFromResponse(c, server)),
+                JValue { HasValues: false } => Array.Empty<Content>(),
+                _ => new List<Content> { CreateFromResponse(refValue, server) }
+            };
+        }
+
+        /// <summary>
         /// Executes a count-only query in a subfolder on the server.
         /// </summary>
         /// <param name="path">Content path.</param>
