@@ -177,27 +177,6 @@ namespace SenseNet.Client
 
             return false;
         }
-        private readonly Dictionary<string, string> _builtinParameters = new Dictionary<string, string>
-        {
-            { P.Top, nameof(Top) },
-            { P.Skip, nameof(Skip) },
-            { P.Expand, nameof(Expand) },
-            { P.Select, nameof(Select) },
-            { P.Filter, nameof(ChildrenFilter) },
-            { P.OrderBy, nameof(OrderBy) },
-            { P.InlineCount, nameof(InlineCount) },
-            //TODO: Implement and use "Format" property if needed.
-            //{ P.Format, nameof(Format) },
-            { P.CountOnly, nameof(CountOnly) },
-            { P.Metadata, nameof(Metadata) },
-            { P.AutoFilters, nameof(AutoFilters) },
-            { P.LifespanFilter, nameof(LifespanFilter) },
-            { P.Version, nameof(Version) },
-            { P.Scenario, nameof(Scenario) },
-            { P.ContentQuery, nameof(ContentQuery) },
-            { P.Permissions, nameof(Permissions) },
-            { P.User, nameof(User) },
-        };
 
         //============================================================================= Properties
 
