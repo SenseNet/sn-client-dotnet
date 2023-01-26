@@ -100,7 +100,7 @@ namespace SenseNet.Client
             {
                 if (jo.Properties().Any(p => p.Name == "Id"))
                     Id = _responseContent.Id;
-                if (jo.Properties().Any(p => p.Name == "ParentId"))
+                if (jo.Properties().Any(p => p.Name == "ParentId" && _responseContent.ParentId != null))
                     ParentId = _responseContent.ParentId;
                 if (jo.Properties().Any(p => p.Name == "Path"))
                     Path = _responseContent.Path;
