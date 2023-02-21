@@ -24,12 +24,23 @@ namespace SenseNet.Extensions.DependencyInjection
             string name, Action<RepositoryOptions> configure)
         {
             // add all services and options needed to connect to a sensenet repository
-            services.AddSenseNetClientTokenStore()
-                .AddSingleton<IServerContextFactory, ServerContextFactory>()
-                .Configure<ServerContextOptions>(opt => {})
+            services.AddSenseNetClient()
                 .ConfigureSenseNetRepository(name, configure);
 
             return services;
+        }
+
+        /// <summary>
+        /// Adds all the features required to connect to a sensenet repository service.
+        /// </summary>
+        public static IServiceCollection AddSenseNetClient(this IServiceCollection services)
+        {
+            return services.AddSenseNetClientTokenStore()
+                .AddSingleton<IServerContextFactory, ServerContextFactory>()
+                .AddSingleton<IRepositoryService, RepositoryService>()
+                .AddTransient<IRepository, Repository>()
+                .AddTransient<Content, Content>()
+                .Configure<ServerContextOptions>(opt => { });
         }
 
         /// <summary>
