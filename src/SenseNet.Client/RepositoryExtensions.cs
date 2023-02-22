@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using SenseNet.Client;
 
@@ -68,5 +69,29 @@ namespace SenseNet.Extensions.DependencyInjection
 
             return services;
         }
+
+        public static IServiceCollection RegisterContentType(this IServiceCollection services, Type contentType, string contentTypeName = null)
+        {
+            services.AddTransient(contentType, contentType);
+            services.Configure<RegisteredContentTypes>(contentTypes =>
+            {
+                contentTypes.ContentTypes.Add(contentTypeName ?? contentType.Name, contentType);
+            });
+            return services;
+        }
+        public static IServiceCollection RegisterContentType<T>(this IServiceCollection services, string contentTypeName = null) where T : Content
+        {
+            services.AddTransient<T, T>();
+            services.Configure<RegisteredContentTypes>(contentTypes =>
+            {
+                contentTypes.ContentTypes.Add(contentTypeName ?? typeof(T).Name, typeof(T));
+            });
+            return services;
+        }
+    }
+
+    public class RegisteredContentTypes
+    {
+        public IDictionary<string, Type> ContentTypes { get; } = new Dictionary<string, Type>();
     }
 }

@@ -3,6 +3,8 @@ using System;
 using System.Threading.Tasks;
 using System.Threading;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using SenseNet.Extensions.DependencyInjection;
 
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client
@@ -10,17 +12,25 @@ namespace SenseNet.Client
     /// <inheritdoc />
     public class Repository : IRepository
     {
+        private readonly IRestCaller _restCaller;
         private readonly IServiceProvider _services;
         private readonly ILogger<Repository> _logger;
-        private readonly IRestCaller _restCaller;
+
+        public RegisteredContentTypes ContentTypes { get; }
 
         public ServerContext Server { get; set; }
 
-        public Repository(IServiceProvider services, ILogger<Repository> logger)
+        public Repository(IRestCaller restCaller, IServiceProvider services, IOptions<RegisteredContentTypes> contentTypes, ILogger<Repository> logger)
         {
+            _restCaller = restCaller;
             _services = services;
+            ContentTypes = contentTypes.Value;
             _logger = logger;
-            _restCaller = _services.GetRequiredService<IRestCaller>();
+        }
+
+        public T CreateContent<T>() where T : Content
+        {
+            return _services.GetRequiredService<T>();
         }
 
         public Task<Content> LoadContentAsync(int id, CancellationToken cancel)
@@ -66,13 +76,28 @@ namespace SenseNet.Client
             if (string.IsNullOrEmpty(rs))
                 return null;
 
-            var content = _services.GetRequiredService<T>();
+            var type = GetTypeFromJsonModel(rs);
+            var content = type != null
+                ? (T)_services.GetRequiredService(type)
+                : _services.GetRequiredService<T>();
+
             content.Server = Server;
             content.Repository = this;
 
             content.InitializeFromResponse(JsonHelper.Deserialize(rs).d);
 
             return content;
+        }
+
+        private Type GetTypeFromJsonModel(string rawJson)
+        {
+            var jsonModel = JsonHelper.Deserialize(rawJson).d;
+            string typeName = jsonModel.Type?.ToString();
+            if (typeName == null)
+                return null;
+            if (ContentTypes.ContentTypes.TryGetValue(typeName, out var type))
+                return type;
+            return null;
         }
     }
 }
