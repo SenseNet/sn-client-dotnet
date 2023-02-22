@@ -38,6 +38,7 @@ namespace SenseNet.Extensions.DependencyInjection
             return services.AddSenseNetClientTokenStore()
                 .AddSingleton<IServerContextFactory, ServerContextFactory>()
                 .AddSingleton<IRepositoryService, RepositoryService>()
+                .AddSingleton<IRestCaller, DefaultRestCaller>()
                 .AddTransient<IRepository, Repository>()
                 .AddTransient<Content, Content>()
                 .Configure<ServerContextOptions>(opt => { });

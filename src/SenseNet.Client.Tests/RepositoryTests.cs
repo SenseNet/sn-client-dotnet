@@ -12,6 +12,13 @@ namespace SenseNet.Client.Tests
     [TestClass]
     public class RepositoryTests
     {
+        private class TestRestCaller : IRestCaller
+        {
+            private readonly string _expectedResponse;
+            public TestRestCaller(string expectedResponse) { _expectedResponse = expectedResponse; }
+            public Task<string> GetResponseStringAsync(Uri uri, ServerContext server) => Task.FromResult(_expectedResponse);
+        }
+
         private class MyContent : Content
         {
             public string HelloMessage => $"Hello {this.Name}!";
@@ -56,8 +63,19 @@ namespace SenseNet.Client.Tests
         [TestMethod]
         public async Task Repository_LoadContent_Localhost()
         {
-            // PREPARATION
-            var repositoryService = GetRepositoryService();
+            // ALIGN
+            var testRestCaller = new TestRestCaller(@"{
+  ""d"": {
+    ""Id"": 1000002,
+    ""Name"": ""Content"",
+    ""Type"": ""Content1"",
+    ""StringProperty"": ""StringValue1""
+  }
+}");
+            var repositoryService = GetRepositoryService(services =>
+            {
+                services.AddSingleton<IRestCaller>(testRestCaller);
+            });
             var repository = await repositoryService.GetRepositoryAsync("local", CancellationToken.None)
                 .ConfigureAwait(false);
 
@@ -65,13 +83,25 @@ namespace SenseNet.Client.Tests
             var content = await repository.LoadContentAsync("/Root/Content", CancellationToken.None)
                 .ConfigureAwait(false);
 
+            // ASSERT
             Assert.AreEqual("Content", content.Name);
         }
         [TestMethod]
         public async Task Repository_LoadContent_Localhost_CustomType()
         {
-            // PREPARATION
-            var repositoryService = GetRepositoryService();
+            // ALIGN
+            var testRestCaller = new TestRestCaller(@"{
+  ""d"": {
+    ""Id"": 1000002,
+    ""Name"": ""Content"",
+    ""Type"": ""Content1"",
+    ""StringProperty"": ""StringValue1""
+  }
+}");
+            var repositoryService = GetRepositoryService(services =>
+            {
+                services.AddSingleton<IRestCaller>(testRestCaller);
+            });
             var repository = await repositoryService.GetRepositoryAsync("local", CancellationToken.None)
                 .ConfigureAwait(false);
 
@@ -79,6 +109,7 @@ namespace SenseNet.Client.Tests
             var content = await repository.LoadContentAsync<MyContent>("/Root/Content", CancellationToken.None)
                 .ConfigureAwait(false);
 
+            // ASSERT
             Assert.AreEqual("Hello Content!", content.HelloMessage);
         }
 

@@ -12,6 +12,7 @@ namespace SenseNet.Client
     {
         private readonly IServiceProvider _services;
         private readonly ILogger<Repository> _logger;
+        private readonly IRestCaller _restCaller;
 
         public ServerContext Server { get; set; }
 
@@ -19,6 +20,7 @@ namespace SenseNet.Client
         {
             _services = services;
             _logger = logger;
+            _restCaller = _services.GetRequiredService<IRestCaller>();
         }
 
         public Task<Content> LoadContentAsync(int id, CancellationToken cancel)
@@ -60,7 +62,7 @@ namespace SenseNet.Client
             requestData.IsCollectionRequest = false;
 
             //TODO: error handling
-            var rs = await RESTCaller.GetResponseStringAsync(requestData.GetUri(), Server).ConfigureAwait(false);
+            var rs = await _restCaller.GetResponseStringAsync(requestData.GetUri(), Server).ConfigureAwait(false);
             if (string.IsNullOrEmpty(rs))
                 return null;
 
