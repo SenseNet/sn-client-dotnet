@@ -6,19 +6,13 @@ using SenseNet.Extensions.DependencyInjection;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
+using NSubstitute;
 
 namespace SenseNet.Client.Tests
 {
     [TestClass]
     public class RepositoryTests
     {
-        private class TestRestCaller : IRestCaller
-        {
-            private readonly string _expectedResponse;
-            public TestRestCaller(string expectedResponse) { _expectedResponse = expectedResponse; }
-            public Task<string> GetResponseStringAsync(Uri uri, ServerContext server) => Task.FromResult(_expectedResponse);
-        }
-
         private class MyContent : Content
         {
             public string HelloMessage => $"Hello {this.Name}!";
@@ -64,17 +58,20 @@ namespace SenseNet.Client.Tests
         public async Task Repository_LoadContent_Localhost()
         {
             // ALIGN
-            var testRestCaller = new TestRestCaller(@"{
+            var restCaller = Substitute.For<IRestCaller>();
+            restCaller
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>())
+                .Returns(Task.FromResult(@"{
   ""d"": {
     ""Id"": 1000002,
     ""Name"": ""Content"",
     ""Type"": ""Content1"",
     ""StringProperty"": ""StringValue1""
   }
-}");
+}"));
             var repositoryService = GetRepositoryService(services =>
             {
-                services.AddSingleton<IRestCaller>(testRestCaller);
+                services.AddSingleton<IRestCaller>(restCaller);
             });
             var repository = await repositoryService.GetRepositoryAsync("local", CancellationToken.None)
                 .ConfigureAwait(false);
@@ -90,17 +87,17 @@ namespace SenseNet.Client.Tests
         public async Task Repository_LoadContent_Localhost_CustomType()
         {
             // ALIGN
-            var testRestCaller = new TestRestCaller(@"{
+            var restCaller = Substitute.For<IRestCaller>();
+            restCaller
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>())
+                .Returns(Task.FromResult(@"{
   ""d"": {
-    ""Id"": 1000002,
     ""Name"": ""Content"",
-    ""Type"": ""Content1"",
-    ""StringProperty"": ""StringValue1""
   }
-}");
+}"));
             var repositoryService = GetRepositoryService(services =>
             {
-                services.AddSingleton<IRestCaller>(testRestCaller);
+                services.AddSingleton<IRestCaller>(restCaller);
             });
             var repository = await repositoryService.GetRepositoryAsync("local", CancellationToken.None)
                 .ConfigureAwait(false);
