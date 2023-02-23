@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using SenseNet.Client;
 
@@ -10,6 +12,7 @@ namespace SenseNet.Extensions.DependencyInjection
         /// <summary>
         /// Registers services necessary for connecting to a sensenet repository service.
         /// </summary>
+        [Obsolete("Use AddSenseNetClient and ConfigureSenseNetRepository instead.")]
         public static IServiceCollection AddSenseNetRepository(this IServiceCollection services,
             Action<RepositoryOptions> configure)
         {
@@ -20,28 +23,47 @@ namespace SenseNet.Extensions.DependencyInjection
         /// <summary>
         /// Registers services necessary for connecting to a named sensenet repository service.
         /// </summary>
+        [Obsolete("Use AddSenseNetClient and ConfigureSenseNetRepository instead.")]
         public static IServiceCollection AddSenseNetRepository(this IServiceCollection services,
             string name, Action<RepositoryOptions> configure)
         {
             // add all services and options needed to connect to a sensenet repository
-            services.AddSenseNetClientTokenStore()
-                .AddSingleton<IServerContextFactory, ServerContextFactory>()
-                .Configure<ServerContextOptions>(opt => {})
+            services.AddSenseNetClient()
                 .ConfigureSenseNetRepository(name, configure);
 
             return services;
         }
 
         /// <summary>
-        /// Configures default sensenet repository options.
+        /// Adds all the features required to connect to a sensenet repository service.
         /// </summary>
+        /// <remarks>After calling this method please configure a repository using
+        /// the ConfigureSenseNetRepository registration method.</remarks>
+        public static IServiceCollection AddSenseNetClient(this IServiceCollection services)
+        {
+            return services.AddSenseNetClientTokenStore()
+                .AddSingleton<IServerContextFactory, ServerContextFactory>()
+                .AddSingleton<IRepositoryCollection, RepositoryCollection>()
+                .AddSingleton<IRestCaller, DefaultRestCaller>()
+                .AddTransient<IRepository, Repository>()
+                .AddTransient<Content, Content>()
+                .Configure<ServerContextOptions>(opt => { });
+        }
+
+        /// <summary>
+        /// Configures the unnamed sensenet repository.
+        /// </summary>
+        /// <remarks>
+        /// Note that there can be only one unnamed repository in an application. If you want to
+        /// connect to multiple repositories, please register them by name.
+        /// </remarks>
         public static IServiceCollection ConfigureSenseNetRepository(this IServiceCollection services, 
             Action<RepositoryOptions> configure)
         {
             return services.ConfigureSenseNetRepository(ServerContextOptions.DefaultServerName, configure);
         }
         /// <summary>
-        /// Configures options for a named sensenet repository service.
+        /// Configures a named sensenet repository.
         /// </summary>
         public static IServiceCollection ConfigureSenseNetRepository(this IServiceCollection services,
             string name, Action<RepositoryOptions> configure)

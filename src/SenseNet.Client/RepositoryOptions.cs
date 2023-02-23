@@ -1,4 +1,5 @@
 ﻿using SenseNet.Client.Authentication;
+using SenseNet.Extensions.DependencyInjection;
 
 namespace SenseNet.Client
 {
