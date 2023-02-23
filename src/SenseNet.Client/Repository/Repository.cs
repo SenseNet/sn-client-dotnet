@@ -35,7 +35,7 @@ namespace SenseNet.Client
             }
             catch (InvalidOperationException ex)
             {
-                throw new ApplicationException("The content type is not registered: " + typeof(T).Name);
+                throw new ApplicationException("The content type is not registered: " + typeof(T).Name, ex);
             }
         }
 

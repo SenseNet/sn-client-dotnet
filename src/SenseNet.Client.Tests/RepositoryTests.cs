@@ -356,7 +356,7 @@ namespace SenseNet.Client.Tests
             Assert.IsInstanceOfType(content2, typeof(DifferentNamespace.MyContent));
         }
         [TestMethod]
-        public async Task Repository_CreateContent_Unknown()
+        public async Task Repository_CreateContent_Unknown_ByType()
         {
             var repositoryService = GetRepositoryService();
             var repository = await repositoryService.GetRepositoryAsync(CancellationToken.None)
@@ -376,6 +376,27 @@ namespace SenseNet.Client.Tests
             }
             Assert.IsTrue(exception.Message.Contains(nameof(MyContent)));
             Assert.IsNotNull(exception.InnerException, "The exception.InnerException is null");
+        }
+        [TestMethod]
+        public async Task Repository_CreateContent_Unknown_ByName()
+        {
+            var repositoryService = GetRepositoryService();
+            var repository = await repositoryService.GetRepositoryAsync(CancellationToken.None)
+                .ConfigureAwait(false);
+            Exception exception = null;
+
+            // ACTION
+            try
+            {
+                var content = repository.CreateContent(nameof(MyContent));
+                // ASSERT
+                Assert.Fail($"The expected {nameof(ApplicationException)} was not thrown.");
+            }
+            catch (ApplicationException e)
+            {
+                exception = e;
+            }
+            Assert.IsTrue(exception.Message.Contains(nameof(MyContent)));
         }
 
         /* =================================================================== LOAD CONTENT */
