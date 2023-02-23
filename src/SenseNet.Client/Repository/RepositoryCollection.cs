@@ -31,9 +31,6 @@ namespace SenseNet.Client
 
         public async Task<IRepository> GetRepositoryAsync(string name, CancellationToken cancel)
         {
-            //TODO: authenticate using the config
-            // auth: what about on-the-fly authentication? How to connect to the same repo with multiple different users?
-
             name ??= ServerContextOptions.DefaultServerName;
 
             if (_repositories.TryGetValue(name, out var repo))

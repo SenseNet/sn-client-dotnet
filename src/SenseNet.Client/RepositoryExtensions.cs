@@ -37,6 +37,8 @@ namespace SenseNet.Extensions.DependencyInjection
         /// <summary>
         /// Adds all the features required to connect to a sensenet repository service.
         /// </summary>
+        /// <remarks>After calling this method please configure a repository using
+        /// the ConfigureSenseNetRepository registration method.</remarks>
         public static IServiceCollection AddSenseNetClient(this IServiceCollection services)
         {
             return services.AddSenseNetClientTokenStore()
@@ -52,7 +54,8 @@ namespace SenseNet.Extensions.DependencyInjection
         /// Configures the unnamed sensenet repository.
         /// </summary>
         /// <remarks>
-        /// Note that there can be only one unnamed repository in an application.
+        /// Note that there can be only one unnamed repository in an application. If you want to
+        /// connect to multiple repositories, please register them by name.
         /// </remarks>
         public static IServiceCollection ConfigureSenseNetRepository(this IServiceCollection services, 
             Action<RepositoryOptions> configure)
@@ -60,7 +63,7 @@ namespace SenseNet.Extensions.DependencyInjection
             return services.ConfigureSenseNetRepository(ServerContextOptions.DefaultServerName, configure);
         }
         /// <summary>
-        /// Configures options for a named sensenet repository service.
+        /// Configures a named sensenet repository.
         /// </summary>
         public static IServiceCollection ConfigureSenseNetRepository(this IServiceCollection services,
             string name, Action<RepositoryOptions> configure)
