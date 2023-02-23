@@ -47,7 +47,6 @@ namespace SenseNet.Client
         public AuthenticationInfo Authentication { get; } = new AuthenticationInfo();
 
         public ILogger Logger { get; set; }
-        public RegisteredContentTypes RegisteredContentTypes { get; set; }
 
         /// <summary>
         /// Gets the current user content based on the available authentication token.
@@ -104,7 +103,6 @@ namespace SenseNet.Client
                 Url = this.Url,
                 IsTrusted = this.IsTrusted,
                 Logger = this.Logger,
-                RegisteredContentTypes = this.RegisteredContentTypes,
                 ServerCertificateCustomValidationCallback = this.ServerCertificateCustomValidationCallback,
                 Authentication =
                 {

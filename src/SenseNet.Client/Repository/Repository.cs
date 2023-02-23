@@ -16,35 +16,18 @@ namespace SenseNet.Client
         private readonly IServiceProvider _services;
         private readonly ILogger<Repository> _logger;
 
-        public RegisteredContentTypes GlobalContentTypes { get; }
         public ServerContext Server { get; set; }
 
-        public Repository(IRestCaller restCaller, IServiceProvider services, IOptions<RegisteredContentTypes> globalContentTypes, ILogger<Repository> logger)
+        public Repository(IRestCaller restCaller, IServiceProvider services, ILogger<Repository> logger)
         {
             _restCaller = restCaller;
             _services = services;
-            GlobalContentTypes = globalContentTypes.Value;
             _logger = logger;
         }
 
-        public T CreateContent<T>() where T : Content
+        public Content CreateContent()
         {
-            try
-            {
-                return PrepareContent(_services.GetRequiredService<T>());
-            }
-            catch (InvalidOperationException ex)
-            {
-                throw new ApplicationException("The content type is not registered: " + typeof(T).Name, ex);
-            }
-        }
-
-        public Content CreateContent(string contentTypeName)
-        {
-            var contentType = GetContentTypeByName(contentTypeName);
-            if(contentType == null)
-                throw new ApplicationException("The content type is not registered: " + contentTypeName);
-            return PrepareContent((Content)_services.GetRequiredService(contentType));
+            return PrepareContent(_services.GetRequiredService<Content>());
         }
 
         private T PrepareContent<T>(T content) where T : Content
@@ -97,10 +80,7 @@ namespace SenseNet.Client
             if (string.IsNullOrEmpty(rs))
                 return null;
 
-            var type = GetTypeFromJsonModel(rs);
-            var content = type != null
-                ? (T)_services.GetRequiredService(type)
-                : _services.GetRequiredService<T>();
+            var content = _services.GetRequiredService<T>();
 
             content.Server = Server;
             content.Repository = this;
@@ -108,25 +88,6 @@ namespace SenseNet.Client
             content.InitializeFromResponse(JsonHelper.Deserialize(rs).d);
 
             return content;
-        }
-
-        private Type GetTypeFromJsonModel(string rawJson)
-        {
-            var jsonModel = JsonHelper.Deserialize(rawJson).d;
-            string contentTypeName = jsonModel.Type?.ToString();
-            return GetContentTypeByName(contentTypeName);
-        }
-
-        private Type GetContentTypeByName(string contentTypeName)
-        {
-            if (contentTypeName == null)
-                return null;
-            if(Server.RegisteredContentTypes != null)
-                if (Server.RegisteredContentTypes.ContentTypes.TryGetValue(contentTypeName, out var contentType))
-                    return contentType;
-            if (GlobalContentTypes.ContentTypes.TryGetValue(contentTypeName, out var globalContentType))
-                return globalContentType;
-            return null;
         }
     }
 }

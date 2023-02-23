@@ -50,69 +50,25 @@ namespace SenseNet.Extensions.DependencyInjection
         /// Configures default sensenet repository options.
         /// </summary>
         public static IServiceCollection ConfigureSenseNetRepository(this IServiceCollection services, 
-            Action<RepositoryOptions> configure, Action<RegisteredContentTypes> registerContentTypes = null)
+            Action<RepositoryOptions> configure)
         {
-            return services.ConfigureSenseNetRepository(ServerContextOptions.DefaultServerName, configure, registerContentTypes);
+            return services.ConfigureSenseNetRepository(ServerContextOptions.DefaultServerName, configure);
         }
         /// <summary>
         /// Configures options for a named sensenet repository service.
         /// </summary>
         public static IServiceCollection ConfigureSenseNetRepository(this IServiceCollection services,
-            string name, Action<RepositoryOptions> configure, Action<RegisteredContentTypes> registerContentTypes = null)
+            string name, Action<RepositoryOptions> configure)
         {
-            var registeredContentTypes = new RegisteredContentTypes();
-            if (registerContentTypes != null)
-            {
-                registerContentTypes(registeredContentTypes);
-                foreach (var contentType in registeredContentTypes.ContentTypes.Values)
-                    services.AddTransient(contentType, contentType);
-            }
             services.Configure<ServerContextOptions>(opt =>
             {
                 var ro = new RepositoryOptions();
                 configure?.Invoke(ro);
-                ro.RegisteredContentTypes = registeredContentTypes;
 
                 opt.AddServer(name, ro);
             });
 
             return services;
-        }
-
-        public static IServiceCollection RegisterGlobalContentType(this IServiceCollection services, Type contentType, string contentTypeName = null)
-        {
-            services.AddTransient(contentType, contentType);
-            services.Configure<RegisteredContentTypes>(contentTypes =>
-            {
-                contentTypes.ContentTypes.Add(contentTypeName ?? contentType.Name, contentType);
-            });
-            return services;
-        }
-        public static IServiceCollection RegisterGlobalContentType<T>(this IServiceCollection services, string contentTypeName = null) where T : Content
-        {
-            services.AddTransient<T, T>();
-            services.Configure<RegisteredContentTypes>(contentTypes =>
-            {
-                contentTypes.ContentTypes.Add(contentTypeName ?? typeof(T).Name, typeof(T));
-            });
-            return services;
-        }
-    }
-
-    [DebuggerDisplay("RegisteredContentTypes: {ContentTypes.Count}")]
-    public class RegisteredContentTypes
-    {
-        internal IDictionary<string, Type> ContentTypes { get; } = new Dictionary<string, Type>();
-
-        public RegisteredContentTypes Add(Type contentType, string contentTypeName = null)
-        {
-            ContentTypes.Add(contentTypeName ?? contentType.Name, contentType);
-            return this;
-        }
-        public RegisteredContentTypes Add<T>(string contentTypeName = null) where T : Content
-        {
-            ContentTypes.Add(contentTypeName ?? typeof(T).Name, typeof(T));
-            return this;
         }
     }
 }
