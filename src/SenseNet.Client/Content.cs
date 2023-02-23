@@ -8,6 +8,7 @@ using System.Net.Http;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using SenseNet.Client.Security;
 
 namespace SenseNet.Client
@@ -18,7 +19,8 @@ namespace SenseNet.Client
     /// </summary>
     public class Content : DynamicObject
     {
-        private IDictionary<string, object> _fields;
+        private readonly ILogger<Content> _logger;
+        private readonly IDictionary<string, object> _fields = new Dictionary<string, object>();
 
         //============================================================================= Content properties
 
@@ -65,12 +67,17 @@ namespace SenseNet.Client
         /// <summary>
         /// The target server that this content belongs to.
         /// </summary>
-        public ServerContext Server { get; }
+        public ServerContext Server { get; internal set; }
+        public IRepository Repository { get; internal set; }
 
         private dynamic _responseContent;
 
         //============================================================================= Constructors
 
+        public Content(ILogger<Content> logger)
+        {
+            _logger = logger;
+        }
         /// <summary>
         /// Internal constructor for client content.
         /// </summary>
@@ -78,7 +85,6 @@ namespace SenseNet.Client
         protected Content(ServerContext server)
         {
             Server = server ?? ClientContext.Current.Server;
-            _fields = new Dictionary<string, object>();
         }
         /// <summary>
         /// Internal constructor for client content.
@@ -90,10 +96,10 @@ namespace SenseNet.Client
             InitializeFromResponse(responseContent);
         }
 
-        private void InitializeFromResponse(dynamic responseContent)
+        internal void InitializeFromResponse(dynamic responseContent)
         {
             _responseContent = responseContent;
-            _fields = new Dictionary<string, object>();
+            _fields.Clear();
 
             // fill local properties from the response object
             if (_responseContent is JObject jo)
@@ -975,9 +981,6 @@ namespace SenseNet.Client
         /// <returns>This operation is always succesful.</returns>
         public override bool TrySetMember(SetMemberBinder binder, object value)
         {
-            if (_fields == null)
-                _fields = new Dictionary<string, object>();
-
             _fields[binder.Name] = value;
 
             return true;
@@ -1044,9 +1047,6 @@ namespace SenseNet.Client
             }
             set
             {
-                if (_fields == null)
-                    _fields = new Dictionary<string, object>();
-
                 _fields[fieldName] = value;
             }
         }

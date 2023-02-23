@@ -74,7 +74,7 @@ namespace SenseNet.Client
             name ??= ServerContextOptions.DefaultServerName;
 
             if (_servers.TryGetValue(name, out var server))
-                CloneWithToken(server);
+                return CloneWithToken(server);
 
             await _asyncLock.WaitAsync();
 
@@ -105,7 +105,7 @@ namespace SenseNet.Client
 
             var server = new ServerContext
             {
-                Url = options.Url.AppendSchema()
+                Url = options.Url.AppendSchema(),
             };
 
             if (!string.IsNullOrEmpty(options.Authentication.ApiKey))
