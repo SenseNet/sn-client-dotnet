@@ -31,7 +31,7 @@ namespace SenseNet.Client
         {
             try
             {
-                return _services.GetRequiredService<T>();
+                return PrepareContent(_services.GetRequiredService<T>());
             }
             catch (InvalidOperationException ex)
             {
@@ -44,7 +44,14 @@ namespace SenseNet.Client
             var contentType = GetContentTypeByName(contentTypeName);
             if(contentType == null)
                 throw new ApplicationException("The content type is not registered: " + contentTypeName);
-            return (Content)_services.GetRequiredService(contentType);
+            return PrepareContent((Content)_services.GetRequiredService(contentType));
+        }
+
+        private T PrepareContent<T>(T content) where T : Content
+        {
+            content.Server = Server;
+            content.Repository = this;
+            return content;
         }
 
         public Task<Content> LoadContentAsync(int id, CancellationToken cancel)

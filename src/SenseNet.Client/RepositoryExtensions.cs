@@ -102,7 +102,7 @@ namespace SenseNet.Extensions.DependencyInjection
     [DebuggerDisplay("RegisteredContentTypes: {ContentTypes.Count}")]
     public class RegisteredContentTypes
     {
-        public IDictionary<string, Type> ContentTypes { get; } = new Dictionary<string, Type>();
+        internal IDictionary<string, Type> ContentTypes { get; } = new Dictionary<string, Type>();
 
         public RegisteredContentTypes Add(Type contentType, string contentTypeName = null)
         {

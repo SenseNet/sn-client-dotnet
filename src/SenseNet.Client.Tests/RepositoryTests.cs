@@ -402,6 +402,35 @@ namespace SenseNet.Client.Tests
         /* =================================================================== LOAD CONTENT */
 
         [TestMethod]
+        public async Task Repository_LoadContent_Request_ByPath()
+        {
+            // ALIGN
+            var restCaller = Substitute.For<IRestCaller>();
+            restCaller
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>())
+                .Returns(Task.FromResult(@"{ ""d"": { ""Name"": ""Content"" }}"));
+            var repositoryService = GetRepositoryService(services =>
+            {
+                services.AddSingleton<IRestCaller>(restCaller);
+            });
+            var repository = await repositoryService.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACT
+            var content = await repository.LoadContentAsync("/Root/Content", CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ASSERT
+            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First();
+            Assert.IsNotNull(requestedUri);
+            Assert.AreEqual("/OData.svc/Root('Content')?metadata=no", requestedUri.PathAndQuery);
+
+            Assert.IsNotNull(content);
+            Assert.AreEqual("Content", content.Name);
+        }
+
+
+        [TestMethod]
         public async Task Repository_LoadContent_GeneralType()
         {
             // ALIGN
