@@ -9,15 +9,15 @@ using System.Threading;
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client
 {
-    internal class RepositoryService : IRepositoryService
+    internal class RepositoryCollection : IRepositoryCollection
     {
-        private readonly ILogger<RepositoryService> _logger;
+        private readonly ILogger<RepositoryCollection> _logger;
         private readonly IServiceProvider _services;
         private readonly IServerContextFactory _serverFactory;
         private readonly IDictionary<string, IRepository> _repositories = new ConcurrentDictionary<string, IRepository>();
         private readonly SemaphoreSlim _asyncLock = new SemaphoreSlim(1, 1);
 
-        public RepositoryService(IServiceProvider services, IServerContextFactory serverFactory, ILogger<RepositoryService> logger)
+        public RepositoryCollection(IServiceProvider services, IServerContextFactory serverFactory, ILogger<RepositoryCollection> logger)
         {
             _services = services;
             _serverFactory = serverFactory;

@@ -3,14 +3,12 @@ using System;
 using System.Threading.Tasks;
 using System.Threading;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using SenseNet.Extensions.DependencyInjection;
 
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client
 {
     /// <inheritdoc />
-    public class Repository : IRepository
+    internal class Repository : IRepository
     {
         private readonly IRestCaller _restCaller;
         private readonly IServiceProvider _services;

@@ -70,7 +70,22 @@ namespace SenseNet.Client.Tests
             Assert.AreEqual("https://url2", repo2.Server.Url);
         }
 
-        private static IRepositoryService GetRepositoryService(Action<IServiceCollection> addServices = null)
+        [TestMethod]
+        public async Task Repository_LoadContent_Localhost()
+        {
+            // PREPARATION
+            var repositoryService = GetRepositoryService();
+            var repository = await repositoryService.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACTION
+            var content = await repository.LoadContentAsync("/Root/Content", CancellationToken.None)
+                .ConfigureAwait(false);
+
+            Assert.AreEqual("Content", content.Name);
+        }
+
+        private static IRepositoryCollection GetRepositoryService(Action<IServiceCollection> addServices = null)
         {
             var services = new ServiceCollection();
 
@@ -99,7 +114,7 @@ namespace SenseNet.Client.Tests
             addServices?.Invoke(services);
 
             var provider = services.BuildServiceProvider();
-            return provider.GetRequiredService<IRepositoryService>();
+            return provider.GetRequiredService<IRepositoryCollection>();
         }
     }
 }
