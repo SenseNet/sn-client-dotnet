@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using SenseNet.Client;
 
@@ -49,20 +50,28 @@ namespace SenseNet.Extensions.DependencyInjection
         /// Configures default sensenet repository options.
         /// </summary>
         public static IServiceCollection ConfigureSenseNetRepository(this IServiceCollection services, 
-            Action<RepositoryOptions> configure)
+            Action<RepositoryOptions> configure, Action<RegisteredContentTypes> registerContentTypes = null)
         {
-            return services.ConfigureSenseNetRepository(ServerContextOptions.DefaultServerName, configure);
+            return services.ConfigureSenseNetRepository(ServerContextOptions.DefaultServerName, configure, registerContentTypes);
         }
         /// <summary>
         /// Configures options for a named sensenet repository service.
         /// </summary>
         public static IServiceCollection ConfigureSenseNetRepository(this IServiceCollection services,
-            string name, Action<RepositoryOptions> configure)
+            string name, Action<RepositoryOptions> configure, Action<RegisteredContentTypes> registerContentTypes = null)
         {
+            var registeredContentTypes = new RegisteredContentTypes();
+            if (registerContentTypes != null)
+            {
+                registerContentTypes(registeredContentTypes);
+                foreach (var contentType in registeredContentTypes.ContentTypes.Values)
+                    services.AddTransient(contentType, contentType);
+            }
             services.Configure<ServerContextOptions>(opt =>
             {
                 var ro = new RepositoryOptions();
                 configure?.Invoke(ro);
+                ro.RegisteredContentTypes = registeredContentTypes;
 
                 opt.AddServer(name, ro);
             });
@@ -70,7 +79,7 @@ namespace SenseNet.Extensions.DependencyInjection
             return services;
         }
 
-        public static IServiceCollection RegisterContentType(this IServiceCollection services, Type contentType, string contentTypeName = null)
+        public static IServiceCollection RegisterGlobalContentType(this IServiceCollection services, Type contentType, string contentTypeName = null)
         {
             services.AddTransient(contentType, contentType);
             services.Configure<RegisteredContentTypes>(contentTypes =>
@@ -79,7 +88,7 @@ namespace SenseNet.Extensions.DependencyInjection
             });
             return services;
         }
-        public static IServiceCollection RegisterContentType<T>(this IServiceCollection services, string contentTypeName = null) where T : Content
+        public static IServiceCollection RegisterGlobalContentType<T>(this IServiceCollection services, string contentTypeName = null) where T : Content
         {
             services.AddTransient<T, T>();
             services.Configure<RegisteredContentTypes>(contentTypes =>
@@ -90,8 +99,20 @@ namespace SenseNet.Extensions.DependencyInjection
         }
     }
 
+    [DebuggerDisplay("RegisteredContentTypes: {ContentTypes.Count}")]
     public class RegisteredContentTypes
     {
         public IDictionary<string, Type> ContentTypes { get; } = new Dictionary<string, Type>();
+
+        public RegisteredContentTypes Add(Type contentType, string contentTypeName = null)
+        {
+            ContentTypes.Add(contentTypeName ?? contentType.Name, contentType);
+            return this;
+        }
+        public RegisteredContentTypes Add<T>(string contentTypeName = null) where T : Content
+        {
+            ContentTypes.Add(contentTypeName ?? typeof(T).Name, typeof(T));
+            return this;
+        }
     }
 }

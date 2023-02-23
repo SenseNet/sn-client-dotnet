@@ -5,6 +5,7 @@ using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using SenseNet.Extensions.DependencyInjection;
 
 namespace SenseNet.Client
 {
@@ -46,6 +47,7 @@ namespace SenseNet.Client
         public AuthenticationInfo Authentication { get; } = new AuthenticationInfo();
 
         public ILogger Logger { get; set; }
+        public RegisteredContentTypes RegisteredContentTypes { get; set; }
 
         /// <summary>
         /// Gets the current user content based on the available authentication token.
@@ -102,6 +104,7 @@ namespace SenseNet.Client
                 Url = this.Url,
                 IsTrusted = this.IsTrusted,
                 Logger = this.Logger,
+                RegisteredContentTypes = this.RegisteredContentTypes,
                 ServerCertificateCustomValidationCallback = this.ServerCertificateCustomValidationCallback,
                 Authentication =
                 {

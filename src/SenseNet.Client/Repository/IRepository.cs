@@ -8,7 +8,7 @@ namespace SenseNet.Client
     public interface IRepository
     {
         public ServerContext Server { get; set; }
-        public RegisteredContentTypes ContentTypes { get; }
+        public RegisteredContentTypes GlobalContentTypes { get; }
 
         public T CreateContent<T>() where T : Content;
 
@@ -19,6 +19,5 @@ namespace SenseNet.Client
         public Task<T> LoadContentAsync<T>(int id, CancellationToken cancel) where T : Content;
         public Task<T> LoadContentAsync<T>(string path, CancellationToken cancel) where T : Content;
         public Task<T> LoadContentAsync<T>(ODataRequest requestData, CancellationToken cancel) where T : Content;
-
     }
 }

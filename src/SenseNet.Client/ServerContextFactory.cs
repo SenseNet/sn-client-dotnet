@@ -105,7 +105,8 @@ namespace SenseNet.Client
 
             var server = new ServerContext
             {
-                Url = options.Url.AppendSchema()
+                Url = options.Url.AppendSchema(),
+                RegisteredContentTypes = options.RegisteredContentTypes
             };
 
             // do not try to authenticate if the values are not provided

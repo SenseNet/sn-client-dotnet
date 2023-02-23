@@ -16,15 +16,14 @@ namespace SenseNet.Client
         private readonly IServiceProvider _services;
         private readonly ILogger<Repository> _logger;
 
-        public RegisteredContentTypes ContentTypes { get; }
-
+        public RegisteredContentTypes GlobalContentTypes { get; }
         public ServerContext Server { get; set; }
 
-        public Repository(IRestCaller restCaller, IServiceProvider services, IOptions<RegisteredContentTypes> contentTypes, ILogger<Repository> logger)
+        public Repository(IRestCaller restCaller, IServiceProvider services, IOptions<RegisteredContentTypes> globalContentTypes, ILogger<Repository> logger)
         {
             _restCaller = restCaller;
             _services = services;
-            ContentTypes = contentTypes.Value;
+            GlobalContentTypes = globalContentTypes.Value;
             _logger = logger;
         }
 
@@ -95,8 +94,10 @@ namespace SenseNet.Client
             string typeName = jsonModel.Type?.ToString();
             if (typeName == null)
                 return null;
-            if (ContentTypes.ContentTypes.TryGetValue(typeName, out var type))
-                return type;
+            if (Server.RegisteredContentTypes.ContentTypes.TryGetValue(typeName, out var contentType))
+                return contentType;
+            if (GlobalContentTypes.ContentTypes.TryGetValue(typeName, out var globalContentType))
+                return globalContentType;
             return null;
         }
     }
