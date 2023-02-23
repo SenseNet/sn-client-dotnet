@@ -29,7 +29,22 @@ namespace SenseNet.Client
 
         public T CreateContent<T>() where T : Content
         {
-            return _services.GetRequiredService<T>();
+            try
+            {
+                return _services.GetRequiredService<T>();
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new ApplicationException("The content type is not registered: " + typeof(T).Name);
+            }
+        }
+
+        public Content CreateContent(string contentTypeName)
+        {
+            var contentType = GetContentTypeByName(contentTypeName);
+            if(contentType == null)
+                throw new ApplicationException("The content type is not registered: " + contentTypeName);
+            return (Content)_services.GetRequiredService(contentType);
         }
 
         public Task<Content> LoadContentAsync(int id, CancellationToken cancel)
@@ -91,12 +106,18 @@ namespace SenseNet.Client
         private Type GetTypeFromJsonModel(string rawJson)
         {
             var jsonModel = JsonHelper.Deserialize(rawJson).d;
-            string typeName = jsonModel.Type?.ToString();
-            if (typeName == null)
+            string contentTypeName = jsonModel.Type?.ToString();
+            return GetContentTypeByName(contentTypeName);
+        }
+
+        private Type GetContentTypeByName(string contentTypeName)
+        {
+            if (contentTypeName == null)
                 return null;
-            if (Server.RegisteredContentTypes.ContentTypes.TryGetValue(typeName, out var contentType))
-                return contentType;
-            if (GlobalContentTypes.ContentTypes.TryGetValue(typeName, out var globalContentType))
+            if(Server.RegisteredContentTypes != null)
+                if (Server.RegisteredContentTypes.ContentTypes.TryGetValue(contentTypeName, out var contentType))
+                    return contentType;
+            if (GlobalContentTypes.ContentTypes.TryGetValue(contentTypeName, out var globalContentType))
                 return globalContentType;
             return null;
         }

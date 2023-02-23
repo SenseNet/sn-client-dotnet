@@ -70,6 +70,8 @@ namespace SenseNet.Client.Tests
             Assert.AreEqual("https://url2", repo2.Server.Url);
         }
 
+        /* =================================================================== CONTENT TYPE REGISTRATION */
+
         [TestMethod]
         public async Task Repository_RegisterGlobalContentType_TypeParam()
         {
@@ -82,9 +84,6 @@ namespace SenseNet.Client.Tests
             // ASSERT
             var repository = await repositoryService.GetRepositoryAsync(CancellationToken.None)
                 .ConfigureAwait(false);
-            var content = repository.CreateContent<MyContent>();
-            Assert.IsNotNull(content);
-            Assert.IsInstanceOfType(content, typeof(MyContent));
             repository.GlobalContentTypes.ContentTypes.TryGetValue("MyContent", out var contentType);
             Assert.IsNotNull(contentType);
             Assert.AreEqual(typeof(MyContent), contentType);
@@ -101,9 +100,6 @@ namespace SenseNet.Client.Tests
             // ASSERT
             var repository = await repositoryService.GetRepositoryAsync(CancellationToken.None)
                 .ConfigureAwait(false);
-            var content = repository.CreateContent<MyContent>();
-            Assert.IsNotNull(content);
-            Assert.IsInstanceOfType(content, typeof(MyContent));
             repository.GlobalContentTypes.ContentTypes.TryGetValue("MyType", out var contentType);
             Assert.IsNotNull(contentType);
             Assert.AreEqual(typeof(MyContent), contentType);
@@ -120,9 +116,6 @@ namespace SenseNet.Client.Tests
             // ASSERT
             var repository = await repositoryService.GetRepositoryAsync(CancellationToken.None)
                 .ConfigureAwait(false);
-            var content = repository.CreateContent<MyContent>();
-            Assert.IsNotNull(content);
-            Assert.IsInstanceOfType(content, typeof(MyContent));
             repository.GlobalContentTypes.ContentTypes.TryGetValue("MyContent", out var contentType);
             Assert.IsNotNull(contentType);
             Assert.AreEqual(typeof(MyContent), contentType);
@@ -139,9 +132,6 @@ namespace SenseNet.Client.Tests
             // ASSERT
             var repository = await repositoryService.GetRepositoryAsync(CancellationToken.None)
                 .ConfigureAwait(false);
-            var content = repository.CreateContent<MyContent>();
-            Assert.IsNotNull(content);
-            Assert.IsInstanceOfType(content, typeof(MyContent));
             repository.GlobalContentTypes.ContentTypes.TryGetValue("MyType", out var contentType);
             Assert.IsNotNull(contentType);
             Assert.AreEqual(typeof(MyContent), contentType);
@@ -251,6 +241,144 @@ namespace SenseNet.Client.Tests
             Assert.IsNotNull(services.GetService<DifferentNamespace.MyContent>());
         }
 
+        /* =================================================================== CREATE CONTENT */
+
+        [TestMethod]
+        public async Task Repository_CreateContent_Global()
+        {
+            var repositoryService = GetRepositoryService(services =>
+            {
+                services.RegisterGlobalContentType<MyContent>();
+            });
+            var repository = await repositoryService.GetRepositoryAsync(CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACTION
+            var content = repository.CreateContent<MyContent>();
+
+            // ASSERT
+            Assert.IsNotNull(content);
+            Assert.IsInstanceOfType(content, typeof(MyContent));
+        }
+        [TestMethod]
+        public async Task Repository_CreateContent_ByName_Global()
+        {
+            var repositoryService = GetRepositoryService(services =>
+            {
+                services.RegisterGlobalContentType<MyContent>();
+            });
+            var repository = await repositoryService.GetRepositoryAsync(CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACTION
+            var content = repository.CreateContent("MyContent");
+
+            // ASSERT
+            Assert.IsNotNull(content);
+            Assert.IsInstanceOfType(content, typeof(MyContent));
+        }
+        [TestMethod]
+        public async Task Repository_CreateContent()
+        {
+            var repoName = "MyRepo";
+            var repositoryService = GetRepositoryService(services =>
+            {
+                //services.RegisterGlobalContentType<MyContent>();
+                services.ConfigureSenseNetRepository(repoName,
+                    configure: options => { options.Url = "https://myrepo.sensenet.cloud"; },
+                    registerContentTypes: contentTypes => { contentTypes.Add<MyContent>(); });
+            });
+            var repository = await repositoryService.GetRepositoryAsync(repoName, CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACTION
+            var content = repository.CreateContent<MyContent>();
+
+            // ASSERT
+            Assert.IsNotNull(content);
+            Assert.IsInstanceOfType(content, typeof(MyContent));
+        }
+        [TestMethod]
+        public async Task Repository_CreateContent_ByName()
+        {
+            var repoName = "MyRepo";
+            var contentTypeName = "MyContent_2";
+            var repositoryService = GetRepositoryService(services =>
+            {
+                //services.RegisterGlobalContentType<MyContent>();
+                services.ConfigureSenseNetRepository(repoName,
+                    configure: options => { options.Url = "https://myrepo.sensenet.cloud"; },
+                    registerContentTypes: contentTypes => { contentTypes.Add<MyContent2>(contentTypeName); });
+            });
+            var repository = await repositoryService.GetRepositoryAsync(repoName, CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACTION
+            var content = repository.CreateContent(contentTypeName);
+
+            // ASSERT
+            Assert.IsNotNull(content);
+            Assert.IsInstanceOfType(content, typeof(MyContent2));
+        }
+        [TestMethod]
+        public async Task Repository_CreateContent_DifferentTypeSameName()
+        {
+            // ALIGN
+            var repo1Name = "Repo1";
+            var repo2Name = "Repo2";
+            var exampleUrl2 = "https://example2.com";
+            var repositoryService = GetRepositoryService(services =>
+            {
+                services.ConfigureSenseNetRepository(repo1Name,
+                    configure: options => { options.Url = ExampleUrl; },
+                    registerContentTypes: contentTypes =>
+                    {
+                        contentTypes.Add<MyContent>();
+                    });
+                services.ConfigureSenseNetRepository(repo2Name,
+                    configure: options => { options.Url = exampleUrl2; },
+                    registerContentTypes: contentTypes =>
+                    {
+                        contentTypes.Add<DifferentNamespace.MyContent>();
+                    });
+            });
+            var repository1 = await repositoryService.GetRepositoryAsync(repo1Name, CancellationToken.None).ConfigureAwait(false);
+            var repository2 = await repositoryService.GetRepositoryAsync(repo2Name, CancellationToken.None).ConfigureAwait(false);
+
+            // ACT
+            var content1 = repository1.CreateContent("MyContent");
+            var content2 = repository2.CreateContent("MyContent");
+
+            // ASSERT
+            Assert.IsNotNull(content1);
+            Assert.IsInstanceOfType(content1, typeof(MyContent));
+            Assert.IsNotNull(content2);
+            Assert.IsInstanceOfType(content2, typeof(DifferentNamespace.MyContent));
+        }
+        [TestMethod]
+        public async Task Repository_CreateContent_Unknown()
+        {
+            var repositoryService = GetRepositoryService();
+            var repository = await repositoryService.GetRepositoryAsync(CancellationToken.None)
+                .ConfigureAwait(false);
+            Exception exception = null;
+
+            // ACTION
+            try
+            {
+                var content = repository.CreateContent<MyContent>();
+                // ASSERT
+                Assert.Fail($"The expected {nameof(ApplicationException)} was not thrown.");
+            }
+            catch (ApplicationException e)
+            {
+                exception = e;
+            }
+            Assert.IsTrue(exception.Message.Contains(nameof(MyContent)));
+            Assert.IsNotNull(exception.InnerException, "The exception.InnerException is null");
+        }
+
+        /* =================================================================== LOAD CONTENT */
 
         [TestMethod]
         public async Task Repository_LoadContent_GeneralType()

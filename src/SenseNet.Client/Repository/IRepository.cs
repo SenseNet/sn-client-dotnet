@@ -11,6 +11,7 @@ namespace SenseNet.Client
         public RegisteredContentTypes GlobalContentTypes { get; }
 
         public T CreateContent<T>() where T : Content;
+        public Content CreateContent(string contentTypeName);
 
         public Task<Content> LoadContentAsync(int id, CancellationToken cancel);
         public Task<Content> LoadContentAsync(string path, CancellationToken cancel);
