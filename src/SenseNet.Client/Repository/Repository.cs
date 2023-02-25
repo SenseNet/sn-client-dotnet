@@ -25,10 +25,37 @@ namespace SenseNet.Client
 
         public Content CreateContent(string parentPath, string contentTypeName, string name)
         {
+            if (parentPath == null)
+                throw new ArgumentNullException(nameof(parentPath));
+            if (parentPath.Length == 0)
+                throw new ArgumentException($"Value cannot be empty. (Parameter '{nameof(parentPath)}')");
+            if (contentTypeName == null)
+                throw new ArgumentNullException(nameof(contentTypeName));
+            if (contentTypeName.Length == 0)
+                throw new ArgumentException($"Value cannot be empty. (Parameter '{nameof(contentTypeName)}')");
+            if (name == null)
+                throw new ArgumentNullException(nameof(name));
+            if (name.Length == 0)
+                throw new ArgumentException($"Value cannot be empty. (Parameter '{nameof(name)}')");
+
             dynamic content = PrepareContent(_services.GetRequiredService<Content>());
             content.ParentPath = parentPath;
             content.Name = name;
             content.__ContentType = contentTypeName;
+            content.Existing = false;
+            return content;
+        }
+
+        public Content CreateContentByTemplate(string parentPath, string contentTypeName, string name, string contentTemplate)
+        {
+            dynamic content = CreateContent(parentPath, contentTypeName, name);
+
+            if (contentTemplate == null)
+                throw new ArgumentNullException(nameof(contentTemplate));
+            if (contentTemplate.Length == 0)
+                throw new ArgumentException($"Value cannot be empty. (Parameter '{nameof(contentTemplate)}')");
+
+            content.__ContentTemplate = contentTemplate;
             return content;
         }
 

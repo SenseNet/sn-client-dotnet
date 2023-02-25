@@ -19,6 +19,15 @@ namespace SenseNet.Client
         /// <param name="name">Name of the content.</param>
         /// <returns>A new content instance.</returns>
         public Content CreateContent(string parentPath, string contentTypeName, string name);
+        /// <summary>
+        /// Creates a new content instance in memory. After saving the content is created on the server from the given content template.
+        /// </summary>
+        /// <param name="parentPath">Path of the existing parent.</param>
+        /// <param name="contentTypeName">Content type name.</param>
+        /// <param name="name">Name of the content.</param>
+        /// <param name="contentTemplate">Content template name.</param>
+        /// <returns>A new content instance.</returns>
+        public Content CreateContentByTemplate(string parentPath, string contentTypeName, string name, string contentTemplate);
 
         /// <summary>
         /// Loads an existing content.

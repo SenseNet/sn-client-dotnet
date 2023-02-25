@@ -67,6 +67,94 @@ namespace SenseNet.Client.Tests
             Assert.AreEqual("Task", content.__ContentType);
             Assert.AreEqual("Task1", content.Name);
         }
+        [TestMethod]
+        public async Task Repository_CreateContent_Error_MissingParentPath()
+        {
+            await TestParameterError<ArgumentNullException>(
+                repository => repository.CreateContent(null, null, null),
+                "Value cannot be null. (Parameter 'parentPath')").ConfigureAwait(false);
+        }
+        [TestMethod]
+        public async Task Repository_CreateContent_Error_MissingContentType()
+        {
+            await TestParameterError<ArgumentNullException>(
+                repository => repository.CreateContent("/Root/Content", null, null),
+                "Value cannot be null. (Parameter 'contentTypeName')").ConfigureAwait(false);
+        }
+        [TestMethod]
+        public async Task Repository_CreateContent_Error_MissingName()
+        {
+            await TestParameterError<ArgumentNullException>(
+                repository => repository.CreateContent("/Root/Content", "Folder", null),
+                "Value cannot be null. (Parameter 'name')").ConfigureAwait(false);
+        }
+        [TestMethod]
+        public async Task Repository_CreateContent_Error_EmptyParentPath()
+        {
+            await TestParameterError<ArgumentException>(
+                repository => repository.CreateContent("", null, null),
+                "Value cannot be empty. (Parameter 'parentPath')").ConfigureAwait(false);
+        }
+        [TestMethod]
+        public async Task Repository_CreateContent_Error_EmptyContentType()
+        {
+            await TestParameterError<ArgumentException>(
+                repository => repository.CreateContent("/Root/Content", "", null),
+                "Value cannot be empty. (Parameter 'contentTypeName')").ConfigureAwait(false);
+        }
+        [TestMethod]
+        public async Task Repository_CreateContent_Error_EmptyName()
+        {
+            await TestParameterError<ArgumentException>(
+                repository => repository.CreateContent("/Root/Content", "Folder", ""),
+                "Value cannot be empty. (Parameter 'name')").ConfigureAwait(false);
+        }
+
+
+        [TestMethod]
+        public async Task Repository_CreateContentByTemplate()
+        {
+            var repository = await GetRepositoryCollection().GetRepositoryAsync("local", CancellationToken.None);
+
+            dynamic content = repository.CreateContentByTemplate(
+                "/Root/Content/MyTasks", "Task", "Task1", "Template1");
+
+            Assert.AreEqual("/Root/Content/MyTasks", content.ParentPath);
+            Assert.AreEqual("Task", content.__ContentType);
+            Assert.AreEqual("Task1", content.Name);
+            Assert.AreEqual("Template1", content.__ContentTemplate);
+        }
+        [TestMethod]
+        public async Task Repository_CreateContentByTemplate_Error_MissingContentTemplate()
+        {
+            await TestParameterError<ArgumentNullException>(
+                repository => repository.CreateContentByTemplate(
+                    "/Root/Content/MyTasks", "Task", "Task1", null),
+                "Value cannot be null. (Parameter 'contentTemplate')").ConfigureAwait(false);
+        }
+        [TestMethod]
+        public async Task Repository_CreateContentByTemplate_Error_EmptyContentTemplate()
+        {
+            await TestParameterError<ArgumentException>(
+                repository => repository.CreateContentByTemplate(
+                    "/Root/Content/MyTasks", "Task", "Task1", ""),
+                "Value cannot be empty. (Parameter 'contentTemplate')").ConfigureAwait(false);
+        }
+
+        public async Task TestParameterError<TException>(Action<IRepository> callback, string expectedMessage) where TException : Exception
+        {
+            var repository = await GetRepositoryCollection().GetRepositoryAsync("local", CancellationToken.None);
+
+            try
+            {
+                callback(repository);
+                Assert.Fail($"The expected {typeof(TException).Name} was not thrown.");
+            }
+            catch (TException e)
+            {
+                Assert.AreEqual(expectedMessage, e.Message);
+            }
+        }
 
         /* ====================================================================== LOAD CONTENT SHORTCUT */
 
