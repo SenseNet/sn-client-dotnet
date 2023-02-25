@@ -14,8 +14,11 @@ namespace SenseNet.Client
         /// <summary>
         /// Creates a new content instance in memory.
         /// </summary>
+        /// <param name="parentPath">Path of the existing parent.</param>
+        /// <param name="contentTypeName">Content type name.</param>
+        /// <param name="name">Name of the content.</param>
         /// <returns>A new content instance.</returns>
-        public Content CreateContent();
+        public Content CreateContent(string parentPath, string contentTypeName, string name);
 
         /// <summary>
         /// Loads an existing content.
@@ -38,5 +41,6 @@ namespace SenseNet.Client
         /// <param name="cancel">The token to monitor for cancellation requests.</param>
         /// <returns>A task that wraps the content or null.</returns>
         public Task<Content> LoadContentAsync(ODataRequest requestData, CancellationToken cancel);
+
     }
 }

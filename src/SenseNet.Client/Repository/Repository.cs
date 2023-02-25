@@ -23,9 +23,13 @@ namespace SenseNet.Client
             _logger = logger;
         }
 
-        public Content CreateContent()
+        public Content CreateContent(string parentPath, string contentTypeName, string name)
         {
-            return PrepareContent(_services.GetRequiredService<Content>());
+            dynamic content = PrepareContent(_services.GetRequiredService<Content>());
+            content.ParentPath = parentPath;
+            content.Name = name;
+            content.__ContentType = contentTypeName;
+            return content;
         }
 
         private T PrepareContent<T>(T content) where T : Content
