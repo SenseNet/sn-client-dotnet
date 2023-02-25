@@ -51,5 +51,7 @@ namespace SenseNet.Client
         /// <returns>A task that wraps the content or null.</returns>
         public Task<Content> LoadContentAsync(ODataRequest requestData, CancellationToken cancel);
 
+        public Task<bool> IsContentExistAsync(string path, CancellationToken cancel);
+
     }
 }

@@ -85,6 +85,19 @@ namespace SenseNet.Client
             return LoadContentAsync<Content>(requestData, cancel);
         }
 
+        public async Task<bool> IsContentExistAsync(string path, CancellationToken cancel)
+        {
+            var requestData = new ODataRequest(Server)
+            {
+                Path = path,
+                Metadata = MetadataFormat.None,
+                Select = new[] { "Id" }
+            };
+
+            var content = await LoadContentAsync(requestData, cancel).ConfigureAwait(false);
+            return content != null;
+        }
+
         public Task<T> LoadContentAsync<T>(int id, CancellationToken cancel) where T : Content
         {
             return LoadContentAsync<T>(new ODataRequest(Server)

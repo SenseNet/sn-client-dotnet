@@ -474,6 +474,53 @@ namespace SenseNet.Client.Tests
             Assert.AreEqual(expectedUrl, requestedUri.PathAndQuery);
         }
 
+        /* ====================================================================== CONTENT EXISTENCE */
+
+        [TestMethod]
+        public async Task Repository_IsContentExists_Yes()
+        {
+            // ALIGN
+            var infrastructure = await GetDefaultRepositoryAndRestCallerMock();
+            var restCaller = infrastructure.RestCaller;
+            var repository = infrastructure.Repository;
+
+            restCaller.GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>())
+                .Returns(Task.FromResult(@"{ ""d"": { ""Id"": 42 }}"));
+
+            // ACT
+            var isExist = await repository.IsContentExistAsync("/Root/Content/MyContent", CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ASSERT REQUEST
+            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First();
+            Assert.IsNotNull(requestedUri);
+            Assert.AreEqual("/OData.svc/Root/Content('MyContent')?metadata=no&$select=Id", requestedUri.PathAndQuery);
+            // ASSERT RESPONSE
+            Assert.IsTrue(isExist);
+        }
+        [TestMethod]
+        public async Task Repository_IsContentExists_No()
+        {
+            // ALIGN
+            var infrastructure = await GetDefaultRepositoryAndRestCallerMock();
+            var restCaller = infrastructure.RestCaller;
+            var repository = infrastructure.Repository;
+
+            restCaller.GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>())
+                .Returns(Task.FromResult(string.Empty));
+
+            // ACT
+            var isExist = await repository.IsContentExistAsync("/Root/Content/MyContent", CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ASSERT REQUEST
+            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First();
+            Assert.IsNotNull(requestedUri);
+            Assert.AreEqual("/OData.svc/Root/Content('MyContent')?metadata=no&$select=Id", requestedUri.PathAndQuery);
+            // ASSERT RESPONSE
+            Assert.IsFalse(isExist);
+        }
+
         /* ====================================================================== TOOLS */
 
         private static IRepositoryCollection GetRepositoryCollection(Action<IServiceCollection> addServices = null)
