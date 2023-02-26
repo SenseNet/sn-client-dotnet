@@ -2,14 +2,13 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using SenseNet.Extensions.DependencyInjection;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using NSubstitute;
-using SenseNet.Client;
-using SenseNet.Testing;
 
 namespace SenseNet.Client.Tests
 {
@@ -542,6 +541,7 @@ namespace SenseNet.Client.Tests
         }
 
         /* ====================================================================== QUERY CONTENT */
+
         [TestMethod]
         public async Task Repository_QueryForAdmin()
         {
@@ -654,6 +654,204 @@ namespace SenseNet.Client.Tests
             Assert.AreEqual("/OData.svc/Root/Content('MyContent')?metadata=no&$select=Id", requestedUri.PathAndQuery);
             // ASSERT RESPONSE
             Assert.IsFalse(isExist);
+        }
+
+        /* ====================================================================== DELETE CONTENT */
+
+        [TestMethod]
+        public async Task Repository_Delete_Permanent_ByPath()
+        {
+            // ALIGN
+            var restCaller = Substitute.For<IRestCaller>();
+            restCaller
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>())
+                .Returns(Task.FromResult(""));
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton<IRestCaller>(restCaller);
+            });
+            var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+            var request = new ODataRequest(repository.Server) { Path = "/Root", Select = new[] { "Id", "Name", "Type" } };
+
+            // ACT
+            await repository.DeleteContentAsync("/Root/Content/MyContent", true, CancellationToken.None);
+
+            // ASSERT
+            var arguments = restCaller.ReceivedCalls().Single().GetArguments();
+            Assert.AreEqual(4, arguments.Length);
+            var requestedUri = arguments[0] as Uri;
+            Assert.IsNotNull(requestedUri);
+            Assert.AreEqual("/OData.svc/('Root')/DeleteBatch?metadata=no", requestedUri.PathAndQuery);
+            var method = arguments[2] as HttpMethod;
+            Assert.IsNotNull(method);
+            Assert.AreEqual(HttpMethod.Post, method);
+            var jsonBody = arguments[3] as string;
+            Assert.IsNotNull(jsonBody);
+            Assert.AreEqual("models=[{\"permanent\":true,\"paths\":[\"/Root/Content/MyContent\"]}]", jsonBody);
+        }
+        [TestMethod]
+        public async Task Repository_Delete_ByPath()
+        {
+            // ALIGN
+            var restCaller = Substitute.For<IRestCaller>();
+            restCaller
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>())
+                .Returns(Task.FromResult(""));
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton<IRestCaller>(restCaller);
+            });
+            var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+            var request = new ODataRequest(repository.Server) { Path = "/Root", Select = new[] { "Id", "Name", "Type" } };
+
+            // ACT
+            await repository.DeleteContentAsync("/Root/Content/MyContent", false, CancellationToken.None);
+
+            // ASSERT
+            var arguments = restCaller.ReceivedCalls().Single().GetArguments();
+            Assert.AreEqual(4, arguments.Length);
+            var requestedUri = arguments[0] as Uri;
+            Assert.IsNotNull(requestedUri);
+            Assert.AreEqual("/OData.svc/('Root')/DeleteBatch?metadata=no", requestedUri.PathAndQuery);
+            var method = arguments[2] as HttpMethod;
+            Assert.IsNotNull(method);
+            Assert.AreEqual(HttpMethod.Post, method);
+            var jsonBody = arguments[3] as string;
+            Assert.IsNotNull(jsonBody);
+            Assert.AreEqual("models=[{\"permanent\":false,\"paths\":[\"/Root/Content/MyContent\"]}]", jsonBody);
+        }
+        [TestMethod]
+        public async Task Repository_Delete_ByPaths()
+        {
+            // ALIGN
+            var restCaller = Substitute.For<IRestCaller>();
+            restCaller
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>())
+                .Returns(Task.FromResult(""));
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton<IRestCaller>(restCaller);
+            });
+            var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+            var request = new ODataRequest(repository.Server) { Path = "/Root", Select = new[] { "Id", "Name", "Type" } };
+
+            // ACT
+            var paths = new[] {"/Root/F1", "/Root/F2", "/Root/F3"};
+            await repository.DeleteContentAsync(paths, false, CancellationToken.None);
+
+            // ASSERT
+            var arguments = restCaller.ReceivedCalls().Single().GetArguments();
+            Assert.AreEqual(4, arguments.Length);
+            var requestedUri = arguments[0] as Uri;
+            Assert.IsNotNull(requestedUri);
+            Assert.AreEqual("/OData.svc/('Root')/DeleteBatch?metadata=no", requestedUri.PathAndQuery);
+            var method = arguments[2] as HttpMethod;
+            Assert.IsNotNull(method);
+            Assert.AreEqual(HttpMethod.Post, method);
+            var jsonBody = arguments[3] as string;
+            Assert.IsNotNull(jsonBody);
+            Assert.AreEqual("models=[{\"permanent\":false,\"paths\":[\"/Root/F1\",\"/Root/F2\",\"/Root/F3\"]}]", jsonBody);
+        }
+        [TestMethod]
+        public async Task Repository_Delete_ById()
+        {
+            // ALIGN
+            var restCaller = Substitute.For<IRestCaller>();
+            restCaller
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>())
+                .Returns(Task.FromResult(""));
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton<IRestCaller>(restCaller);
+            });
+            var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+            var request = new ODataRequest(repository.Server) { Path = "/Root", Select = new[] { "Id", "Name", "Type" } };
+
+            // ACT
+            await repository.DeleteContentAsync(1234, false, CancellationToken.None);
+
+            // ASSERT
+            var arguments = restCaller.ReceivedCalls().Single().GetArguments();
+            Assert.AreEqual(4, arguments.Length);
+            var requestedUri = arguments[0] as Uri;
+            Assert.IsNotNull(requestedUri);
+            Assert.AreEqual("/OData.svc/('Root')/DeleteBatch?metadata=no", requestedUri.PathAndQuery);
+            var method = arguments[2] as HttpMethod;
+            Assert.IsNotNull(method);
+            Assert.AreEqual(HttpMethod.Post, method);
+            var jsonBody = arguments[3] as string;
+            Assert.IsNotNull(jsonBody);
+            Assert.AreEqual("models=[{\"permanent\":false,\"paths\":[1234]}]", jsonBody);
+        }
+        [TestMethod]
+        public async Task Repository_Delete_ByIds()
+        {
+            // ALIGN
+            var restCaller = Substitute.For<IRestCaller>();
+            restCaller
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>())
+                .Returns(Task.FromResult(""));
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton<IRestCaller>(restCaller);
+            });
+            var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+            var request = new ODataRequest(repository.Server) { Path = "/Root", Select = new[] { "Id", "Name", "Type" } };
+
+            // ACT
+            var ids = new[] { 1234, 1235, 1236, 1237 };
+            await repository.DeleteContentAsync(ids, false, CancellationToken.None);
+
+            // ASSERT
+            var arguments = restCaller.ReceivedCalls().Single().GetArguments();
+            Assert.AreEqual(4, arguments.Length);
+            var requestedUri = arguments[0] as Uri;
+            Assert.IsNotNull(requestedUri);
+            Assert.AreEqual("/OData.svc/('Root')/DeleteBatch?metadata=no", requestedUri.PathAndQuery);
+            var method = arguments[2] as HttpMethod;
+            Assert.IsNotNull(method);
+            Assert.AreEqual(HttpMethod.Post, method);
+            var jsonBody = arguments[3] as string;
+            Assert.IsNotNull(jsonBody);
+            Assert.AreEqual("models=[{\"permanent\":false,\"paths\":[1234,1235,1236,1237]}]", jsonBody);
+        }
+        [TestMethod]
+        public async Task Repository_Delete_ByIdsOrPaths()
+        {
+            // ALIGN
+            var restCaller = Substitute.For<IRestCaller>();
+            restCaller
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>())
+                .Returns(Task.FromResult(""));
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton<IRestCaller>(restCaller);
+            });
+            var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+            var request = new ODataRequest(repository.Server) { Path = "/Root", Select = new[] { "Id", "Name", "Type" } };
+
+            // ACT
+            var idsOrPaths = new object[] { "/Root/F1", 1234, "/Root/F2", 1235, 1236 };
+            await repository.DeleteContentAsync(idsOrPaths, false, CancellationToken.None);
+
+            // ASSERT
+            var arguments = restCaller.ReceivedCalls().Single().GetArguments();
+            Assert.AreEqual(4, arguments.Length);
+            var requestedUri = arguments[0] as Uri;
+            Assert.IsNotNull(requestedUri);
+            Assert.AreEqual("/OData.svc/('Root')/DeleteBatch?metadata=no", requestedUri.PathAndQuery);
+            var method = arguments[2] as HttpMethod;
+            Assert.IsNotNull(method);
+            Assert.AreEqual(HttpMethod.Post, method);
+            var jsonBody = arguments[3] as string;
+            Assert.IsNotNull(jsonBody);
+            Assert.AreEqual("models=[{\"permanent\":false,\"paths\":[\"/Root/F1\",1234,\"/Root/F2\",1235,1236]}]", jsonBody);
         }
 
         /* ====================================================================== TOOLS */

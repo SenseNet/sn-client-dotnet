@@ -59,5 +59,11 @@ namespace SenseNet.Client
 
         public Task<IEnumerable<Content>> QueryForAdminAsync(string queryText, CancellationToken cancel, string[] select = null, string[] expand = null, QuerySettings settings = null);
         public Task<IEnumerable<Content>> QueryAsync(string queryText, CancellationToken cancel, string[] select = null, string[] expand = null, QuerySettings settings = null);
+
+        public Task DeleteContentAsync(string path, bool permanent, CancellationToken cancellationToken); 
+        public Task DeleteContentAsync(string[] paths, bool permanent, CancellationToken cancellationToken);
+        public Task DeleteContentAsync(int id, bool permanent, CancellationToken cancellationToken);
+        public Task DeleteContentAsync(int[] ids, bool permanent, CancellationToken cancellationToken);
+        public Task DeleteContentAsync(object[] idsOrPaths, bool permanent, CancellationToken cancellationToken);
     }
 }

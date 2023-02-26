@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
+using System.Net.Http;
 
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client
@@ -184,6 +185,39 @@ namespace SenseNet.Client
             };
 
             return LoadCollectionAsync(oDataRequest, cancel);
+        }
+
+        public Task DeleteContentAsync(string path, bool permanent, CancellationToken cancellationToken)
+        {
+            return DeleteContentAsync(new object[] { path }, permanent, cancellationToken);
+        }
+        public Task DeleteContentAsync(string[] paths, bool permanent, CancellationToken cancellationToken)
+        {
+            return DeleteContentAsync(paths.Cast<object>().ToArray(), permanent, cancellationToken);
+        }
+        public Task DeleteContentAsync(int id, bool permanent, CancellationToken cancellationToken)
+        {
+            return DeleteContentAsync(new object[] { id }, permanent, cancellationToken);
+        }
+        public Task DeleteContentAsync(int[] ids, bool permanent, CancellationToken cancellationToken)
+        {
+            return DeleteContentAsync(ids.Cast<object>().ToArray(), permanent, cancellationToken);
+        }
+        public async Task DeleteContentAsync(object[] idsOrPaths, bool permanent, CancellationToken cancellationToken)
+        {
+            var oDataRequest = new ODataRequest(Server)
+            {
+                Path = "/Root",
+                ActionName = "DeleteBatch"
+            };
+
+            await _restCaller.GetResponseStringAsync(oDataRequest.GetUri(), Server, HttpMethod.Post,
+                    JsonHelper.GetJsonPostModel(new
+                    {
+                        permanent,
+                        paths = idsOrPaths
+                    }))
+                .ConfigureAwait(false);
         }
 
         private T CreateContentFromResponse<T>(dynamic jObject) where T : Content
