@@ -1,8 +1,11 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Threading;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json.Linq;
 
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client
@@ -122,12 +125,32 @@ namespace SenseNet.Client
             if (string.IsNullOrEmpty(rs))
                 return null;
 
+            var content = CreateContentFromResponse<T>(JsonHelper.Deserialize(rs).d);
+
+            return content;
+        }
+
+        public async Task<IEnumerable<Content>> LoadCollectionAsync(ODataRequest requestData, CancellationToken cancel)
+        {
+            // ---- return await RESTCaller.GetCollectionAsync(requestData, Server).ConfigureAwait(false);
+            // just to make sure
+            requestData.IsCollectionRequest = true;
+            requestData.SiteUrl = ServerContext.GetUrl(Server);
+
+            var rs = await _restCaller.GetResponseStringAsync(requestData.GetUri(), Server).ConfigureAwait(false);
+            var items = JsonHelper.Deserialize(rs).d.results as JArray;
+
+            return items?.Select(CreateContentFromResponse<Content>) ?? new Content[0];
+        }
+
+        private T CreateContentFromResponse<T>(dynamic jObject) where T : Content
+        {
             var content = _services.GetRequiredService<T>();
 
             content.Server = Server;
             content.Repository = this;
 
-            content.InitializeFromResponse(JsonHelper.Deserialize(rs).d);
+            content.InitializeFromResponse(jObject);
 
             return content;
         }

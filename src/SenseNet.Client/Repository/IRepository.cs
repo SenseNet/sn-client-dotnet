@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Threading;
 
 // ReSharper disable once CheckNamespace
@@ -53,5 +54,6 @@ namespace SenseNet.Client
 
         public Task<bool> IsContentExistAsync(string path, CancellationToken cancel);
 
+        public Task<IEnumerable<Content>> LoadCollectionAsync(ODataRequest requestData, CancellationToken cancel);
     }
 }

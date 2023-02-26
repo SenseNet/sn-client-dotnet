@@ -474,6 +474,47 @@ namespace SenseNet.Client.Tests
             Assert.AreEqual(expectedUrl, requestedUri.PathAndQuery);
         }
 
+        /* ====================================================================== LOAD COLLECTION */
+
+        [TestMethod]
+        public async Task Repository_LoadCollection()
+        {
+            // ALIGN
+            var restCaller = Substitute.For<IRestCaller>();
+            restCaller
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>())
+                .Returns(Task.FromResult(@"{""d"": {""__count"": 2, ""results"": [
+                    {""Id"": 3, ""Name"": ""IMS"", ""Type"": ""Domains""},
+                    {""Id"": 1000, ""Name"": ""System"", ""Type"": ""SystemFolder""}]}}"));
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton<IRestCaller>(restCaller);
+            });
+            var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+            var request = new ODataRequest(repository.Server) {Path = "/Root", Select = new[] {"Id", "Name", "Type"}};
+
+            // ACT
+            var collection = await repository.LoadCollectionAsync(request, CancellationToken.None);
+
+            // ASSERT
+            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First();
+            Assert.IsNotNull(requestedUri);
+            Assert.AreEqual("/OData.svc/Root?metadata=no&$select=Id,Name,Type", requestedUri.PathAndQuery);
+
+            var contents = collection.ToArray();
+            Assert.AreEqual(2, contents.Length);
+
+            var content = contents[0];
+            Assert.AreEqual(3, content.Id);
+            Assert.AreEqual("IMS", content.Name);
+            Assert.AreEqual("Domains", content["Type"].ToString());
+            content = contents[1];
+            Assert.AreEqual(1000, content.Id);
+            Assert.AreEqual("System", content.Name);
+            Assert.AreEqual("SystemFolder", content["Type"].ToString());
+        }
+
         /* ====================================================================== CONTENT EXISTENCE */
 
         [TestMethod]
