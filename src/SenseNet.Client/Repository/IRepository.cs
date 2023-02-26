@@ -56,5 +56,8 @@ namespace SenseNet.Client
 
         public Task<IEnumerable<Content>> LoadCollectionAsync(ODataRequest requestData, CancellationToken cancel);
         public Task<int> GetContentCountAsync(ODataRequest requestData, CancellationToken cancel);
+
+        public Task<IEnumerable<Content>> QueryForAdminAsync(string queryText, CancellationToken cancel, string[] select = null, string[] expand = null, QuerySettings settings = null);
+        public Task<IEnumerable<Content>> QueryAsync(string queryText, CancellationToken cancel, string[] select = null, string[] expand = null, QuerySettings settings = null);
     }
 }

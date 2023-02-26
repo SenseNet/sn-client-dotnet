@@ -157,6 +157,35 @@ namespace SenseNet.Client
             throw new ClientException($"Invalid count response. Request: {requestData.GetUri()}. Response: {response}");
         }
 
+        public Task<IEnumerable<Content>> QueryForAdminAsync(string queryText, CancellationToken cancel,
+            string[] select = null, string[] expand = null, QuerySettings settings = null)
+        {
+            settings ??= new QuerySettings();
+            settings.EnableAutofilters = FilterStatus.Disabled;
+            settings.EnableLifespanFilter = FilterStatus.Disabled;
+            return QueryAsync(queryText, cancel, select, expand, settings);
+        }
+
+        public Task<IEnumerable<Content>> QueryAsync(string queryText, CancellationToken cancel,
+            string[] select = null, string[] expand = null, QuerySettings settings = null)
+        {
+            settings ??= QuerySettings.Default;
+
+            var oDataRequest = new ODataRequest(Server)
+            {
+                Path = "/Root",
+                Select = select,
+                Expand = expand,
+                Top = settings.Top,
+                Skip = settings.Skip,
+                AutoFilters = settings.EnableAutofilters,
+                LifespanFilter = settings.EnableLifespanFilter,
+                ContentQuery = queryText
+            };
+
+            return LoadCollectionAsync(oDataRequest, cancel);
+        }
+
         private T CreateContentFromResponse<T>(dynamic jObject) where T : Content
         {
             var content = _services.GetRequiredService<T>();

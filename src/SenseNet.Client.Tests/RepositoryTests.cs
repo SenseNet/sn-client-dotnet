@@ -541,6 +541,74 @@ namespace SenseNet.Client.Tests
             Assert.AreEqual(42, count);
         }
 
+        /* ====================================================================== QUERY CONTENT */
+        [TestMethod]
+        public async Task Repository_QueryForAdmin()
+        {
+            // ALIGN
+            var restCaller = Substitute.For<IRestCaller>();
+            restCaller
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>())
+                .Returns(Task.FromResult(@"{""d"": {""__count"": 4, ""results"": [
+      {""Name"": ""Admin""},
+      {""Name"": ""PublicAdmin""},
+      {""Name"": ""Somebody""},
+      {""Name"": ""Visitor""}]}}"));
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton<IRestCaller>(restCaller);
+            });
+            var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACT
+            var collection = await repository.QueryForAdminAsync(
+                queryText: "TypeIs:User .SORT:Name",
+                CancellationToken.None,
+                select: new[] {"Name"});
+
+            // ASSERT
+            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First();
+            Assert.IsNotNull(requestedUri);
+            Assert.AreEqual("/OData.svc/Root?metadata=no&$select=Name&enableautofilters=false&enablelifespanfilter=false&query=TypeIs%3AUser%20.SORT%3AName", requestedUri.PathAndQuery);
+
+            var actual = string.Join(", ", collection.Select(c => c.Name));
+            Assert.AreEqual("Admin, PublicAdmin, Somebody, Visitor", actual);
+        }
+        [TestMethod]
+        public async Task Repository_Query()
+        {
+            // ALIGN
+            var restCaller = Substitute.For<IRestCaller>();
+            restCaller
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>())
+                .Returns(Task.FromResult(@"{""d"": {""__count"": 4, ""results"": [
+      {""Name"": ""Admin""},
+      {""Name"": ""PublicAdmin""},
+      {""Name"": ""Somebody""},
+      {""Name"": ""Visitor""}]}}"));
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton<IRestCaller>(restCaller);
+            });
+            var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACT
+            var collection = await repository.QueryAsync(
+                queryText: "TypeIs:User .SORT:Name",
+                CancellationToken.None,
+                select: new[] { "Name" });
+
+            // ASSERT
+            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First();
+            Assert.IsNotNull(requestedUri);
+            Assert.AreEqual("/OData.svc/Root?metadata=no&$select=Name&query=TypeIs%3AUser%20.SORT%3AName", requestedUri.PathAndQuery);
+
+            var actual = string.Join(", ", collection.Select(c => c.Name));
+            Assert.AreEqual("Admin, PublicAdmin, Somebody, Visitor", actual);
+        }
+
         /* ====================================================================== CONTENT EXISTENCE */
 
         [TestMethod]
