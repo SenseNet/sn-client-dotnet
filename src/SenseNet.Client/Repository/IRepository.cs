@@ -55,5 +55,6 @@ namespace SenseNet.Client
         public Task<bool> IsContentExistAsync(string path, CancellationToken cancel);
 
         public Task<IEnumerable<Content>> LoadCollectionAsync(ODataRequest requestData, CancellationToken cancel);
+        public Task<int> GetContentCountAsync(ODataRequest requestData, CancellationToken cancel);
     }
 }

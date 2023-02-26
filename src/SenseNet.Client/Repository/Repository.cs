@@ -137,10 +137,24 @@ namespace SenseNet.Client
             requestData.IsCollectionRequest = true;
             requestData.SiteUrl = ServerContext.GetUrl(Server);
 
-            var rs = await _restCaller.GetResponseStringAsync(requestData.GetUri(), Server).ConfigureAwait(false);
-            var items = JsonHelper.Deserialize(rs).d.results as JArray;
+            var response = await _restCaller.GetResponseStringAsync(requestData.GetUri(), Server).ConfigureAwait(false);
+            var items = JsonHelper.Deserialize(response).d.results as JArray;
 
             return items?.Select(CreateContentFromResponse<Content>) ?? new Content[0];
+        }
+
+        public async Task<int> GetContentCountAsync(ODataRequest requestData, CancellationToken cancel)
+        {
+            // just to make sure
+            requestData.IsCollectionRequest = true;
+            requestData.CountOnly = true;
+
+            var response = await _restCaller.GetResponseStringAsync(requestData.GetUri(), Server).ConfigureAwait(false);
+            
+            if (int.TryParse(response, out var count))
+                return count;
+
+            throw new ClientException($"Invalid count response. Request: {requestData.GetUri()}. Response: {response}");
         }
 
         private T CreateContentFromResponse<T>(dynamic jObject) where T : Content
