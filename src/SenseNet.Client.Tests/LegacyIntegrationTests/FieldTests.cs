@@ -4,9 +4,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json.Linq;
-using SenseNet.Client.Tests.UnitTests;
 
-namespace SenseNet.Client.Tests.IntegrationTests
+namespace SenseNet.Client.Tests.LegacyIntegrationTests
 {
     [TestClass]
     public class FieldTests

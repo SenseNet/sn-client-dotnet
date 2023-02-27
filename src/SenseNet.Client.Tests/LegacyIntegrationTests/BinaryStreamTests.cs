@@ -3,11 +3,10 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SenseNet.Client.Tests.UnitTests;
 
 // ReSharper disable StringLiteralTypo
 
-namespace SenseNet.Client.Tests.IntegrationTests
+namespace SenseNet.Client.Tests.LegacyIntegrationTests
 {
     [TestClass]
     public class BinaryStreamTests

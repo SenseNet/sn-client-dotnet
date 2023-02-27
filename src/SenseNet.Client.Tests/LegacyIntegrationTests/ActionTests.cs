@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SenseNet.Client.Tests.UnitTests;
 
-namespace SenseNet.Client.Tests.IntegrationTests
+namespace SenseNet.Client.Tests.LegacyIntegrationTests
 {
     /// <summary>
     /// The tests in this class test the dynamic method call feature (TryInvokeMember) of the Content class.

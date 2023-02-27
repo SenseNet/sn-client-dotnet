@@ -1,6 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace SenseNet.Client.Tests.UnitTests
+namespace SenseNet.Client.Tests
 {
     [TestClass]
     public class Initializer

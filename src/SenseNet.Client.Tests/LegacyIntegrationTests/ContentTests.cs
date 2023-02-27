@@ -6,10 +6,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json.Linq;
 using SenseNet.Client.Security;
-using SenseNet.Client.Tests.UnitTests;
 using SenseNet.Extensions.DependencyInjection;
 
-namespace SenseNet.Client.Tests.IntegrationTests
+namespace SenseNet.Client.Tests.LegacyIntegrationTests
 {
     [TestClass]
     public class ContentTests
