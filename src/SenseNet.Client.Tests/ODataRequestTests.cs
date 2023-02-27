@@ -24,7 +24,7 @@ namespace SenseNet.Client.Tests
     {
         [TestMethod]
         [ExpectedException(typeof(InvalidOperationException))]
-        public void NoServer_Error()
+        public void ODataRequest_NoServer_Error()
         {
             using (new ServerSwindler())
             {
@@ -36,7 +36,7 @@ namespace SenseNet.Client.Tests
         }
         [TestMethod]
         [ExpectedException(typeof(InvalidOperationException))]
-        public void ServerWithoutUrl_Error()
+        public void ODataRequest_ServerWithoutUrl_Error()
         {
             using (new ServerSwindler())
             {
@@ -47,7 +47,7 @@ namespace SenseNet.Client.Tests
             }
         }
         [TestMethod]
-        public void ServerWithUrl()
+        public void ODataRequest_ServerWithUrl()
         {
             using (new ServerSwindler())
             {
@@ -62,7 +62,7 @@ namespace SenseNet.Client.Tests
         }
 
         [TestMethod]
-        public void QueryString_Parameters()
+        public void ODataRequest_QueryString_Parameters()
         {
             var request = new ODataRequest(new ServerContext
             {
@@ -86,7 +86,7 @@ namespace SenseNet.Client.Tests
         }
 
         [TestMethod]
-        public void QueryString_ParameterArray()
+        public void ODataRequest_QueryString_ParameterArray()
         {
             var request = new ODataRequest(new ServerContext
             {
@@ -112,7 +112,7 @@ namespace SenseNet.Client.Tests
         }
 
         [TestMethod]
-        public void QueryString_ParameterArray_AddWellKnown()
+        public void ODataRequest_QueryString_ParameterArray_AddWellKnown()
         {
             void ParamTest(string name, string value, string propertyName, object propertyValue)
             {
@@ -155,7 +155,7 @@ namespace SenseNet.Client.Tests
             ParamTest("user", "/root///user1", "User", "/root///user1");
         }
         [TestMethod]
-        public void QueryString_ParameterArray_RemoveWellKnownByName()
+        public void ODataRequest_QueryString_ParameterArray_RemoveWellKnownByName()
         {
             void ParamTest(string name, string value, string propertyName, object propertyValue)
             {
@@ -219,14 +219,14 @@ namespace SenseNet.Client.Tests
 
         [TestMethod]
         [ExpectedException(typeof(InvalidOperationException))]
-        public void QueryString_BuildFromProperties_EmptyIsBuggy()
+        public void ODataRequest_QueryString_BuildFromProperties_EmptyIsBuggy()
         {
             var req = new ODataRequest();
 
             Assert.AreEqual("", req.ToString());
         }
         [TestMethod]
-        public void QueryString_BuildFromProperties_Defaults()
+        public void ODataRequest_QueryString_BuildFromProperties_Defaults()
         {
             var expected = $"{ClientContext.Current.Server.Url}/OData.svc/('Root')?metadata=no";
 
@@ -235,7 +235,7 @@ namespace SenseNet.Client.Tests
             Assert.AreEqual(expected, req.ToString());
         }
         [TestMethod]
-        public void QueryString_BuildFromProperties_CollectionDefaults()
+        public void ODataRequest_QueryString_BuildFromProperties_CollectionDefaults()
         {
             var expected = $"{ClientContext.Current.Server.Url}/OData.svc/Root?metadata=no";
 
@@ -244,7 +244,7 @@ namespace SenseNet.Client.Tests
             Assert.AreEqual(expected, req.ToString());
         }
         [TestMethod]
-        public void QueryString_BuildFromProperties_PropertySet1()
+        public void ODataRequest_QueryString_BuildFromProperties_PropertySet1()
         {
             var expected = $"{ClientContext.Current.Server.Url}/OData.svc/('Root')/Action1?" +
                            $"metadata=minimal&$expand=Field1,Field2&$select=Id,Name,Field1,Field2&version=V16.78D";
@@ -266,7 +266,7 @@ namespace SenseNet.Client.Tests
             Assert.AreEqual(expected, req.ToString());
         }
         [TestMethod]
-        public void QueryString_BuildFromProperties_PropertySet2()
+        public void ODataRequest_QueryString_BuildFromProperties_PropertySet2()
         {
             var expected = $"{ClientContext.Current.Server.Url}/OData.svc/content(79)/PropertyName?" +
                            $"metadata=minimal&$expand=Field1,Field2&$select=Id,Name,Field1,Field2&version=V16.78D";
@@ -288,7 +288,7 @@ namespace SenseNet.Client.Tests
             Assert.AreEqual(expected, req.ToString());
         }
         [TestMethod]
-        public void QueryString_BuildFromProperties_PropertySet3()
+        public void ODataRequest_QueryString_BuildFromProperties_PropertySet3()
         {
             var expected = $"{ClientContext.Current.Server.Url}/OData.svc/Root?" +
                            $"metadata=no&$top=7&$skip=78&$select=Id,Name&$filter=isof('Folder')&" +
@@ -318,7 +318,7 @@ namespace SenseNet.Client.Tests
             Assert.AreEqual(expected, req.ToString());
         }
         [TestMethod]
-        public void QueryString_BuildFromProperties_PropertySet4()
+        public void ODataRequest_QueryString_BuildFromProperties_PropertySet4()
         {
             var expected = $"{ClientContext.Current.Server.Url}/OData.svc/Root/$count?" +
                            $"metadata=no&$filter=isof('Folder')&$inlinecount=allpages&" +
@@ -342,5 +342,220 @@ namespace SenseNet.Client.Tests
 
             Assert.AreEqual(expected, req.ToString());
         }
+
+        /* ============================================================================= */
+
+        private string _baseUri => ClientContext.Current.Server.Url;
+
+        [TestMethod]
+        public void OdataRequest_Id()
+        {
+            var request = new ODataRequest(null) {ContentId = 42};
+            Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no", request.ToString());
+        }
+        [TestMethod]
+        public void OdataRequest_Path()
+        {
+            var request = new ODataRequest(null) {Path = "/Root/Content/MyFolder"};
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root/Content('MyFolder')?metadata=no", request.ToString());
+        }
+        [TestMethod]
+        public void OdataRequest_CountOnly()
+        {
+            var request = new ODataRequest(null) {ContentId = 42, CountOnly = true};
+            Assert.AreEqual($"{_baseUri}/OData.svc/content(42)/$count?metadata=no", request.ToString());
+        }
+        [TestMethod]
+        public void OdataRequest_ActionName()
+        {
+            var request = new ODataRequest(null) {ContentId = 42, ActionName = "Action1"};
+              Assert.AreEqual($"{_baseUri}/OData.svc/content(42)/Action1?metadata=no", request.ToString());
+        }
+        [TestMethod]
+        public void OdataRequest_PropertyName()
+        {
+            var request = new ODataRequest(null) {ContentId = 42, PropertyName = "Property1"};
+              Assert.AreEqual($"{_baseUri}/OData.svc/content(42)/Property1?metadata=no", request.ToString());
+        }
+        [TestMethod]
+        public void OdataRequest_MetadataFull()
+        {
+            var request = new ODataRequest(null) {ContentId = 42, Metadata = MetadataFormat.Full};
+              Assert.AreEqual($"{_baseUri}/OData.svc/content(42)", request.ToString());
+        }
+        [TestMethod]
+        public void OdataRequest_MetadataMinimal()
+        {
+            var request = new ODataRequest(null) {ContentId = 42, Metadata = MetadataFormat.Minimal};
+            Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=minimal", request.ToString());
+        }
+        [TestMethod]
+        public void OdataRequest_MetadataNo()
+        {
+            var request = new ODataRequest(null) {ContentId = 42, Metadata = MetadataFormat.None};
+            Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no", request.ToString());
+        }
+        [TestMethod]
+        public void OdataRequest_TopSkip()
+        {
+            var request = new ODataRequest(null) {ContentId = 42, Top = 10, Skip = 11};
+            Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no&$top=10&$skip=11", request.ToString());
+        }
+        [TestMethod]
+        public void OdataRequest_ExpandSelect()
+        {
+            var request = new ODataRequest(null)
+            {
+                ContentId = 42,
+                Expand = new[] {"Manager", "CreatedBy/Manager"},
+                Select = new[] {"Id", "Name", "Manager/Name", "CreatedBy/Manager/Name"}
+            };
+            Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no&$expand=Manager,CreatedBy/Manager&" +
+                            $"$select=Id,Name,Manager/Name,CreatedBy/Manager/Name", request.ToString());
+        }
+        [TestMethod]
+        public void OdataRequest_Filter()
+        {
+            var request = new ODataRequest(null) {ContentId = 42, ChildrenFilter = "isof('Folder')"};
+            Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no&$filter=isof('Folder')", request.ToString());
+        }
+        [TestMethod]
+        public void OdataRequest_OrderBy()
+        {
+            var request = new ODataRequest(null) {ContentId = 42, OrderBy = new[] {"Name", "Index desc"}};
+            Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no&$orderby=Name,Index desc", request.ToString());
+        }
+        [TestMethod]
+        public void OdataRequest_InlineCountDefault()
+        {
+            var request = new ODataRequest(null) {ContentId = 42, InlineCount = InlineCountOptions.Default};
+            Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no", request.ToString());
+        }
+        [TestMethod]
+        public void OdataRequest_InlineCountNone()
+        {
+            var request = new ODataRequest(null) {ContentId = 42, InlineCount = InlineCountOptions.None};
+            Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no", request.ToString());
+        }
+        [TestMethod]
+        public void OdataRequest_InlineCountAllPages()
+        {
+            var request = new ODataRequest(null) {ContentId = 42, InlineCount = InlineCountOptions.AllPages};
+            Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no&$inlinecount=allpages", request.ToString());
+        }
+        [TestMethod]
+        public void OdataRequest_AutoFiltersDefault()
+        {
+            var request = new ODataRequest(null) {ContentId = 42, AutoFilters = FilterStatus.Default};
+            Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no", request.ToString());
+        }
+        [TestMethod]
+        public void OdataRequest_AutoFiltersEnabled()
+        {
+            var request = new ODataRequest(null) {ContentId = 42, AutoFilters = FilterStatus.Enabled};
+            Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no&enableautofilters=true", request.ToString());
+        }
+        [TestMethod]
+        public void OdataRequest_AutoFiltersDisabled()
+        {
+            var request = new ODataRequest(null) {ContentId = 42, AutoFilters = FilterStatus.Disabled};
+            Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no&enableautofilters=false", request.ToString());
+        }
+        [TestMethod]
+        public void OdataRequest_LifespanFilterDefault()
+        {
+            var request = new ODataRequest(null) {ContentId = 42, LifespanFilter = FilterStatus.Default};
+            Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no", request.ToString());
+        }
+        [TestMethod]
+        public void OdataRequest_LifespanFilterEnabled()
+        {
+            var request = new ODataRequest(null) {ContentId = 42, LifespanFilter = FilterStatus.Enabled};
+            Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no&enablelifespanfilter=true", request.ToString());
+        }
+        [TestMethod]
+        public void OdataRequest_LifespanFilterDisabled()
+        {
+            var request = new ODataRequest(null) {ContentId = 42, LifespanFilter = FilterStatus.Disabled};
+            Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no&enablelifespanfilter=false", request.ToString());
+        }
+        [TestMethod]
+        public void OdataRequest_Version()
+        {
+            var request = new ODataRequest(null) {ContentId = 42, Version = "V1.0.A"};
+            Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no&version=V1.0.A", request.ToString());
+        }
+        [TestMethod]
+        public void OdataRequest_Scenario()
+        {
+            var request = new ODataRequest(null) {ContentId = 42, Scenario = "scenario1"};
+            Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no&scenario=scenario1", request.ToString());
+        }
+        [TestMethod]
+        public void OdataRequest_ContentQuery()
+        {
+            var request = new ODataRequest(null) {ContentId = 42, ContentQuery = "Index:>100 .SORT:Name"};
+            Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no&query=Index%3A%3E100%20.SORT%3AName", 
+                  request.ToString());
+        }
+        [TestMethod]
+        public void OdataRequest_Permissions()
+        {
+            var request = new ODataRequest(null) {ContentId = 42, Permissions = new[] {"Save", "Custom01"}};
+            Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no&permissions=Save,Custom01",
+                request.ToString());
+        }
+        [TestMethod]
+        public void OdataRequest_User()
+        {
+            var request = new ODataRequest(null) {ContentId = 42, User = "user1"};
+            Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no&user=user1", request.ToString());
+        }
+        [TestMethod]
+        public void OdataRequest_Parameters()
+        {
+            var request = new ODataRequest(null)
+            {
+                ContentId = 42,
+                Parameters = {{"param1", "value1"}, {"param2", "value2"}}
+            };
+            Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no&param1=value1&param2=value2", request.ToString());
+        }
+
+        [TestMethod]
+        public void OdataRequest_Error_MissingIdOrPath()
+        {
+            try
+            {
+                var request = new ODataRequest(null);
+                var _ = request.ToString();
+                Assert.Fail($"The expected {nameof(InvalidOperationException)} was not thrown.");
+            }
+            catch (InvalidOperationException e)
+            {
+                Assert.AreEqual("Invalid request properties: either content id or path must be provided.", e.Message);
+            }
+        }
+        [TestMethod]
+        public void OdataRequest_Error_ActionAndProperty()
+        {
+            try
+            {
+                var request = new ODataRequest(null)
+                {
+                    ContentId = 42,
+                    ActionName = "action1",
+                    PropertyName = "property1"
+                };
+                var _ = request.ToString();
+                Assert.Fail($"The expected {nameof(InvalidOperationException)} was not thrown.");
+            }
+            catch (InvalidOperationException e)
+            {
+                Assert.AreEqual("Invalid request properties: both action name and property name are provided.",
+                    e.Message);
+            }
+        }
+
     }
 }

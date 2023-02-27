@@ -155,7 +155,7 @@ namespace SenseNet.Client.Tests
             }
         }
 
-        /* ====================================================================== LOAD CONTENT SHORTCUT */
+        /* ====================================================================== LOAD CONTENT */
 
         [TestMethod]
         public async Task Repository_LoadContent_ByPath()
@@ -198,6 +198,21 @@ namespace SenseNet.Client.Tests
             Assert.AreEqual("Content", content.Name);
         }
 
+        [TestMethod]
+        public async Task Repository_LoadContent_ByOdataRequest_IdVersion()
+        {
+            await ODataRequestForLoadContentTest(repository =>
+                    new ODataRequest(repository.Server) { ContentId = 42, Version = "V1.0.A" },
+                "/OData.svc/content(42)?metadata=no&version=V1.0.A");
+        }
+        [TestMethod]
+        public async Task Repository_LoadContent_ByOdataRequest_PathVersion()
+        {
+            await ODataRequestForLoadContentTest(repository =>
+                    new ODataRequest(repository.Server) { Path = "/Root/Content/MyFolder", Version = "V1.0.A" },
+                "/OData.svc/Root/Content('MyFolder')?metadata=no&version=V1.0.A");
+        }
+
         private async Task<(IRepository Repository, IRestCaller RestCaller)> GetDefaultRepositoryAndRestCallerMock()
         {
             var restCaller = Substitute.For<IRestCaller>();
@@ -212,242 +227,6 @@ namespace SenseNet.Client.Tests
                 .ConfigureAwait(false);
             return (repository, restCaller);
         }
-
-        /* ====================================================================== LOAD CONTENT BY ODATA REQUEST */
-
-        [TestMethod]
-        public async Task Repository_LoadContent_ByOdataRequest_Id()
-        {
-            await ODataRequestForLoadContentTest(repository =>
-                    new ODataRequest(repository.Server) { ContentId = 42 },
-                "/OData.svc/content(42)?metadata=no");
-        }
-        [TestMethod]
-        public async Task Repository_LoadContent_ByOdataRequest_Path()
-        {
-            await ODataRequestForLoadContentTest(repository =>
-                    new ODataRequest(repository.Server) { Path = "/Root/Content/MyFolder" },
-                "/OData.svc/Root/Content('MyFolder')?metadata=no");
-        }
-        [TestMethod]
-        public async Task Repository_LoadContent_ByOdataRequest_CountOnly()
-        {
-            await ODataRequestForLoadContentTest(repository =>
-                    new ODataRequest(repository.Server) { ContentId = 42, CountOnly = true },
-                "/OData.svc/content(42)/$count?metadata=no");
-        }
-        [TestMethod]
-        public async Task Repository_LoadContent_ByOdataRequest_ActionName()
-        {
-            await ODataRequestForLoadContentTest(repository =>
-                new ODataRequest(repository.Server) {ContentId = 42, ActionName = "Action1"},
-                "/OData.svc/content(42)/Action1?metadata=no");
-        }
-        [TestMethod]
-        public async Task Repository_LoadContent_ByOdataRequest_PropertyName()
-        {
-            await ODataRequestForLoadContentTest(repository =>
-                    new ODataRequest(repository.Server) { ContentId = 42, PropertyName = "Property1" },
-                "/OData.svc/content(42)/Property1?metadata=no");
-        }
-        [TestMethod]
-        public async Task Repository_LoadContent_ByOdataRequest_MetadataFull()
-        {
-            await ODataRequestForLoadContentTest(repository =>
-                    new ODataRequest(repository.Server) { ContentId = 42, Metadata = MetadataFormat.Full },
-                "/OData.svc/content(42)");
-        }
-        [TestMethod]
-        public async Task Repository_LoadContent_ByOdataRequest_MetadataMinimal()
-        {
-            await ODataRequestForLoadContentTest(repository =>
-                    new ODataRequest(repository.Server) { ContentId = 42, Metadata = MetadataFormat.Minimal },
-                "/OData.svc/content(42)?metadata=minimal");
-        }
-        [TestMethod]
-        public async Task Repository_LoadContent_ByOdataRequest_MetadataNo()
-        {
-            await ODataRequestForLoadContentTest(repository =>
-                    new ODataRequest(repository.Server) { ContentId = 42, Metadata = MetadataFormat.None },
-                "/OData.svc/content(42)?metadata=no");
-        }
-        [TestMethod]
-        public async Task Repository_LoadContent_ByOdataRequest_TopSkip()
-        {
-            await ODataRequestForLoadContentTest(repository =>
-                    new ODataRequest(repository.Server) { ContentId = 42, Top = 10, Skip = 11 },
-                "/OData.svc/content(42)?metadata=no&$top=10&$skip=11");
-        }
-        [TestMethod]
-        public async Task Repository_LoadContent_ByOdataRequest_ExpandSelect()
-        {
-            await ODataRequestForLoadContentTest(repository =>
-                new ODataRequest(repository.Server)
-                {
-                    ContentId = 42,
-                    Expand = new[] {"Manager", "CreatedBy/Manager"},
-                    Select = new[] {"Id", "Name", "Manager/Name", "CreatedBy/Manager/Name"}
-                },
-                "/OData.svc/content(42)?metadata=no&$expand=Manager,CreatedBy/Manager&$select=Id,Name,Manager/Name,CreatedBy/Manager/Name");
-        }
-        [TestMethod]
-        public async Task Repository_LoadContent_ByOdataRequest_Filter()
-        {
-            await ODataRequestForLoadContentTest(repository =>
-                    new ODataRequest(repository.Server) {ContentId = 42, ChildrenFilter = "isof('Folder')"},
-                "/OData.svc/content(42)?metadata=no&$filter=isof('Folder')");
-        }
-        [TestMethod]
-        public async Task Repository_LoadContent_ByOdataRequest_OrderBy()
-        {
-            await ODataRequestForLoadContentTest(repository =>
-                    new ODataRequest(repository.Server) {ContentId = 42, OrderBy = new []{"Name", "Index desc"}},
-                "/OData.svc/content(42)?metadata=no&$orderby=Name,Index%20desc");
-        }
-        [TestMethod]
-        public async Task Repository_LoadContent_ByOdataRequest_InlineCountDefault()
-        {
-            await ODataRequestForLoadContentTest(repository =>
-                    new ODataRequest(repository.Server) {ContentId = 42, InlineCount = InlineCountOptions.Default},
-                "/OData.svc/content(42)?metadata=no");
-        }
-        [TestMethod]
-        public async Task Repository_LoadContent_ByOdataRequest_InlineCountNone()
-        {
-            await ODataRequestForLoadContentTest(repository =>
-                    new ODataRequest(repository.Server) {ContentId = 42, InlineCount = InlineCountOptions.None},
-                "/OData.svc/content(42)?metadata=no");
-        }
-        [TestMethod]
-        public async Task Repository_LoadContent_ByOdataRequest_InlineCountAllPages()
-        {
-            await ODataRequestForLoadContentTest(repository =>
-                    new ODataRequest(repository.Server) {ContentId = 42, InlineCount = InlineCountOptions.AllPages},
-                "/OData.svc/content(42)?metadata=no&$inlinecount=allpages");
-        }
-        [TestMethod]
-        public async Task Repository_LoadContent_ByOdataRequest_AutoFiltersDefault()
-        {
-            await ODataRequestForLoadContentTest(repository =>
-                    new ODataRequest(repository.Server) {ContentId = 42, AutoFilters = FilterStatus.Default},
-                "/OData.svc/content(42)?metadata=no");
-        }
-        [TestMethod]
-        public async Task Repository_LoadContent_ByOdataRequest_AutoFiltersEnabled()
-        {
-            await ODataRequestForLoadContentTest(repository =>
-                    new ODataRequest(repository.Server) {ContentId = 42, AutoFilters = FilterStatus.Enabled},
-                "/OData.svc/content(42)?metadata=no&enableautofilters=true");
-        }
-        [TestMethod]
-        public async Task Repository_LoadContent_ByOdataRequest_AutoFiltersDisabled()
-        {
-            await ODataRequestForLoadContentTest(repository =>
-                    new ODataRequest(repository.Server) {ContentId = 42, AutoFilters = FilterStatus.Disabled},
-                "/OData.svc/content(42)?metadata=no&enableautofilters=false");
-        }
-        [TestMethod]
-        public async Task Repository_LoadContent_ByOdataRequest_LifespanFilterDefault()
-        {
-            await ODataRequestForLoadContentTest(repository =>
-                    new ODataRequest(repository.Server) {ContentId = 42, LifespanFilter = FilterStatus.Default},
-                "/OData.svc/content(42)?metadata=no");
-        }
-        [TestMethod]
-        public async Task Repository_LoadContent_ByOdataRequest_LifespanFilterEnabled()
-        {
-            await ODataRequestForLoadContentTest(repository =>
-                    new ODataRequest(repository.Server) {ContentId = 42, LifespanFilter = FilterStatus.Enabled},
-                "/OData.svc/content(42)?metadata=no&enablelifespanfilter=true");
-        }
-        [TestMethod]
-        public async Task Repository_LoadContent_ByOdataRequest_LifespanFilterDisabled()
-        {
-            await ODataRequestForLoadContentTest(repository =>
-                    new ODataRequest(repository.Server) {ContentId = 42, LifespanFilter = FilterStatus.Disabled},
-                "/OData.svc/content(42)?metadata=no&enablelifespanfilter=false");
-        }
-        [TestMethod]
-        public async Task Repository_LoadContent_ByOdataRequest_Version()
-        {
-            await ODataRequestForLoadContentTest(repository =>
-                    new ODataRequest(repository.Server) {ContentId = 42, Version = "V1.0.A"},
-                "/OData.svc/content(42)?metadata=no&version=V1.0.A");
-        }
-        [TestMethod]
-        public async Task Repository_LoadContent_ByOdataRequest_Scenario()
-        {
-            await ODataRequestForLoadContentTest(repository =>
-                    new ODataRequest(repository.Server) {ContentId = 42, Scenario = "scenario1"},
-                "/OData.svc/content(42)?metadata=no&scenario=scenario1");
-        }
-        [TestMethod]
-        public async Task Repository_LoadContent_ByOdataRequest_ContentQuery()
-        {
-            await ODataRequestForLoadContentTest(repository =>
-                    new ODataRequest(repository.Server) {ContentId = 42, ContentQuery = "Index:>100 .SORT:Name"},
-                "/OData.svc/content(42)?metadata=no&query=Index%3A%3E100%20.SORT%3AName");
-        }
-        [TestMethod]
-        public async Task Repository_LoadContent_ByOdataRequest_Permissions()
-        {
-            await ODataRequestForLoadContentTest(repository =>
-                    new ODataRequest(repository.Server) {ContentId = 42, Permissions = new[] {"Save", "Custom01"}},
-                "/OData.svc/content(42)?metadata=no&permissions=Save,Custom01");
-        }
-        [TestMethod]
-        public async Task Repository_LoadContent_ByOdataRequest_User()
-        {
-            await ODataRequestForLoadContentTest(repository =>
-                    new ODataRequest(repository.Server) {ContentId = 42, User = "user1"},
-                "/OData.svc/content(42)?metadata=no&user=user1");
-        }
-        [TestMethod]
-        public async Task Repository_LoadContent_ByOdataRequest_Parameters()
-        {
-            await ODataRequestForLoadContentTest(repository =>
-                    new ODataRequest(repository.Server)
-                    {
-                        ContentId = 42,
-                        Parameters = { {"param1", "value1"}, { "param2", "value2" } }
-                    },
-                "/OData.svc/content(42)?metadata=no&param1=value1&param2=value2");
-        }
-
-        [TestMethod]
-        public async Task Repository_LoadContent_ByOdataRequest_Error_MissingIdOrPath()
-        {
-            try
-            {
-                await ODataRequestForLoadContentTest(repository =>
-                        new ODataRequest(repository.Server),
-                    "_________");
-            }
-            catch (InvalidOperationException e)
-            {
-                Assert.AreEqual("Invalid request properties: either content id or path must be provided.", e.Message);
-            }
-        }
-        [TestMethod]
-        public async Task Repository_LoadContent_ByOdataRequest_Error_ActionAndProperty()
-        {
-            try
-            {
-                await ODataRequestForLoadContentTest(repository =>
-                        new ODataRequest(repository.Server)
-                        {
-                            ContentId = 42,
-                            ActionName = "action1",
-                            PropertyName = "property1"
-                        },
-                    "_________");
-            }
-            catch (InvalidOperationException e)
-            {
-                Assert.AreEqual("Invalid request properties: both action name and property name are provided.", e.Message);
-            }
-        }
-
         private async Task ODataRequestForLoadContentTest(Func<IRepository, ODataRequest> getOdataRequest, string expectedUrl)
         {
             // ALIGN
