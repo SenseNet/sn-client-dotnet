@@ -1,6 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace SenseNet.Client.Tests
+namespace SenseNet.Client.Tests.UnitTests
 {
     [TestClass]
     public class SetPermissionRequestTests

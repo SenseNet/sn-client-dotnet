@@ -5,7 +5,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SenseNet.Client.Authentication;
 using SenseNet.Extensions.DependencyInjection;
 
-namespace SenseNet.Client.Tests
+namespace SenseNet.Client.Tests.UnitTests
 {
     [TestClass]
     public class ServerContextFactoryTests
@@ -23,10 +23,13 @@ namespace SenseNet.Client.Tests
         public async Task ServerContext_ConfigureNamed()
         {
             const string exampleUrl = "https://example.com";
-            var scf = GetFactory(services => { services.ConfigureSenseNetRepository("x", opt =>
+            var scf = GetFactory(services =>
             {
-                opt.Url = exampleUrl; 
-            }); });
+                services.ConfigureSenseNetRepository("x", opt =>
+            {
+                opt.Url = exampleUrl;
+            });
+            });
 
             // default should be empty
             var server0 = await scf.GetServerAsync();
@@ -45,7 +48,8 @@ namespace SenseNet.Client.Tests
             const string exampleUrl1 = "https://example1.com";
             const string exampleUrl2 = "https://example2.com";
 
-            var scf = GetFactory(services => {
+            var scf = GetFactory(services =>
+            {
                 services.ConfigureSenseNetRepository("x", opt => { opt.Url = exampleUrl1; });
                 services.ConfigureSenseNetRepository("y", opt => { opt.Url = exampleUrl2; });
             });
@@ -71,7 +75,7 @@ namespace SenseNet.Client.Tests
                 });
             });
 
-            var server1 = await scf.GetServerAsync(token:"token1");
+            var server1 = await scf.GetServerAsync(token: "token1");
             Assert.AreEqual("token1", server1.Authentication.AccessToken);
         }
         [TestMethod]

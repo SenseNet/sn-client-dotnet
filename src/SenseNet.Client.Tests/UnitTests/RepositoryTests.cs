@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using NSubstitute;
 
-namespace SenseNet.Client.Tests
+namespace SenseNet.Client.Tests.UnitTests
 {
     [TestClass]
     public class RepositoryTests
@@ -221,7 +221,7 @@ namespace SenseNet.Client.Tests
                 .Returns(Task.FromResult(@"{ ""d"": { ""Name"": ""Content"" }}"));
             var repositories = GetRepositoryCollection(services =>
             {
-                services.AddSingleton<IRestCaller>(restCaller);
+                services.AddSingleton(restCaller);
             });
             var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
                 .ConfigureAwait(false);
@@ -236,7 +236,7 @@ namespace SenseNet.Client.Tests
                 .Returns(Task.FromResult(@"{ ""d"": { ""Name"": ""Content"" }}"));
             var repositories = GetRepositoryCollection(services =>
             {
-                services.AddSingleton<IRestCaller>(restCaller);
+                services.AddSingleton(restCaller);
             });
             var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
                 .ConfigureAwait(false);
@@ -266,11 +266,11 @@ namespace SenseNet.Client.Tests
                     {""Id"": 1000, ""Name"": ""System"", ""Type"": ""SystemFolder""}]}}"));
             var repositories = GetRepositoryCollection(services =>
             {
-                services.AddSingleton<IRestCaller>(restCaller);
+                services.AddSingleton(restCaller);
             });
             var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
                 .ConfigureAwait(false);
-            var request = new ODataRequest(repository.Server) {Path = "/Root", Select = new[] {"Id", "Name", "Type"}};
+            var request = new ODataRequest(repository.Server) { Path = "/Root", Select = new[] { "Id", "Name", "Type" } };
 
             // ACT
             var collection = await repository.LoadCollectionAsync(request, CancellationToken.None);
@@ -302,7 +302,7 @@ namespace SenseNet.Client.Tests
                 .Returns(Task.FromResult(@"42"));
             var repositories = GetRepositoryCollection(services =>
             {
-                services.AddSingleton<IRestCaller>(restCaller);
+                services.AddSingleton(restCaller);
             });
             var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
                 .ConfigureAwait(false);
@@ -335,7 +335,7 @@ namespace SenseNet.Client.Tests
       {""Name"": ""Visitor""}]}}"));
             var repositories = GetRepositoryCollection(services =>
             {
-                services.AddSingleton<IRestCaller>(restCaller);
+                services.AddSingleton(restCaller);
             });
             var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
                 .ConfigureAwait(false);
@@ -344,7 +344,7 @@ namespace SenseNet.Client.Tests
             var collection = await repository.QueryForAdminAsync(
                 queryText: "TypeIs:User .SORT:Name",
                 CancellationToken.None,
-                select: new[] {"Name"});
+                select: new[] { "Name" });
 
             // ASSERT
             var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First();
@@ -368,7 +368,7 @@ namespace SenseNet.Client.Tests
       {""Name"": ""Visitor""}]}}"));
             var repositories = GetRepositoryCollection(services =>
             {
-                services.AddSingleton<IRestCaller>(restCaller);
+                services.AddSingleton(restCaller);
             });
             var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
                 .ConfigureAwait(false);
@@ -447,7 +447,7 @@ namespace SenseNet.Client.Tests
                 .Returns(Task.FromResult(""));
             var repositories = GetRepositoryCollection(services =>
             {
-                services.AddSingleton<IRestCaller>(restCaller);
+                services.AddSingleton(restCaller);
             });
             var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
                 .ConfigureAwait(false);
@@ -479,7 +479,7 @@ namespace SenseNet.Client.Tests
                 .Returns(Task.FromResult(""));
             var repositories = GetRepositoryCollection(services =>
             {
-                services.AddSingleton<IRestCaller>(restCaller);
+                services.AddSingleton(restCaller);
             });
             var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
                 .ConfigureAwait(false);
@@ -511,14 +511,14 @@ namespace SenseNet.Client.Tests
                 .Returns(Task.FromResult(""));
             var repositories = GetRepositoryCollection(services =>
             {
-                services.AddSingleton<IRestCaller>(restCaller);
+                services.AddSingleton(restCaller);
             });
             var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
                 .ConfigureAwait(false);
             var request = new ODataRequest(repository.Server) { Path = "/Root", Select = new[] { "Id", "Name", "Type" } };
 
             // ACT
-            var paths = new[] {"/Root/F1", "/Root/F2", "/Root/F3"};
+            var paths = new[] { "/Root/F1", "/Root/F2", "/Root/F3" };
             await repository.DeleteContentAsync(paths, false, CancellationToken.None);
 
             // ASSERT
@@ -544,7 +544,7 @@ namespace SenseNet.Client.Tests
                 .Returns(Task.FromResult(""));
             var repositories = GetRepositoryCollection(services =>
             {
-                services.AddSingleton<IRestCaller>(restCaller);
+                services.AddSingleton(restCaller);
             });
             var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
                 .ConfigureAwait(false);
@@ -576,7 +576,7 @@ namespace SenseNet.Client.Tests
                 .Returns(Task.FromResult(""));
             var repositories = GetRepositoryCollection(services =>
             {
-                services.AddSingleton<IRestCaller>(restCaller);
+                services.AddSingleton(restCaller);
             });
             var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
                 .ConfigureAwait(false);
@@ -609,7 +609,7 @@ namespace SenseNet.Client.Tests
                 .Returns(Task.FromResult(""));
             var repositories = GetRepositoryCollection(services =>
             {
-                services.AddSingleton<IRestCaller>(restCaller);
+                services.AddSingleton(restCaller);
             });
             var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
                 .ConfigureAwait(false);

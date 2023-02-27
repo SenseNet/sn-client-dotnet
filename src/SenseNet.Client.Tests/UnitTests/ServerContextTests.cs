@@ -3,7 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace SenseNet.Client.Tests
+namespace SenseNet.Client.Tests.UnitTests
 {
     [TestClass]
     public class ServerContextTests
@@ -54,18 +54,18 @@ namespace SenseNet.Client.Tests
 
             Assert.AreEqual(string.Join(";", ids), actual);
         }
-        
+
         [TestMethod]
         public void RemoveMultipleServers()
         {
             var idsToAdd = Enumerable.Range(0, 10).ToArray();
-            
+
             var serversToAdd = idsToAdd.Select(i => new ServerContext { Url = i.ToString() }).ToArray();
             var serversToRemove = serversToAdd.Skip(5).ToArray();
 
             // remove the last few servers
             ManipulateServers(serversToAdd, serversToRemove, string.Join(";", idsToAdd.Take(5)));
-            
+
             // try to remove servers by id: it should not work
             var idsToRemove = Enumerable.Range(5, 10).ToArray();
             serversToRemove = idsToRemove.Select(i => new ServerContext { Url = i.ToString() }).ToArray();
@@ -82,7 +82,7 @@ namespace SenseNet.Client.Tests
             var serversToAdd = idsToAdd.Select(i => new ServerContext { Url = i.ToString() }).ToArray();
 
             // servers with even ids
-            var serversToRemove = serversToAdd.Where(s => Convert.ToInt32(s.Url)%2 == 0).ToArray();
+            var serversToRemove = serversToAdd.Where(s => Convert.ToInt32(s.Url) % 2 == 0).ToArray();
 
             var cc = new ClientContext();
 

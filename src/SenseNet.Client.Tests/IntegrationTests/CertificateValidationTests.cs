@@ -4,8 +4,9 @@ using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using SenseNet.Client.Tests.UnitTests;
 
-namespace SenseNet.Client.Tests
+namespace SenseNet.Client.Tests.IntegrationTests
 {
     [TestClass]
     public class CertificateValidationTests
