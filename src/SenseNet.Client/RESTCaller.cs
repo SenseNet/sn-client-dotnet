@@ -690,13 +690,19 @@ namespace SenseNet.Client
 
         private static void SetAuthenticationForRequest(WebRequest myReq, ServerContext server)
         {
-            if (server == null)
-                server = ClientContext.Current.Server;
+            server ??= ClientContext.Current.Server;
 
             // use token authentication
             if (!string.IsNullOrEmpty(server.Authentication.AccessToken))
             {
                 myReq.Headers.Add("Authorization", "Bearer " + server.Authentication.AccessToken);
+                return;
+            }
+
+            // api key authentication
+            if (!string.IsNullOrEmpty(server.Authentication.ApiKey))
+            {
+                myReq.Headers.Add("apikey", server.Authentication.ApiKey);
                 return;
             }
 
@@ -799,13 +805,19 @@ namespace SenseNet.Client
 
         private static void SetAuthenticationForRequest(HttpClientHandler handler, HttpRequestMessage request, ServerContext server)
         {
-            if (server == null)
-                server = ClientContext.Current.Server;
+            server ??= ClientContext.Current.Server;
 
             // use token authentication
             if (!string.IsNullOrEmpty(server.Authentication.AccessToken))
             {
                 request.Headers.Add("Authorization", "Bearer " + server.Authentication.AccessToken);
+                return;
+            }
+
+            // api key authentication
+            if (!string.IsNullOrEmpty(server.Authentication.ApiKey))
+            {
+                request.Headers.Add("apikey", server.Authentication.ApiKey);
                 return;
             }
 
