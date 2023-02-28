@@ -858,14 +858,149 @@ namespace SenseNet.Client.Tests.UnitTests
         #endregion
 
         [TestMethod]
+        public void LoadContentRequest_WellKnownParameters()
+        {
+            var request = new LoadContentRequest {ContentId = 42};
+            request.Parameters.Add("version", "lastmajor");
+            request.Parameters.Add("$select", "Id,Name,Owner/Name");
+            request.Parameters.Add("$expand", "Owner");
+            request.Parameters.Add("metadata", "minimal");
+            request.Parameters.Add("$format", "verbosejson");
+
+            var oDataRequest = request.ToODataRequest(null);
+
+            Assert.AreEqual(42, oDataRequest.ContentId);
+
+            Assert.AreEqual("lastmajor", request.Version);
+            Assert.AreEqual("Id, Name, Owner/Name", string.Join(", ", request.Select));
+            Assert.AreEqual("Owner", string.Join(", ", request.Expand));
+            Assert.AreEqual(MetadataFormat.Minimal, request.Metadata);
+            Assert.AreEqual(0, request.Parameters.Count);
+
+            Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?" +
+                            $"metadata=minimal&" +
+                            $"$expand=Owner&" +
+                            $"$select=Id,Name,Owner/Name&" +
+                            $"version=lastmajor&" +
+                            $"$format=verbosejson",
+                oDataRequest.ToString());
+        }
+        [TestMethod]
+        public void LoadContentRequest_ForbiddenWellKnownParameters()
+        {
+            //UNDONE: Discussion: forbidden parameters should throw any exception.
+
+            var request = new LoadContentRequest { ContentId = 42 };
+            request.Parameters.Add("$top", "10");
+            request.Parameters.Add("$skip", "15");
+
+            var oDataRequest = request.ToODataRequest(null);
+
+            Assert.AreEqual(42, oDataRequest.ContentId);
+
+            Assert.AreEqual(2, request.Parameters.Count);
+
+            Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no&$top=10&$skip=15",
+                oDataRequest.ToString());
+        }
+
+        [TestMethod]
+        public void QueryContentRequest_WellKnownParameters()
+        {
+            var request = new QueryContentRequest();
+            request.Parameters.Add("version", "lastmajor");
+            request.Parameters.Add("$top", "10");
+            request.Parameters.Add("$skip", "11");
+            request.Parameters.Add("$select", "Id,Name,Owner/Name");
+            request.Parameters.Add("$expand", "Owner");
+            request.Parameters.Add("metadata", "minimal");
+            request.Parameters.Add("query", "TypeIs:Folder");
+            request.Parameters.Add("$inlinecount", "allpages");
+            request.Parameters.Add("enableautofilters", "true");
+            request.Parameters.Add("enablelifespanfilter", "true");
+            request.Parameters.Add("$orderby", "Name,Index desc");
+            request.Parameters.Add("$format", "verbosejson");
+
+            var oDataRequest = request.ToODataRequest(null);
+
+            Assert.AreEqual("/Root", oDataRequest.Path);
+
+            Assert.AreEqual("lastmajor", request.Version);
+            Assert.AreEqual(10, request.Top);
+            Assert.AreEqual(11, request.Skip);
+            Assert.AreEqual("Id, Name, Owner/Name", string.Join(", ", request.Select));
+            Assert.AreEqual("Owner", string.Join(", ", request.Expand));
+            Assert.AreEqual(MetadataFormat.Minimal, request.Metadata);
+            Assert.AreEqual(InlineCountOptions.AllPages, request.InlineCount);
+            Assert.AreEqual(FilterStatus.Enabled, request.AutoFilters);
+            Assert.AreEqual(FilterStatus.Enabled, request.LifespanFilter);
+            Assert.AreEqual("Name, Index desc", string.Join(", ", request.OrderBy));
+            Assert.AreEqual("TypeIs:Folder", request.ContentQuery);
+            Assert.AreEqual(0, request.Parameters.Count);
+
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root?" +
+                            $"metadata=minimal&" +
+                            $"$top=10&" +
+                            $"$skip=11&" +
+                            $"$expand=Owner&" +
+                            $"$select=Id,Name,Owner/Name&" +
+                            $"$orderby=Name,Index desc&" +
+                            $"$inlinecount=allpages&" +
+                            $"enableautofilters=true&" +
+                            $"enablelifespanfilter=true&" +
+                            $"version=lastmajor&" +
+                            $"query=TypeIs%3AFolder&" +
+                            $"$format=verbosejson",
+                oDataRequest.ToString());
+        }
+
+        [TestMethod]
         public void LoadCollectionRequest_WellKnownParameters()
         {
-            var request = new LoadCollectionRequest { Path = "/Root/MyContent", Top = 20 };
-            request.Parameters.Add("$select", "Id,Name");
+            var request = new LoadCollectionRequest { Path = "/Root/MyContent" };
+            request.Parameters.Add("version", "lastmajor");
             request.Parameters.Add("$top", "10");
-            request.Parameters.Add("version", "V1.0.A");
+            request.Parameters.Add("$skip", "11");
+            request.Parameters.Add("$select", "Id,Name,Owner/Name");
+            request.Parameters.Add("$expand", "Owner");
+            request.Parameters.Add("metadata", "minimal");
+            request.Parameters.Add("query", "TypeIs:Folder");
+            request.Parameters.Add("$inlinecount", "allpages");
+            request.Parameters.Add("$filter", "isof('Folder')");
+            request.Parameters.Add("enableautofilters", "true");
+            request.Parameters.Add("enablelifespanfilter", "true");
+            request.Parameters.Add("$orderby", "Name,Index desc");
+            request.Parameters.Add("$format", "verbosejson");
 
-            Assert.AreEqual($"{_baseUri}/OData.svc/Root/MyContent?metadata=no&$top=10&$select=Id,Name&version=V1.0.A",
+            Assert.AreEqual("/Root/MyContent", request.Path);
+            Assert.AreEqual("lastmajor", request.Version);
+            Assert.AreEqual(10, request.Top);
+            Assert.AreEqual(11, request.Skip);
+            Assert.AreEqual("Id, Name, Owner/Name", string.Join(", ", request.Select));
+            Assert.AreEqual("Owner", string.Join(", ", request.Expand));
+            Assert.AreEqual(MetadataFormat.Minimal, request.Metadata);
+            Assert.AreEqual(InlineCountOptions.AllPages, request.InlineCount);
+            Assert.AreEqual("isof('Folder')", request.ChildrenFilter);
+            Assert.AreEqual(FilterStatus.Enabled, request.AutoFilters);
+            Assert.AreEqual(FilterStatus.Enabled, request.LifespanFilter);
+            Assert.AreEqual("Name, Index desc", string.Join(", ", request.OrderBy));
+            Assert.AreEqual("TypeIs:Folder", request.ContentQuery);
+            Assert.AreEqual(0, request.Parameters.Count);
+
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root/MyContent?" +
+                            $"metadata=minimal&" +
+                            $"$top=10&" +
+                            $"$skip=11&" +
+                            $"$expand=Owner&" +
+                            $"$select=Id,Name,Owner/Name&" +
+                            $"$filter=isof('Folder')&" +
+                            $"$orderby=Name,Index desc&" +
+                            $"$inlinecount=allpages&" +
+                            $"enableautofilters=true&" +
+                            $"enablelifespanfilter=true&" +
+                            $"version=lastmajor&" +
+                            $"query=TypeIs%3AFolder&" +
+                            $"$format=verbosejson",
                 request.ToODataRequest(null).ToString());
         }
     }

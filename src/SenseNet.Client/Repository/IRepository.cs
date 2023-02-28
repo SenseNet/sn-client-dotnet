@@ -60,7 +60,7 @@ namespace SenseNet.Client
 
         public Task<IEnumerable<Content>> QueryForAdminAsync(QueryContentRequest requestData, CancellationToken cancel);
         public Task<IEnumerable<Content>> QueryAsync(QueryContentRequest requestData, CancellationToken cancel);
-        //UNDONE: these methods are missing: QueryCountForAdminAsync, QueryCountAsync?
+        //UNDONE: Discussion: are these methods missing: QueryCountForAdminAsync, QueryCountAsync?
 
         public Task DeleteContentAsync(string path, bool permanent, CancellationToken cancel); 
         public Task DeleteContentAsync(string[] paths, bool permanent, CancellationToken cancel);
