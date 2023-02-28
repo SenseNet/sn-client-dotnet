@@ -397,7 +397,7 @@ namespace SenseNet.Client.Tests.UnitTests
                 .Returns(Task.FromResult(@"{ ""d"": { ""Id"": 42 }}"));
 
             // ACT
-            var isExist = await repository.IsContentExistAsync("/Root/Content/MyContent", CancellationToken.None)
+            var isExist = await repository.IsContentExistsAsync("/Root/Content/MyContent", CancellationToken.None)
                 .ConfigureAwait(false);
 
             // ASSERT REQUEST
@@ -419,7 +419,7 @@ namespace SenseNet.Client.Tests.UnitTests
                 .Returns(Task.FromResult(string.Empty));
 
             // ACT
-            var isExist = await repository.IsContentExistAsync("/Root/Content/MyContent", CancellationToken.None)
+            var isExist = await repository.IsContentExistsAsync("/Root/Content/MyContent", CancellationToken.None)
                 .ConfigureAwait(false);
 
             // ASSERT REQUEST

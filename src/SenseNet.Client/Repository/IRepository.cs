@@ -52,15 +52,14 @@ namespace SenseNet.Client
         /// <returns>A task that wraps the content or null.</returns>
         public Task<Content> LoadContentAsync(LoadContentRequest requestData, CancellationToken cancel);
 
-        //UNDONE: Finalize name: IsContentExist | IsContentExists | IsContentAvailable | IsContentPresent
-        public Task<bool> IsContentExistAsync(string path, CancellationToken cancel);
+        public Task<bool> IsContentExistsAsync(string path, CancellationToken cancel);
 
         public Task<IEnumerable<Content>> LoadCollectionAsync(LoadCollectionRequest requestData, CancellationToken cancel);
         public Task<int> GetContentCountAsync(LoadCollectionRequest requestData, CancellationToken cancel);
 
         public Task<IEnumerable<Content>> QueryForAdminAsync(QueryContentRequest requestData, CancellationToken cancel);
         public Task<IEnumerable<Content>> QueryAsync(QueryContentRequest requestData, CancellationToken cancel);
-        //UNDONE: Discussion: are these methods missing: QueryCountForAdminAsync, QueryCountAsync?
+        //UNDONE: missing methods: QueryCountForAdminAsync, QueryCountAsync?
 
         public Task DeleteContentAsync(string path, bool permanent, CancellationToken cancel); 
         public Task DeleteContentAsync(string[] paths, bool permanent, CancellationToken cancel);

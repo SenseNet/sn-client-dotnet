@@ -83,7 +83,7 @@ namespace SenseNet.Client
             return LoadContentAsync<Content>(requestData, cancel);
         }
 
-        public async Task<bool> IsContentExistAsync(string path, CancellationToken cancel)
+        public async Task<bool> IsContentExistsAsync(string path, CancellationToken cancel)
         {
             var requestData = new LoadContentRequest
             {

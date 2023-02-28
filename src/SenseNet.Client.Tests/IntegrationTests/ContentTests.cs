@@ -53,20 +53,20 @@ namespace SenseNet.Client.Tests.IntegrationTests
 
             // OPERATIONS
             // 1 - Delete content if exists for the clean test
-            if (await repository.IsContentExistAsync(path, cancel).ConfigureAwait(false))
+            if (await repository.IsContentExistsAsync(path, cancel).ConfigureAwait(false))
             {
                 await repository.DeleteContentAsync(path, true, cancel).ConfigureAwait(false);
-                Assert.IsFalse(await repository.IsContentExistAsync(path, cancel).ConfigureAwait(false));
+                Assert.IsFalse(await repository.IsContentExistsAsync(path, cancel).ConfigureAwait(false));
             }
 
             // 2 - Create brand new content and test its existence
             var content = repository.CreateContent(parentPath, contentTypeName, contentName);
-            await content.SaveAsync().ConfigureAwait(false); //UNDONE: missing CancellationToken parameter of SaveAsync()
-            Assert.IsTrue(await repository.IsContentExistAsync(path, cancel).ConfigureAwait(false));
+            await content.SaveAsync().ConfigureAwait(false);
+            Assert.IsTrue(await repository.IsContentExistsAsync(path, cancel).ConfigureAwait(false));
 
             // 3 - Delete the content and check the repository is clean
             await repository.DeleteContentAsync(path, true, cancel).ConfigureAwait(false);
-            Assert.IsFalse(await repository.IsContentExistAsync(path, cancel).ConfigureAwait(false));
+            Assert.IsFalse(await repository.IsContentExistsAsync(path, cancel).ConfigureAwait(false));
         }
 
         /* ================================================================================================== TOOLS */

@@ -363,7 +363,7 @@ namespace SenseNet.Client.Tests.UnitTests
         [TestMethod]
         public void OdataRequest_IdPath()
         {
-            //UNDONE: Discussion: The path is irrelevant if the identifier is specified.
+            //UNDONE: The path is irrelevant if the identifier is specified. (Move this test to LoadContent tests)
             var request = new ODataRequest(null) { ContentId = 42, Path = "/Root/Content/MyContent" };
             Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no", request.ToString());
         }
@@ -885,24 +885,6 @@ namespace SenseNet.Client.Tests.UnitTests
                             $"$select=Id,Name,Owner/Name&" +
                             $"version=lastmajor&" +
                             $"$format=verbosejson",
-                oDataRequest.ToString());
-        }
-        [TestMethod]
-        public void LoadContentRequest_ForbiddenWellKnownParameters()
-        {
-            //UNDONE: Discussion: forbidden parameters should throw any exception.
-
-            var request = new LoadContentRequest { ContentId = 42 };
-            request.Parameters.Add("$top", "10");
-            request.Parameters.Add("$skip", "15");
-
-            var oDataRequest = request.ToODataRequest(null);
-
-            Assert.AreEqual(42, oDataRequest.ContentId);
-
-            Assert.AreEqual(2, request.Parameters.Count);
-
-            Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no&$top=10&$skip=15",
                 oDataRequest.ToString());
         }
 
