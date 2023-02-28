@@ -1,4 +1,6 @@
-﻿// ReSharper disable once CheckNamespace
+﻿using System;
+
+// ReSharper disable once CheckNamespace
 namespace SenseNet.Client;
 
 public class LoadContentRequest : RequestBase
@@ -14,6 +16,8 @@ public class LoadContentRequest : RequestBase
 
     protected override void AddProperties(ODataRequest oDataRequest)
     {
+        if (Path != default && ContentId != default)
+            throw new InvalidOperationException("Invalid request properties: ContentId and Path cannot be specified at the same time.");
         oDataRequest.Path = this.Path;
         oDataRequest.ContentId = this.ContentId;
     }

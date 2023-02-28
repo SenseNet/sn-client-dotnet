@@ -361,13 +361,6 @@ namespace SenseNet.Client.Tests.UnitTests
             Assert.AreEqual($"{_baseUri}/OData.svc/Root/Content('MyFolder')?metadata=no", request.ToString());
         }
         [TestMethod]
-        public void OdataRequest_IdPath()
-        {
-            //UNDONE: The path is irrelevant if the identifier is specified. (Move this test to LoadContent tests)
-            var request = new ODataRequest(null) { ContentId = 42, Path = "/Root/Content/MyContent" };
-            Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no", request.ToString());
-        }
-        [TestMethod]
         public void OdataRequest_CountOnly()
         {
             var request = new ODataRequest(null) { ContentId = 42, CountOnly = true };
@@ -559,6 +552,22 @@ namespace SenseNet.Client.Tests.UnitTests
                 request.ToODataRequest(null).ToString());
         }
         [TestMethod]
+        public void LoadContentRequest_Error_IdAndPath()
+        {
+            try
+            {
+                var request = new LoadContentRequest {ContentId = 42, Path = "/Root/Content/MyContent"};
+                var _ = request.ToODataRequest(null);
+                Assert.Fail($"The expected {nameof(InvalidOperationException)} was not thrown.");
+            }
+            catch (InvalidOperationException ex)
+            {
+                Assert.AreEqual(
+                    "Invalid request properties: ContentId and Path cannot be specified at the same time.",
+                    ex.Message);
+            }
+        }
+        [TestMethod]
         public void LoadContentRequest_Version()
         {
             var request = new ODataRequest(null) { ContentId = 42, Version = "V1.0.A" };
@@ -734,7 +743,7 @@ namespace SenseNet.Client.Tests.UnitTests
             {
                 var request = new LoadCollectionRequest();
                 var _ = request.ToODataRequest(null).ToString();
-                Assert.Fail($"Expected {nameof(InvalidOperationException)} was not thrown.");
+                Assert.Fail($"The expected {nameof(InvalidOperationException)} was not thrown.");
             }
             catch (InvalidOperationException ex)
             {
@@ -855,6 +864,28 @@ namespace SenseNet.Client.Tests.UnitTests
                 request.ToODataRequest(null).ToString());
         }
 
+        [TestMethod]
+        public void LoadCollectionRequest_Error_QueryAndFilter()
+        {
+            try
+            {
+                var request = new LoadCollectionRequest()
+                {
+                    Path = "/Root/Content/MyContent",
+                    ContentQuery = "TypeIs:Folder",
+                    ChildrenFilter = "IsOf(File)"
+                };
+                var _ = request.ToODataRequest(null);
+                Assert.Fail($"The expected {nameof(InvalidOperationException)} was not thrown.");
+            }
+            catch (InvalidOperationException ex)
+            {
+                Assert.AreEqual(
+                    "Invalid request properties: ContentQuery and ChildrenFilter cannot be specified at the same time.",
+                    ex.Message);
+            }
+        }
+
         #endregion
 
         [TestMethod]
@@ -941,7 +972,7 @@ namespace SenseNet.Client.Tests.UnitTests
         }
 
         [TestMethod]
-        public void LoadCollectionRequest_WellKnownParameters()
+        public void LoadCollectionRequest_WellKnownParameters_ExceptFilter()
         {
             var request = new LoadCollectionRequest { Path = "/Root/MyContent" };
             request.Parameters.Add("version", "lastmajor");
@@ -951,6 +982,57 @@ namespace SenseNet.Client.Tests.UnitTests
             request.Parameters.Add("$expand", "Owner");
             request.Parameters.Add("metadata", "minimal");
             request.Parameters.Add("query", "TypeIs:Folder");
+            request.Parameters.Add("$inlinecount", "allpages");
+            request.Parameters.Add("enableautofilters", "true");
+            request.Parameters.Add("enablelifespanfilter", "true");
+            request.Parameters.Add("$orderby", "Name,Index desc");
+            request.Parameters.Add("$format", "verbosejson");
+
+            var oDataRequest = request.ToODataRequest(null);
+
+            Assert.AreEqual("/Root/MyContent", oDataRequest.Path);
+            Assert.AreEqual(true, oDataRequest.IsCollectionRequest);
+            Assert.AreEqual(false, oDataRequest.CountOnly);
+
+            Assert.AreEqual("/Root/MyContent", request.Path);
+            Assert.AreEqual("lastmajor", request.Version);
+            Assert.AreEqual(10, request.Top);
+            Assert.AreEqual(11, request.Skip);
+            Assert.AreEqual("Id, Name, Owner/Name", string.Join(", ", request.Select));
+            Assert.AreEqual("Owner", string.Join(", ", request.Expand));
+            Assert.AreEqual(MetadataFormat.Minimal, request.Metadata);
+            Assert.AreEqual(InlineCountOptions.AllPages, request.InlineCount);
+            Assert.AreEqual(FilterStatus.Enabled, request.AutoFilters);
+            Assert.AreEqual(FilterStatus.Enabled, request.LifespanFilter);
+            Assert.AreEqual("Name, Index desc", string.Join(", ", request.OrderBy));
+            Assert.AreEqual("TypeIs:Folder", request.ContentQuery);
+            Assert.AreEqual(0, request.Parameters.Count);
+
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root/MyContent?" +
+                            $"metadata=minimal&" +
+                            $"$top=10&" +
+                            $"$skip=11&" +
+                            $"$expand=Owner&" +
+                            $"$select=Id,Name,Owner/Name&" +
+                            $"$orderby=Name,Index desc&" +
+                            $"$inlinecount=allpages&" +
+                            $"enableautofilters=true&" +
+                            $"enablelifespanfilter=true&" +
+                            $"version=lastmajor&" +
+                            $"query=TypeIs%3AFolder&" +
+                            $"$format=verbosejson",
+                request.ToODataRequest(null).ToString());
+        }
+        [TestMethod]
+        public void LoadCollectionRequest_WellKnownParameters_ExceptQuery()
+        {
+            var request = new LoadCollectionRequest { Path = "/Root/MyContent" };
+            request.Parameters.Add("version", "lastmajor");
+            request.Parameters.Add("$top", "10");
+            request.Parameters.Add("$skip", "11");
+            request.Parameters.Add("$select", "Id,Name,Owner/Name");
+            request.Parameters.Add("$expand", "Owner");
+            request.Parameters.Add("metadata", "minimal");
             request.Parameters.Add("$inlinecount", "allpages");
             request.Parameters.Add("$filter", "isof('Folder')");
             request.Parameters.Add("enableautofilters", "true");
@@ -976,7 +1058,6 @@ namespace SenseNet.Client.Tests.UnitTests
             Assert.AreEqual(FilterStatus.Enabled, request.AutoFilters);
             Assert.AreEqual(FilterStatus.Enabled, request.LifespanFilter);
             Assert.AreEqual("Name, Index desc", string.Join(", ", request.OrderBy));
-            Assert.AreEqual("TypeIs:Folder", request.ContentQuery);
             Assert.AreEqual(0, request.Parameters.Count);
 
             Assert.AreEqual($"{_baseUri}/OData.svc/Root/MyContent?" +
@@ -991,7 +1072,6 @@ namespace SenseNet.Client.Tests.UnitTests
                             $"enableautofilters=true&" +
                             $"enablelifespanfilter=true&" +
                             $"version=lastmajor&" +
-                            $"query=TypeIs%3AFolder&" +
                             $"$format=verbosejson",
                 request.ToODataRequest(null).ToString());
         }

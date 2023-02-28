@@ -42,6 +42,10 @@ public class LoadCollectionRequest : QueryContentRequest
     {
         if (string.IsNullOrEmpty(Path))
             throw new InvalidOperationException("Invalid request properties: Path must be provided.");
+        if (ContentQuery != default && ChildrenFilter != default)
+            throw new InvalidOperationException("Invalid request properties: ContentQuery and ChildrenFilter cannot be specified at the same time.");
+
+
         oDataRequest.IsCollectionRequest = true;
 
         oDataRequest.Path = this.Path;
