@@ -870,6 +870,8 @@ namespace SenseNet.Client.Tests.UnitTests
             var oDataRequest = request.ToODataRequest(null);
 
             Assert.AreEqual(42, oDataRequest.ContentId);
+            Assert.AreEqual(false, oDataRequest.IsCollectionRequest);
+            Assert.AreEqual(false, oDataRequest.CountOnly);
 
             Assert.AreEqual("lastmajor", request.Version);
             Assert.AreEqual("Id, Name, Owner/Name", string.Join(", ", request.Select));
@@ -924,6 +926,8 @@ namespace SenseNet.Client.Tests.UnitTests
             var oDataRequest = request.ToODataRequest(null);
 
             Assert.AreEqual("/Root", oDataRequest.Path);
+            Assert.AreEqual(true, oDataRequest.IsCollectionRequest);
+            Assert.AreEqual(false, oDataRequest.CountOnly);
 
             Assert.AreEqual("lastmajor", request.Version);
             Assert.AreEqual(10, request.Top);
@@ -971,6 +975,12 @@ namespace SenseNet.Client.Tests.UnitTests
             request.Parameters.Add("enablelifespanfilter", "true");
             request.Parameters.Add("$orderby", "Name,Index desc");
             request.Parameters.Add("$format", "verbosejson");
+
+            var oDataRequest = request.ToODataRequest(null);
+
+            Assert.AreEqual("/Root/MyContent", oDataRequest.Path);
+            Assert.AreEqual(true, oDataRequest.IsCollectionRequest);
+            Assert.AreEqual(false, oDataRequest.CountOnly);
 
             Assert.AreEqual("/Root/MyContent", request.Path);
             Assert.AreEqual("lastmajor", request.Version);
