@@ -72,138 +72,109 @@ namespace SenseNet.Client
 
         public Task<Content> LoadContentAsync(int id, CancellationToken cancel)
         {
-            return LoadContentAsync(new ODataRequest(Server)
-            {
-                ContentId = id
-            }, cancel);
+            return LoadContentAsync(new LoadContentRequest {ContentId = id}, cancel);
         }
         public Task<Content> LoadContentAsync(string path, CancellationToken cancel)
         {
-            return LoadContentAsync(new ODataRequest(Server)
-            {
-                Path = path
-            }, cancel);
+            return LoadContentAsync(new LoadContentRequest {Path = path}, cancel);
         }
-        public Task<Content> LoadContentAsync(ODataRequest requestData, CancellationToken cancel)
+        public Task<Content> LoadContentAsync(LoadContentRequest requestData, CancellationToken cancel)
         {
             return LoadContentAsync<Content>(requestData, cancel);
         }
 
         public async Task<bool> IsContentExistAsync(string path, CancellationToken cancel)
         {
-            var requestData = new ODataRequest(Server)
+            var requestData = new LoadContentRequest
             {
                 Path = path,
                 Metadata = MetadataFormat.None,
                 Select = new[] { "Id" }
             };
-
             var content = await LoadContentAsync(requestData, cancel).ConfigureAwait(false);
             return content != null;
         }
 
         public Task<T> LoadContentAsync<T>(int id, CancellationToken cancel) where T : Content
         {
-            return LoadContentAsync<T>(new ODataRequest(Server)
-            {
-                ContentId = id
-            }, cancel);
+            return LoadContentAsync<T>(new LoadContentRequest {ContentId = id}, cancel);
         }
         public Task<T> LoadContentAsync<T>(string path, CancellationToken cancel) where T : Content
         {
-            return LoadContentAsync<T>(new ODataRequest(Server)
-            {
-                Path = path
-            }, cancel);
+            return LoadContentAsync<T>(new LoadContentRequest {Path = path}, cancel);
         }
-        public async Task<T> LoadContentAsync<T>(ODataRequest requestData, CancellationToken cancel) where T : Content
+        public async Task<T> LoadContentAsync<T>(LoadContentRequest requestData, CancellationToken cancel) where T : Content
         {
-            // just to make sure
-            requestData.IsCollectionRequest = false;
+            var oDataRequest = requestData.ToODataRequest(Server);
+            oDataRequest.IsCollectionRequest = false;
 
             //TODO: error handling
-            var rs = await _restCaller.GetResponseStringAsync(requestData.GetUri(), Server).ConfigureAwait(false);
+            var rs = await _restCaller.GetResponseStringAsync(oDataRequest.GetUri(), Server, cancel).ConfigureAwait(false);
             if (string.IsNullOrEmpty(rs))
                 return null;
 
             var content = CreateContentFromResponse<T>(JsonHelper.Deserialize(rs).d);
-
             return content;
         }
 
-        public async Task<IEnumerable<Content>> LoadCollectionAsync(ODataRequest requestData, CancellationToken cancel)
+        public Task<IEnumerable<Content>> LoadCollectionAsync(LoadCollectionRequest requestData, CancellationToken cancel)
         {
-            // ---- return await RESTCaller.GetCollectionAsync(requestData, Server).ConfigureAwait(false);
-            // just to make sure
+            return LoadCollectionAsync(requestData.ToODataRequest(Server), cancel);
+        }
+        private async Task<IEnumerable<Content>> LoadCollectionAsync(ODataRequest requestData, CancellationToken cancel)
+        {
             requestData.IsCollectionRequest = true;
             requestData.SiteUrl = ServerContext.GetUrl(Server);
 
-            var response = await _restCaller.GetResponseStringAsync(requestData.GetUri(), Server).ConfigureAwait(false);
+            var response = await _restCaller.GetResponseStringAsync(requestData.GetUri(), Server, cancel).ConfigureAwait(false);
             var items = JsonHelper.Deserialize(response).d.results as JArray;
 
-            return items?.Select(CreateContentFromResponse<Content>) ?? new Content[0];
+            return items?.Select(CreateContentFromResponse<Content>) ?? Array.Empty<Content>();
         }
 
-        public async Task<int> GetContentCountAsync(ODataRequest requestData, CancellationToken cancel)
+        public async Task<int> GetContentCountAsync(LoadCollectionRequest requestData, CancellationToken cancel)
         {
-            // just to make sure
-            requestData.IsCollectionRequest = true;
-            requestData.CountOnly = true;
+            var oDataRequest = requestData.ToODataRequest(Server);
+            oDataRequest.IsCollectionRequest = true;
+            oDataRequest.CountOnly = true;
 
-            var response = await _restCaller.GetResponseStringAsync(requestData.GetUri(), Server).ConfigureAwait(false);
+            var response = await _restCaller.GetResponseStringAsync(oDataRequest.GetUri(), Server, cancel).ConfigureAwait(false);
             
             if (int.TryParse(response, out var count))
                 return count;
 
-            throw new ClientException($"Invalid count response. Request: {requestData.GetUri()}. Response: {response}");
+            throw new ClientException($"Invalid count response. Request: {oDataRequest.GetUri()}. Response: {response}");
         }
 
-        public Task<IEnumerable<Content>> QueryForAdminAsync(string queryText, CancellationToken cancel,
-            string[] select = null, string[] expand = null, QuerySettings settings = null)
+        public Task<IEnumerable<Content>> QueryForAdminAsync(QueryContentRequest requestData, CancellationToken cancel)
         {
-            settings ??= new QuerySettings();
-            settings.EnableAutofilters = FilterStatus.Disabled;
-            settings.EnableLifespanFilter = FilterStatus.Disabled;
-            return QueryAsync(queryText, cancel, select, expand, settings);
-        }
-
-        public Task<IEnumerable<Content>> QueryAsync(string queryText, CancellationToken cancel,
-            string[] select = null, string[] expand = null, QuerySettings settings = null)
-        {
-            settings ??= QuerySettings.Default;
-
-            var oDataRequest = new ODataRequest(Server)
-            {
-                Path = "/Root",
-                Select = select,
-                Expand = expand,
-                Top = settings.Top,
-                Skip = settings.Skip,
-                AutoFilters = settings.EnableAutofilters,
-                LifespanFilter = settings.EnableLifespanFilter,
-                ContentQuery = queryText
-            };
-
+            var oDataRequest = requestData.ToODataRequest(Server);
+            oDataRequest.AutoFilters = FilterStatus.Disabled;
+            oDataRequest.LifespanFilter = FilterStatus.Disabled;
             return LoadCollectionAsync(oDataRequest, cancel);
         }
+        public Task<IEnumerable<Content>> QueryAsync(QueryContentRequest requestData, CancellationToken cancel)
+        {
+            return LoadCollectionAsync(requestData.ToODataRequest(Server), cancel);
+        }
 
-        public Task DeleteContentAsync(string path, bool permanent, CancellationToken cancellationToken)
+        public Task DeleteContentAsync(string path, bool permanent, CancellationToken cancel)
         {
-            return DeleteContentAsync(new object[] { path }, permanent, cancellationToken);
+            return DeleteContentAsync(new object[] { path }, permanent, cancel);
         }
-        public Task DeleteContentAsync(string[] paths, bool permanent, CancellationToken cancellationToken)
+        public Task DeleteContentAsync(string[] paths, bool permanent, CancellationToken cancel)
         {
-            return DeleteContentAsync(paths.Cast<object>().ToArray(), permanent, cancellationToken);
+            return DeleteContentAsync(paths.Cast<object>().ToArray(), permanent, cancel);
         }
-        public Task DeleteContentAsync(int id, bool permanent, CancellationToken cancellationToken)
+        public Task DeleteContentAsync(int id, bool permanent, CancellationToken cancel)
         {
-            return DeleteContentAsync(new object[] { id }, permanent, cancellationToken);
+            return DeleteContentAsync(new object[] { id }, permanent, cancel);
         }
-        public Task DeleteContentAsync(int[] ids, bool permanent, CancellationToken cancellationToken)
+        public Task DeleteContentAsync(int[] ids, bool permanent, CancellationToken cancel)
         {
-            return DeleteContentAsync(ids.Cast<object>().ToArray(), permanent, cancellationToken);
+            return DeleteContentAsync(ids.Cast<object>().ToArray(), permanent, cancel);
         }
-        public async Task DeleteContentAsync(object[] idsOrPaths, bool permanent, CancellationToken cancellationToken)
+        public async Task DeleteContentAsync(object[] idsOrPaths, bool permanent, CancellationToken cancel)
         {
             var oDataRequest = new ODataRequest(Server)
             {
@@ -211,7 +182,7 @@ namespace SenseNet.Client
                 ActionName = "DeleteBatch"
             };
 
-            await _restCaller.GetResponseStringAsync(oDataRequest.GetUri(), Server, HttpMethod.Post,
+            await _restCaller.GetResponseStringAsync(oDataRequest.GetUri(), Server, cancel, HttpMethod.Post,
                     JsonHelper.GetJsonPostModel(new
                     {
                         permanent,

@@ -22,6 +22,7 @@ namespace SenseNet.Client.Tests.UnitTests
     [TestClass]
     public class ODataRequestTests
     {
+        #region ODataRequest_*
         [TestMethod]
         [ExpectedException(typeof(InvalidOperationException))]
         public void ODataRequest_NoServer_Error()
@@ -360,6 +361,13 @@ namespace SenseNet.Client.Tests.UnitTests
             Assert.AreEqual($"{_baseUri}/OData.svc/Root/Content('MyFolder')?metadata=no", request.ToString());
         }
         [TestMethod]
+        public void OdataRequest_IdPath()
+        {
+            //UNDONE: Discussion: The path is irrelevant if the identifier is specified.
+            var request = new ODataRequest(null) { ContentId = 42, Path = "/Root/Content/MyContent" };
+            Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no", request.ToString());
+        }
+        [TestMethod]
         public void OdataRequest_CountOnly()
         {
             var request = new ODataRequest(null) { ContentId = 42, CountOnly = true };
@@ -378,21 +386,15 @@ namespace SenseNet.Client.Tests.UnitTests
             Assert.AreEqual($"{_baseUri}/OData.svc/content(42)/Property1?metadata=no", request.ToString());
         }
         [TestMethod]
-        public void OdataRequest_MetadataFull()
+        public void OdataRequest_Metadata()
         {
             var request = new ODataRequest(null) { ContentId = 42, Metadata = MetadataFormat.Full };
             Assert.AreEqual($"{_baseUri}/OData.svc/content(42)", request.ToString());
-        }
-        [TestMethod]
-        public void OdataRequest_MetadataMinimal()
-        {
-            var request = new ODataRequest(null) { ContentId = 42, Metadata = MetadataFormat.Minimal };
+
+            request = new ODataRequest(null) { ContentId = 42, Metadata = MetadataFormat.Minimal };
             Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=minimal", request.ToString());
-        }
-        [TestMethod]
-        public void OdataRequest_MetadataNo()
-        {
-            var request = new ODataRequest(null) { ContentId = 42, Metadata = MetadataFormat.None };
+
+            request = new ODataRequest(null) { ContentId = 42, Metadata = MetadataFormat.None };
             Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no", request.ToString());
         }
         [TestMethod]
@@ -426,57 +428,39 @@ namespace SenseNet.Client.Tests.UnitTests
             Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no&$orderby=Name,Index desc", request.ToString());
         }
         [TestMethod]
-        public void OdataRequest_InlineCountDefault()
+        public void OdataRequest_InlineCount()
         {
             var request = new ODataRequest(null) { ContentId = 42, InlineCount = InlineCountOptions.Default };
             Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no", request.ToString());
-        }
-        [TestMethod]
-        public void OdataRequest_InlineCountNone()
-        {
-            var request = new ODataRequest(null) { ContentId = 42, InlineCount = InlineCountOptions.None };
+
+            request = new ODataRequest(null) { ContentId = 42, InlineCount = InlineCountOptions.None };
             Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no", request.ToString());
-        }
-        [TestMethod]
-        public void OdataRequest_InlineCountAllPages()
-        {
-            var request = new ODataRequest(null) { ContentId = 42, InlineCount = InlineCountOptions.AllPages };
+
+            request = new ODataRequest(null) { ContentId = 42, InlineCount = InlineCountOptions.AllPages };
             Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no&$inlinecount=allpages", request.ToString());
         }
         [TestMethod]
-        public void OdataRequest_AutoFiltersDefault()
+        public void OdataRequest_AutoFilters()
         {
             var request = new ODataRequest(null) { ContentId = 42, AutoFilters = FilterStatus.Default };
             Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no", request.ToString());
-        }
-        [TestMethod]
-        public void OdataRequest_AutoFiltersEnabled()
-        {
-            var request = new ODataRequest(null) { ContentId = 42, AutoFilters = FilterStatus.Enabled };
+
+            request = new ODataRequest(null) { ContentId = 42, AutoFilters = FilterStatus.Enabled };
             Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no&enableautofilters=true", request.ToString());
-        }
-        [TestMethod]
-        public void OdataRequest_AutoFiltersDisabled()
-        {
-            var request = new ODataRequest(null) { ContentId = 42, AutoFilters = FilterStatus.Disabled };
+
+            request = new ODataRequest(null) { ContentId = 42, AutoFilters = FilterStatus.Disabled };
             Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no&enableautofilters=false", request.ToString());
         }
         [TestMethod]
-        public void OdataRequest_LifespanFilterDefault()
+        public void OdataRequest_LifespanFilter()
         {
             var request = new ODataRequest(null) { ContentId = 42, LifespanFilter = FilterStatus.Default };
             Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no", request.ToString());
-        }
-        [TestMethod]
-        public void OdataRequest_LifespanFilterEnabled()
-        {
-            var request = new ODataRequest(null) { ContentId = 42, LifespanFilter = FilterStatus.Enabled };
+
+            request = new ODataRequest(null) { ContentId = 42, LifespanFilter = FilterStatus.Enabled };
             Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no&enablelifespanfilter=true", request.ToString());
-        }
-        [TestMethod]
-        public void OdataRequest_LifespanFilterDisabled()
-        {
-            var request = new ODataRequest(null) { ContentId = 42, LifespanFilter = FilterStatus.Disabled };
+
+            request = new ODataRequest(null) { ContentId = 42, LifespanFilter = FilterStatus.Disabled };
             Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no&enablelifespanfilter=false", request.ToString());
         }
         [TestMethod]
@@ -557,5 +541,332 @@ namespace SenseNet.Client.Tests.UnitTests
             }
         }
 
+        #endregion
+
+        #region LoadContentRequest_*
+        [TestMethod]
+        public void LoadContentRequest_Id()
+        {
+            var request = new LoadContentRequest { ContentId = 42 };
+            Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no",
+                request.ToODataRequest(null).ToString());
+        }
+        [TestMethod]
+        public void LoadContentRequest_Path()
+        {
+            var request = new LoadContentRequest { Path = "/Root/Content/MyContent" };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root/Content('MyContent')?metadata=no",
+                request.ToODataRequest(null).ToString());
+        }
+        [TestMethod]
+        public void LoadContentRequest_Version()
+        {
+            var request = new ODataRequest(null) { ContentId = 42, Version = "V1.0.A" };
+            Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no&version=V1.0.A", request.ToString());
+        }
+        [TestMethod]
+        public void LoadContentRequest_ExpandSelect()
+        {
+            var request = new LoadContentRequest
+            {
+                ContentId = 42,
+                Expand = new[] { "Manager", "CreatedBy/Manager" },
+                Select = new[] { "Id", "Name", "Manager/Name", "CreatedBy/Manager/Name" }
+            };
+            Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no&$expand=Manager,CreatedBy/Manager&" +
+                            $"$select=Id,Name,Manager/Name,CreatedBy/Manager/Name",
+                request.ToODataRequest(null).ToString());
+
+        }
+        [TestMethod]
+        public void LoadContentRequest_Metadata()
+        {
+            var request = new LoadContentRequest { ContentId = 42, Metadata = MetadataFormat.Full };
+            Assert.AreEqual($"{_baseUri}/OData.svc/content(42)",
+                request.ToODataRequest(null).ToString());
+
+            request = new LoadContentRequest { ContentId = 42, Metadata = MetadataFormat.Minimal };
+            Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=minimal",
+                request.ToODataRequest(null).ToString());
+
+            request = new LoadContentRequest { ContentId = 42, Metadata = MetadataFormat.None };
+            Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no",
+                request.ToODataRequest(null).ToString());
+
+        }
+        [TestMethod]
+        public void LoadContentRequest_Parameters()
+        {
+            var request = new LoadContentRequest
+            {
+                ContentId = 42,
+                Parameters = { { "param1", "value1" }, { "param2", "value2" } }
+            };
+            Assert.AreEqual($"{_baseUri}/OData.svc/content(42)?metadata=no&param1=value1&param2=value2",
+                request.ToODataRequest(null).ToString());
+
+        }
+
+        #endregion
+
+        #region QueryContentRequest_*
+        [TestMethod]
+        public void QueryContentRequest_Version()
+        {
+            var request = new QueryContentRequest { Version = "V1.0.A" };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root?metadata=no&version=V1.0.A", 
+                request.ToODataRequest(null).ToString());
+        }
+        [TestMethod]
+        public void QueryContentRequest_TopSkip()
+        {
+            var request = new QueryContentRequest { Top = 10, Skip = 11 };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root?metadata=no&$top=10&$skip=11",
+                request.ToODataRequest(null).ToString());
+        }
+        [TestMethod]
+        public void QueryContentRequest_ExpandSelect()
+        {
+            var request = new QueryContentRequest
+            {
+                Expand = new[] { "Manager", "CreatedBy/Manager" },
+                Select = new[] { "Id", "Name", "Manager/Name", "CreatedBy/Manager/Name" }
+            };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root?metadata=no&$expand=Manager,CreatedBy/Manager&" +
+                            $"$select=Id,Name,Manager/Name,CreatedBy/Manager/Name",
+                request.ToODataRequest(null).ToString());
+
+        }
+        [TestMethod]
+        public void QueryContentRequest_Metadata()
+        {
+            var request = new QueryContentRequest { Metadata = MetadataFormat.Full };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root",
+                request.ToODataRequest(null).ToString());
+
+            request = new QueryContentRequest { Metadata = MetadataFormat.Minimal };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root?metadata=minimal",
+                request.ToODataRequest(null).ToString());
+
+            request = new QueryContentRequest { Metadata = MetadataFormat.None };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root?metadata=no",
+                request.ToODataRequest(null).ToString());
+
+        }
+        [TestMethod]
+        public void QueryContentRequest_ContentQuery()
+        {
+            var request = new QueryContentRequest { ContentQuery = "Index:>100 .SORT:Name" };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root?metadata=no&query=Index%3A%3E100%20.SORT%3AName",
+                request.ToODataRequest(null).ToString());
+        }
+        [TestMethod]
+        public void QueryContentRequest_Parameters()
+        {
+            var request = new QueryContentRequest
+            {
+                Parameters = { { "param1", "value1" }, { "param2", "value2" } }
+            };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root?metadata=no&param1=value1&param2=value2",
+                request.ToODataRequest(null).ToString());
+
+        }
+        [TestMethod]
+        public void QueryContentRequest_InlineCount()
+        {
+            var request = new QueryContentRequest { InlineCount = InlineCountOptions.Default };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root?metadata=no",
+                request.ToODataRequest(null).ToString());
+
+            request = new QueryContentRequest { InlineCount = InlineCountOptions.None };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root?metadata=no",
+                request.ToODataRequest(null).ToString());
+
+            request = new QueryContentRequest { InlineCount = InlineCountOptions.AllPages };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root?metadata=no&$inlinecount=allpages",
+                request.ToODataRequest(null).ToString());
+        }
+        [TestMethod]
+        public void QueryContentRequest_AutoFilters()
+        {
+            var request = new QueryContentRequest { AutoFilters = FilterStatus.Default };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root?metadata=no",
+                request.ToODataRequest(null).ToString());
+
+            request = new QueryContentRequest { AutoFilters = FilterStatus.Enabled };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root?metadata=no&enableautofilters=true",
+                request.ToODataRequest(null).ToString());
+
+            request = new QueryContentRequest { AutoFilters = FilterStatus.Disabled };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root?metadata=no&enableautofilters=false",
+                request.ToODataRequest(null).ToString());
+        }
+        [TestMethod]
+        public void QueryContentRequest_LifespanFilter()
+        {
+            var request = new QueryContentRequest { LifespanFilter = FilterStatus.Default };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root?metadata=no",
+                request.ToODataRequest(null).ToString());
+
+            request = new QueryContentRequest { LifespanFilter = FilterStatus.Enabled };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root?metadata=no&enablelifespanfilter=true",
+                request.ToODataRequest(null).ToString());
+
+            request = new QueryContentRequest { LifespanFilter = FilterStatus.Disabled };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root?metadata=no&enablelifespanfilter=false",
+                request.ToODataRequest(null).ToString());
+        }
+        [TestMethod]
+        public void QueryContentRequest_OrderBy()
+        {
+            var request = new QueryContentRequest { OrderBy = new[] { "Name", "Index desc" } };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root?metadata=no&$orderby=Name,Index desc",
+                request.ToODataRequest(null).ToString());
+        }
+
+        #endregion
+
+        #region LoadCollectionRequest_*
+        [TestMethod]
+        public void LoadCollectionRequest_MissingPath_Error()
+        {
+            try
+            {
+                var request = new LoadCollectionRequest();
+                var _ = request.ToODataRequest(null).ToString();
+                Assert.Fail($"Expected {nameof(InvalidOperationException)} was not thrown.");
+            }
+            catch (InvalidOperationException ex)
+            {
+                Assert.AreEqual("Invalid request properties: Path must be provided.", ex.Message);
+            }
+        }
+        [TestMethod]
+        public void LoadCollectionRequest_Version()
+        {
+            var request = new LoadCollectionRequest { Path = "/Root/MyContent", Version = "V1.0.A" };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root/MyContent?metadata=no&version=V1.0.A",
+                request.ToODataRequest(null).ToString());
+        }
+        [TestMethod]
+        public void LoadCollectionRequest_TopSkip()
+        {
+            var request = new LoadCollectionRequest { Path = "/Root/MyContent", Top = 10, Skip = 11 };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root/MyContent?metadata=no&$top=10&$skip=11",
+                request.ToODataRequest(null).ToString());
+        }
+        [TestMethod]
+        public void LoadCollectionRequest_ExpandSelect()
+        {
+            var request = new LoadCollectionRequest
+            {
+                Path = "/Root/MyContent",
+                Expand = new[] { "Manager", "CreatedBy/Manager" },
+                Select = new[] { "Id", "Name", "Manager/Name", "CreatedBy/Manager/Name" }
+            };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root/MyContent?metadata=no&$expand=Manager,CreatedBy/Manager&" +
+                            $"$select=Id,Name,Manager/Name,CreatedBy/Manager/Name",
+                request.ToODataRequest(null).ToString());
+
+        }
+        [TestMethod]
+        public void LoadCollectionRequest_Metadata()
+        {
+            var request = new LoadCollectionRequest { Path = "/Root/MyContent", Metadata = MetadataFormat.Full };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root/MyContent",
+                request.ToODataRequest(null).ToString());
+
+            request = new LoadCollectionRequest { Path = "/Root/MyContent", Metadata = MetadataFormat.Minimal };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root/MyContent?metadata=minimal",
+                request.ToODataRequest(null).ToString());
+
+            request = new LoadCollectionRequest { Path = "/Root/MyContent", Metadata = MetadataFormat.None };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root/MyContent?metadata=no",
+                request.ToODataRequest(null).ToString());
+        }
+        [TestMethod]
+        public void LoadCollectionRequest_ContentQuery()
+        {
+            var request = new LoadCollectionRequest { Path = "/Root/MyContent", ContentQuery = "Index:>100 .SORT:Name" };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root/MyContent?metadata=no&query=Index%3A%3E100%20.SORT%3AName",
+                request.ToODataRequest(null).ToString());
+        }
+        [TestMethod]
+        public void LoadCollectionRequest_Parameters()
+        {
+            var request = new LoadCollectionRequest
+            {
+                Path = "/Root/MyContent",
+                Parameters = { { "param1", "value1" }, { "param2", "value2" } }
+            };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root/MyContent?metadata=no&param1=value1&param2=value2",
+                request.ToODataRequest(null).ToString());
+        }
+        [TestMethod]
+        public void LoadCollectionRequest_InlineCount()
+        {
+            var request = new LoadCollectionRequest { Path = "/Root/MyContent", InlineCount = InlineCountOptions.Default };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root/MyContent?metadata=no",
+                request.ToODataRequest(null).ToString());
+
+            request = new LoadCollectionRequest { Path = "/Root/MyContent", InlineCount = InlineCountOptions.None };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root/MyContent?metadata=no",
+                request.ToODataRequest(null).ToString());
+
+            request = new LoadCollectionRequest { Path = "/Root/MyContent", InlineCount = InlineCountOptions.AllPages };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root/MyContent?metadata=no&$inlinecount=allpages",
+                request.ToODataRequest(null).ToString());
+        }
+        [TestMethod]
+        public void LoadCollectionRequest_AutoFilters()
+        {
+            var request = new LoadCollectionRequest { Path = "/Root/MyContent", AutoFilters = FilterStatus.Default };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root/MyContent?metadata=no",
+                request.ToODataRequest(null).ToString());
+
+            request = new LoadCollectionRequest { Path = "/Root/MyContent", AutoFilters = FilterStatus.Enabled };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root/MyContent?metadata=no&enableautofilters=true",
+                request.ToODataRequest(null).ToString());
+
+            request = new LoadCollectionRequest { Path = "/Root/MyContent", AutoFilters = FilterStatus.Disabled };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root/MyContent?metadata=no&enableautofilters=false",
+                request.ToODataRequest(null).ToString());
+        }
+        [TestMethod]
+        public void LoadCollectionRequest_LifespanFilter()
+        {
+            var request = new LoadCollectionRequest { Path = "/Root/MyContent", LifespanFilter = FilterStatus.Default };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root/MyContent?metadata=no",
+                request.ToODataRequest(null).ToString());
+
+            request = new LoadCollectionRequest { Path = "/Root/MyContent", LifespanFilter = FilterStatus.Enabled };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root/MyContent?metadata=no&enablelifespanfilter=true",
+                request.ToODataRequest(null).ToString());
+
+            request = new LoadCollectionRequest { Path = "/Root/MyContent", LifespanFilter = FilterStatus.Disabled };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root/MyContent?metadata=no&enablelifespanfilter=false",
+                request.ToODataRequest(null).ToString());
+        }
+        [TestMethod]
+        public void LoadCollectionRequest_OrderBy()
+        {
+            var request = new LoadCollectionRequest { Path = "/Root/MyContent", OrderBy = new[] { "Name", "Index desc" } };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root/MyContent?metadata=no&$orderby=Name,Index desc",
+                request.ToODataRequest(null).ToString());
+        }
+
+        #endregion
+
+        [TestMethod]
+        public void LoadCollectionRequest_WellKnownParameters()
+        {
+            var request = new LoadCollectionRequest { Path = "/Root/MyContent", Top = 20 };
+            request.Parameters.Add("$select", "Id,Name");
+            request.Parameters.Add("$top", "10");
+            request.Parameters.Add("version", "V1.0.A");
+
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root/MyContent?metadata=no&$top=10&$select=Id,Name&version=V1.0.A",
+                request.ToODataRequest(null).ToString());
+        }
     }
 }

@@ -50,20 +50,22 @@ namespace SenseNet.Client
         /// <param name="requestData">Detailed request information.</param>
         /// <param name="cancel">The token to monitor for cancellation requests.</param>
         /// <returns>A task that wraps the content or null.</returns>
-        public Task<Content> LoadContentAsync(ODataRequest requestData, CancellationToken cancel);
+        public Task<Content> LoadContentAsync(LoadContentRequest requestData, CancellationToken cancel);
 
+        //UNDONE: Finalize name: IsContentExist | IsContentExists | IsContentAvailable | IsContentPresent
         public Task<bool> IsContentExistAsync(string path, CancellationToken cancel);
 
-        public Task<IEnumerable<Content>> LoadCollectionAsync(ODataRequest requestData, CancellationToken cancel);
-        public Task<int> GetContentCountAsync(ODataRequest requestData, CancellationToken cancel);
+        public Task<IEnumerable<Content>> LoadCollectionAsync(LoadCollectionRequest requestData, CancellationToken cancel);
+        public Task<int> GetContentCountAsync(LoadCollectionRequest requestData, CancellationToken cancel);
 
-        public Task<IEnumerable<Content>> QueryForAdminAsync(string queryText, CancellationToken cancel, string[] select = null, string[] expand = null, QuerySettings settings = null);
-        public Task<IEnumerable<Content>> QueryAsync(string queryText, CancellationToken cancel, string[] select = null, string[] expand = null, QuerySettings settings = null);
+        public Task<IEnumerable<Content>> QueryForAdminAsync(QueryContentRequest requestData, CancellationToken cancel);
+        public Task<IEnumerable<Content>> QueryAsync(QueryContentRequest requestData, CancellationToken cancel);
+        //UNDONE: these methods are missing: QueryCountForAdminAsync, QueryCountAsync?
 
-        public Task DeleteContentAsync(string path, bool permanent, CancellationToken cancellationToken); 
-        public Task DeleteContentAsync(string[] paths, bool permanent, CancellationToken cancellationToken);
-        public Task DeleteContentAsync(int id, bool permanent, CancellationToken cancellationToken);
-        public Task DeleteContentAsync(int[] ids, bool permanent, CancellationToken cancellationToken);
-        public Task DeleteContentAsync(object[] idsOrPaths, bool permanent, CancellationToken cancellationToken);
+        public Task DeleteContentAsync(string path, bool permanent, CancellationToken cancel); 
+        public Task DeleteContentAsync(string[] paths, bool permanent, CancellationToken cancel);
+        public Task DeleteContentAsync(int id, bool permanent, CancellationToken cancel);
+        public Task DeleteContentAsync(int[] ids, bool permanent, CancellationToken cancel);
+        public Task DeleteContentAsync(object[] idsOrPaths, bool permanent, CancellationToken cancel);
     }
 }

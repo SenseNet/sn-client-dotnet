@@ -201,15 +201,15 @@ namespace SenseNet.Client.Tests.UnitTests
         [TestMethod]
         public async Task Repository_LoadContent_ByOdataRequest_IdVersion()
         {
-            await ODataRequestForLoadContentTest(repository =>
-                    new ODataRequest(repository.Server) { ContentId = 42, Version = "V1.0.A" },
+            await ODataRequestForLoadContentTest(
+                repository => new LoadContentRequest { ContentId = 42, Version = "V1.0.A" },
                 "/OData.svc/content(42)?metadata=no&version=V1.0.A");
         }
         [TestMethod]
         public async Task Repository_LoadContent_ByOdataRequest_PathVersion()
         {
-            await ODataRequestForLoadContentTest(repository =>
-                    new ODataRequest(repository.Server) { Path = "/Root/Content/MyFolder", Version = "V1.0.A" },
+            await ODataRequestForLoadContentTest(
+                repository => new LoadContentRequest { Path = "/Root/Content/MyFolder", Version = "V1.0.A" },
                 "/OData.svc/Root/Content('MyFolder')?metadata=no&version=V1.0.A");
         }
 
@@ -217,7 +217,7 @@ namespace SenseNet.Client.Tests.UnitTests
         {
             var restCaller = Substitute.For<IRestCaller>();
             restCaller
-                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>())
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult(@"{ ""d"": { ""Name"": ""Content"" }}"));
             var repositories = GetRepositoryCollection(services =>
             {
@@ -227,12 +227,12 @@ namespace SenseNet.Client.Tests.UnitTests
                 .ConfigureAwait(false);
             return (repository, restCaller);
         }
-        private async Task ODataRequestForLoadContentTest(Func<IRepository, ODataRequest> getOdataRequest, string expectedUrl)
+        private async Task ODataRequestForLoadContentTest(Func<IRepository, LoadContentRequest> getLoadContentRequest, string expectedUrl)
         {
             // ALIGN
             var restCaller = Substitute.For<IRestCaller>();
             restCaller
-                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>())
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult(@"{ ""d"": { ""Name"": ""Content"" }}"));
             var repositories = GetRepositoryCollection(services =>
             {
@@ -242,8 +242,7 @@ namespace SenseNet.Client.Tests.UnitTests
                 .ConfigureAwait(false);
 
             // ACT
-            getOdataRequest(repository);
-            var content = await repository.LoadContentAsync(getOdataRequest(repository), CancellationToken.None)
+            var content = await repository.LoadContentAsync(getLoadContentRequest(repository), CancellationToken.None)
                 .ConfigureAwait(false);
 
             // ASSERT
@@ -260,7 +259,7 @@ namespace SenseNet.Client.Tests.UnitTests
             // ALIGN
             var restCaller = Substitute.For<IRestCaller>();
             restCaller
-                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>())
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult(@"{""d"": {""__count"": 2, ""results"": [
                     {""Id"": 3, ""Name"": ""IMS"", ""Type"": ""Domains""},
                     {""Id"": 1000, ""Name"": ""System"", ""Type"": ""SystemFolder""}]}}"));
@@ -270,7 +269,7 @@ namespace SenseNet.Client.Tests.UnitTests
             });
             var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
                 .ConfigureAwait(false);
-            var request = new ODataRequest(repository.Server) { Path = "/Root", Select = new[] { "Id", "Name", "Type" } };
+            var request = new LoadCollectionRequest { Path = "/Root", Select = new[] { "Id", "Name", "Type" } };
 
             // ACT
             var collection = await repository.LoadCollectionAsync(request, CancellationToken.None);
@@ -298,7 +297,7 @@ namespace SenseNet.Client.Tests.UnitTests
             // ALIGN
             var restCaller = Substitute.For<IRestCaller>();
             restCaller
-                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>())
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult(@"42"));
             var repositories = GetRepositoryCollection(services =>
             {
@@ -306,7 +305,7 @@ namespace SenseNet.Client.Tests.UnitTests
             });
             var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
                 .ConfigureAwait(false);
-            var request = new ODataRequest(repository.Server) { Path = "/Root", Select = new[] { "Id", "Name", "Type" } };
+            var request = new LoadCollectionRequest { Path = "/Root", Select = new[] { "Id", "Name", "Type" } };
 
             // ACT
             var count = await repository.GetContentCountAsync(request, CancellationToken.None);
@@ -327,7 +326,7 @@ namespace SenseNet.Client.Tests.UnitTests
             // ALIGN
             var restCaller = Substitute.For<IRestCaller>();
             restCaller
-                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>())
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult(@"{""d"": {""__count"": 4, ""results"": [
       {""Name"": ""Admin""},
       {""Name"": ""PublicAdmin""},
@@ -341,10 +340,8 @@ namespace SenseNet.Client.Tests.UnitTests
                 .ConfigureAwait(false);
 
             // ACT
-            var collection = await repository.QueryForAdminAsync(
-                queryText: "TypeIs:User .SORT:Name",
-                CancellationToken.None,
-                select: new[] { "Name" });
+            var request = new QueryContentRequest {ContentQuery = "TypeIs:User .SORT:Name", Select = new[] {"Name"}};
+            var collection = await repository.QueryForAdminAsync(request, CancellationToken.None);
 
             // ASSERT
             var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First();
@@ -360,7 +357,7 @@ namespace SenseNet.Client.Tests.UnitTests
             // ALIGN
             var restCaller = Substitute.For<IRestCaller>();
             restCaller
-                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>())
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult(@"{""d"": {""__count"": 4, ""results"": [
       {""Name"": ""Admin""},
       {""Name"": ""PublicAdmin""},
@@ -374,10 +371,8 @@ namespace SenseNet.Client.Tests.UnitTests
                 .ConfigureAwait(false);
 
             // ACT
-            var collection = await repository.QueryAsync(
-                queryText: "TypeIs:User .SORT:Name",
-                CancellationToken.None,
-                select: new[] { "Name" });
+            var request = new QueryContentRequest { ContentQuery = "TypeIs:User .SORT:Name", Select = new[] { "Name" } };
+            var collection = await repository.QueryAsync(request, CancellationToken.None);
 
             // ASSERT
             var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First();
@@ -398,7 +393,7 @@ namespace SenseNet.Client.Tests.UnitTests
             var restCaller = infrastructure.RestCaller;
             var repository = infrastructure.Repository;
 
-            restCaller.GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>())
+            restCaller.GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult(@"{ ""d"": { ""Id"": 42 }}"));
 
             // ACT
@@ -420,7 +415,7 @@ namespace SenseNet.Client.Tests.UnitTests
             var restCaller = infrastructure.RestCaller;
             var repository = infrastructure.Repository;
 
-            restCaller.GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>())
+            restCaller.GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult(string.Empty));
 
             // ACT
@@ -443,7 +438,7 @@ namespace SenseNet.Client.Tests.UnitTests
             // ALIGN
             var restCaller = Substitute.For<IRestCaller>();
             restCaller
-                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>())
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult(""));
             var repositories = GetRepositoryCollection(services =>
             {
@@ -458,14 +453,14 @@ namespace SenseNet.Client.Tests.UnitTests
 
             // ASSERT
             var arguments = restCaller.ReceivedCalls().Single().GetArguments();
-            Assert.AreEqual(4, arguments.Length);
+            Assert.AreEqual(5, arguments.Length);
             var requestedUri = arguments[0] as Uri;
             Assert.IsNotNull(requestedUri);
             Assert.AreEqual("/OData.svc/('Root')/DeleteBatch?metadata=no", requestedUri.PathAndQuery);
-            var method = arguments[2] as HttpMethod;
+            var method = arguments[3] as HttpMethod;
             Assert.IsNotNull(method);
             Assert.AreEqual(HttpMethod.Post, method);
-            var jsonBody = arguments[3] as string;
+            var jsonBody = arguments[4] as string;
             Assert.IsNotNull(jsonBody);
             Assert.AreEqual("models=[{\"permanent\":true,\"paths\":[\"/Root/Content/MyContent\"]}]", jsonBody);
         }
@@ -475,7 +470,7 @@ namespace SenseNet.Client.Tests.UnitTests
             // ALIGN
             var restCaller = Substitute.For<IRestCaller>();
             restCaller
-                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>())
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult(""));
             var repositories = GetRepositoryCollection(services =>
             {
@@ -490,14 +485,14 @@ namespace SenseNet.Client.Tests.UnitTests
 
             // ASSERT
             var arguments = restCaller.ReceivedCalls().Single().GetArguments();
-            Assert.AreEqual(4, arguments.Length);
+            Assert.AreEqual(5, arguments.Length);
             var requestedUri = arguments[0] as Uri;
             Assert.IsNotNull(requestedUri);
             Assert.AreEqual("/OData.svc/('Root')/DeleteBatch?metadata=no", requestedUri.PathAndQuery);
-            var method = arguments[2] as HttpMethod;
+            var method = arguments[3] as HttpMethod;
             Assert.IsNotNull(method);
             Assert.AreEqual(HttpMethod.Post, method);
-            var jsonBody = arguments[3] as string;
+            var jsonBody = arguments[4] as string;
             Assert.IsNotNull(jsonBody);
             Assert.AreEqual("models=[{\"permanent\":false,\"paths\":[\"/Root/Content/MyContent\"]}]", jsonBody);
         }
@@ -507,7 +502,7 @@ namespace SenseNet.Client.Tests.UnitTests
             // ALIGN
             var restCaller = Substitute.For<IRestCaller>();
             restCaller
-                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>())
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult(""));
             var repositories = GetRepositoryCollection(services =>
             {
@@ -523,14 +518,14 @@ namespace SenseNet.Client.Tests.UnitTests
 
             // ASSERT
             var arguments = restCaller.ReceivedCalls().Single().GetArguments();
-            Assert.AreEqual(4, arguments.Length);
+            Assert.AreEqual(5, arguments.Length);
             var requestedUri = arguments[0] as Uri;
             Assert.IsNotNull(requestedUri);
             Assert.AreEqual("/OData.svc/('Root')/DeleteBatch?metadata=no", requestedUri.PathAndQuery);
-            var method = arguments[2] as HttpMethod;
+            var method = arguments[3] as HttpMethod;
             Assert.IsNotNull(method);
             Assert.AreEqual(HttpMethod.Post, method);
-            var jsonBody = arguments[3] as string;
+            var jsonBody = arguments[4] as string;
             Assert.IsNotNull(jsonBody);
             Assert.AreEqual("models=[{\"permanent\":false,\"paths\":[\"/Root/F1\",\"/Root/F2\",\"/Root/F3\"]}]", jsonBody);
         }
@@ -540,7 +535,7 @@ namespace SenseNet.Client.Tests.UnitTests
             // ALIGN
             var restCaller = Substitute.For<IRestCaller>();
             restCaller
-                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>())
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult(""));
             var repositories = GetRepositoryCollection(services =>
             {
@@ -555,14 +550,14 @@ namespace SenseNet.Client.Tests.UnitTests
 
             // ASSERT
             var arguments = restCaller.ReceivedCalls().Single().GetArguments();
-            Assert.AreEqual(4, arguments.Length);
+            Assert.AreEqual(5, arguments.Length);
             var requestedUri = arguments[0] as Uri;
             Assert.IsNotNull(requestedUri);
             Assert.AreEqual("/OData.svc/('Root')/DeleteBatch?metadata=no", requestedUri.PathAndQuery);
-            var method = arguments[2] as HttpMethod;
+            var method = arguments[3] as HttpMethod;
             Assert.IsNotNull(method);
             Assert.AreEqual(HttpMethod.Post, method);
-            var jsonBody = arguments[3] as string;
+            var jsonBody = arguments[4] as string;
             Assert.IsNotNull(jsonBody);
             Assert.AreEqual("models=[{\"permanent\":false,\"paths\":[1234]}]", jsonBody);
         }
@@ -572,7 +567,7 @@ namespace SenseNet.Client.Tests.UnitTests
             // ALIGN
             var restCaller = Substitute.For<IRestCaller>();
             restCaller
-                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>())
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult(""));
             var repositories = GetRepositoryCollection(services =>
             {
@@ -588,14 +583,14 @@ namespace SenseNet.Client.Tests.UnitTests
 
             // ASSERT
             var arguments = restCaller.ReceivedCalls().Single().GetArguments();
-            Assert.AreEqual(4, arguments.Length);
+            Assert.AreEqual(5, arguments.Length);
             var requestedUri = arguments[0] as Uri;
             Assert.IsNotNull(requestedUri);
             Assert.AreEqual("/OData.svc/('Root')/DeleteBatch?metadata=no", requestedUri.PathAndQuery);
-            var method = arguments[2] as HttpMethod;
+            var method = arguments[3] as HttpMethod;
             Assert.IsNotNull(method);
             Assert.AreEqual(HttpMethod.Post, method);
-            var jsonBody = arguments[3] as string;
+            var jsonBody = arguments[4] as string;
             Assert.IsNotNull(jsonBody);
             Assert.AreEqual("models=[{\"permanent\":false,\"paths\":[1234,1235,1236,1237]}]", jsonBody);
         }
@@ -605,7 +600,7 @@ namespace SenseNet.Client.Tests.UnitTests
             // ALIGN
             var restCaller = Substitute.For<IRestCaller>();
             restCaller
-                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>())
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult(""));
             var repositories = GetRepositoryCollection(services =>
             {
@@ -621,14 +616,14 @@ namespace SenseNet.Client.Tests.UnitTests
 
             // ASSERT
             var arguments = restCaller.ReceivedCalls().Single().GetArguments();
-            Assert.AreEqual(4, arguments.Length);
+            Assert.AreEqual(5, arguments.Length);
             var requestedUri = arguments[0] as Uri;
             Assert.IsNotNull(requestedUri);
             Assert.AreEqual("/OData.svc/('Root')/DeleteBatch?metadata=no", requestedUri.PathAndQuery);
-            var method = arguments[2] as HttpMethod;
+            var method = arguments[3] as HttpMethod;
             Assert.IsNotNull(method);
             Assert.AreEqual(HttpMethod.Post, method);
-            var jsonBody = arguments[3] as string;
+            var jsonBody = arguments[4] as string;
             Assert.IsNotNull(jsonBody);
             Assert.AreEqual("models=[{\"permanent\":false,\"paths\":[\"/Root/F1\",1234,\"/Root/F2\",1235,1236]}]", jsonBody);
         }
