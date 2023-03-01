@@ -67,6 +67,28 @@ namespace SenseNet.Client.Tests.UnitTests
             Assert.AreEqual("Task1", content.Name);
         }
         [TestMethod]
+        public async Task Repository_CreateContent_MissingName()
+        {
+            var repository = await GetRepositoryCollection().GetRepositoryAsync("local", CancellationToken.None);
+
+            dynamic content = repository.CreateContent("/Root/Content/MyTasks", "Task", null);
+
+            Assert.AreEqual("/Root/Content/MyTasks", content.ParentPath);
+            Assert.AreEqual("Task", content.__ContentType);
+            Assert.IsNull(content.Name);
+        }
+        [TestMethod]
+        public async Task Repository_CreateContent_EmptyName()
+        {
+            var repository = await GetRepositoryCollection().GetRepositoryAsync("local", CancellationToken.None);
+
+            dynamic content = repository.CreateContent("/Root/Content/MyTasks", "Task", "");
+
+            Assert.AreEqual("/Root/Content/MyTasks", content.ParentPath);
+            Assert.AreEqual("Task", content.__ContentType);
+            Assert.IsNull(content.Name);
+        }
+        [TestMethod]
         public async Task Repository_CreateContent_Error_MissingParentPath()
         {
             await TestParameterError<ArgumentNullException>(
@@ -81,13 +103,6 @@ namespace SenseNet.Client.Tests.UnitTests
                 "Value cannot be null. (Parameter 'contentTypeName')").ConfigureAwait(false);
         }
         [TestMethod]
-        public async Task Repository_CreateContent_Error_MissingName()
-        {
-            await TestParameterError<ArgumentNullException>(
-                repository => repository.CreateContent("/Root/Content", "Folder", null),
-                "Value cannot be null. (Parameter 'name')").ConfigureAwait(false);
-        }
-        [TestMethod]
         public async Task Repository_CreateContent_Error_EmptyParentPath()
         {
             await TestParameterError<ArgumentException>(
@@ -100,13 +115,6 @@ namespace SenseNet.Client.Tests.UnitTests
             await TestParameterError<ArgumentException>(
                 repository => repository.CreateContent("/Root/Content", "", null),
                 "Value cannot be empty. (Parameter 'contentTypeName')").ConfigureAwait(false);
-        }
-        [TestMethod]
-        public async Task Repository_CreateContent_Error_EmptyName()
-        {
-            await TestParameterError<ArgumentException>(
-                repository => repository.CreateContent("/Root/Content", "Folder", ""),
-                "Value cannot be empty. (Parameter 'name')").ConfigureAwait(false);
         }
 
 

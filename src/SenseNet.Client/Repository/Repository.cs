@@ -37,10 +37,9 @@ namespace SenseNet.Client
                 throw new ArgumentNullException(nameof(contentTypeName));
             if (contentTypeName.Length == 0)
                 throw new ArgumentException($"Value cannot be empty. (Parameter '{nameof(contentTypeName)}')");
-            if (name == null)
-                throw new ArgumentNullException(nameof(name));
-            if (name.Length == 0)
-                throw new ArgumentException($"Value cannot be empty. (Parameter '{nameof(name)}')");
+
+            if (name == string.Empty)
+                name = null;
 
             dynamic content = PrepareContent(_services.GetRequiredService<Content>());
             content.ParentPath = parentPath;
