@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -67,6 +68,52 @@ namespace SenseNet.Client.Tests.IntegrationTests
             // 3 - Delete the content and check the repository is clean
             await repository.DeleteContentAsync(path, true, cancel).ConfigureAwait(false);
             Assert.IsFalse(await repository.IsContentExistsAsync(path, cancel).ConfigureAwait(false));
+        }
+
+        [TestMethod]
+        public async Task IT_Content_Query()
+        {
+            var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
+            var repository = await GetRepositoryCollection()
+                .GetRepositoryAsync("local", cancel).ConfigureAwait(false);
+
+            // ACT
+            var request = new QueryContentRequest
+            {
+                ContentQuery = "TypeIs:User",
+                OrderBy = new[] {"Name"}
+            };
+            var contents = await repository.QueryAsync(request, cancel).ConfigureAwait(false);
+
+            // ASSERT
+            var names = contents.Select(x => x.Name).ToArray();
+            Assert.IsTrue(names.Contains("Admin"));
+            Assert.IsTrue(names.Contains("Visitor"));
+        }
+        [TestMethod]
+        public async Task IT_Content_QueryCount()
+        {
+            var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
+            var repository = await GetRepositoryCollection()
+                .GetRepositoryAsync("local", cancel).ConfigureAwait(false);
+
+            // ACT-1: get collection
+            var request = new QueryContentRequest
+            {
+                ContentQuery = "TypeIs:User",
+                OrderBy = new[] { "Name" }
+            };
+            var contents = await repository.QueryAsync(request, cancel).ConfigureAwait(false);
+            var expectedCount = contents.Count();
+
+            // ASSERT-1
+            Assert.IsTrue(expectedCount > 0);
+
+            // ACT-2
+            var actualCount = await repository.QueryCountAsync(request, cancel).ConfigureAwait(false);
+
+            // ASSERT-2
+            Assert.AreEqual(expectedCount, actualCount);
         }
 
         /* ================================================================================================== TOOLS */

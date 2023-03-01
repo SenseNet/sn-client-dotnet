@@ -383,6 +383,59 @@ namespace SenseNet.Client.Tests.UnitTests
             Assert.AreEqual("Admin, PublicAdmin, Somebody, Visitor", actual);
         }
 
+        [TestMethod]
+        public async Task Repository_QueryCountForAdmin()
+        {
+            // ALIGN
+            var restCaller = Substitute.For<IRestCaller>();
+            restCaller
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(@"42"));
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton(restCaller);
+            });
+            var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACT
+            var request = new QueryContentRequest { ContentQuery = "TypeIs:User .SORT:Name", Select = new[] { "Name" } };
+            var count = await repository.QueryCountForAdminAsync(request, CancellationToken.None);
+
+            // ASSERT
+            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First();
+            Assert.IsNotNull(requestedUri);
+            Assert.AreEqual("/OData.svc/Root/$count?metadata=no&$select=Name&enableautofilters=false&enablelifespanfilter=false&query=TypeIs%3AUser%20.SORT%3AName", requestedUri.PathAndQuery);
+
+            Assert.AreEqual(42, count);
+        }
+        [TestMethod]
+        public async Task Repository_QueryCount()
+        {
+            // ALIGN
+            var restCaller = Substitute.For<IRestCaller>();
+            restCaller
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(@"42"));
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton(restCaller);
+            });
+            var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACT
+            var request = new QueryContentRequest { ContentQuery = "TypeIs:User .SORT:Name", Select = new[] { "Name" } };
+            var count = await repository.QueryCountAsync(request, CancellationToken.None);
+
+            // ASSERT
+            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First();
+            Assert.IsNotNull(requestedUri);
+            Assert.AreEqual("/OData.svc/Root/$count?metadata=no&$select=Name&query=TypeIs%3AUser%20.SORT%3AName", requestedUri.PathAndQuery);
+
+            Assert.AreEqual(42, count);
+        }
+
         /* ====================================================================== CONTENT EXISTENCE */
 
         [TestMethod]

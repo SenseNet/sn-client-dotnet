@@ -158,6 +158,26 @@ namespace SenseNet.Client
             return LoadCollectionAsync(requestData.ToODataRequest(Server), cancel);
         }
 
+        public Task<int> QueryCountForAdminAsync(QueryContentRequest requestData, CancellationToken cancel)
+        {
+            requestData.AutoFilters = FilterStatus.Disabled;
+            requestData.LifespanFilter = FilterStatus.Disabled;
+
+            return QueryCountAsync(requestData, cancel);
+        }
+        public async Task<int> QueryCountAsync(QueryContentRequest requestData, CancellationToken cancel)
+        {
+            var oDataRequest = requestData.ToODataRequest(Server);
+            oDataRequest.CountOnly = true;
+
+            var response = await _restCaller.GetResponseStringAsync(oDataRequest.GetUri(), Server, cancel).ConfigureAwait(false);
+
+            if (int.TryParse(response, out var count))
+                return count;
+
+            throw new ClientException($"Invalid count response. Request: {oDataRequest.GetUri()}. Response: {response}");
+        }
+
         public Task DeleteContentAsync(string path, bool permanent, CancellationToken cancel)
         {
             return DeleteContentAsync(new object[] { path }, permanent, cancel);
