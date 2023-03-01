@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 [assembly: InternalsVisibleTo("SenseNet.Client.Tests")]
+[assembly: InternalsVisibleTo("SenseNet.Client.IntegrationTests")]
 
 [assembly: AssemblyTrademark("Sense/Net Inc.")]
 

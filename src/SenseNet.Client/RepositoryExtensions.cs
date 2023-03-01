@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using SenseNet.Client;
 
@@ -47,7 +45,7 @@ namespace SenseNet.Extensions.DependencyInjection
                 .AddSingleton<IRestCaller, DefaultRestCaller>()
                 .AddTransient<IRepository, Repository>()
                 .AddTransient<Content, Content>()
-                .Configure<ServerContextOptions>(opt => { });
+                .Configure<ServerContextOptions>(_ => { });
         }
 
         /// <summary>

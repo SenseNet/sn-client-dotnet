@@ -7,7 +7,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SenseNet.Client.Authentication;
 using Task = System.Threading.Tasks.Task;
 
-namespace SenseNet.Client.Tests
+namespace SenseNet.Client.Tests.UnitTests
 {
     internal class TestTokenProvider : ITokenProvider
     {
@@ -35,7 +35,7 @@ namespace SenseNet.Client.Tests
         [TestMethod]
         public async Task GetTokenTwice()
         {
-            var ts = new TokenStore(new TestTokenProvider(),  new Logger<TokenStore>(new NullLoggerFactory()));
+            var ts = new TokenStore(new TestTokenProvider(), new Logger<TokenStore>(new NullLoggerFactory()));
             var server = new ServerContext
             {
                 Url = "https://localhost:44362"

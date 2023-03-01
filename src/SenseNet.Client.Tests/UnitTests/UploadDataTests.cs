@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
 
-namespace SenseNet.Client.Tests
+namespace SenseNet.Client.Tests.UnitTests
 {
     [TestClass]
     public class UploadDataTests
@@ -27,7 +27,7 @@ namespace SenseNet.Client.Tests
             };
 
             var dict = JsonConvert.SerializeObject(uploadData.ToDictionary().ToDictionary(x => x.Key, x => x.Value.ToString()));
-            var pairs = JsonConvert.SerializeObject(uploadData.ToKeyValuePairs().ToDictionary(x=>x.Key, x=>x.Value));
+            var pairs = JsonConvert.SerializeObject(uploadData.ToKeyValuePairs().ToDictionary(x => x.Key, x => x.Value));
 
             Assert.AreEqual(dict, pairs);
         }

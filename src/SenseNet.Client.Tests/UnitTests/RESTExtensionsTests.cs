@@ -1,7 +1,7 @@
 using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace SenseNet.Client.Tests
+namespace SenseNet.Client.Tests.UnitTests
 {
     [TestClass]
     // ReSharper disable once InconsistentNaming
