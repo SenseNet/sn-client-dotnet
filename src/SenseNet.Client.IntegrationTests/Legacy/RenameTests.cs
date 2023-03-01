@@ -1,8 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-
-namespace SenseNet.Client.Tests.LegacyIntegrationTests
+﻿namespace SenseNet.Client.IntegrationTests.Legacy
 {
     [TestClass]
     public class RenameTests

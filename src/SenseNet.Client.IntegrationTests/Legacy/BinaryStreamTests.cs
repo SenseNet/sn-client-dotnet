@@ -1,12 +1,6 @@
-﻿using System;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿// ReSharper disable StringLiteralTypo
 
-// ReSharper disable StringLiteralTypo
-
-namespace SenseNet.Client.Tests.LegacyIntegrationTests
+namespace SenseNet.Client.IntegrationTests.Legacy
 {
     [TestClass]
     public class BinaryStreamTests

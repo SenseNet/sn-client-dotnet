@@ -1,17 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SenseNet.Client.Tests.UnitTests;
 using SenseNet.Extensions.DependencyInjection;
 
-namespace SenseNet.Client.Tests.IntegrationTests
+namespace SenseNet.Client.IntegrationTests
 {
     [TestClass]
     public class ContentTests
@@ -130,7 +122,7 @@ namespace SenseNet.Client.Tests.IntegrationTests
 
             var config = new ConfigurationBuilder()
                 .AddJsonFile("appsettings.json", optional: true)
-                .AddUserSecrets<RepositoryTests>()
+                .AddUserSecrets<ContentTests>()
                 .Build();
 
             services

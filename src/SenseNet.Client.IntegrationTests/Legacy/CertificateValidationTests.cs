@@ -1,11 +1,7 @@
-﻿using System;
-using System.Net.Http;
-using System.Net.Security;
+﻿using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
-using System.Threading.Tasks;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace SenseNet.Client.Tests.LegacyIntegrationTests
+namespace SenseNet.Client.IntegrationTests.Legacy
 {
     [TestClass]
     public class CertificateValidationTests

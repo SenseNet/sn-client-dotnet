@@ -1,14 +1,9 @@
-﻿using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Linq;
 using SenseNet.Client.Security;
 using SenseNet.Extensions.DependencyInjection;
 
-namespace SenseNet.Client.Tests.LegacyIntegrationTests
+namespace SenseNet.Client.IntegrationTests.Legacy
 {
     [TestClass]
     public class ContentTests

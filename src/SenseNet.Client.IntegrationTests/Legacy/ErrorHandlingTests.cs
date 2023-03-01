@@ -1,10 +1,6 @@
-﻿using System;
-using System.Net;
-using System.Net.Http;
-using System.Threading.Tasks;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using System.Net;
 
-namespace SenseNet.Client.Tests.LegacyIntegrationTests
+namespace SenseNet.Client.IntegrationTests.Legacy
 {
     [TestClass]
     public class ErrorHandlingTests
