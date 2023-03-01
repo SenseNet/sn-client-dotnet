@@ -1,7 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Data.Common;
 using System.Linq;
 
 // ReSharper disable once CheckNamespace
@@ -90,7 +88,7 @@ public abstract class RequestBase
     /// <summary>
     /// Initializes an instance of the LoadContentRequest class.
     /// </summary>
-    public RequestBase()
+    protected RequestBase()
     {
         Metadata = MetadataFormat.None;
         Parameters = new ODataRequestParameterCollection(AddWellKnownItem, RemoveWellKnownItem);

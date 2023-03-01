@@ -5,6 +5,9 @@ using System.Linq;
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client
 {
+    /// <summary>
+    /// Represents a request for querying the repository.
+    /// </summary>
     public class QueryContentRequest : RequestBase
     {
         private static class P
@@ -76,21 +79,21 @@ namespace SenseNet.Client
         public string ContentQuery { get; set; }
 
         /// <summary>
-        /// Gets or sets the total count request if the resource is a collection.
+        /// Gets or sets the total count parameter if the resource is a collection.
         /// </summary>
         public InlineCountOptions InlineCount { get; set; }
         /// <summary>
-        /// Gets or sets the value of the switch that controls the auto filtering.
+        /// Gets or sets the value of the auto filter parameter.
         /// </summary>
         public FilterStatus AutoFilters { get; set; }
         /// <summary>
-        /// Gets or sets the value of the switch that controls the lifespan filtering.
+        /// Gets or sets the value of the lifespan filter parameter.
         /// </summary>
         public FilterStatus LifespanFilter { get; set; }
         /// <summary>
-        /// Gets or sets the sorting of the children in priority order.
-        /// Every item can be an existing FieldName optionally followed by the sorting direction
-        /// (space + "asc" or "desc" e. g. "CreationDate desc")
+        /// Gets or sets the sorting definition.
+        /// It can contain an existing FieldName followed by the optional
+        /// sorting direction (e.g. "CreationDate desc").
         /// </summary>
         public string[] OrderBy { get; set; }
 

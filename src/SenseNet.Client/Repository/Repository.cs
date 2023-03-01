@@ -195,6 +195,9 @@ namespace SenseNet.Client
         }
         public async Task DeleteContentAsync(object[] idsOrPaths, bool permanent, CancellationToken cancel)
         {
+            if (idsOrPaths == null)
+                throw new ArgumentNullException(nameof(idsOrPaths));
+
             var oDataRequest = new ODataRequest(Server)
             {
                 Path = "/Root",
@@ -208,6 +211,10 @@ namespace SenseNet.Client
                         paths = idsOrPaths
                     }))
                 .ConfigureAwait(false);
+
+            _logger?.LogTrace(idsOrPaths.Length == 1
+                ? $"Content {idsOrPaths[0]} was deleted."
+                : $"{idsOrPaths.Length} contents were deleted.");
         }
 
         private T CreateContentFromResponse<T>(dynamic jObject) where T : Content

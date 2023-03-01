@@ -3,6 +3,9 @@
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client;
 
+/// <summary>
+/// Represents a request for loading a content from the repository.
+/// </summary>
 public class LoadContentRequest : RequestBase
 {
     /// <summary>

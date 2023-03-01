@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client;
 
+/// <summary>
+/// Represents a request for a content collection.
+/// </summary>
 public class LoadCollectionRequest : QueryContentRequest
 {
     private static class P
@@ -29,12 +30,12 @@ public class LoadCollectionRequest : QueryContentRequest
     //============================================================================= Properties
 
     /// <summary>
-    /// Content path that will be the base of the OData request if the Content id is not provided.
+    /// Content path that will be the base of the OData request.
     /// </summary>
     public string Path { get; set; }
 
     /// <summary>
-    /// Gets or sets a standard OData filter of the children.
+    /// Gets or sets a standard OData filter of child entities.
     /// </summary>
     public string ChildrenFilter { get; set; }
 
