@@ -18,7 +18,11 @@ namespace SenseNet.Client.Tests
             {
                 new ServerContext
                 {
-                    Url = "https://localhost:44362"
+                    Url = "https://localhost:44362",
+                    Authentication =
+                    {
+                        ApiKey = ""
+                    }
                 }
             });
 

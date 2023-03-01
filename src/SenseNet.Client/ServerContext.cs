@@ -18,6 +18,7 @@ namespace SenseNet.Client
         {
             public string AccessToken { get; set; }
             public string RefreshToken { get; set; }
+            public string ApiKey { get; set; }
         }
 
         /// <summary>
@@ -79,6 +80,16 @@ namespace SenseNet.Client
                     Logger?.LogTrace(ex, "Error during JWT access token conversion.");
                 }
             }
+            else if (!string.IsNullOrEmpty(Authentication?.ApiKey))
+            {
+                request = new ODataRequest(this)
+                {
+                    Path = "/Root",
+                    ActionName = "GetCurrentUser",
+                    Select = select,
+                    Expand = expand
+                };
+            }
 
             // no token or invalid: load Visitor
             request ??= new ODataRequest(this)
@@ -107,7 +118,8 @@ namespace SenseNet.Client
                 Authentication =
                 {
                     AccessToken = this.Authentication.AccessToken,
-                    RefreshToken = this.Authentication.RefreshToken
+                    RefreshToken = this.Authentication.RefreshToken,
+                    ApiKey = this.Authentication.ApiKey
                 }
             };
 

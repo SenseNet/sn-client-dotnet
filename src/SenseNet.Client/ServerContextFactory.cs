@@ -108,6 +108,9 @@ namespace SenseNet.Client
                 Url = options.Url.AppendSchema(),
             };
 
+            if (!string.IsNullOrEmpty(options.Authentication.ApiKey))
+                server.Authentication.ApiKey = options.Authentication.ApiKey;
+
             // do not try to authenticate if the values are not provided
             if (string.IsNullOrEmpty(options.Authentication.ClientId) ||
                 string.IsNullOrEmpty(options.Authentication.ClientSecret)) 
