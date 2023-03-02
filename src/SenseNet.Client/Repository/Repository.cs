@@ -7,6 +7,8 @@ using System.Threading;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using System.Net.Http;
+using SenseNet.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client
@@ -18,15 +20,31 @@ namespace SenseNet.Client
         private readonly IServiceProvider _services;
         private readonly ILogger<Repository> _logger;
 
+        public RegisteredContentTypes GlobalContentTypes { get; }
         public ServerContext Server { get; set; }
 
-        public Repository(IRestCaller restCaller, IServiceProvider services, ILogger<Repository> logger)
+        public Repository(IRestCaller restCaller, IServiceProvider services, IOptions<RegisteredContentTypes> globalContentTypes, ILogger<Repository> logger)
         {
             _restCaller = restCaller;
             _services = services;
+            GlobalContentTypes = globalContentTypes.Value;
             _logger = logger;
         }
 
+//UNDONE: rewrite CreateContent<T>
+public T CreateContent<T>(string parentPath, string name) where T : Content
+{
+    try
+    {
+        return PrepareContent(_services.GetRequiredService<T>());
+    }
+    catch (InvalidOperationException ex)
+    {
+        throw new ApplicationException("The content type is not registered: " + typeof(T).Name, ex);
+    }
+}
+        
+        //UNDONE: rewrite CreateContent
         public Content CreateContent(string parentPath, string contentTypeName, string name)
         {
             if (parentPath == null)
@@ -41,6 +59,13 @@ namespace SenseNet.Client
             if (name == string.Empty)
                 name = null;
 
+//public Content CreateContent(string contentTypeName)
+//{
+//    var contentType = GetContentTypeByName(contentTypeName);
+//    if (contentType == null)
+//        throw new ApplicationException("The content type is not registered: " + contentTypeName);
+//    return PrepareContent((Content)_services.GetRequiredService(contentType));
+//}
             dynamic content = PrepareContent(_services.GetRequiredService<Content>());
             content.ParentPath = parentPath;
             content.Name = name;
@@ -115,6 +140,31 @@ namespace SenseNet.Client
             var content = CreateContentFromResponse<T>(JsonHelper.Deserialize(rs).d);
             return content;
         }
+//UNDONE: merge methods
+/*
+public async Task<T> LoadContentAsync<T>(LoadContentRequest requestData, CancellationToken cancel) where T : Content
+{
+    // just to make sure
+    requestData.IsCollectionRequest = false;
+
+    //TODO: error handling
+    var rs = await _restCaller.GetResponseStringAsync(requestData.GetUri(), Server).ConfigureAwait(false);
+    if (string.IsNullOrEmpty(rs))
+        return null;
+
+    var type = GetTypeFromJsonModel(rs);
+    var content = type != null
+        ? (T)_services.GetRequiredService(type)
+        : _services.GetRequiredService<T>();
+
+    content.Server = Server;
+    content.Repository = this;
+
+    content.InitializeFromResponse(JsonHelper.Deserialize(rs).d);
+
+    return content;
+}
+*/
 
         public Task<IEnumerable<Content>> LoadCollectionAsync(LoadCollectionRequest requestData, CancellationToken cancel)
         {
@@ -235,5 +285,26 @@ namespace SenseNet.Client
 
             return content;
         }
+
+
+//UNDONE: integrate GetTypeFromJsonModel
+private Type GetTypeFromJsonModel(string rawJson)
+{
+    var jsonModel = JsonHelper.Deserialize(rawJson).d;
+    string contentTypeName = jsonModel.Type?.ToString();
+    return GetContentTypeByName(contentTypeName);
+}
+//UNDONE: integrate GetContentTypeByName
+private Type GetContentTypeByName(string contentTypeName)
+{
+    if (contentTypeName == null)
+        return null;
+    if (Server.RegisteredContentTypes != null)
+        if (Server.RegisteredContentTypes.ContentTypes.TryGetValue(contentTypeName, out var contentType))
+            return contentType;
+    if (GlobalContentTypes.ContentTypes.TryGetValue(contentTypeName, out var globalContentType))
+        return globalContentType;
+    return null;
+}
     }
 }

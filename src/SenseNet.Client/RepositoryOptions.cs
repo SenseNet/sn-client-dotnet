@@ -7,5 +7,6 @@ namespace SenseNet.Client
     {
         public string Url { get; set; }
         public AuthenticationOptions Authentication { get; set; } = new AuthenticationOptions();
+        public RegisteredContentTypes RegisteredContentTypes { get; set; }
     }
 }

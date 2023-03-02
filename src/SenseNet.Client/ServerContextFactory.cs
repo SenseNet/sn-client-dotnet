@@ -106,6 +106,7 @@ namespace SenseNet.Client
             var server = new ServerContext
             {
                 Url = options.Url.AppendSchema(),
+                RegisteredContentTypes = options.RegisteredContentTypes
             };
 
             if (!string.IsNullOrEmpty(options.Authentication.ApiKey))

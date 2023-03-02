@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Threading;
+using SenseNet.Extensions.DependencyInjection;
 
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client
@@ -15,6 +16,11 @@ namespace SenseNet.Client
         /// </summary>
         /// <remarks>A repository instance always belongs to a single sensenet service.</remarks>
         public ServerContext Server { get; set; }
+        //UNDONE: doc
+        public RegisteredContentTypes GlobalContentTypes { get; }
+
+        //UNDONE: doc
+        public T CreateContent<T>(string parentPath, string name) where T : Content;
 
         /// <summary>
         /// Creates a new content instance in memory.
@@ -56,6 +62,13 @@ namespace SenseNet.Client
         /// <param name="cancel">The token to monitor for cancellation requests.</param>
         /// <returns>A task that wraps the content or null.</returns>
         public Task<Content> LoadContentAsync(LoadContentRequest requestData, CancellationToken cancel);
+
+        //UNDONE: doc
+        public Task<T> LoadContentAsync<T>(int id, CancellationToken cancel) where T : Content;
+        //UNDONE: doc
+        public Task<T> LoadContentAsync<T>(string path, CancellationToken cancel) where T : Content;
+        //UNDONE: doc
+        public Task<T> LoadContentAsync<T>(LoadContentRequest requestData, CancellationToken cancel) where T : Content;
 
         /// <summary>
         /// Checks if a content with the provided path exists in the repository.
