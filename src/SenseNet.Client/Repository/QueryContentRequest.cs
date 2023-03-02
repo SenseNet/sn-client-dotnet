@@ -65,6 +65,11 @@ namespace SenseNet.Client
         //============================================================================= Properties
 
         /// <summary>
+        /// Content path that will be the base of the OData request.
+        /// </summary>
+        public string Path { get; set; }
+
+        /// <summary>
         /// Gets or sets the "top" query parameter.
         /// </summary>
         public int Top { get; set; }
@@ -99,7 +104,7 @@ namespace SenseNet.Client
 
         protected override void AddProperties(ODataRequest oDataRequest)
         {
-            oDataRequest.Path ??= "/Root";
+            oDataRequest.Path ??= Path ?? "/Root";
             oDataRequest.IsCollectionRequest = true;
 
             oDataRequest.Top = this.Top;

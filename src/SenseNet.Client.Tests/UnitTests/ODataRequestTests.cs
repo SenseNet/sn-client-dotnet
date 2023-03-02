@@ -620,6 +620,20 @@ namespace SenseNet.Client.Tests.UnitTests
 
         #region QueryContentRequest_*
         [TestMethod]
+        public void QueryContentRequest_Path()
+        {
+            var request = new QueryContentRequest { Path = "/Root/Content/MyContent" };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root/Content/MyContent?metadata=no",
+                request.ToODataRequest(null).ToString());
+        }
+        [TestMethod]
+        public void QueryContentRequest_Path_Null()
+        {
+            var request = new QueryContentRequest { Path = null };
+            Assert.AreEqual($"{_baseUri}/OData.svc/Root?metadata=no",
+                request.ToODataRequest(null).ToString());
+        }
+        [TestMethod]
         public void QueryContentRequest_Version()
         {
             var request = new QueryContentRequest { Version = "V1.0.A" };
