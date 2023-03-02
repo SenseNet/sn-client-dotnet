@@ -133,6 +133,9 @@ namespace SenseNet.Client
             requestData.SiteUrl = ServerContext.GetUrl(Server);
 
             var response = await _restCaller.GetResponseStringAsync(requestData.GetUri(), Server, cancel).ConfigureAwait(false);
+            if (string.IsNullOrEmpty(response))
+                return Array.Empty<Content>();
+
             var items = JsonHelper.Deserialize(response).d.results as JArray;
 
             return items?.Select(CreateContentFromResponse<Content>) ?? Array.Empty<Content>();

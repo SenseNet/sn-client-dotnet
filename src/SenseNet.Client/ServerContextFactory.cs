@@ -106,6 +106,7 @@ namespace SenseNet.Client
             var server = new ServerContext
             {
                 Url = options.Url.AppendSchema(),
+                Logger = _logger
             };
 
             if (!string.IsNullOrEmpty(options.Authentication.ApiKey))
