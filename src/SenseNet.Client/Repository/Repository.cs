@@ -118,7 +118,14 @@ namespace SenseNet.Client
 
         public Task<IEnumerable<Content>> LoadCollectionAsync(LoadCollectionRequest requestData, CancellationToken cancel)
         {
+            if (requestData.ContentQuery != null)
+                requestData.ContentQuery = AddInFolderRestriction(requestData.ContentQuery, requestData.Path);
             return LoadCollectionAsync(requestData.ToODataRequest(Server), cancel);
+        }
+        private string AddInFolderRestriction(string contentQuery, string folderPath)
+        {
+            //UNDONE: AddInFolderRestriction throws a server error if the content query has top level instructions e.g. .SORT
+            return $"+InFolder:'{folderPath}' +({contentQuery})";
         }
         private async Task<IEnumerable<Content>> LoadCollectionAsync(ODataRequest requestData, CancellationToken cancel)
         {

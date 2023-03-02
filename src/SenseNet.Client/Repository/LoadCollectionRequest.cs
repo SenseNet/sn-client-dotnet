@@ -30,11 +30,6 @@ public class LoadCollectionRequest : QueryContentRequest
     //============================================================================= Properties
 
     /// <summary>
-    /// Content path that will be the base of the OData request.
-    /// </summary>
-    public string Path { get; set; }
-
-    /// <summary>
     /// Gets or sets a standard OData filter of child entities.
     /// </summary>
     public string ChildrenFilter { get; set; }
