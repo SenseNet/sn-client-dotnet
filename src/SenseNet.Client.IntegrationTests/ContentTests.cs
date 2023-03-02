@@ -140,6 +140,23 @@ namespace SenseNet.Client.IntegrationTests
             Assert.AreEqual($"{rootPath}/Folder-1", contents[1].Path);
             Assert.AreEqual($"{rootPath}/Folder-1/File-1", contents[2].Path);
             Assert.AreEqual($"{rootPath}/Folder-2/File-1", contents[3].Path);
+
+            // ACT-2
+            request = new LoadCollectionRequest
+            {
+                Path = $"{rootPath}/Folder-1",
+                ContentQuery = "Name:'*-1'",
+                Select = new[] { "Name", "Path", "Type" },
+                OrderBy = new[] { "Path" }
+            };
+            result = await repository.QueryAsync(request, cancel).ConfigureAwait(false);
+            contents = result.ToArray();
+
+            // ASSERT-2
+            Assert.AreEqual(2, contents.Length);
+            Assert.AreEqual($"{rootPath}/Folder-1", contents[0].Path);
+            Assert.AreEqual($"{rootPath}/Folder-1/File-1", contents[1].Path);
+
         }
         [TestMethod]
         public async Task IT_Content_Collection_Depth()
