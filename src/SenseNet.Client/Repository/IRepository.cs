@@ -17,7 +17,10 @@ public interface IRepository
     /// </summary>
     /// <remarks>A repository instance always belongs to a single sensenet service.</remarks>
     public ServerContext Server { get; set; }
-    //UNDONE: doc
+
+    /// <summary>
+    /// Gets the registered repository-independent content types.
+    /// </summary>
     public RegisteredContentTypes GlobalContentTypes { get; }
 
     /* ============================================================================ CREATION */
@@ -30,7 +33,13 @@ public interface IRepository
     /// <param name="name">Name of the content.</param>
     /// <returns>A new content instance.</returns>
     public Content CreateContent(string parentPath, string contentTypeName, string name);
-    //UNDONE: doc
+    /// <summary>
+    /// Creates a new content instance in memory by the given type parameter.
+    /// </summary>
+    /// <typeparam name="T">Type of the content (should be registered).</typeparam>
+    /// <param name="parentPath">Path of the already existing parent.</param>
+    /// <param name="name">Name of the content.</param>
+    /// <returns>A new content instance.</returns>
     public T CreateContent<T>(string parentPath, string name) where T : Content;
 
     /// <summary>
@@ -43,8 +52,16 @@ public interface IRepository
     /// <param name="contentTemplate">Content template name.</param>
     /// <returns>A new content instance.</returns>
     public Content CreateContentByTemplate(string parentPath, string contentTypeName, string name, string contentTemplate);
-    //UNDONE: missing tests
-    //UNDONE: doc
+    //UNDONE: missing tests CreateContentByTemplate<T>()
+    /// <summary>
+    /// Creates a new content instance in memory. When saved, the content is created from the
+    /// given content template on the server.
+    /// </summary>
+    /// <typeparam name="T">Type of the content (should be registered).</typeparam>
+    /// <param name="parentPath">Path of the already existing parent.</param>
+    /// <param name="name">Name of the content. If it is null, the server will generate a name for the content.</param>
+    /// <param name="contentTemplate">Content template name.</param>
+    /// <returns>A new content instance.</returns>
     public T CreateContentByTemplate<T>(string parentPath, string name, string contentTemplate) where T : Content;
 
     /* ============================================================================ LOAD CONTENT */
@@ -71,13 +88,31 @@ public interface IRepository
     /// <returns>A task that wraps the content or null.</returns>
     public Task<Content> LoadContentAsync(LoadContentRequest requestData, CancellationToken cancel);
 
-    //UNDONE: missing tests
-    //UNDONE: doc
+    //UNDONE: missing tests LoadContentAsync<T>(int id, ...
+    /// <summary>
+    /// Loads an existing content.
+    /// </summary>
+    /// <typeparam name="T">Well known type of the content (should be registered)</typeparam>
+    /// <param name="id">Content id</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A task that wraps the content or null.</returns>
     public Task<T> LoadContentAsync<T>(int id, CancellationToken cancel) where T : Content;
-    //UNDONE: doc
+    /// <summary>
+    /// Loads an existing content.
+    /// </summary>
+    /// <typeparam name="T">Well known type of the content (should be registered)</typeparam>
+    /// <param name="path">Content path</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A task that wraps the content or null.</returns>
     public Task<T> LoadContentAsync<T>(string path, CancellationToken cancel) where T : Content;
-    //UNDONE: missing tests
-    //UNDONE: doc
+    //UNDONE: missing tests LoadContentAsync<T>(LoadContentRequest requestData, ...
+    /// <summary>
+    /// Loads an existing content.
+    /// </summary>
+    /// <typeparam name="T">Well known type of the content (should be registered)</typeparam>
+    /// <param name="requestData">Detailed request information.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A task that wraps the content or null.</returns>
     public Task<T> LoadContentAsync<T>(LoadContentRequest requestData, CancellationToken cancel) where T : Content;
 
     /* ============================================================================ LOAD COLLECTION */

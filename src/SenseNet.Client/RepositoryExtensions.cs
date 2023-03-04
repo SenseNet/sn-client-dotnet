@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Mime;
 using Microsoft.Extensions.DependencyInjection;
 using SenseNet.Client;
 
@@ -58,6 +59,10 @@ public static class RepositoryExtensions
     /// Note that there can be only one unnamed repository in an application. If you want to
     /// connect to multiple repositories, please register them by name.
     /// </remarks>
+    /// <param name="services"></param>
+    /// <param name="configure">Callback for configuring <see cref="RepositoryOptions"/> instance.</param>
+    /// <param name="registerContentTypes">Optional callback for register custom content types.</param>
+    /// <returns></returns>
     public static IServiceCollection ConfigureSenseNetRepository(this IServiceCollection services, 
         Action<RepositoryOptions> configure, Action<RegisteredContentTypes> registerContentTypes = null)
     {
@@ -66,6 +71,11 @@ public static class RepositoryExtensions
     /// <summary>
     /// Configures a named sensenet repository.
     /// </summary>
+    /// <param name="services"></param>
+    /// <param name="name">Name of the repository.</param>
+    /// <param name="configure">Callback for configuring <see cref="RepositoryOptions"/> instance.</param>
+    /// <param name="registerContentTypes">Optional callback for register custom content types.</param>
+    /// <returns></returns>
     public static IServiceCollection ConfigureSenseNetRepository(this IServiceCollection services,
         string name, Action<RepositoryOptions> configure, Action<RegisteredContentTypes> registerContentTypes = null)
     {
@@ -88,7 +98,13 @@ public static class RepositoryExtensions
         return services;
     }
 
-    //UNDONE: doc
+    /// <summary>
+    /// Registers a global content type.
+    /// </summary>
+    /// <param name="services"></param>
+    /// <param name="contentType">Type of the custom content to register.</param>
+    /// <param name="contentTypeName">Name if the content type if it is different from the <paramref name="contentType"/> name.</param>
+    /// <returns></returns>
     public static IServiceCollection RegisterGlobalContentType(this IServiceCollection services, Type contentType, string contentTypeName = null)
     {
         services.AddTransient(contentType, contentType);
@@ -98,7 +114,13 @@ public static class RepositoryExtensions
         });
         return services;
     }
-    //UNDONE: doc
+    /// <summary>
+    /// Registers a global content type.
+    /// </summary>
+    /// <typeparam name="T">Type of the custom content to register.</typeparam>
+    /// <param name="services"></param>
+    /// <param name="contentTypeName">Name if the content type if it is different from the given content type name.</param>
+    /// <returns></returns>
     public static IServiceCollection RegisterGlobalContentType<T>(this IServiceCollection services, string contentTypeName = null) where T : Content
     {
         services.AddTransient<T, T>();
@@ -107,31 +129,5 @@ public static class RepositoryExtensions
             contentTypes.ContentTypes.Add(contentTypeName ?? typeof(T).Name, typeof(T));
         });
         return services;
-    }
-}
-
-[DebuggerDisplay("RegisteredContentTypes: {ContentTypes.Count}")]
-//UNDONE: separate to new file
-//UNDONE: doc
-public class RegisteredContentTypes
-{
-    internal IDictionary<string, Type> ContentTypes { get; } = new Dictionary<string, Type>();
-
-    //UNDONE: doc
-    public RegisteredContentTypes Add(Type contentType, string contentTypeName = null)
-    {
-        ContentTypes.Add(contentTypeName ?? contentType.Name, contentType);
-        return this;
-    }
-    //UNDONE: doc
-    public RegisteredContentTypes Add<T>(string contentTypeName = null) where T : Content
-    {
-        ContentTypes.Add(contentTypeName ?? typeof(T).Name, typeof(T));
-        return this;
-    }
-    //UNDONE: doc
-    public string GetContentTypeNameByType(Type contentType)
-    {
-        return ContentTypes.FirstOrDefault(x => x.Value == contentType).Key;
     }
 }

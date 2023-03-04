@@ -55,8 +55,10 @@ public class ServerContext
 
     public ILogger Logger { get; set; }
 
-    //UNDONE: doc
-    public RegisteredContentTypes RegisteredContentTypes { get; set; }
+    /// <summary>
+    /// Gets the registered content types.
+    /// </summary>
+    public RegisteredContentTypes RegisteredContentTypes { get; internal set; }
 
     /// <summary>
     /// Gets the current user content based on the available authentication token.
