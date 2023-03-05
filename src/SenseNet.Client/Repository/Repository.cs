@@ -13,7 +13,6 @@ using Microsoft.Extensions.Options;
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client;
 
-/// <inheritdoc />
 internal class Repository : IRepository
 {
     private readonly IRestCaller _restCaller;
@@ -49,7 +48,7 @@ internal class Repository : IRepository
 
         var contentType = GetContentTypeByName(contentTypeName);
         if (contentType == null)
-            throw new ApplicationException("The content type is not registered: " + contentTypeName);
+            contentType = typeof(Content);
 
         var content = (Content) _services.GetRequiredService(contentType);
         return PrepareContent(content, parentPath, name, contentTypeName);

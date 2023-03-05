@@ -1,11 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Linq;
-using System.Net.Http;
-using System.Threading;
 using SenseNet.Extensions.DependencyInjection;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using NSubstitute;
@@ -188,7 +183,7 @@ namespace SenseNet.Client.Tests.UnitTests
                 .ConfigureAwait(false);
 
             // ASSERT
-            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First();
+            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
             Assert.IsNotNull(requestedUri);
             Assert.AreEqual("/OData.svc/Root('Content')?metadata=no", requestedUri.PathAndQuery);
 
@@ -208,7 +203,7 @@ namespace SenseNet.Client.Tests.UnitTests
                 .ConfigureAwait(false);
 
             // ASSERT
-            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First();
+            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
             Assert.IsNotNull(requestedUri);
             Assert.AreEqual("/OData.svc/content(42)?metadata=no", requestedUri.PathAndQuery);
 
@@ -220,14 +215,14 @@ namespace SenseNet.Client.Tests.UnitTests
         public async Task Repository_LoadContent_ByOdataRequest_IdVersion()
         {
             await ODataRequestForLoadContentTest(
-                repository => new LoadContentRequest { ContentId = 42, Version = "V1.0.A" },
+                _ => new LoadContentRequest { ContentId = 42, Version = "V1.0.A" },
                 "/OData.svc/content(42)?metadata=no&version=V1.0.A");
         }
         [TestMethod]
         public async Task Repository_LoadContent_ByOdataRequest_PathVersion()
         {
             await ODataRequestForLoadContentTest(
-                repository => new LoadContentRequest { Path = "/Root/Content/MyFolder", Version = "V1.0.A" },
+                _ => new LoadContentRequest { Path = "/Root/Content/MyFolder", Version = "V1.0.A" },
                 "/OData.svc/Root/Content('MyFolder')?metadata=no&version=V1.0.A");
         }
 
@@ -260,11 +255,11 @@ namespace SenseNet.Client.Tests.UnitTests
                 .ConfigureAwait(false);
 
             // ACT
-            var content = await repository.LoadContentAsync(getLoadContentRequest(repository), CancellationToken.None)
+            var _ = await repository.LoadContentAsync(getLoadContentRequest(repository), CancellationToken.None)
                 .ConfigureAwait(false);
 
             // ASSERT
-            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First();
+            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
             Assert.IsNotNull(requestedUri);
             Assert.AreEqual(expectedUrl, requestedUri.PathAndQuery);
         }
@@ -293,7 +288,7 @@ namespace SenseNet.Client.Tests.UnitTests
             var collection = await repository.LoadCollectionAsync(request, CancellationToken.None);
 
             // ASSERT
-            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First();
+            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
             Assert.IsNotNull(requestedUri);
             Assert.AreEqual("/OData.svc/Root?metadata=no&$select=Id,Name,Type", requestedUri.PathAndQuery);
 
@@ -329,7 +324,7 @@ namespace SenseNet.Client.Tests.UnitTests
             var count = await repository.GetContentCountAsync(request, CancellationToken.None);
 
             // ASSERT
-            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First();
+            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
             Assert.IsNotNull(requestedUri);
             Assert.AreEqual("/OData.svc/Root/$count?metadata=no&$select=Id,Name,Type", requestedUri.PathAndQuery);
 
@@ -362,7 +357,7 @@ namespace SenseNet.Client.Tests.UnitTests
             var collection = await repository.QueryForAdminAsync(request, CancellationToken.None);
 
             // ASSERT
-            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First();
+            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
             Assert.IsNotNull(requestedUri);
             Assert.AreEqual("/OData.svc/Root?metadata=no&$select=Name&enableautofilters=false&enablelifespanfilter=false&query=TypeIs%3AUser%20.SORT%3AName", requestedUri.PathAndQuery);
 
@@ -393,7 +388,7 @@ namespace SenseNet.Client.Tests.UnitTests
             var collection = await repository.QueryAsync(request, CancellationToken.None);
 
             // ASSERT
-            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First();
+            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
             Assert.IsNotNull(requestedUri);
             Assert.AreEqual("/OData.svc/Root?metadata=no&$select=Name&query=TypeIs%3AUser%20.SORT%3AName", requestedUri.PathAndQuery);
 
@@ -421,7 +416,7 @@ namespace SenseNet.Client.Tests.UnitTests
             var count = await repository.QueryCountForAdminAsync(request, CancellationToken.None);
 
             // ASSERT
-            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First();
+            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
             Assert.IsNotNull(requestedUri);
             Assert.AreEqual("/OData.svc/Root/$count?metadata=no&$select=Name&enableautofilters=false&enablelifespanfilter=false&query=TypeIs%3AUser%20.SORT%3AName", requestedUri.PathAndQuery);
 
@@ -447,7 +442,7 @@ namespace SenseNet.Client.Tests.UnitTests
             var count = await repository.QueryCountAsync(request, CancellationToken.None);
 
             // ASSERT
-            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First();
+            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
             Assert.IsNotNull(requestedUri);
             Assert.AreEqual("/OData.svc/Root/$count?metadata=no&$select=Name&query=TypeIs%3AUser%20.SORT%3AName", requestedUri.PathAndQuery);
 
@@ -472,7 +467,7 @@ namespace SenseNet.Client.Tests.UnitTests
                 .ConfigureAwait(false);
 
             // ASSERT REQUEST
-            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First();
+            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
             Assert.IsNotNull(requestedUri);
             Assert.AreEqual("/OData.svc/Root/Content('MyContent')?metadata=no&$select=Id", requestedUri.PathAndQuery);
             // ASSERT RESPONSE
@@ -494,7 +489,7 @@ namespace SenseNet.Client.Tests.UnitTests
                 .ConfigureAwait(false);
 
             // ASSERT REQUEST
-            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First();
+            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
             Assert.IsNotNull(requestedUri);
             Assert.AreEqual("/OData.svc/Root/Content('MyContent')?metadata=no&$select=Id", requestedUri.PathAndQuery);
             // ASSERT RESPONSE
@@ -517,7 +512,6 @@ namespace SenseNet.Client.Tests.UnitTests
             });
             var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
                 .ConfigureAwait(false);
-            var request = new ODataRequest(repository.Server) { Path = "/Root", Select = new[] { "Id", "Name", "Type" } };
 
             // ACT
             await repository.DeleteContentAsync("/Root/Content/MyContent", true, CancellationToken.None);
@@ -549,7 +543,6 @@ namespace SenseNet.Client.Tests.UnitTests
             });
             var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
                 .ConfigureAwait(false);
-            var request = new ODataRequest(repository.Server) { Path = "/Root", Select = new[] { "Id", "Name", "Type" } };
 
             // ACT
             await repository.DeleteContentAsync("/Root/Content/MyContent", false, CancellationToken.None);
@@ -581,7 +574,6 @@ namespace SenseNet.Client.Tests.UnitTests
             });
             var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
                 .ConfigureAwait(false);
-            var request = new ODataRequest(repository.Server) { Path = "/Root", Select = new[] { "Id", "Name", "Type" } };
 
             // ACT
             var paths = new[] { "/Root/F1", "/Root/F2", "/Root/F3" };
@@ -614,7 +606,6 @@ namespace SenseNet.Client.Tests.UnitTests
             });
             var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
                 .ConfigureAwait(false);
-            var request = new ODataRequest(repository.Server) { Path = "/Root", Select = new[] { "Id", "Name", "Type" } };
 
             // ACT
             await repository.DeleteContentAsync(1234, false, CancellationToken.None);
@@ -646,7 +637,6 @@ namespace SenseNet.Client.Tests.UnitTests
             });
             var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
                 .ConfigureAwait(false);
-            var request = new ODataRequest(repository.Server) { Path = "/Root", Select = new[] { "Id", "Name", "Type" } };
 
             // ACT
             var ids = new[] { 1234, 1235, 1236, 1237 };
@@ -679,7 +669,6 @@ namespace SenseNet.Client.Tests.UnitTests
             });
             var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
                 .ConfigureAwait(false);
-            var request = new ODataRequest(repository.Server) { Path = "/Root", Select = new[] { "Id", "Name", "Type" } };
 
             // ACT
             var idsOrPaths = new object[] { "/Root/F1", 1234, "/Root/F2", 1235, 1236 };
@@ -999,12 +988,12 @@ namespace SenseNet.Client.Tests.UnitTests
             var repositories = GetRepositoryCollection();
             var repository = await repositories.GetRepositoryAsync(CancellationToken.None)
                 .ConfigureAwait(false);
-            Exception exception = null;
+            Exception? exception = null;
 
             // ACTION
             try
             {
-                var content = repository.CreateContent<MyContent>("/Root/Content", "MyContent-1");
+                var _ = repository.CreateContent<MyContent>("/Root/Content", "MyContent-1");
                 // ASSERT
                 Assert.Fail($"The expected {nameof(ApplicationException)} was not thrown.");
             }
@@ -1021,20 +1010,86 @@ namespace SenseNet.Client.Tests.UnitTests
             var repositories = GetRepositoryCollection();
             var repository = await repositories.GetRepositoryAsync(CancellationToken.None)
                 .ConfigureAwait(false);
-            Exception exception = null;
 
             // ACTION
-            try
-            {
-                var content = repository.CreateContent("/Root/Content", nameof(MyContent), null);
-                // ASSERT
-                Assert.Fail($"The expected {nameof(ApplicationException)} was not thrown.");
-            }
-            catch (ApplicationException e)
-            {
-                exception = e;
-            }
-            Assert.IsTrue(exception.Message.Contains(nameof(MyContent)));
+            var content = repository.CreateContent("/Root/Content", nameof(MyContent), null);
+
+            // ASSERT
+            Assert.AreEqual(typeof(Content), content.GetType());
+        }
+
+        /* =================================================================== CONTENT CREATION EXAMPLES */
+
+        [TestMethod]
+        public async Task Repository_T_CreateContent_EXAMPLE_GlobalContentTypes()
+        {
+            var cancel = new CancellationTokenSource().Token;
+            var services = new ServiceCollection()
+                .AddLogging()
+                .AddSenseNetClient()
+                .RegisterGlobalContentType<MyContent>()
+                .RegisterGlobalContentType<MyContent2>()
+                .ConfigureSenseNetRepository(repositoryOptions => { })
+                .BuildServiceProvider();
+            var repository = await services.GetRequiredService<IRepositoryCollection>().GetRepositoryAsync(cancel);
+
+            // ACTION
+            var content = repository.CreateContent<MyContent2>("/Root/Content", "MyContent-1");
+
+            // ASSERT
+            Assert.IsNotNull(content);
+            Assert.IsInstanceOfType(content, typeof(MyContent2));
+        }
+        [TestMethod]
+        public async Task Repository_T_CreateContent_EXAMPLE_LocalContentTypes()
+        {
+            var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(2)).Token;
+            var services = new ServiceCollection()
+                .AddLogging()
+                .AddSenseNetClient()
+                .ConfigureSenseNetRepository(repositoryOptions => { },
+                    registeredContentTypes =>
+                    {
+                        registeredContentTypes.Add<MyContent>();
+                        registeredContentTypes.Add<MyContent2>();
+                    })
+                .BuildServiceProvider();
+
+            // ACT
+            var repository = await services.GetRequiredService<IRepositoryCollection>().GetRepositoryAsync(cancel);
+
+            // ACTION
+            var content = repository.CreateContent<MyContent2>("/Root/Content", "MyContent-1");
+
+            // ASSERT
+            Assert.IsNotNull(content);
+            Assert.IsInstanceOfType(content, typeof(MyContent2));
+        }
+        [TestMethod]
+        public async Task Repository_T_CreateContent_EXAMPLE_ReRegisterLocally()
+        {
+            var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(2)).Token;
+            var services = new ServiceCollection()
+                .AddLogging()
+                .AddSenseNetClient()
+                .RegisterGlobalContentType<MyContent>()
+                .RegisterGlobalContentType<MyContent2>()
+                .ConfigureSenseNetRepository(repositoryOptions => { },
+                    registeredContentTypes =>
+                    {
+                        registeredContentTypes.Add<MyContent3>("MyContent2");
+                    })
+                .BuildServiceProvider();
+
+            // ACT
+            var repository = await services.GetRequiredService<IRepositoryCollection>().GetRepositoryAsync(cancel);
+
+            // ACTION
+            var content = repository.CreateContent("/Root/Content", "MyContent2", "MyContent-1");
+
+            // ASSERT
+            Assert.IsNotNull(content);
+            Assert.IsInstanceOfType(content, typeof(MyContent3));
         }
 
         /* =================================================================== LOAD CONTENT */
@@ -1049,7 +1104,7 @@ namespace SenseNet.Client.Tests.UnitTests
                 .Returns(Task.FromResult(@"{ ""d"": { ""Name"": ""Content"" }}"));
             var repositories = GetRepositoryCollection(services =>
             {
-                services.AddSingleton<IRestCaller>(restCaller);
+                services.AddSingleton(restCaller);
             });
             var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
                 .ConfigureAwait(false);
@@ -1059,7 +1114,7 @@ namespace SenseNet.Client.Tests.UnitTests
                 .ConfigureAwait(false);
 
             // ASSERT
-            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First();
+            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
             Assert.IsNotNull(requestedUri);
             Assert.AreEqual("/OData.svc/Root('Content')?metadata=no", requestedUri.PathAndQuery);
 
@@ -1078,7 +1133,7 @@ namespace SenseNet.Client.Tests.UnitTests
                 .Returns(Task.FromResult(@"{ ""d"": { ""Name"": ""Content"" }}"));
             var repositories = GetRepositoryCollection(services =>
             {
-                services.AddSingleton<IRestCaller>(restCaller);
+                services.AddSingleton(restCaller);
             });
             var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
                 .ConfigureAwait(false);
@@ -1101,7 +1156,7 @@ namespace SenseNet.Client.Tests.UnitTests
                 .Returns(Task.FromResult(@"{ ""d"": { ""Name"": ""Content"" }}"));
             var repositories = GetRepositoryCollection(services =>
             {
-                services.AddSingleton<IRestCaller>(restCaller);
+                services.AddSingleton(restCaller);
                 services.AddTransient<MyContent, MyContent>();
             });
             var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
@@ -1124,7 +1179,7 @@ namespace SenseNet.Client.Tests.UnitTests
                 .Returns(Task.FromResult(@"{ ""d"": { ""Type"": ""MyContent"", ""Name"": ""Content"" }}"));
             var repositories = GetRepositoryCollection(services =>
             {
-                services.AddSingleton<IRestCaller>(restCaller);
+                services.AddSingleton(restCaller);
 
                 services.RegisterGlobalContentType<MyContent>();
             });
@@ -1143,7 +1198,7 @@ namespace SenseNet.Client.Tests.UnitTests
         
         /* ====================================================================== TOOLS */
 
-        private static IRepositoryCollection GetRepositoryCollection(Action<IServiceCollection> addServices = null)
+        private static IRepositoryCollection GetRepositoryCollection(Action<IServiceCollection>? addServices = null)
         {
             var services = new ServiceCollection();
 
@@ -1154,7 +1209,7 @@ namespace SenseNet.Client.Tests.UnitTests
             });
 
             var config = new ConfigurationBuilder()
-                .AddJsonFile("appsettings.json", optional: true)
+                .AddJsonFile("appSettings.json", optional: true)
                 .AddUserSecrets<RepositoryTests>()
                 .Build();
 
