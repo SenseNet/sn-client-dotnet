@@ -181,8 +181,6 @@ internal class Repository : IRepository
 
     private string AddInFolderRestriction(string contentQuery, string folderPath)
     {
-        //UNDONE: AddInFolderRestriction throws a server error if the content query has top level instructions e.g. .SORT
-
         var clause = $"InFolder:'{folderPath}'";
         return MoveSettingsToTheEnd($"+{clause} +({contentQuery})").Trim();
     }
@@ -194,7 +192,7 @@ internal class Repository : IRepository
         var response = await _restCaller.GetResponseStringAsync(requestData.GetUri(), Server, cancel).ConfigureAwait(false);
         var items = JsonHelper.Deserialize(response).d.results as JArray;
 
-        return items?.Select(CreateContentFromResponse<Content>) ?? Array.Empty<Content>();
+        return items?.Select(CreateContentFromResponse) ?? Array.Empty<Content>();
     }
 
     /* ============================================================================ EXISTENCE */
@@ -310,6 +308,22 @@ internal class Repository : IRepository
     private T CreateContentFromResponse<T>(dynamic jObject) where T : Content
     {
         var content = _services.GetRequiredService<T>();
+
+        content.Server = Server;
+        content.Repository = this;
+
+        content.InitializeFromResponse(jObject);
+
+        return content;
+    }
+    private Content CreateContentFromResponse(dynamic jObject)
+    {
+        string contentTypeName = jObject.Type?.ToString();
+        var type = GetContentTypeByName(contentTypeName);
+
+        var content = type != null
+            ? (Content)_services.GetRequiredService(type)
+            : _services.GetRequiredService<Content>();
 
         content.Server = Server;
         content.Repository = this;

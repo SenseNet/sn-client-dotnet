@@ -960,7 +960,7 @@ namespace SenseNet.Client.Tests.UnitTests
             {
                 //services.RegisterGlobalContentType<MyContent>();
                 services.ConfigureSenseNetRepository(repoName,
-                    configure: options => { options.Url = "https://myrepo.sensenet.cloud"; },
+                    configure: options => { options.Url = ExampleUrl; },
                     registerContentTypes: contentTypes => { contentTypes.Add<MyContent>(); });
             });
             var repository = await repositories.GetRepositoryAsync(repoName, CancellationToken.None)
@@ -982,7 +982,7 @@ namespace SenseNet.Client.Tests.UnitTests
             {
                 //services.RegisterGlobalContentType<MyContent>();
                 services.ConfigureSenseNetRepository(repoName,
-                    configure: options => { options.Url = "https://myrepo.sensenet.cloud"; },
+                    configure: options => { options.Url = ExampleUrl; },
                     registerContentTypes: contentTypes => { contentTypes.Add<MyContent2>(contentTypeName); });
             });
             var repository = await repositories.GetRepositoryAsync(repoName, CancellationToken.None)
@@ -1075,7 +1075,7 @@ namespace SenseNet.Client.Tests.UnitTests
             {
                 //services.RegisterGlobalContentType<MyContent>();
                 services.ConfigureSenseNetRepository(repoName,
-                    configure: options => { options.Url = "https://myrepo.sensenet.cloud"; },
+                    configure: options => { options.Url = ExampleUrl; },
                     registerContentTypes: contentTypes => { contentTypes.Add<MyContent>(); });
             });
             var repository = await repositories.GetRepositoryAsync(repoName, CancellationToken.None)
@@ -1097,7 +1097,7 @@ namespace SenseNet.Client.Tests.UnitTests
             {
                 //services.RegisterGlobalContentType<MyContent>();
                 services.ConfigureSenseNetRepository(repoName,
-                    configure: options => { options.Url = "https://myrepo.sensenet.cloud"; },
+                    configure: options => { options.Url = ExampleUrl; },
                     registerContentTypes: contentTypes => { contentTypes.Add<MyContent>(); });
             });
             var repository = await repositories.GetRepositoryAsync(repoName, CancellationToken.None)
@@ -1122,7 +1122,7 @@ namespace SenseNet.Client.Tests.UnitTests
             {
                 //services.RegisterGlobalContentType<MyContent>();
                 services.ConfigureSenseNetRepository(repoName,
-                    configure: options => { options.Url = "https://myrepo.sensenet.cloud"; },
+                    configure: options => { options.Url = ExampleUrl; },
                     registerContentTypes: contentTypes => { contentTypes.Add<MyContent>(); });
             });
             var repository = await repositories.GetRepositoryAsync(repoName, CancellationToken.None)
@@ -1163,7 +1163,7 @@ namespace SenseNet.Client.Tests.UnitTests
             {
                 //services.RegisterGlobalContentType<MyContent>();
                 services.ConfigureSenseNetRepository(repoName,
-                    configure: options => { options.Url = "https://myrepo.sensenet.cloud"; },
+                    configure: options => { options.Url = ExampleUrl; },
                     registerContentTypes: contentTypes =>
                     {
                         contentTypes.Add<MyContent>();
@@ -1194,7 +1194,7 @@ namespace SenseNet.Client.Tests.UnitTests
             {
                 //services.RegisterGlobalContentType<MyContent>();
                 services.ConfigureSenseNetRepository(repoName,
-                    configure: options => { options.Url = "https://myrepo.sensenet.cloud"; },
+                    configure: options => { options.Url = ExampleUrl; },
                     registerContentTypes: contentTypes =>
                     {
                         contentTypes.Add<MyContent>();
@@ -1226,7 +1226,7 @@ namespace SenseNet.Client.Tests.UnitTests
             {
                 //services.RegisterGlobalContentType<MyContent>();
                 services.ConfigureSenseNetRepository(repoName,
-                    configure: options => { options.Url = "https://myrepo.sensenet.cloud"; },
+                    configure: options => { options.Url = ExampleUrl; },
                     registerContentTypes: contentTypes =>
                     {
                         contentTypes.Add<MyContent2>();
@@ -1356,7 +1356,6 @@ namespace SenseNet.Client.Tests.UnitTests
             Assert.AreEqual("Content", content.Name);
         }
 
-
         [TestMethod]
         public async Task Repository_LoadContent_GeneralType()
         {
@@ -1452,7 +1451,48 @@ namespace SenseNet.Client.Tests.UnitTests
             Assert.AreEqual("Content", content.Name);
             Assert.AreEqual(typeof(MyContent), content.GetType());
         }
-        
+
+        /* =================================================================== LOAD COLLECTION */
+
+        [TestMethod]
+        public async Task Repository_T_LoadCollection()
+        {
+            // ALIGN
+            var restCaller = Substitute.For<IRestCaller>();
+            restCaller
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(@"{""d"": {""__count"": 4, ""results"": [
+                    {""Id"": 10001, ""Name"": ""Content1"", ""Type"": ""MyContent""},
+                    {""Id"": 10002, ""Name"": ""Content2"", ""Type"": ""MyContent2""},
+                    {""Id"": 10003, ""Name"": ""Content3"", ""Type"": ""MyContent3""},
+                    {""Id"": 10004, ""Name"": ""Content4"", ""Type"": ""MyContent4""},
+                    ]}}"));
+
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton(restCaller);
+                services.RegisterGlobalContentType<MyContent>();
+                services.RegisterGlobalContentType<MyContent2>();
+                services.RegisterGlobalContentType<MyContent3>();
+            });
+            var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+            var request = new LoadCollectionRequest { Path = "/Root/Somewhere", Select = new[] { "Id", "Name", "Type" } };
+
+            // ACT
+            var collection = await repository.LoadCollectionAsync(request, CancellationToken.None);
+
+            // ASSERT
+            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
+            Assert.IsNotNull(requestedUri);
+            Assert.AreEqual("/OData.svc/Root/Somewhere?metadata=no&$select=Id,Name,Type", requestedUri.PathAndQuery);
+
+            var contents = collection.ToArray();
+            Assert.AreEqual(4, contents.Length);
+            var typeNames = string.Join(", ", contents.Select(x => x.GetType().Name));
+            Assert.AreEqual("MyContent, MyContent2, MyContent3, Content", typeNames);
+        }
+
         /* ====================================================================== TOOLS */
 
         private static IRepositoryCollection GetRepositoryCollection(Action<IServiceCollection>? addServices = null)
