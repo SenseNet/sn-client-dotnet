@@ -345,6 +345,31 @@ namespace SenseNet.Client.Tests.UnitTests
             Assert.AreEqual(42, count);
         }
 
+        [TestMethod]
+        public async Task Repository_InFolderRestriction_1()
+        {
+            var repository = await GetRepositoryCollection().GetRepositoryAsync("local", CancellationToken.None);
+            var repositoryAcc = new ObjectAccessor(repository);
+
+            void Test(string query, string path, string expected)
+            {
+                var result = (string) repositoryAcc.Invoke("AddInFolderRestriction",
+                    new[] {typeof(string), typeof(string)},
+                    new[] {query, path});
+                Assert.AreEqual(expected, result);
+            }
+
+            Test("Type:Folder", "/Root", "+InFolder:'/Root' +(Type:Folder)");
+            Test("Type:Folder .SORT:Name", "/Root", "+InFolder:'/Root' +(Type:Folder ) .SORT:Name");
+            Test(".SORT:Name Type:Folder", "/Root", "+InFolder:'/Root' +( Type:Folder) .SORT:Name");
+
+            Test(".TOP:10 +Type:Folder +Name:a*", "/Root",
+                "+InFolder:'/Root' +( +Type:Folder +Name:a*) .TOP:10");
+
+            Test(".TOP:10 +Type:Folder .SKIP:5 +Name:a* .SORT:Index", "/Root",
+                "+InFolder:'/Root' +( +Type:Folder  +Name:a* ) .TOP:10  .SKIP:5  .SORT:Index");
+        }
+
         /* ====================================================================== QUERY CONTENT */
 
         [TestMethod]

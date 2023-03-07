@@ -9,6 +9,7 @@ using Newtonsoft.Json.Linq;
 using System.Net.Http;
 using SenseNet.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using System.Text.RegularExpressions;
 
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client;
@@ -181,7 +182,9 @@ internal class Repository : IRepository
     private string AddInFolderRestriction(string contentQuery, string folderPath)
     {
         //UNDONE: AddInFolderRestriction throws a server error if the content query has top level instructions e.g. .SORT
-        return $"+InFolder:'{folderPath}' +({contentQuery})";
+
+        var clause = $"InFolder:'{folderPath}'";
+        return MoveSettingsToTheEnd($"+{clause} +({contentQuery})").Trim();
     }
     private async Task<IEnumerable<Content>> LoadCollectionAsync(ODataRequest requestData, CancellationToken cancel)
     {
@@ -332,5 +335,61 @@ internal class Repository : IRepository
         if (GlobalContentTypes.ContentTypes.TryGetValue(contentTypeName, out var globalContentType))
             return globalContentType;
         return null;
+    }
+
+    /* ---------------------------------------------------------------------------- */
+
+    private static string[] QuerySettingParts { get; } = {
+        "SELECT", "SKIP", "TOP", "SORT", "REVERSESORT", "AUTOFILTERS", "LIFESPAN", "COUNTONLY", "QUICK", "ALLVERSIONS"
+    };
+    private static readonly string RegexKeywordsAndComments = "//|/\\*|(\\.(?<keyword>[A-Z]+)(([ ]*:[ ]*[#]?\\w+(\\.\\w+)?)|([\\) $\\r\\n]+)))";
+    private static string MoveSettingsToTheEnd(string queryText)
+    {
+        if (string.IsNullOrEmpty(queryText))
+            return queryText;
+
+        var backParts = string.Empty;
+        var index = 0;
+        var regex = new Regex(RegexKeywordsAndComments, RegexOptions.Multiline);
+
+        while (true)
+        {
+            if (index >= queryText.Length)
+                break;
+
+            // find the next setting keyword or comment start
+            var match = regex.Match(queryText, index);
+            if (!match.Success)
+                break;
+
+            // if it is not a keyword than it is a comment --> skip it
+            if (!match.Value.StartsWith("."))
+            {
+                index = queryText.Length;
+                continue;
+            }
+
+            // if we do not recognise the keyword, skip it (it may be in the middle of a text between quotation marks)
+            if (!QuerySettingParts.Contains(match.Groups["keyword"].Value))
+            {
+                index = match.Index + match.Length;
+                continue;
+            }
+
+            // remove the setting from the original position and store it
+            // Patch match.value: it cannot ends with ') '.
+            var matchValue = match.Value;
+            if (matchValue.EndsWith(") "))
+                matchValue = matchValue.Substring(0, matchValue.Length - 2);
+            else if (matchValue.EndsWith(")"))
+                matchValue = matchValue.Substring(0, matchValue.Length - 1);
+
+            queryText = queryText.Remove(match.Index, matchValue.Length);
+            index = match.Index;
+            backParts += " " + matchValue + " ";
+        }
+
+        // add the stored settings to the end of the query
+        return string.Concat(queryText, backParts);
     }
 }
