@@ -19,6 +19,7 @@ namespace SenseNet.Client
     /// </summary>
     public class Content : DynamicObject
     {
+        private readonly IRestCaller _restCaller;
         private readonly ILogger<Content> _logger;
         private readonly IDictionary<string, object> _fields = new Dictionary<string, object>();
 
@@ -74,8 +75,9 @@ namespace SenseNet.Client
 
         //============================================================================= Constructors
 
-        public Content(ILogger<Content> logger)
+        public Content(IRestCaller restCaller, ILogger<Content> logger)
         {
+            _restCaller = restCaller;
             _logger = logger;
         }
         /// <summary>
@@ -809,7 +811,7 @@ namespace SenseNet.Client
                 ? (this.Id > 0
                     ? await RESTCaller.PatchContentAsync(this.Id, postData, Server).ConfigureAwait(false)
                     : await RESTCaller.PatchContentAsync(this.Path, postData, Server).ConfigureAwait(false))
-                : await RESTCaller.PostContentAsync(this.ParentPath, postData, Server).ConfigureAwait(false);
+                : await _restCaller.PostContentAsync(this.ParentPath, postData, Server, CancellationToken.None).ConfigureAwait(false);
 
             // reset local values
             InitializeFromResponse(responseContent);

@@ -14,4 +14,9 @@ public class DefaultRestCaller : IRestCaller
             return await RESTCaller.GetResponseStringAsync(uri, server).ConfigureAwait(false);
         return await RESTCaller.GetResponseStringAsync(uri, server, method, jsonBody).ConfigureAwait(false);
     }
+
+    public Task<dynamic> PostContentAsync(string parentPath, object postData, ServerContext server, CancellationToken cancel)
+    {
+        return RESTCaller.PostContentAsync(parentPath, postData, server);
+    }
 }

@@ -11,7 +11,7 @@ namespace DifferentNamespace
 {
     public class MyContent : Content
     {
-        public MyContent(ILogger<MyContent> logger) : base(logger) { }
+        public MyContent(IRestCaller restCaller, ILogger<MyContent> logger) : base(restCaller, logger) { }
     }
 }
 
@@ -741,11 +741,11 @@ namespace SenseNet.Client.Tests.UnitTests
         public class MyContent : Content
         {
             public string HelloMessage => $"Hello {this.Name}!";
-            public MyContent(ILogger<MyContent> logger) : base(logger) { }
+            public MyContent(IRestCaller restCaller, ILogger<MyContent> logger) : base(restCaller, logger) { }
         }
-        public class MyContent2 : Content { public MyContent2(ILogger<MyContent> logger) : base(logger) { } }
-        public class MyContent3 : Content { public MyContent3(ILogger<MyContent> logger) : base(logger) { } }
-        public class MyContent4 : Content { public MyContent4(ILogger<MyContent> logger) : base(logger) { } }
+        public class MyContent2 : Content { public MyContent2(IRestCaller restCaller, ILogger<MyContent> logger) : base(restCaller, logger) { } }
+        public class MyContent3 : Content { public MyContent3(IRestCaller restCaller, ILogger<MyContent> logger) : base(restCaller, logger) { } }
+        public class MyContent4 : Content { public MyContent4(IRestCaller restCaller, ILogger<MyContent> logger) : base(restCaller, logger) { } }
 
         [TestMethod]
         public async Task Repository_T_RegisterGlobalContentType_TypeParam()
@@ -1250,6 +1250,36 @@ namespace SenseNet.Client.Tests.UnitTests
             // ASSERT
             var allNames = string.Join(", ", contentTypeNames);
             Assert.AreEqual("MyContent2, MyContent_Three", allNames);
+        }
+
+        [TestMethod]
+        public async Task Repository_T_CreateContentAndSave_Global()
+        {
+            var restCaller = Substitute.For<IRestCaller>();
+            restCaller
+                .PostContentAsync(Arg.Any<string>(), Arg.Any<object>(), Arg.Any<ServerContext>(),
+                    Arg.Any<CancellationToken>())
+                .Returns(new Content(null, null));
+
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.RegisterGlobalContentType<MyContent>();
+                services.AddSingleton(restCaller);
+            });
+            var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACT
+            var content = repository.CreateContent<MyContent>("/Root/Content", "MyContent-1");
+            await content.SaveAsync().ConfigureAwait(false);
+
+            // ASSERT
+            var arguments = restCaller.ReceivedCalls().Single().GetArguments();
+            Assert.AreEqual("/Root/Content", arguments[0]); // parentPath
+            dynamic data = arguments[1]!;
+            Assert.IsNotNull(data);
+            Assert.AreEqual("MyContent-1", data.Name);
+            Assert.AreEqual("MyContent", data.__ContentType);
         }
 
         /* =================================================================== CONTENT REGISTRATION AND CREATION EXAMPLES */

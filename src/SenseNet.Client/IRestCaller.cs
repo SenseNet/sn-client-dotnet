@@ -9,4 +9,6 @@ public interface IRestCaller
 {
     Task<string> GetResponseStringAsync(Uri uri, ServerContext server, CancellationToken cancel,
         HttpMethod method = null, string jsonBody = null);
+
+    Task<dynamic> PostContentAsync(string parentPath, object postData, ServerContext server, CancellationToken cancel);
 }
