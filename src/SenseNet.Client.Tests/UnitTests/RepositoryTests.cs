@@ -122,7 +122,6 @@ namespace SenseNet.Client.Tests.UnitTests
                 "Value cannot be empty. (Parameter 'contentTypeName')").ConfigureAwait(false);
         }
 
-
         [TestMethod]
         public async Task Repository_CreateContentByTemplate()
         {
@@ -151,21 +150,6 @@ namespace SenseNet.Client.Tests.UnitTests
                 repository => repository.CreateContentByTemplate(
                     "/Root/Content/MyTasks", "Task", "Task1", ""),
                 "Value cannot be empty. (Parameter 'contentTemplate')").ConfigureAwait(false);
-        }
-
-        public async Task TestParameterError<TException>(Action<IRepository> callback, string expectedMessage) where TException : Exception
-        {
-            var repository = await GetRepositoryCollection().GetRepositoryAsync("local", CancellationToken.None);
-
-            try
-            {
-                callback(repository);
-                Assert.Fail($"The expected {typeof(TException).Name} was not thrown.");
-            }
-            catch (TException e)
-            {
-                Assert.AreEqual(expectedMessage, e.Message);
-            }
         }
 
         /* ====================================================================== LOAD CONTENT */
@@ -304,6 +288,36 @@ namespace SenseNet.Client.Tests.UnitTests
             Assert.AreEqual("System", content.Name);
             Assert.AreEqual("SystemFolder", content["Type"].ToString());
         }
+        [TestMethod]
+        public async Task Repository_LoadCollection_WithQuery()
+        {
+            // ALIGN
+            var restCaller = Substitute.For<IRestCaller>();
+            restCaller
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(@"{""d"": {""__count"": 2, ""results"": [
+                    {""Id"": 3, ""Name"": ""IMS"", ""Type"": ""Domains""},
+                    {""Id"": 1000, ""Name"": ""System"", ""Type"": ""SystemFolder""}]}}"));
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton(restCaller);
+            });
+            var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACT
+            var request = new LoadCollectionRequest { Path = "/Root/MyContent", ContentQuery = "TypeIs:File", Select = new[] { "Id", "Name", "Type" } };
+            var collection = await repository.LoadCollectionAsync(request, CancellationToken.None);
+
+            // ASSERT
+            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
+            Assert.IsNotNull(requestedUri);
+            // decoded query expectation: query=+InFolder:'/Root/MyContent' +(TypeIs:File)
+            Assert.AreEqual("/OData.svc/Root/MyContent?metadata=no&$select=Id,Name,Type&" +
+                            "query=%2BInFolder%3A%27%2FRoot%2FMyContent%27%20%2B%28TypeIs%3AFile%29",
+                requestedUri.PathAndQuery);
+        }
+
         [TestMethod]
         public async Task Repository_GetContentCount()
         {
@@ -688,6 +702,15 @@ namespace SenseNet.Client.Tests.UnitTests
             Assert.AreEqual("models=[{\"permanent\":false,\"paths\":[\"/Root/F1\",1234,\"/Root/F2\",1235,1236]}]", jsonBody);
         }
 
+        [TestMethod]
+        public async Task Repository_Delete_Error_MissingIdsOrPaths()
+        {
+            await TestParameterError<ArgumentNullException>(
+                callback: async repository => await repository.DeleteContentAsync(
+                    (object[])null, false, CancellationToken.None).ConfigureAwait(false),
+                expectedMessage: "Value cannot be null. (Parameter 'idsOrPaths')").ConfigureAwait(false);
+        }
+
         /* =================================================================== CONTENT TYPE REGISTRATION */
 
         public class MyContent : Content
@@ -868,7 +891,7 @@ namespace SenseNet.Client.Tests.UnitTests
             Assert.IsNotNull(services.GetService<DifferentNamespace.MyContent>());
         }
 
-        /* =================================================================== CREATE CONTENT */
+        /* =================================================================== CREATE REGISTERED CONTENT */
 
         [TestMethod]
         public async Task Repository_T_CreateContent_Global()
@@ -1018,7 +1041,193 @@ namespace SenseNet.Client.Tests.UnitTests
             Assert.AreEqual(typeof(Content), content.GetType());
         }
 
-        /* =================================================================== CONTENT CREATION EXAMPLES */
+
+        [TestMethod]
+        public async Task Repository_T_CreateContentByTemplate()
+        {
+            var repoName = "MyRepo";
+            var repositories = GetRepositoryCollection(services =>
+            {
+                //services.RegisterGlobalContentType<MyContent>();
+                services.ConfigureSenseNetRepository(repoName,
+                    configure: options => { options.Url = "https://myrepo.sensenet.cloud"; },
+                    registerContentTypes: contentTypes => { contentTypes.Add<MyContent>(); });
+            });
+            var repository = await repositories.GetRepositoryAsync(repoName, CancellationToken.None)
+                .ConfigureAwait(false);
+
+            dynamic content = repository.CreateContentByTemplate<MyContent>(
+                "/Root/Content", "Content1", "Template1");
+
+            Assert.AreEqual("/Root/Content", content.ParentPath);
+            Assert.AreEqual("MyContent", content.__ContentType);
+            Assert.AreEqual("Content1", content.Name);
+            Assert.AreEqual("Template1", content.__ContentTemplate);
+        }
+        [TestMethod]
+        public async Task Repository_T_CreateContentByTemplate_Error_MissingContentTemplate()
+        {
+            var repoName = "MyRepo";
+            var repositories = GetRepositoryCollection(services =>
+            {
+                //services.RegisterGlobalContentType<MyContent>();
+                services.ConfigureSenseNetRepository(repoName,
+                    configure: options => { options.Url = "https://myrepo.sensenet.cloud"; },
+                    registerContentTypes: contentTypes => { contentTypes.Add<MyContent>(); });
+            });
+            var repository = await repositories.GetRepositoryAsync(repoName, CancellationToken.None)
+                .ConfigureAwait(false);
+
+            try
+            {
+                repository.CreateContentByTemplate<MyContent>(
+                    "/Root/Content", "Content1", null);
+                Assert.Fail($"The expected {nameof(ArgumentNullException)} was not thrown.");
+            }
+            catch (ArgumentNullException e)
+            {
+                Assert.AreEqual("Value cannot be null. (Parameter 'contentTemplate')", e.Message);
+            }
+        }
+        [TestMethod]
+        public async Task Repository_T_CreateContentByTemplate_Error_EmptyContentTemplate()
+        {
+            var repoName = "MyRepo";
+            var repositories = GetRepositoryCollection(services =>
+            {
+                //services.RegisterGlobalContentType<MyContent>();
+                services.ConfigureSenseNetRepository(repoName,
+                    configure: options => { options.Url = "https://myrepo.sensenet.cloud"; },
+                    registerContentTypes: contentTypes => { contentTypes.Add<MyContent>(); });
+            });
+            var repository = await repositories.GetRepositoryAsync(repoName, CancellationToken.None)
+                .ConfigureAwait(false);
+
+            try
+            {
+                repository.CreateContentByTemplate<MyContent>(
+                    "/Root/Content", "Content1", "");
+                Assert.Fail($"The expected {nameof(ArgumentException)} was not thrown.");
+            }
+            catch (ArgumentException e)
+            {
+                Assert.AreEqual("Value cannot be empty. (Parameter 'contentTemplate')", e.Message);
+            }
+        }
+
+        [TestMethod]
+        public async Task Repository_T_CreateContent_Error_MissingParentPath()
+        {
+            await TestParameterError<ArgumentNullException>(
+                repository => repository.CreateContent<MyContent>(null, null),
+                "Value cannot be null. (Parameter 'parentPath')").ConfigureAwait(false);
+        }
+        [TestMethod]
+        public async Task Repository_T_CreateContent_Error_EmptyParentPath()
+        {
+            await TestParameterError<ArgumentException>(
+                repository => repository.CreateContent<MyContent>("", null),
+                "Value cannot be empty. (Parameter 'parentPath')").ConfigureAwait(false);
+        }
+
+        [TestMethod]
+        public async Task Repository_T_GetContentTypeNameByType_Template()
+        {
+            var repoName = "MyRepo";
+            var repositories = GetRepositoryCollection(services =>
+            {
+                //services.RegisterGlobalContentType<MyContent>();
+                services.ConfigureSenseNetRepository(repoName,
+                    configure: options => { options.Url = "https://myrepo.sensenet.cloud"; },
+                    registerContentTypes: contentTypes =>
+                    {
+                        contentTypes.Add<MyContent>();
+                        contentTypes.Add<MyContent2>("MyContent_2");
+                        contentTypes.Add<MyContent3>();
+                    });
+            });
+            var repository = await repositories.GetRepositoryAsync(repoName, CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACT
+            var contentTypeNames = new[]
+            {
+                repository.GetContentTypeNameByType<MyContent>(),
+                repository.GetContentTypeNameByType<MyContent2>(),
+                repository.GetContentTypeNameByType<MyContent3>(),
+            };
+
+            // ASSERT
+            var allNames = string.Join(", ", contentTypeNames);
+            Assert.AreEqual("MyContent, MyContent_2, MyContent3", allNames);
+        }
+        [TestMethod]
+        public async Task Repository_T_GetContentTypeNameByType_Type()
+        {
+            var repoName = "MyRepo";
+            var repositories = GetRepositoryCollection(services =>
+            {
+                //services.RegisterGlobalContentType<MyContent>();
+                services.ConfigureSenseNetRepository(repoName,
+                    configure: options => { options.Url = "https://myrepo.sensenet.cloud"; },
+                    registerContentTypes: contentTypes =>
+                    {
+                        contentTypes.Add<MyContent>();
+                        contentTypes.Add<MyContent2>("MyContent_2");
+                        contentTypes.Add<MyContent3>();
+                    });
+            });
+            var repository = await repositories.GetRepositoryAsync(repoName, CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACT
+            var contentTypeNames = new[]
+            {
+                repository.GetContentTypeNameByType(null),
+                repository.GetContentTypeNameByType(typeof(MyContent)),
+                repository.GetContentTypeNameByType(typeof(MyContent2)),
+                repository.GetContentTypeNameByType(typeof(MyContent3)),
+            };
+
+            // ASSERT
+            var allNames = string.Join(", ", contentTypeNames);
+            Assert.AreEqual(", MyContent, MyContent_2, MyContent3", allNames);
+        }
+        [TestMethod]
+        public async Task Repository_T_GetContentTypeNameByType_FirstOrDefault()
+        {
+            var repoName = "MyRepo";
+            var repositories = GetRepositoryCollection(services =>
+            {
+                //services.RegisterGlobalContentType<MyContent>();
+                services.ConfigureSenseNetRepository(repoName,
+                    configure: options => { options.Url = "https://myrepo.sensenet.cloud"; },
+                    registerContentTypes: contentTypes =>
+                    {
+                        contentTypes.Add<MyContent2>();
+                        contentTypes.Add<MyContent2>("MyContent_2");
+                        contentTypes.Add<MyContent2>("MyContent_Two");
+                        contentTypes.Add<MyContent3>("MyContent_Three");
+                        contentTypes.Add<MyContent3>("MyContent_3");
+                        contentTypes.Add<MyContent3>();
+                    });
+            });
+            var repository = await repositories.GetRepositoryAsync(repoName, CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACT
+            var contentTypeNames = new[]
+            {
+                repository.GetContentTypeNameByType(typeof(MyContent2)),
+                repository.GetContentTypeNameByType(typeof(MyContent3)),
+            };
+
+            // ASSERT
+            var allNames = string.Join(", ", contentTypeNames);
+            Assert.AreEqual("MyContent2, MyContent_Three", allNames);
+        }
+
+        /* =================================================================== CONTENT REGISTRATION AND CREATION EXAMPLES */
 
         [TestMethod]
         public async Task Repository_T_CreateContent_EXAMPLE_GlobalContentTypes()
@@ -1147,7 +1356,30 @@ namespace SenseNet.Client.Tests.UnitTests
             Assert.AreEqual("Content", content.Name);
         }
         [TestMethod]
-        public async Task Repository_LoadContent_KnownCustomType()
+        public async Task Repository_LoadContent_KnownCustomTypeById()
+        {
+            // ALIGN
+            var restCaller = Substitute.For<IRestCaller>();
+            restCaller
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(@"{ ""d"": { ""Name"": ""Content"" }}"));
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton(restCaller);
+                services.AddTransient<MyContent, MyContent>();
+            });
+            var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACTION
+            var content = await repository.LoadContentAsync<MyContent>(42, CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ASSERT
+            Assert.AreEqual("Hello Content!", content.HelloMessage);
+        }
+        [TestMethod]
+        public async Task Repository_LoadContent_KnownCustomType_ByPath()
         {
             // ALIGN
             var restCaller = Substitute.For<IRestCaller>();
@@ -1228,6 +1460,35 @@ namespace SenseNet.Client.Tests.UnitTests
 
             var provider = services.BuildServiceProvider();
             return provider.GetRequiredService<IRepositoryCollection>();
+        }
+
+        public async Task TestParameterError<TException>(Action<IRepository> callback, string expectedMessage) where TException : Exception
+        {
+            var repository = await GetRepositoryCollection().GetRepositoryAsync("local", CancellationToken.None);
+
+            try
+            {
+                callback(repository);
+                Assert.Fail($"The expected {typeof(TException).Name} was not thrown.");
+            }
+            catch (TException e)
+            {
+                Assert.AreEqual(expectedMessage, e.Message);
+            }
+        }
+        public async Task TestParameterError<TException>(Func<IRepository, Task> callback, string expectedMessage) where TException : Exception
+        {
+            var repository = await GetRepositoryCollection().GetRepositoryAsync("local", CancellationToken.None);
+
+            try
+            {
+                await callback(repository);
+                Assert.Fail($"The expected {typeof(TException).Name} was not thrown.");
+            }
+            catch (TException e)
+            {
+                Assert.AreEqual(expectedMessage, e.Message);
+            }
         }
     }
 }

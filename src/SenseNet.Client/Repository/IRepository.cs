@@ -66,7 +66,6 @@ public interface IRepository
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="parentPath"/>, <paramref name="contentTypeName"/>
     /// or <paramref name="contentTemplate"/> is empty.</exception>
     public Content CreateContentByTemplate(string parentPath, string contentTypeName, string name, string contentTemplate);
-    //UNDONE: missing tests CreateContentByTemplate<T>()
     /// <summary>
     /// Creates a new content instance in memory. When saved, the content is created from the
     /// given content template on the server.
@@ -108,7 +107,6 @@ public interface IRepository
     /// <returns>A task that wraps the content or null.</returns>
     public Task<Content> LoadContentAsync(LoadContentRequest requestData, CancellationToken cancel);
 
-    //UNDONE: missing tests LoadContentAsync<T>(int id, ...
     /// <summary>
     /// Loads an existing content.
     /// </summary>
@@ -125,7 +123,6 @@ public interface IRepository
     /// <param name="cancel">The token to monitor for cancellation requests.</param>
     /// <returns>A task that wraps the content or null.</returns>
     public Task<T> LoadContentAsync<T>(string path, CancellationToken cancel) where T : Content;
-    //UNDONE: missing tests LoadContentAsync<T>(LoadContentRequest requestData, ...
     /// <summary>
     /// Loads an existing content.
     /// </summary>
@@ -246,6 +243,6 @@ public interface IRepository
 
     /* ============================================================================ TOOLS */
 
-    public string GetContentTypeNameByType<T>(); //UNDONE: missing tests GetContentTypeNameByType<T>()
-    public string GetContentTypeNameByType(Type contentType); //UNDONE: missing tests GetContentTypeNameByType(Type contentType)
+    public string GetContentTypeNameByType<T>();
+    public string GetContentTypeNameByType(Type contentType);
 }
