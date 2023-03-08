@@ -1219,7 +1219,7 @@ namespace SenseNet.Client.Tests.UnitTests
             Assert.AreEqual(", MyContent, MyContent_2, MyContent3", allNames);
         }
         [TestMethod]
-        public async Task Repository_T_GetContentTypeNameByType_FirstOrDefault()
+        public async Task Repository_T_GetContentTypeNameByType_Error_NotSpecifiedName()
         {
             var repoName = "MyRepo";
             var repositories = GetRepositoryCollection(services =>
@@ -1232,24 +1232,24 @@ namespace SenseNet.Client.Tests.UnitTests
                         contentTypes.Add<MyContent2>();
                         contentTypes.Add<MyContent2>("MyContent_2");
                         contentTypes.Add<MyContent2>("MyContent_Two");
-                        contentTypes.Add<MyContent3>("MyContent_Three");
-                        contentTypes.Add<MyContent3>("MyContent_3");
-                        contentTypes.Add<MyContent3>();
                     });
             });
             var repository = await repositories.GetRepositoryAsync(repoName, CancellationToken.None)
                 .ConfigureAwait(false);
 
             // ACT
-            var contentTypeNames = new[]
+            try
             {
-                repository.GetContentTypeNameByType(typeof(MyContent2)),
-                repository.GetContentTypeNameByType(typeof(MyContent3)),
-            };
-
-            // ASSERT
-            var allNames = string.Join(", ", contentTypeNames);
-            Assert.AreEqual("MyContent2, MyContent_Three", allNames);
+                var _ = repository.GetContentTypeNameByType(typeof(MyContent2));
+                // ASSERT
+                Assert.Fail($"The expected {nameof(InvalidOperationException)} was not thrown.");
+            }
+            catch (InvalidOperationException ex)
+            {
+                Assert.AreEqual("Cannot resolve the content type name for the type MyContent2 " +
+                                "because two or more names are registered: " +
+                                "MyContent2, MyContent_2, MyContent_Two.", ex.Message);
+            }
         }
 
         [TestMethod]
@@ -1281,6 +1281,79 @@ namespace SenseNet.Client.Tests.UnitTests
             Assert.AreEqual("MyContent-1", data.Name);
             Assert.AreEqual("MyContent", data.__ContentType);
         }
+        [TestMethod]
+        public async Task Repository_T_CreateContentAndSave_LocalAndDifferentName()
+        {
+            var restCaller = Substitute.For<IRestCaller>();
+            restCaller
+                .PostContentAsync(Arg.Any<string>(), Arg.Any<object>(), Arg.Any<ServerContext>(),
+                    Arg.Any<CancellationToken>())
+                .Returns(new Content(null, null));
+
+            var repoName = "MyRepo";
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton(restCaller);
+                services.ConfigureSenseNetRepository(repoName,
+                    configure: options => { options.Url = ExampleUrl; },
+                    registerContentTypes: contentTypes =>
+                    {
+                        contentTypes.Add<MyContent2>("MyContent_Two");
+                    });
+            });
+            var repository = await repositories.GetRepositoryAsync(repoName, CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACT
+            var content = repository.CreateContent<MyContent2>("/Root/Content", "MyContent-1");
+            await content.SaveAsync().ConfigureAwait(false);
+
+            // ASSERT
+            var arguments = restCaller.ReceivedCalls().Single().GetArguments();
+            Assert.AreEqual("/Root/Content", arguments[0]); // parentPath
+            dynamic data = arguments[1]!;
+            Assert.IsNotNull(data);
+            Assert.AreEqual("MyContent-1", data.Name);
+            Assert.AreEqual("MyContent_Two", data.__ContentType);
+        }
+        //UNDONE: Implement this test: Repository_T_CreateContentAndSave_SpecifiedDifferentName
+        //[TestMethod]
+        //public async Task Repository_T_CreateContentAndSave_SpecifiedDifferentName()
+        //{
+        //    var restCaller = Substitute.For<IRestCaller>();
+        //    restCaller
+        //        .PostContentAsync(Arg.Any<string>(), Arg.Any<object>(), Arg.Any<ServerContext>(),
+        //            Arg.Any<CancellationToken>())
+        //        .Returns(new Content(null, null));
+
+        //    var repoName = "MyRepo";
+        //    var repositories = GetRepositoryCollection(services =>
+        //    {
+        //        services.AddSingleton(restCaller);
+        //        services.ConfigureSenseNetRepository(repoName,
+        //            configure: options => { options.Url = ExampleUrl; },
+        //            registerContentTypes: contentTypes =>
+        //            {
+        //                contentTypes.Add<MyContent2>();
+        //                contentTypes.Add<MyContent2>("MyContent_2");
+        //                contentTypes.Add<MyContent2>("MyContent_Two");
+        //            });
+        //    });
+        //    var repository = await repositories.GetRepositoryAsync(repoName, CancellationToken.None)
+        //        .ConfigureAwait(false);
+
+        //    // ACT
+        //    var content = repository.CreateContent<MyContent2>("/Root/Content", "MyContent_Two", "MyContent-1");
+        //    await content.SaveAsync().ConfigureAwait(false);
+
+        //    // ASSERT
+        //    var arguments = restCaller.ReceivedCalls().Single().GetArguments();
+        //    Assert.AreEqual("/Root/Content", arguments[0]); // parentPath
+        //    dynamic data = arguments[1]!;
+        //    Assert.IsNotNull(data);
+        //    Assert.AreEqual("MyContent-1", data.Name);
+        //    Assert.AreEqual("MyContent_Two", data.__ContentType);
+        //}
 
         /* =================================================================== CONTENT REGISTRATION AND CREATION EXAMPLES */
 

@@ -61,15 +61,17 @@ internal class Repository : IRepository
         if (parentPath.Length == 0)
             throw new ArgumentException($"Value cannot be empty. (Parameter '{nameof(parentPath)}')");
 
+        T content;
         try
         {
-            var content = _services.GetRequiredService<T>();
-            return PrepareContent(content, parentPath, name, GetContentTypeNameByType<T>());
+            content = _services.GetRequiredService<T>();
         }
         catch (InvalidOperationException ex)
         {
             throw new ApplicationException("The content type is not registered: " + typeof(T).Name, ex);
         }
+
+        return PrepareContent(content, parentPath, name, GetContentTypeNameByType<T>());
     }
 
     public Content CreateContentByTemplate(string parentPath, string contentTypeName, string name, string contentTemplate)

@@ -41,7 +41,23 @@ public class RegisteredContentTypes
 
     internal string GetContentTypeNameByType(Type contentType)
     {
-        //UNDONE: ? .Single() logic
-        return ContentTypes.FirstOrDefault(x => x.Value == contentType).Key;
+        //return ContentTypes.FirstOrDefault(x => x.Value == contentType).Key;
+        var names = ContentTypes
+            .Where(x => x.Value == contentType)
+            .Select(x=>x.Key)
+            .ToArray();
+
+        if (names.Length == 0)
+            return null;
+        if (names[0] == string.Empty)
+            return null;
+        if(names.Length == 1)
+            return names[0];
+
+        // names.Length > 1)
+        var registeredNames = string.Join(", ", names);
+        throw new InvalidOperationException(
+            $"Cannot resolve the content type name for the type {contentType.Name} " +
+            $"because two or more names are registered: {registeredNames}.");
     }
 }
