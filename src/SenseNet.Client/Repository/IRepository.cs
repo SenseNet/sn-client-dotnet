@@ -244,9 +244,4 @@ public interface IRepository
     /// <param name="cancel">The token to monitor for cancellation requests.</param>
     /// <returns>A task that represents an asynchronous operation.</returns>
     public Task DeleteContentAsync(object[] idsOrPaths, bool permanent, CancellationToken cancel);
-
-    /* ============================================================================ TOOLS */
-
-    public string GetContentTypeNameByType<T>();
-    public string GetContentTypeNameByType(Type contentType);
 }

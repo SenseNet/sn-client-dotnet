@@ -1171,7 +1171,7 @@ namespace SenseNet.Client.Tests.UnitTests
                         contentTypes.Add<MyContent3>();
                     });
             });
-            var repository = await repositories.GetRepositoryAsync(repoName, CancellationToken.None)
+            var repository = (Repository) await repositories.GetRepositoryAsync(repoName, CancellationToken.None)
                 .ConfigureAwait(false);
 
             // ACT
@@ -1202,7 +1202,7 @@ namespace SenseNet.Client.Tests.UnitTests
                         contentTypes.Add<MyContent3>();
                     });
             });
-            var repository = await repositories.GetRepositoryAsync(repoName, CancellationToken.None)
+            var repository = (Repository) await repositories.GetRepositoryAsync(repoName, CancellationToken.None)
                 .ConfigureAwait(false);
 
             // ACT
@@ -1234,7 +1234,7 @@ namespace SenseNet.Client.Tests.UnitTests
                         contentTypes.Add<MyContent2>("MyContent_Two");
                     });
             });
-            var repository = await repositories.GetRepositoryAsync(repoName, CancellationToken.None)
+            var repository = (Repository) await repositories.GetRepositoryAsync(repoName, CancellationToken.None)
                 .ConfigureAwait(false);
 
             // ACT

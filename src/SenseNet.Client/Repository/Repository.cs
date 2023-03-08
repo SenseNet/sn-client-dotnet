@@ -289,8 +289,8 @@ internal class Repository : IRepository
 
     /* ============================================================================ TOOLS */
 
-    public string GetContentTypeNameByType<T>() => GetContentTypeNameByType(typeof(T));
-    public string GetContentTypeNameByType(Type contentType)
+    internal string GetContentTypeNameByType<T>() => GetContentTypeNameByType(typeof(T));
+    internal string GetContentTypeNameByType(Type contentType)
     {
         if (contentType == null)
             return null;
