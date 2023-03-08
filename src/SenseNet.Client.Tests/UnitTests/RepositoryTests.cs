@@ -929,7 +929,7 @@ namespace SenseNet.Client.Tests.UnitTests
                 .ConfigureAwait(false);
 
             // ACTION
-            var content = repository.CreateContent<MyContent>("/Root/Content", "MyContent-1");
+            var content = repository.CreateContent<MyContent>("/Root/Content", null, "MyContent-1");
 
             // ASSERT
             Assert.IsNotNull(content);
@@ -967,7 +967,7 @@ namespace SenseNet.Client.Tests.UnitTests
                 .ConfigureAwait(false);
 
             // ACTION
-            var content = repository.CreateContent<MyContent>("/Root/Content", "MyContent-1");
+            var content = repository.CreateContent<MyContent>("/Root/Content", null, "MyContent-1");
 
             // ASSERT
             Assert.IsNotNull(content);
@@ -1041,7 +1041,7 @@ namespace SenseNet.Client.Tests.UnitTests
             // ACTION
             try
             {
-                var _ = repository.CreateContent<MyContent>("/Root/Content", "MyContent-1");
+                var _ = repository.CreateContent<MyContent>("/Root/Content", null, "MyContent-1");
                 // ASSERT
                 Assert.Fail($"The expected {nameof(ApplicationException)} was not thrown.");
             }
@@ -1082,7 +1082,7 @@ namespace SenseNet.Client.Tests.UnitTests
                 .ConfigureAwait(false);
 
             dynamic content = repository.CreateContentByTemplate<MyContent>(
-                "/Root/Content", "Content1", "Template1");
+                "/Root/Content", null, "Content1", "Template1");
 
             Assert.AreEqual("/Root/Content", content.ParentPath);
             Assert.AreEqual("MyContent", content.__ContentType);
@@ -1106,7 +1106,7 @@ namespace SenseNet.Client.Tests.UnitTests
             try
             {
                 repository.CreateContentByTemplate<MyContent>(
-                    "/Root/Content", "Content1", null);
+                    "/Root/Content", null, "Content1", null);
                 Assert.Fail($"The expected {nameof(ArgumentNullException)} was not thrown.");
             }
             catch (ArgumentNullException e)
@@ -1131,7 +1131,7 @@ namespace SenseNet.Client.Tests.UnitTests
             try
             {
                 repository.CreateContentByTemplate<MyContent>(
-                    "/Root/Content", "Content1", "");
+                    "/Root/Content", null, "Content1", "");
                 Assert.Fail($"The expected {nameof(ArgumentException)} was not thrown.");
             }
             catch (ArgumentException e)
@@ -1144,14 +1144,14 @@ namespace SenseNet.Client.Tests.UnitTests
         public async Task Repository_T_CreateContent_Error_MissingParentPath()
         {
             await TestParameterError<ArgumentNullException>(
-                repository => repository.CreateContent<MyContent>(null, null),
+                repository => repository.CreateContent<MyContent>(null, null, null),
                 "Value cannot be null. (Parameter 'parentPath')").ConfigureAwait(false);
         }
         [TestMethod]
         public async Task Repository_T_CreateContent_Error_EmptyParentPath()
         {
             await TestParameterError<ArgumentException>(
-                repository => repository.CreateContent<MyContent>("", null),
+                repository => repository.CreateContent<MyContent>("", null, null),
                 "Value cannot be empty. (Parameter 'parentPath')").ConfigureAwait(false);
         }
 
@@ -1270,7 +1270,7 @@ namespace SenseNet.Client.Tests.UnitTests
                 .ConfigureAwait(false);
 
             // ACT
-            var content = repository.CreateContent<MyContent>("/Root/Content", "MyContent-1");
+            var content = repository.CreateContent<MyContent>("/Root/Content", null, "MyContent-1");
             await content.SaveAsync().ConfigureAwait(false);
 
             // ASSERT
@@ -1305,7 +1305,7 @@ namespace SenseNet.Client.Tests.UnitTests
                 .ConfigureAwait(false);
 
             // ACT
-            var content = repository.CreateContent<MyContent2>("/Root/Content", "MyContent-1");
+            var content = repository.CreateContent<MyContent2>("/Root/Content", null, "MyContent-1");
             await content.SaveAsync().ConfigureAwait(false);
 
             // ASSERT
@@ -1316,44 +1316,43 @@ namespace SenseNet.Client.Tests.UnitTests
             Assert.AreEqual("MyContent-1", data.Name);
             Assert.AreEqual("MyContent_Two", data.__ContentType);
         }
-        //UNDONE: Implement this test: Repository_T_CreateContentAndSave_SpecifiedDifferentName
-        //[TestMethod]
-        //public async Task Repository_T_CreateContentAndSave_SpecifiedDifferentName()
-        //{
-        //    var restCaller = Substitute.For<IRestCaller>();
-        //    restCaller
-        //        .PostContentAsync(Arg.Any<string>(), Arg.Any<object>(), Arg.Any<ServerContext>(),
-        //            Arg.Any<CancellationToken>())
-        //        .Returns(new Content(null, null));
+        [TestMethod]
+        public async Task Repository_T_CreateContentAndSave_SpecifiedDifferentName()
+        {
+            var restCaller = Substitute.For<IRestCaller>();
+            restCaller
+                .PostContentAsync(Arg.Any<string>(), Arg.Any<object>(), Arg.Any<ServerContext>(),
+                    Arg.Any<CancellationToken>())
+                .Returns(new Content(null, null));
 
-        //    var repoName = "MyRepo";
-        //    var repositories = GetRepositoryCollection(services =>
-        //    {
-        //        services.AddSingleton(restCaller);
-        //        services.ConfigureSenseNetRepository(repoName,
-        //            configure: options => { options.Url = ExampleUrl; },
-        //            registerContentTypes: contentTypes =>
-        //            {
-        //                contentTypes.Add<MyContent2>();
-        //                contentTypes.Add<MyContent2>("MyContent_2");
-        //                contentTypes.Add<MyContent2>("MyContent_Two");
-        //            });
-        //    });
-        //    var repository = await repositories.GetRepositoryAsync(repoName, CancellationToken.None)
-        //        .ConfigureAwait(false);
+            var repoName = "MyRepo";
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton(restCaller);
+                services.ConfigureSenseNetRepository(repoName,
+                    configure: options => { options.Url = ExampleUrl; },
+                    registerContentTypes: contentTypes =>
+                    {
+                        contentTypes.Add<MyContent2>();
+                        contentTypes.Add<MyContent2>("MyContent_2");
+                        contentTypes.Add<MyContent2>("MyContent_Two");
+                    });
+            });
+            var repository = await repositories.GetRepositoryAsync(repoName, CancellationToken.None)
+                .ConfigureAwait(false);
 
-        //    // ACT
-        //    var content = repository.CreateContent<MyContent2>("/Root/Content", "MyContent_Two", "MyContent-1");
-        //    await content.SaveAsync().ConfigureAwait(false);
+            // ACT
+            var content = repository.CreateContent<MyContent2>("/Root/Content", "MyContent_Two", "MyContent-1");
+            await content.SaveAsync().ConfigureAwait(false);
 
-        //    // ASSERT
-        //    var arguments = restCaller.ReceivedCalls().Single().GetArguments();
-        //    Assert.AreEqual("/Root/Content", arguments[0]); // parentPath
-        //    dynamic data = arguments[1]!;
-        //    Assert.IsNotNull(data);
-        //    Assert.AreEqual("MyContent-1", data.Name);
-        //    Assert.AreEqual("MyContent_Two", data.__ContentType);
-        //}
+            // ASSERT
+            var arguments = restCaller.ReceivedCalls().Single().GetArguments();
+            Assert.AreEqual("/Root/Content", arguments[0]); // parentPath
+            dynamic data = arguments[1]!;
+            Assert.IsNotNull(data);
+            Assert.AreEqual("MyContent-1", data.Name);
+            Assert.AreEqual("MyContent_Two", data.__ContentType);
+        }
 
         /* =================================================================== CONTENT REGISTRATION AND CREATION EXAMPLES */
 
@@ -1371,7 +1370,7 @@ namespace SenseNet.Client.Tests.UnitTests
             var repository = await services.GetRequiredService<IRepositoryCollection>().GetRepositoryAsync(cancel);
 
             // ACTION
-            var content = repository.CreateContent<MyContent2>("/Root/Content", "MyContent-1");
+            var content = repository.CreateContent<MyContent2>("/Root/Content", null, "MyContent-1");
 
             // ASSERT
             Assert.IsNotNull(content);
@@ -1396,7 +1395,7 @@ namespace SenseNet.Client.Tests.UnitTests
             var repository = await services.GetRequiredService<IRepositoryCollection>().GetRepositoryAsync(cancel);
 
             // ACTION
-            var content = repository.CreateContent<MyContent2>("/Root/Content", "MyContent-1");
+            var content = repository.CreateContent<MyContent2>("/Root/Content", null, "MyContent-1");
 
             // ASSERT
             Assert.IsNotNull(content);

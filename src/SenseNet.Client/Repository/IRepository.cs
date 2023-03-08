@@ -29,9 +29,9 @@ public interface IRepository
     /// Creates a new content instance in memory.
     /// If the requested type is not registered, the return value will be a <see cref="Content"/>.
     /// </summary>
-    /// <param name="parentPath">Path of the already existing parent.</param>
-    /// <param name="contentTypeName">Content type name.</param>
-    /// <param name="name">Name of the content.</param>
+    /// <param name="parentPath">Path of the already existing parent (required).</param>
+    /// <param name="contentTypeName">Content type name (required).</param>
+    /// <param name="name">Name of the content (optional).</param>
     /// <returns>A new content instance.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="parentPath"/>
     /// or <paramref name="contentTypeName"/> is null.</exception>
@@ -40,16 +40,19 @@ public interface IRepository
     public Content CreateContent(string parentPath, string contentTypeName, string name);
     /// <summary>
     /// Creates a new content instance in memory by the given type parameter.
+    /// If the content type is registered globally or in a repository with two or more names,
+    /// use the optional parameter <paramref name="contentTypeName"/> to properly identify the type and name.
     /// The requested type should be registered or an <see cref="ApplicationException"/> will be thrown.
     /// </summary>
     /// <typeparam name="T">Type of the content (should be registered).</typeparam>
-    /// <param name="parentPath">Path of the already existing parent.</param>
-    /// <param name="name">Name of the content.</param>
+    /// <param name="parentPath">Path of the already existing parent (required).</param>
+    /// <param name="contentTypeName">Content type name (optional).</param>
+    /// <param name="name">Name of the content (optional).</param>
     /// <returns>A new content instance.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="parentPath"/> is null.</exception>
     /// <exception cref="ArgumentException">Thrown when <paramref name="parentPath"/> is empty.</exception>
     /// <exception cref="ApplicationException">Thrown when the requested type is registered.</exception>
-    public T CreateContent<T>(string parentPath, string name) where T : Content;
+    public T CreateContent<T>(string parentPath, string contentTypeName, string name) where T : Content;
 
     /// <summary>
     /// Creates a new content instance in memory. When saved, the content is created from the
@@ -73,6 +76,7 @@ public interface IRepository
     /// </summary>
     /// <typeparam name="T">Type of the content (should be registered).</typeparam>
     /// <param name="parentPath">Path of the already existing parent.</param>
+    /// <param name="contentTypeName">Content type name (optional).</param>
     /// <param name="name">Name of the content. If it is null, the server will generate a name for the content.</param>
     /// <param name="contentTemplate">Content template name.</param>
     /// <returns>A new content instance.</returns>
@@ -81,7 +85,7 @@ public interface IRepository
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="parentPath"/>
     /// or <paramref name="contentTemplate"/> is empty.</exception>
     /// <exception cref="ApplicationException">Thrown when the requested type is registered.</exception>
-    public T CreateContentByTemplate<T>(string parentPath, string name, string contentTemplate) where T : Content;
+    public T CreateContentByTemplate<T>(string parentPath, string contentTypeName, string name, string contentTemplate) where T : Content;
 
     /* ============================================================================ LOAD CONTENT */
 

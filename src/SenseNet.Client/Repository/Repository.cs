@@ -54,7 +54,7 @@ internal class Repository : IRepository
         var content = (Content) _services.GetRequiredService(contentType);
         return PrepareContent(content, parentPath, name, contentTypeName);
     }
-    public T CreateContent<T>(string parentPath, string name) where T : Content
+    public T CreateContent<T>(string parentPath, string contentTypeName, string name) where T : Content
     {
         if (parentPath == null)
             throw new ArgumentNullException(nameof(parentPath));
@@ -71,7 +71,7 @@ internal class Repository : IRepository
             throw new ApplicationException("The content type is not registered: " + typeof(T).Name, ex);
         }
 
-        return PrepareContent(content, parentPath, name, GetContentTypeNameByType<T>());
+        return PrepareContent(content, parentPath, name, contentTypeName ?? GetContentTypeNameByType<T>());
     }
 
     public Content CreateContentByTemplate(string parentPath, string contentTypeName, string name, string contentTemplate)
@@ -86,9 +86,9 @@ internal class Repository : IRepository
         content.__ContentTemplate = contentTemplate;
         return content;
     }
-    public T CreateContentByTemplate<T>(string parentPath, string name, string contentTemplate) where T : Content
+    public T CreateContentByTemplate<T>(string parentPath, string contentTypeName, string name, string contentTemplate) where T : Content
     {
-        dynamic content = CreateContent<T>(parentPath, name);
+        dynamic content = CreateContent<T>(parentPath, contentTypeName, name);
 
         if (contentTemplate == null)
             throw new ArgumentNullException(nameof(contentTemplate));
