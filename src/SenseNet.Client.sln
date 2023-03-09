@@ -11,6 +11,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SenseNet.Client.Integration
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SenseNet.Client.DemoConsole", "SenseNet.Client.DemoConsole\SenseNet.Client.DemoConsole.csproj", "{B75A2674-0332-43B3-AA1F-BBB1F87EDA18}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SenseNet.Client.DemoMvc", "SenseNet.Client.DemoMvc\SenseNet.Client.DemoMvc.csproj", "{FBB4806C-01E1-4AA4-98D1-ECC069C4AACC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{B75A2674-0332-43B3-AA1F-BBB1F87EDA18}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B75A2674-0332-43B3-AA1F-BBB1F87EDA18}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B75A2674-0332-43B3-AA1F-BBB1F87EDA18}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FBB4806C-01E1-4AA4-98D1-ECC069C4AACC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FBB4806C-01E1-4AA4-98D1-ECC069C4AACC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FBB4806C-01E1-4AA4-98D1-ECC069C4AACC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FBB4806C-01E1-4AA4-98D1-ECC069C4AACC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
