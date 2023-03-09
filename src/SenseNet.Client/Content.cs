@@ -809,11 +809,25 @@ public partial class Content : DynamicObject
             }
         }
 
-        dynamic responseContent = Existing
-            ? (this.Id > 0
-                ? await RESTCaller.PatchContentAsync(this.Id, postData, Server).ConfigureAwait(false)
-                : await RESTCaller.PatchContentAsync(this.Path, postData, Server).ConfigureAwait(false))
-            : await _restCaller.PostContentAsync(this.ParentPath, postData, Server, CancellationToken.None).ConfigureAwait(false);
+        dynamic responseContent;
+        if (_restCaller == null)
+        {
+            // Backward compatible version
+            responseContent = Existing
+                ? (this.Id > 0
+                    ? await RESTCaller.PatchContentAsync(this.Id, postData, Server).ConfigureAwait(false)
+                    : await RESTCaller.PatchContentAsync(this.Path, postData, Server).ConfigureAwait(false))
+                : await RESTCaller.PostContentAsync(this.ParentPath, postData, Server).ConfigureAwait(false);
+        }
+        else
+        {
+            // Modernized version
+            responseContent = Existing
+                ? (this.Id > 0
+                    ? await RESTCaller.PatchContentAsync(this.Id, postData, Server).ConfigureAwait(false)
+                    : await RESTCaller.PatchContentAsync(this.Path, postData, Server).ConfigureAwait(false))
+                : await _restCaller.PostContentAsync(this.ParentPath, postData, Server, CancellationToken.None).ConfigureAwait(false);
+        }
 
         // reset local values
         InitializeFromResponse(responseContent);
