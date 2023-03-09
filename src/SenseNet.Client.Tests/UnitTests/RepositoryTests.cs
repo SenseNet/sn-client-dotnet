@@ -1,11 +1,12 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SenseNet.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Configuration;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Newtonsoft.Json.Linq;
 using NSubstitute;
 using SenseNet.Client;
-using SenseNet.Testing;
+using SenseNet.Extensions.DependencyInjection;
+using SenseNet.Tests.Accessors;
 
 namespace DifferentNamespace
 {

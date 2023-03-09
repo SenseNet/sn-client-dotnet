@@ -74,6 +74,11 @@ internal class Repository : IRepository
         return PrepareContent(content, parentPath, name, contentTypeName ?? GetContentTypeNameByType<T>());
     }
 
+    public Content CreateContentFromJson(JObject jObject, Type contentType = null)
+    {
+        return CreateContentFromResponse(jObject, contentType);
+    }
+
     public Content CreateContentByTemplate(string parentPath, string contentTypeName, string name, string contentTemplate)
     {
         dynamic content = CreateContent(parentPath, contentTypeName, name);
@@ -194,7 +199,7 @@ internal class Repository : IRepository
         var response = await _restCaller.GetResponseStringAsync(requestData.GetUri(), Server, cancel).ConfigureAwait(false);
         var items = JsonHelper.Deserialize(response).d.results as JArray;
 
-        return items?.Select(CreateContentFromResponse) ?? Array.Empty<Content>();
+        return items?.Select(x => CreateContentFromResponse(x)) ?? Array.Empty<Content>();
     }
 
     /* ============================================================================ EXISTENCE */
@@ -318,10 +323,18 @@ internal class Repository : IRepository
 
         return content;
     }
-    private Content CreateContentFromResponse(dynamic jObject)
+    private Content CreateContentFromResponse(dynamic jObject, Type contentType = null)
     {
-        string contentTypeName = jObject.Type?.ToString();
-        var type = GetContentTypeByName(contentTypeName);
+        Type type;
+        if (contentType == null)
+        {
+            string contentTypeName = jObject.Type?.ToString();
+            type = GetContentTypeByName(contentTypeName);
+        }
+        else
+        {
+            type = contentType;
+        }
 
         var content = type != null
             ? (Content)_services.GetRequiredService(type)

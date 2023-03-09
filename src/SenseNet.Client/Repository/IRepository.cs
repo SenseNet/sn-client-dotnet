@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Threading;
+using Newtonsoft.Json.Linq;
 using SenseNet.Extensions.DependencyInjection;
 
 // ReSharper disable once CheckNamespace
@@ -53,6 +54,8 @@ public interface IRepository
     /// <exception cref="ArgumentException">Thrown when <paramref name="parentPath"/> is empty.</exception>
     /// <exception cref="ApplicationException">Thrown when the requested type is registered.</exception>
     public T CreateContent<T>(string parentPath, string contentTypeName, string name) where T : Content;
+
+    Content CreateContentFromJson(JObject jObject, Type contentType = null);
 
     /// <summary>
     /// Creates a new content instance in memory. When saved, the content is created from the
