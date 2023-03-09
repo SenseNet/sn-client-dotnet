@@ -13,6 +13,7 @@ using NSubstitute.Core;
 using SenseNet.Diagnostics;
 using SenseNet.Tools;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Sockets;
@@ -494,6 +495,140 @@ public class ContentTests
         Assert.AreEqual(2, content.MultiChoice_2.Length);
         Assert.AreEqual(2, content.MultiChoice_2[0]);
         Assert.AreEqual(42, content.MultiChoice_2[1]);
+    }
+
+    private class TestContent_Number : Content
+    {
+        public TestContent_Number(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }
+
+        public long Number_Long_Null { get; set; }
+        public long Number_Long_Null_WithDefault { get; set; } = 42L;
+        public long? Number_Long_Nullable_Null { get; set; }
+        public long Number_Long { get; set; }
+        public decimal Number_Decimal { get; set; }
+        public decimal? Number_Decimal_Nullable { get; set; }
+        public double Number_Double { get; set; }
+        public double? Number_Double_Nullable { get; set; }
+        public float Number_Single { get; set; }
+        public float? Number_Single_Nullable { get; set; }
+    }
+    [TestMethod]
+    public async Task Content_T_Properties_Number()
+    {
+        // ALIGN
+        var restCaller = Substitute.For<IRestCaller>();
+        restCaller
+            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(@"{
+  ""d"": {
+    ""Number_Long_Null"": null,
+    ""Number_Long_Nullable_Null"": null,
+    ""Number_Long_Null_WithDefault"": null,
+    ""Number_Long"": 9223372036854775807,
+    ""Number_Decimal"": 1234567.8987,
+    ""Number_Decimal_Nullable"": null,
+    ""Number_Double"": 1234567.8987,
+    ""Number_Double_Nullable"": null,
+    ""Number_Single"": 1234567.8987,
+    ""Number_Single_Nullable"": null,
+  }
+}"));
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<TestContent_Number>();
+        });
+        var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+            .ConfigureAwait(false);
+
+        // ACT
+        var request = new LoadContentRequest()
+        {
+            Path = "/Root/Content",
+        };
+        var content = await repository.LoadContentAsync<TestContent_Number>(request, CancellationToken.None);
+
+        // ASSERT
+        var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
+        Assert.IsNotNull(requestedUri);
+        Assert.AreEqual("/OData.svc/Root('Content')?metadata=no", requestedUri.PathAndQuery);
+
+        Assert.AreEqual(0L, content.Number_Long_Null);
+        Assert.AreEqual(42L, content.Number_Long_Null_WithDefault);
+        Assert.AreEqual(null, content.Number_Long_Nullable_Null);
+        Assert.AreEqual(9223372036854775807L, content.Number_Long);
+        Assert.AreEqual(1234567.8987m, content.Number_Decimal);
+        Assert.AreEqual(null, content.Number_Decimal_Nullable);
+        Assert.AreEqual(1234567.8987d, content.Number_Double);
+        Assert.AreEqual(null, content.Number_Double_Nullable);
+        Assert.AreEqual(1234567.8987f, content.Number_Single);
+        Assert.AreEqual(null, content.Number_Single_Nullable);
+    }
+
+    private class TestContent_Binaries : Content
+    {
+        public TestContent_Binaries(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }
+
+        public Binary Binary { get; set; }
+        public Binary Secondary { get; set; }
+    }
+    [TestMethod]
+    public async Task Content_T_Properties_Binary()
+    {
+        // ALIGN
+        var restCaller = Substitute.For<IRestCaller>();
+        restCaller
+            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(@"{
+  ""d"": {
+    ""Binary"": {
+      ""__mediaresource"": {
+        ""edit_media"": null,
+        ""media_src"": ""/binaryhandler.ashx?nodeid=999999&propertyname=Binary"",
+        ""content_type"": ""image/png"",
+        ""media_etag"": null
+      }
+    },
+    ""Secondary"": {
+      ""__mediaresource"": {
+        ""edit_media"": null,
+        ""media_src"": ""/binaryhandler.ashx?nodeid=999999&propertyname=Secondary"",
+        ""content_type"": ""application/octet-stream"",
+        ""media_etag"": null
+      }
+    }
+  }
+}"));
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<TestContent_Binaries>();
+        });
+        var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+            .ConfigureAwait(false);
+
+        // ACT
+        var request = new LoadContentRequest()
+        {
+            Path = "/Root/Content",
+        };
+        var content = await repository.LoadContentAsync<TestContent_Binaries>(request, CancellationToken.None);
+
+        // ASSERT
+        var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
+        Assert.IsNotNull(requestedUri);
+        Assert.AreEqual("/OData.svc/Root('Content')?metadata=no", requestedUri.PathAndQuery);
+
+        Assert.AreEqual(null, content.Binary.EditMedia);
+        Assert.AreEqual("/binaryhandler.ashx?nodeid=999999&propertyname=Binary", content.Binary.MediaSrc);
+        Assert.AreEqual("image/png", content.Binary.ContentType);
+        Assert.AreEqual(null, content.Binary.MediaEtag);
+        Assert.AreEqual(null, content.Secondary.EditMedia);
+        Assert.AreEqual("/binaryhandler.ashx?nodeid=999999&propertyname=Secondary", content.Secondary.MediaSrc);
+        Assert.AreEqual("application/octet-stream", content.Secondary.ContentType);
+        Assert.AreEqual(null, content.Secondary.MediaEtag);
     }
 
     /* =================================================================== REFERENCES */

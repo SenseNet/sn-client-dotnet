@@ -7,7 +7,6 @@ using System.Threading;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using System.Net.Http;
-using SenseNet.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using System.Text.RegularExpressions;
 

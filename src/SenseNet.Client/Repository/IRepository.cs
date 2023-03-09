@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Threading;
 using Newtonsoft.Json.Linq;
-using SenseNet.Extensions.DependencyInjection;
 
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client;

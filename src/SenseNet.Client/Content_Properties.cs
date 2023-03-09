@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Newtonsoft.Json;
 
 namespace SenseNet.Client;
 
@@ -14,9 +15,20 @@ public class ReferenceFieldAttribute : Attribute
 
 }
 
+public class Binary
+{
+    [JsonProperty(PropertyName = "edit_media")]
+    public string EditMedia { get; set; }
+    [JsonProperty(PropertyName = "media_src")]
+    public string MediaSrc { get; set; }
+    [JsonProperty(PropertyName = "content_type")]
+    public string ContentType { get; set; }
+    [JsonProperty(PropertyName = "media_etag")]
+    public string MediaEtag { get; set; }
+}
+
 public partial class Content
 {
-
     private void SetProperties(dynamic responseContent)
     {
         foreach (var property in this.GetType().GetProperties())
@@ -33,7 +45,6 @@ public partial class Content
                     property.SetMethod.Invoke(this, new object[] { jValue.Value<int>() });
                 continue;
             }
-
             if (property.PropertyType == typeof(bool))
             {
                 if (jsonValue is JValue jValue)
@@ -93,11 +104,36 @@ public partial class Content
                 continue;
             }
 
-            //UNDONE: DataType.Currency
-            //UNDONE: DataType.Binary
-
-
-
+            if (property.PropertyType == typeof(long) || property.PropertyType == typeof(long?))
+            {
+                if (jsonValue is JValue jValue)
+                    property.SetMethod.Invoke(this, new object[] { jValue.Value<long>() });
+                continue;
+            }
+            if (property.PropertyType == typeof(decimal) || property.PropertyType == typeof(decimal?))
+            {
+                if (jsonValue is JValue jValue)
+                    property.SetMethod.Invoke(this, new object[] { jValue.Value<decimal>() });
+                continue;
+            }
+            if (property.PropertyType == typeof(double) || property.PropertyType == typeof(double?))
+            {
+                if (jsonValue is JValue jValue)
+                    property.SetMethod.Invoke(this, new object[] { jValue.Value<double>() });
+                continue;
+            }
+            if (property.PropertyType == typeof(float) || property.PropertyType == typeof(float?))
+            {
+                if (jsonValue is JValue jValue)
+                    property.SetMethod.Invoke(this, new object[] { jValue.Value<float>() });
+                continue;
+            }
+            if (property.PropertyType == typeof(Binary))
+            {
+                if (jsonValue is JObject jObject)
+                    property.SetMethod.Invoke(this, new object[] { jObject["__mediaresource"].ToObject<Binary>() });
+                continue;
+            }
 
             //continue;
 
