@@ -171,7 +171,11 @@ public partial class Content
                 }
             }
 
-            // ?? property.SetMethod.Invoke(this, new[] {((JObject) jsonValue).ToObject(propertyType)});
+            if (jsonValue is JObject customObject)
+            {
+                property.SetMethod.Invoke(this, new[] {customObject.ToObject(propertyType)});
+                continue;
+            }
 
             throw new NotSupportedException("## unknown type");
         }

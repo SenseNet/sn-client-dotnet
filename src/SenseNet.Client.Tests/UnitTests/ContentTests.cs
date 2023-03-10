@@ -902,6 +902,63 @@ public class ContentTests
         Assert.AreEqual("/Root/Path3", referredItems[2].Path);
     }
 
+    /* =================================================================== CUSTOM PROPERTIES */
+
+    private class CustomType1
+    {
+        public string Property1 { get; set; }
+        public int Property2 { get; set; }
+    }
+    private class TestContent_CustomProperties : Content
+    {
+        public TestContent_CustomProperties(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }
+
+        public CustomType1 Field1 { get; set; }
+        public CustomType1 Field2 { get; set; }
+    }
+    [TestMethod]
+    public async Task Content_T_Properties_Custom()
+    {
+        // ALIGN
+        var restCaller = Substitute.For<IRestCaller>();
+        restCaller
+            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(@"{
+  ""d"": {
+    ""Id"": 999543,
+    ""Field1"": {
+      ""property1"": ""value1"",
+      ""property2"": 42,
+    },
+    ""Field2"": {
+      ""property3"": ""value3"",
+      ""property4"": 44,
+    },
+  }
+}"));
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<TestContent_CustomProperties>();
+        });
+        var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+            .ConfigureAwait(false);
+
+        // ACT
+        var request = new LoadContentRequest {Path = "/Root/Content"};
+        var content = await repository.LoadContentAsync<TestContent_CustomProperties>(request, CancellationToken.None);
+
+        // ASSERT
+        Assert.IsNotNull(content.Field1);
+        Assert.AreEqual("value1", content.Field1.Property1);
+        Assert.AreEqual(42, content.Field1.Property2);
+        Assert.IsNotNull(content.Field2);
+        // Field2 is instantiated but not filled because the response data is not compatible with it.
+        Assert.AreEqual(null, content.Field2.Property1);
+        Assert.AreEqual(0, content.Field2.Property2);
+    }
+
     /* ====================================================================== TOOLS */
 
     private static IRepositoryCollection GetRepositoryCollection(Action<IServiceCollection>? addServices = null)
