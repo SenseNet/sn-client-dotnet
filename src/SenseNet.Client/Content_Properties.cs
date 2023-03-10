@@ -1,5 +1,4 @@
-﻿using AngleSharp.Dom;
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -9,11 +8,11 @@ using Newtonsoft.Json;
 
 namespace SenseNet.Client;
 
-[AttributeUsage(AttributeTargets.Property)]
-public class ReferenceFieldAttribute : Attribute
-{
+//[AttributeUsage(AttributeTargets.Property)]
+//public class ReferenceFieldAttribute : Attribute
+//{
 
-}
+//}
 
 public class Binary
 {
@@ -38,38 +37,57 @@ public partial class Content
                 continue;
             if ((jsonValue is JObject) && jsonValue["__deferred"] != null)
                 continue;
+            var propertyType = property.PropertyType;
 
-            if (property.PropertyType == typeof(int))
+            if (propertyType == typeof(int) || propertyType == typeof(int?))
             {
                 if (jsonValue is JValue jValue)
                     property.SetMethod.Invoke(this, new object[] { jValue.Value<int>() });
                 continue;
             }
-            if (property.PropertyType == typeof(bool))
+            if (propertyType == typeof(bool) || propertyType == typeof(bool?))
             {
                 if (jsonValue is JValue jValue)
                     property.SetMethod.Invoke(this, new object[] { jValue.Value<bool>() });
                 continue;
             }
-            if (property.PropertyType == typeof(bool?))
-            {
-                if (jsonValue is JValue jValue)
-                    property.SetMethod.Invoke(this, new object[] { jValue.Value<bool>() });
-                continue;
-            }
-            if (property.PropertyType == typeof(DateTime))
+            if (propertyType == typeof(DateTime) || propertyType == typeof(DateTime?))
             {
                 if (jsonValue is JValue jValue)
                     property.SetMethod.Invoke(this, new object[] { jValue.Value<DateTime>() });
                 continue;
             }
-            if (property.PropertyType == typeof(DateTime?))
+            if (propertyType == typeof(long) || propertyType == typeof(long?))
             {
                 if (jsonValue is JValue jValue)
-                    property.SetMethod.Invoke(this, new object[] { jValue.Value<DateTime>() });
+                    property.SetMethod.Invoke(this, new object[] { jValue.Value<long>() });
                 continue;
             }
-            if (property.PropertyType == typeof(string))
+            if (propertyType == typeof(decimal) || propertyType == typeof(decimal?))
+            {
+                if (jsonValue is JValue jValue)
+                    property.SetMethod.Invoke(this, new object[] { jValue.Value<decimal>() });
+                continue;
+            }
+            if (propertyType == typeof(double) || propertyType == typeof(double?))
+            {
+                if (jsonValue is JValue jValue)
+                    property.SetMethod.Invoke(this, new object[] { jValue.Value<double>() });
+                continue;
+            }
+            if (propertyType == typeof(float) || propertyType == typeof(float?))
+            {
+                if (jsonValue is JValue jValue)
+                    property.SetMethod.Invoke(this, new object[] { jValue.Value<float>() });
+                continue;
+            }
+            if (propertyType == typeof(Binary))
+            {
+                if (jsonValue is JObject jObject)
+                    property.SetMethod.Invoke(this, new object[] { jObject["__mediaresource"].ToObject<Binary>() });
+                continue;
+            }
+            if (propertyType == typeof(string))
             {
                 if (jsonValue is JValue jValue)
                     property.SetMethod.Invoke(this, new object[] { jValue.Value<string>() });
@@ -77,7 +95,8 @@ public partial class Content
                     property.SetMethod.Invoke(this, new object[] { jArray[0].Value<string>() });
                 continue;
             }
-            if (property.PropertyType == typeof(string[]))
+
+            if (propertyType == typeof(string[]))
             {
                 if (jsonValue is JValue jValue)
                     property.SetMethod.Invoke(this, new object[] {new[] {jValue.Value<string>()}});
@@ -90,7 +109,7 @@ public partial class Content
                 }
                 continue;
             }
-            if (property.PropertyType == typeof(int[]))
+            if (propertyType == typeof(int[]))
             {
                 if (jsonValue is JValue jValue)
                     property.SetMethod.Invoke(this, new object[] { new[] { jValue.Value<int>() } });
@@ -103,80 +122,88 @@ public partial class Content
                 }
                 continue;
             }
+            //UNDONE: Are there more supported int and string enumerable types?
 
-            if (property.PropertyType == typeof(long) || property.PropertyType == typeof(long?))
-            {
-                if (jsonValue is JValue jValue)
-                    property.SetMethod.Invoke(this, new object[] { jValue.Value<long>() });
-                continue;
-            }
-            if (property.PropertyType == typeof(decimal) || property.PropertyType == typeof(decimal?))
-            {
-                if (jsonValue is JValue jValue)
-                    property.SetMethod.Invoke(this, new object[] { jValue.Value<decimal>() });
-                continue;
-            }
-            if (property.PropertyType == typeof(double) || property.PropertyType == typeof(double?))
-            {
-                if (jsonValue is JValue jValue)
-                    property.SetMethod.Invoke(this, new object[] { jValue.Value<double>() });
-                continue;
-            }
-            if (property.PropertyType == typeof(float) || property.PropertyType == typeof(float?))
-            {
-                if (jsonValue is JValue jValue)
-                    property.SetMethod.Invoke(this, new object[] { jValue.Value<float>() });
-                continue;
-            }
-            if (property.PropertyType == typeof(Binary))
-            {
-                if (jsonValue is JObject jObject)
-                    property.SetMethod.Invoke(this, new object[] { jObject["__mediaresource"].ToObject<Binary>() });
-                continue;
-            }
 
-            //continue;
+            //if (property.GetCustomAttribute<ReferenceFieldAttribute>() == null)
 
-            if (property.GetCustomAttribute<ReferenceFieldAttribute>() == null)
-    continue;
-            var isEnumerable = IsEnumerableType(property.PropertyType, out var itemType);
-            if (isEnumerable)
+            if (typeof(Content).IsAssignableFrom(propertyType))
             {
-                var referredContent = GetReferences(jsonValue, property.PropertyType, itemType);
+                // Single reference
+                var referredContent = GetReference(jsonValue, propertyType);
                 property.SetMethod.Invoke(this, new[] { referredContent });
+                continue;
             }
-            else
+
+            if (propertyType.IsArray)
             {
-                var referredContent = GetReference(jsonValue, property.PropertyType);
-                property.SetMethod.Invoke(this, new[] { referredContent });
+                // Multi reference to a content array
+                var itemType = propertyType.GetElementType();
+                if (typeof(Content).IsAssignableFrom(itemType))
+                {
+                    var referredContents = GetMultiReferenceArray(jsonValue, itemType);
+                    property.SetMethod.Invoke(this, new[] { referredContents });
+                    continue;
+                }
             }
+
+            if (propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+            {
+                // Multi reference to an IEnumerable<?>
+                var itemType = propertyType.GetGenericArguments().First();
+                if (typeof(Content).IsAssignableFrom(itemType))
+                {
+                    var referredContents = GetMultiReferenceArray(jsonValue, itemType);
+                    property.SetMethod.Invoke(this, new[] { referredContents });
+                    continue;
+                }
+            }
+
+            if (propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() == typeof(List<>))
+            {
+                // Multi reference to a List<?>
+                var itemType = propertyType.GetGenericArguments().First();
+                if (typeof(Content).IsAssignableFrom(itemType))
+                {
+                    var referredContents = GetMultiReferenceList(jsonValue, itemType);
+                    property.SetMethod.Invoke(this, new[] { referredContents });
+                    continue;
+                }
+            }
+
+            // ?? property.SetMethod.Invoke(this, new[] {((JObject) jsonValue).ToObject(propertyType)});
+
+            throw new NotSupportedException("## unknown type");
         }
     }
 
-    private bool IsEnumerableType(Type type, out Type itemType)
+    private Array GetMultiReferenceArray(object jsonValue, Type itemType)
     {
-        // type.GetGenericTypeDefinition() == typeof(IEnumerable<>)
+        Content[] referredContents = GetReferences(jsonValue, itemType);
+        if (referredContents == null)
+            return null;
 
-        itemType = null;
+        var array = Array.CreateInstance(itemType, referredContents.Length);
 
-        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IEnumerable<>))
-        {
-            // IEnumerable<>
-            itemType = type.GetGenericArguments().First();
-            return true;
-        }
+        for (int i = 0; i < referredContents.Length; i++)
+            array.SetValue(referredContents[i], i);
 
-        var interfaceType = type
-            .GetInterfaces()
-            .FirstOrDefault(t => t.IsGenericType && t.GetGenericTypeDefinition() == typeof(IEnumerable));
-        if (interfaceType != null)
-        {
-            // List<> ??
-            itemType = interfaceType.GetGenericArguments().First();
-            return true;
-        }
+        return array;
+    }
+    private IList GetMultiReferenceList(object jsonValue, Type itemType)
+    {
+        Content[] referredContents = GetReferences(jsonValue, itemType);
+        if (referredContents == null)
+            return null;
 
-        return false;
+        var listType = typeof(List<>);
+        var constructedListType = listType.MakeGenericType(itemType);
+        var list = (IList)Activator.CreateInstance(constructedListType);
+
+        foreach (var content in referredContents)
+            list.Add(content);
+
+        return list;
     }
 
     private Content GetReference(object input, Type propertyType)
@@ -202,7 +229,7 @@ public partial class Content
         }
         throw new NotSupportedException($"GetReference failed. Object type {input.GetType().FullName} is not supported.");
     }
-    private object GetReferences(object input, Type propertyType, Type itemType)
+    private Content[] GetReferences(object input, Type itemType)
     {
         if (input == null)
             return null;

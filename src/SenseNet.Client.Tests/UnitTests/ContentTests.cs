@@ -637,12 +637,12 @@ public class ContentTests
     {
         public TestContentForReferences(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }
 
-        [ReferenceField]
         public MyContent? Manager { get; set; }
-        [ReferenceField]
         public MyContent2? Owner { get; set; }
-        [ReferenceField]
         public IEnumerable<MyContent3>? AllowedChildTypes { get; set; }
+
+        public MyContent3[]? Reference_Array { get; set; }
+        public List<MyContent3>? Reference_List { get; set; }
     }
 
     [TestMethod]
@@ -746,52 +746,161 @@ public class ContentTests
         Assert.IsNull(content.Manager);
         Assert.IsNotNull(content.Owner);
     }
-//    [TestMethod]
-//    public async Task Content_T_References_Expanded_Multi()
-//    {
-//        // ALIGN
-//        var restCaller = Substitute.For<IRestCaller>();
-//        restCaller
-//            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-//            .Returns(Task.FromResult(@"{ ""d"": { ""Name"": ""Content"", ""Type"": ""Workspace"",
-//    // multi reference
-//    ""AllowedChildTypes"": [
-//      { ""Path"": ""/Root/System/Schema/ContentTypes/GenericContent/Folder"" },
-//      { ""Path"": ""/Root/System/Schema/ContentTypes/GenericContent/Folder/SystemFolder"" },
-//      { ""Path"": ""/Root/System/Schema/ContentTypes/GenericContent/File"" }
-//    ]
-//  }
-//}"));
+    [TestMethod]
+    public async Task Content_T_References_Expanded_Multi_IEnumerable()
+    {
+        // ALIGN
+        var restCaller = Substitute.For<IRestCaller>();
+        restCaller
+            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(@"{ ""d"": { ""Name"": ""Content"", ""Type"": ""Workspace"",
+    // multi reference
+    ""AllowedChildTypes"": [
+      { ""Path"": ""/Root/System/Schema/ContentTypes/GenericContent/Folder"" },
+      { ""Path"": ""/Root/System/Schema/ContentTypes/GenericContent/Folder/SystemFolder"" },
+      { ""Path"": ""/Root/System/Schema/ContentTypes/GenericContent/File"" }
+    ]
+  }
+}"));
 
-//        var repositories = GetRepositoryCollection(services =>
-//        {
-//            services.AddSingleton(restCaller);
-//            services.RegisterGlobalContentType<MyContent>();
-//            services.RegisterGlobalContentType<MyContent2>();
-//            services.RegisterGlobalContentType<MyContent3>();
-//            services.RegisterGlobalContentType<TestContentForReferences>("Workspace");
-//        });
-//        var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
-//            .ConfigureAwait(false);
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<MyContent>();
+            services.RegisterGlobalContentType<MyContent2>();
+            services.RegisterGlobalContentType<MyContent3>();
+            services.RegisterGlobalContentType<TestContentForReferences>("Workspace");
+        });
+        var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+            .ConfigureAwait(false);
 
-//        // ACT
-//        var request = new LoadContentRequest()
-//        {
-//            Path = "/Root/Content",
-//            Expand = new[] { "Owner", "Manager", "AllowedChildTypes" },
-//            Select = new[] { "Name", "Type", "AllowedChildTypes/Path" }
-//        };
-//        var content = await repository.LoadContentAsync<TestContentForReferences>(request, CancellationToken.None);
+        // ACT
+        var request = new LoadContentRequest()
+        {
+            Path = "/Root/Content",
+            Expand = new[] { "AllowedChildTypes" },
+            Select = new[] { "Name", "Type", "AllowedChildTypes/Path" }
+        };
+        var content = await repository.LoadContentAsync<TestContentForReferences>(request, CancellationToken.None);
 
-//        // ASSERT
-//        var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
-//        Assert.IsNotNull(requestedUri);
-//        Assert.AreEqual("/OData.svc/Root('Content')?metadata=no&$expand=AllowedChildTypes&$select=Name,Type,AllowedChildTypes/Path", requestedUri.PathAndQuery);
+        // ASSERT
+        var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
+        Assert.IsNotNull(requestedUri);
+        Assert.AreEqual("/OData.svc/Root('Content')?metadata=no&$expand=AllowedChildTypes&$select=Name,Type,AllowedChildTypes/Path", requestedUri.PathAndQuery);
 
-//        Assert.IsNull(content.Manager);
-//        Assert.IsNotNull(content.Owner);
-//        Assert.IsNotNull(content.AllowedChildTypes);
-//    }
+        Assert.IsNull(content.Manager);
+        Assert.IsNull(content.Owner);
+        Assert.IsNotNull(content.AllowedChildTypes);
+        var referredItems = content.AllowedChildTypes.ToArray();
+        Assert.IsTrue(referredItems.All(x => x is MyContent3));
+
+        Assert.AreEqual("/Root/System/Schema/ContentTypes/GenericContent/Folder", referredItems[0].Path);
+        Assert.AreEqual("/Root/System/Schema/ContentTypes/GenericContent/Folder/SystemFolder", referredItems[1].Path);
+        Assert.AreEqual("/Root/System/Schema/ContentTypes/GenericContent/File", referredItems[2].Path);
+    }
+    [TestMethod]
+    public async Task Content_T_References_Expanded_Multi_Array()
+    {
+        // ALIGN
+        var restCaller = Substitute.For<IRestCaller>();
+        restCaller
+            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(@"{ ""d"": { ""Name"": ""Content"", ""Type"": ""Workspace"",
+    // multi reference
+    ""Reference_Array"": [
+      { ""Path"": ""/Root/Path1"" },
+      { ""Path"": ""/Root/Path2"" },
+      { ""Path"": ""/Root/Path3"" }
+    ]
+  }
+}"));
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<MyContent>();
+            services.RegisterGlobalContentType<MyContent2>();
+            services.RegisterGlobalContentType<MyContent3>();
+            services.RegisterGlobalContentType<TestContentForReferences>("Workspace");
+        });
+        var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+            .ConfigureAwait(false);
+
+        // ACT
+        var request = new LoadContentRequest()
+        {
+            Path = "/Root/Content",
+            Expand = new[] { "AllowedChildTypes" },
+            Select = new[] { "Name", "Type", "AllowedChildTypes/Path" }
+        };
+        var content = await repository.LoadContentAsync<TestContentForReferences>(request, CancellationToken.None);
+
+        // ASSERT
+        var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
+        Assert.IsNotNull(requestedUri);
+        Assert.AreEqual("/OData.svc/Root('Content')?metadata=no&$expand=AllowedChildTypes&$select=Name,Type,AllowedChildTypes/Path", requestedUri.PathAndQuery);
+
+        Assert.IsNull(content.Manager);
+        Assert.IsNull(content.Owner);
+        Assert.IsNotNull(content.Reference_Array);
+        var referredItems = content.Reference_Array;
+        Assert.IsTrue(referredItems.All(x => x is MyContent3));
+        Assert.AreEqual("/Root/Path1", referredItems[0].Path);
+        Assert.AreEqual("/Root/Path2", referredItems[1].Path);
+        Assert.AreEqual("/Root/Path3", referredItems[2].Path);
+    }
+    [TestMethod]
+    public async Task Content_T_References_Expanded_Multi_List()
+    {
+        // ALIGN
+        var restCaller = Substitute.For<IRestCaller>();
+        restCaller
+            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(@"{ ""d"": { ""Name"": ""Content"", ""Type"": ""Workspace"",
+    // multi reference
+    ""Reference_List"": [
+      { ""Path"": ""/Root/Path1"" },
+      { ""Path"": ""/Root/Path2"" },
+      { ""Path"": ""/Root/Path3"" }
+    ]
+  }
+}"));
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<MyContent>();
+            services.RegisterGlobalContentType<MyContent2>();
+            services.RegisterGlobalContentType<MyContent3>();
+            services.RegisterGlobalContentType<TestContentForReferences>("Workspace");
+        });
+        var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+            .ConfigureAwait(false);
+
+        // ACT
+        var request = new LoadContentRequest()
+        {
+            Path = "/Root/Content",
+            Expand = new[] { "AllowedChildTypes" },
+            Select = new[] { "Name", "Type", "AllowedChildTypes/Path" }
+        };
+        var content = await repository.LoadContentAsync<TestContentForReferences>(request, CancellationToken.None);
+
+        // ASSERT
+        var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
+        Assert.IsNotNull(requestedUri);
+        Assert.AreEqual("/OData.svc/Root('Content')?metadata=no&$expand=AllowedChildTypes&$select=Name,Type,AllowedChildTypes/Path", requestedUri.PathAndQuery);
+
+        Assert.IsNull(content.Manager);
+        Assert.IsNull(content.Owner);
+        Assert.IsNotNull(content.Reference_List);
+        var referredItems = content.Reference_List;
+        Assert.IsTrue(referredItems.All(x => x is MyContent3));
+
+        Assert.AreEqual("/Root/Path1", referredItems[0].Path);
+        Assert.AreEqual("/Root/Path2", referredItems[1].Path);
+        Assert.AreEqual("/Root/Path3", referredItems[2].Path);
+    }
 
     /* ====================================================================== TOOLS */
 
