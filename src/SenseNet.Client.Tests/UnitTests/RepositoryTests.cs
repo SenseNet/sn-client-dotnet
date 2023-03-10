@@ -1270,7 +1270,7 @@ namespace SenseNet.Client.Tests.UnitTests
                 .ConfigureAwait(false);
 
             // ACT
-            var content = repository.CreateContent<MyContent>("/Root/Content", null, "MyContent-1");
+            var content = repository.CreateContent<MyContent> ("/Root/Content", null, "MyContent-1");
             await content.SaveAsync().ConfigureAwait(false);
 
             // ASSERT
@@ -1281,6 +1281,7 @@ namespace SenseNet.Client.Tests.UnitTests
             Assert.AreEqual("MyContent-1", data.Name);
             Assert.AreEqual("MyContent", data.__ContentType);
         }
+
         [TestMethod]
         public async Task Repository_T_CreateContentAndSave_LocalAndDifferentName()
         {
@@ -1353,7 +1354,7 @@ namespace SenseNet.Client.Tests.UnitTests
             Assert.AreEqual("MyContent-1", data.Name);
             Assert.AreEqual("MyContent_Two", data.__ContentType);
         }
-
+        
         /* =================================================================== CONTENT REGISTRATION AND CREATION EXAMPLES */
 
         [TestMethod]

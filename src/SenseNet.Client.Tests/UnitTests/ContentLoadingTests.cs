@@ -24,7 +24,7 @@ using Newtonsoft.Json.Linq;
 namespace SenseNet.Client.Tests.UnitTests;
 
 [TestClass]
-public class ContentTests
+public class ContentLoadingTests
 {
     /* =================================================================== GENERAL PROPERTIES */
 
@@ -918,6 +918,7 @@ public class ContentTests
         public CustomType1 Field2 { get; set; }
         public Dictionary<string, int> Field3 { get; set; }
 
+        //UNDONE: Add parameter: string propertyName
         protected override object ConvertValue(JToken jsonValue, Type targetType)
         {
             // Can convert string to Dictionary<string, int>
@@ -938,6 +939,7 @@ public class ContentTests
 
             return base.ConvertValue(jsonValue, targetType);
         }
+        //UNDONE: Convert back custom values.
     }
     [TestMethod]
     public async Task Content_T_Properties_Custom()

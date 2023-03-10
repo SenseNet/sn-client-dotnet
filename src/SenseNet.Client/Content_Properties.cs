@@ -191,7 +191,7 @@ public partial class Content
         Content[] referredContents = GetReferences(jsonValue, itemType);
         if (referredContents == null)
             return null;
-
+        
         var array = Array.CreateInstance(itemType, referredContents.Length);
 
         for (int i = 0; i < referredContents.Length; i++)
