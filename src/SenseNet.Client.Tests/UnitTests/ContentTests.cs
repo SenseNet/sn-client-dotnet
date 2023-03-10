@@ -19,6 +19,7 @@ using System.Net.Http;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Text;
+using Newtonsoft.Json.Linq;
 
 namespace SenseNet.Client.Tests.UnitTests;
 
@@ -915,6 +916,28 @@ public class ContentTests
 
         public CustomType1 Field1 { get; set; }
         public CustomType1 Field2 { get; set; }
+        public Dictionary<string, int> Field3 { get; set; }
+
+        protected override object ConvertValue(JToken jsonValue, Type targetType)
+        {
+            // Can convert string to Dictionary<string, int>
+            if (targetType == typeof(Dictionary<string, int>))
+            {
+                var stringValue = jsonValue.Value<string>();
+                if (stringValue != null)
+                {
+                    return new Dictionary<string, int>(stringValue.Split(',').Select(x =>
+                    {
+                        var split = x.Split(':');
+                        var name = split[0].Trim();
+                        var value = int.Parse(split[1]);
+                        return new KeyValuePair<string, int>(name, value);
+                    }));
+                }
+            }
+
+            return base.ConvertValue(jsonValue, targetType);
+        }
     }
     [TestMethod]
     public async Task Content_T_Properties_Custom()
@@ -934,6 +957,7 @@ public class ContentTests
       ""property3"": ""value3"",
       ""property4"": 44,
     },
+    ""Field3"": ""Name1:111,Name2:222,Name3:333""
   }
 }"));
 
@@ -957,6 +981,11 @@ public class ContentTests
         // Field2 is instantiated but not filled because the response data is not compatible with it.
         Assert.AreEqual(null, content.Field2.Property1);
         Assert.AreEqual(0, content.Field2.Property2);
+        Assert.IsNotNull(content.Field3);
+        Assert.AreEqual(3, content.Field3.Count);
+        Assert.AreEqual(111, content.Field3["Name1"]);
+        Assert.AreEqual(222, content.Field3["Name2"]);
+        Assert.AreEqual(333, content.Field3["Name3"]);
     }
 
     /* ====================================================================== TOOLS */

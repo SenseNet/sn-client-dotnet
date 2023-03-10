@@ -177,8 +177,13 @@ public partial class Content
                 continue;
             }
 
-            throw new NotSupportedException("## unknown type");
+            property.SetMethod.Invoke(this, new[] { this.ConvertValue(jsonValue, propertyType) });
         }
+    }
+
+    protected virtual object ConvertValue(JToken jsonValue, Type targetType)
+    {
+        return null;
     }
 
     private Array GetMultiReferenceArray(object jsonValue, Type itemType)
