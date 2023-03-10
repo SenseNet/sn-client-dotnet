@@ -106,6 +106,7 @@ internal class ServerContextFactory : IServerContextFactory
         var server = new ServerContext
         {
             Url = options.Url.AppendSchema(),
+            Logger = _logger,
             RegisteredContentTypes = options.RegisteredContentTypes
         };
 

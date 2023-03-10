@@ -18,6 +18,9 @@
     <Authors>kavics,aniko,lajos,tusmester</Authors>
     <Copyright>Copyright © Sense/Net Inc.</Copyright>
     <LangVersion>latest</LangVersion>
+	  <PublishRepositoryUrl>true</PublishRepositoryUrl>
+	  <IncludeSymbols>true</IncludeSymbols>
+	  <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -30,6 +33,10 @@
     <PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="3.1.7" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.1.7" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
     <PackageReference Include="SenseNet.Tools" Version="3.2.8" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.15.1" />
