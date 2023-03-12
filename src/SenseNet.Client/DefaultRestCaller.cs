@@ -19,4 +19,14 @@ public class DefaultRestCaller : IRestCaller
     {
         return RESTCaller.PostContentAsync(parentPath, postData, server);
     }
+
+    public Task<dynamic> PatchContentAsync(int contentId, object postData, ServerContext server, CancellationToken cancel)
+    {
+        return RESTCaller.PatchContentAsync(contentId, postData, server);
+    }
+
+    public Task<dynamic> PatchContentAsync(string path, object postData, ServerContext server, CancellationToken cancel)
+    {
+        return RESTCaller.PatchContentAsync(path, postData, server);
+    }
 }

@@ -20,6 +20,9 @@ using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Newtonsoft.Json.Linq;
+// ReSharper disable InconsistentNaming
+// ReSharper disable ClassNeverInstantiated.Local
+// ReSharper disable UnusedAutoPropertyAccessor.Local
 
 namespace SenseNet.Client.Tests.UnitTests;
 
@@ -32,26 +35,29 @@ public class ContentLoadingTests
     {
         public TestGenericContent(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }
 
-        public int Id { get; set; }
-        public int ParentId { get; set; }
+        // --- Implemented in base class
+        //public int Id { get; set; }
+        //public int ParentId { get; set; }
+        //public string Name { get; set; }
+        //public string Path { get; set; }
+        // --- Irrelevant readonly properties
+        //public string TypeIs { get; set; }
+        //public string InTree { get; set; }
+        //public string InFolder { get; set; }
+        // ---
         public int OwnerId { get; set; }
         public Content Owner { get; set; }
         public int VersionId { get; set; }
-        public string Type { get; set; } // NodeType
-        //public string TypeIs { get; set; } // NodeType
-        public string Icon { get; set; } // ShortText
-        public string Name { get; set; } // ShortText
+        public string Type { get; set; }
+        public string Icon { get; set; }
         public int CreatedById { get; set; }
         public int ModifiedById { get; set; }
-        public string Version { get; set; } // Version
-        public string Path { get; set; } // ShortText
+        public string Version { get; set; }
         public int Depth { get; set; }
-        //public string InTree { get; set; } // ShortText
-        //public string InFolder { get; set; } // ShortText
         public bool IsSystemContent { get; set; }
         public bool IsFolder { get; set; }
-        public string DisplayName { get; set; } // ShortText
-        public string Description { get; set; } // RichText
+        public string DisplayName { get; set; }
+        public string Description { get; set; }
         public bool? Hidden { get; set; }
         public int Index { get; set; }
         public bool? EnableLifespan { get; set; }
@@ -59,8 +65,8 @@ public class ContentLoadingTests
         public DateTime? ValidTill { get; set; }
         public Content[] AllowedChildTypes { get; set; }
         public Content[] EffectiveAllowedChildTypes { get; set; }
-        public string VersioningMode { get; set; } // VersioningMode
-        public string InheritableVersioningMode { get; set; } // InheritableVersioningMode
+        public string VersioningMode { get; set; }
+        public string InheritableVersioningMode { get; set; }
         public Content CreatedBy { get; set; }
         public Content VersionCreatedBy { get; set; }
         public DateTime? CreationDate { get; set; }
@@ -69,39 +75,39 @@ public class ContentLoadingTests
         public Content VersionModifiedBy { get; set; }
         public DateTime? ModificationDate { get; set; }
         public DateTime? VersionModificationDate { get; set; }
-        public string ApprovingMode { get; set; } // ApprovingMode
-        public string InheritableApprovingMode { get; set; } // InheritableApprovingMode
+        public string ApprovingMode { get; set; }
+        public string InheritableApprovingMode { get; set; }
         public bool? Locked { get; set; }
         public Content CheckedOutTo { get; set; }
         public bool? TrashDisabled { get; set; }
-        public string SavingState { get; set; } // Choice
-        public string ExtensionData { get; set; } // LongText
+        public string SavingState { get; set; }
+        public string ExtensionData { get; set; }
         public Content BrowseApplication { get; set; }
         public bool? Approvable { get; set; }
         public bool? IsTaggable { get; set; }
-        public string Tags { get; set; } // LongText
+        public string Tags { get; set; }
         public bool? IsRateable { get; set; }
-        public string RateStr { get; set; } // ShortText
-        public string RateAvg { get; set; } // Number
+        public string RateStr { get; set; }
+        public string RateAvg { get; set; }
         public int RateCount { get; set; }
-        public string Rate { get; set; } // Rating
+        public string Rate { get; set; }
         public bool? Publishable { get; set; }
         public Content[] Versions { get; set; }
-        public string CheckInComments { get; set; } // LongText
-        public string RejectReason { get; set; } // LongText
+        public string CheckInComments { get; set; }
+        public string RejectReason { get; set; }
         public Content Workspace { get; set; }
-        public string BrowseUrl { get; set; } // ShortText
-        public string Sharing { get; set; } // Sharing
-        public string SharedWith { get; set; } // Sharing
-        public string SharedBy { get; set; } // Sharing
-        public string SharingMode { get; set; } // Sharing
-        public string SharingLevel { get; set; } // Sharing
+        public string BrowseUrl { get; set; }
+        public string Sharing { get; set; }
+        public string SharedWith { get; set; }
+        public string SharedBy { get; set; }
+        public string SharingMode { get; set; }
+        public string SharingLevel { get; set; }
     }
     private class TestFolder : TestGenericContent
     {
         public TestFolder(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }
         
-        public string PreviewEnabled { get; set; } // Choice
+        public string PreviewEnabled { get; set; }
     }
     private class TestWorkspace : TestFolder
     {
@@ -336,7 +342,7 @@ public class ContentLoadingTests
         Assert.AreEqual("0", content.ApprovingMode); // ApprovingMode
         Assert.AreEqual("0", content.InheritableApprovingMode); // InheritableApprovingMode
         Assert.AreEqual(false, content.Locked); // Boolean
-        //Assert.AreEqual(null, content.CheckedOutTo); // Reference
+        Assert.AreEqual(null, content.CheckedOutTo); // Reference
         Assert.AreEqual(false, content.TrashDisabled); // Boolean
         Assert.AreEqual("0", content.SavingState); // Choice
         Assert.AreEqual(null, content.ExtensionData); // LongText
@@ -914,32 +920,36 @@ public class ContentLoadingTests
     {
         public TestContent_CustomProperties(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }
 
-        public CustomType1 Field1 { get; set; }
-        public CustomType1 Field2 { get; set; }
-        public Dictionary<string, int> Field3 { get; set; }
+        public CustomType1 Field_CustomType1 { get; set; }
+        public CustomType1 Field_TypeMismatch { get; set; }
+        public bool Field_StringToBool { get; set; }
+        public Dictionary<string, int> Field_StringToDictionary { get; set; }
 
-        //UNDONE: Add parameter: string propertyName
-        protected override object ConvertValue(JToken jsonValue, Type targetType)
+        protected override bool TryConvertToProperty(string propertyName, JToken jsonValue, out object propertyValue)
         {
-            // Can convert string to Dictionary<string, int>
-            if (targetType == typeof(Dictionary<string, int>))
+            if (propertyName == nameof(Field_StringToBool))
+            {
+                var stringValue = jsonValue.Value<string>();
+                propertyValue = !string.IsNullOrEmpty(stringValue) && "0" != stringValue;
+                return true;
+            }
+            if (propertyName == nameof(Field_StringToDictionary))
             {
                 var stringValue = jsonValue.Value<string>();
                 if (stringValue != null)
                 {
-                    return new Dictionary<string, int>(stringValue.Split(',').Select(x =>
+                    propertyValue = new Dictionary<string, int>(stringValue.Split(',').Select(x =>
                     {
                         var split = x.Split(':');
                         var name = split[0].Trim();
                         var value = int.Parse(split[1]);
                         return new KeyValuePair<string, int>(name, value);
                     }));
+                    return true;
                 }
             }
-
-            return base.ConvertValue(jsonValue, targetType);
+            return base.TryConvertToProperty(propertyName, jsonValue, out propertyValue);
         }
-        //UNDONE: Convert back custom values.
     }
     [TestMethod]
     public async Task Content_T_Properties_Custom()
@@ -951,15 +961,16 @@ public class ContentLoadingTests
             .Returns(Task.FromResult(@"{
   ""d"": {
     ""Id"": 999543,
-    ""Field1"": {
+    ""Field_CustomType1"": {
       ""property1"": ""value1"",
       ""property2"": 42,
     },
-    ""Field2"": {
+    ""Field_TypeMismatch"": {
       ""property3"": ""value3"",
       ""property4"": 44,
     },
-    ""Field3"": ""Name1:111,Name2:222,Name3:333""
+    ""Field_StringToBool"": ""1"",
+    ""Field_StringToDictionary"": ""Name1:111,Name2:222,Name3:333""
   }
 }"));
 
@@ -976,18 +987,22 @@ public class ContentLoadingTests
         var content = await repository.LoadContentAsync<TestContent_CustomProperties>(request, CancellationToken.None);
 
         // ASSERT
-        Assert.IsNotNull(content.Field1);
-        Assert.AreEqual("value1", content.Field1.Property1);
-        Assert.AreEqual(42, content.Field1.Property2);
-        Assert.IsNotNull(content.Field2);
-        // Field2 is instantiated but not filled because the response data is not compatible with it.
-        Assert.AreEqual(null, content.Field2.Property1);
-        Assert.AreEqual(0, content.Field2.Property2);
-        Assert.IsNotNull(content.Field3);
-        Assert.AreEqual(3, content.Field3.Count);
-        Assert.AreEqual(111, content.Field3["Name1"]);
-        Assert.AreEqual(222, content.Field3["Name2"]);
-        Assert.AreEqual(333, content.Field3["Name3"]);
+        // Field_CustomType1 is converted automatically
+        Assert.IsNotNull(content.Field_CustomType1);
+        Assert.AreEqual("value1", content.Field_CustomType1.Property1);
+        Assert.AreEqual(42, content.Field_CustomType1.Property2);
+        Assert.IsNotNull(content.Field_TypeMismatch);
+        // Field_TypeMismatch is instantiated but not filled because the response data is not compatible with it.
+        Assert.AreEqual(null, content.Field_TypeMismatch.Property1);
+        Assert.AreEqual(0, content.Field_TypeMismatch.Property2);
+        Assert.IsNotNull(content.Field_StringToDictionary);
+        // Field_StringToBool is converted by the overridden ConvertToProperty method.
+        Assert.AreEqual(true, content.Field_StringToBool);
+        // Field_StringToDictionary is converted by the overridden ConvertToProperty method.
+        Assert.AreEqual(3, content.Field_StringToDictionary.Count);
+        Assert.AreEqual(111, content.Field_StringToDictionary["Name1"]);
+        Assert.AreEqual(222, content.Field_StringToDictionary["Name2"]);
+        Assert.AreEqual(333, content.Field_StringToDictionary["Name3"]);
     }
 
     /* ====================================================================== TOOLS */

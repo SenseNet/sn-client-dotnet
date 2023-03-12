@@ -33,6 +33,14 @@ public partial class Content
         foreach (var property in this.GetType().GetProperties())
         {
             var jsonValue = responseContent[property.Name];
+
+            if (TryConvertToProperty(property.Name, jsonValue, out object propertyValue))
+            {
+                //UNDONE: handle error: type mismatch in conversion.
+                property.SetMethod.Invoke(this, new[] { propertyValue });
+                continue;
+            }
+
             if (jsonValue == null)
                 continue;
             if ((jsonValue is JObject) && jsonValue["__deferred"] != null)
@@ -177,13 +185,21 @@ public partial class Content
                 continue;
             }
 
-            property.SetMethod.Invoke(this, new[] { this.ConvertValue(jsonValue, propertyType) });
+            //UNDONE: ? set default instead of throw exception.
+            throw new NotImplementedException("#1");
         }
     }
 
-    protected virtual object ConvertValue(JToken jsonValue, Type targetType)
+    protected virtual bool TryConvertToProperty(string propertyName, JToken jsonValue, out object propertyValue)
     {
-        return null;
+        propertyValue = null;
+        return false;
+    }
+    //UNDONE: Convert back custom values.
+    protected virtual bool TryConvertFromProperty(string propertyName, out object convertedValue)
+    {
+        convertedValue = null;
+        return false;
     }
 
     private Array GetMultiReferenceArray(object jsonValue, Type itemType)
@@ -260,6 +276,36 @@ public partial class Content
             return contents;
         }
         throw new NotSupportedException($"GetReferences failed. Object type {input.GetType().FullName} is not supported.");
+    }
+
+
+    private void ManagePostData(IDictionary<string, object> postData)
+    {
+        foreach (var property in this.GetType().GetProperties())
+        {
+            if (property.Name == "FieldNames")
+                continue;
+            if (property.Name == "Id")
+                continue;
+            if (property.Name == "Item")
+                continue;
+            if (property.Name == "Path")
+                continue;
+            if(property.Name == "ParentPath")
+                continue;
+            if (property.Name == "Repository")
+                continue;
+            if (property.Name == "Server")
+                continue;
+            if (property.Name == "ParentId")
+                continue;
+
+            var propertyValue = property.GetGetMethod().Invoke(this, null);
+            //UNDONE: Convert back custom values.
+
+
+            postData[property.Name] = propertyValue;
+        }
     }
 
 }

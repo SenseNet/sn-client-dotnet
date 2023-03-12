@@ -809,6 +809,9 @@ public partial class Content : DynamicObject
             }
         }
 
+        if (this.GetType() != typeof(Content))
+            ManagePostData(postData);
+
         dynamic responseContent;
         if (_restCaller == null)
         {
@@ -825,8 +828,8 @@ public partial class Content : DynamicObject
             //UNDONE: Use _restCaller
             responseContent = Existing
                 ? (this.Id > 0
-                    ? await RESTCaller.PatchContentAsync(this.Id, postData, Server).ConfigureAwait(false)
-                    : await RESTCaller.PatchContentAsync(this.Path, postData, Server).ConfigureAwait(false))
+                    ? await _restCaller.PatchContentAsync(this.Id, postData, Server, CancellationToken.None).ConfigureAwait(false)
+                    : await _restCaller.PatchContentAsync(this.Path, postData, Server, CancellationToken.None).ConfigureAwait(false))
                 : await _restCaller.PostContentAsync(this.ParentPath, postData, Server, CancellationToken.None).ConfigureAwait(false);
         }
 
