@@ -1,5 +1,4 @@
-﻿using System.Dynamic;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -17,8 +16,9 @@ public class ContentSavingTests
         public TestContent_A(IRestCaller restCaller, ILogger<TestContent_A> logger) : base(restCaller, logger) { }
         public int Index { get; set; }
     }
+
     [TestMethod]
-    public async Task Content_T_Save_Dynamic_AddProperty()
+    public async Task Content_T_SaveFirst_Dynamic_AddProperty()
     {
         var restCaller = Substitute.For<IRestCaller>();
         restCaller
@@ -53,7 +53,7 @@ public class ContentSavingTests
         Assert.AreEqual(9999, data.Index);
     }
     [TestMethod]
-    public async Task Content_T_Save_Custom_SetProperty()
+    public async Task Content_T_SaveFirst_Custom_SetProperty()
     {
         var restCaller = Substitute.For<IRestCaller>();
         restCaller
@@ -89,7 +89,7 @@ public class ContentSavingTests
         Assert.AreEqual(9998, (int)data.Index);
     }
     [TestMethod]
-    public async Task Content_T_Save_Custom_AddAndSetProperty()
+    public async Task Content_T_SaveFirst_Custom_AddAndSetProperty()
     {
         var restCaller = Substitute.For<IRestCaller>();
         restCaller
@@ -128,7 +128,60 @@ public class ContentSavingTests
     }
 
     [TestMethod]
-    public async Task Content_T_Update_Dynamic_ExistingProperty()
+    public async Task Content_T_BaseType_Update_1()
+    {
+        var fields = await UpdateBaseTypeTest(content =>
+        {
+            content.Index = 42;
+        });
+
+        // ASSERT-2
+        var names = string.Join(", ", fields.Keys.OrderBy(x => x));
+        Assert.AreEqual("Index, Name", names);
+        Assert.AreEqual(42, fields["Index"]);
+    }
+    [TestMethod]
+    public async Task Content_T_BaseType_Update_2()
+    {
+        var fields = await UpdateBaseTypeTest(content =>
+        {
+            content.Index = 42;
+        });
+
+        // ASSERT-2
+        var names = string.Join(", ", fields.Keys.OrderBy(x => x));
+        Assert.AreEqual("Index, Name", names);
+        Assert.AreEqual(42, fields["Index"]);
+    }
+    [TestMethod]
+    public async Task Content_T_BaseType_Update_3()
+    {
+        var fields = await UpdateBaseTypeTest(content =>
+        {
+            Assert.AreEqual("99", content.Index.ToString()); // Force read property
+            content["Index2"] = 43;
+        });
+
+        // ASSERT-2
+        var names = string.Join(", ", fields.Keys.OrderBy(x => x));
+        Assert.AreEqual("Index2, Name", names);
+        Assert.AreEqual(43, fields["Index2"]);
+    }
+    [TestMethod]
+    public async Task Content_T_BaseType_Update_4()
+    {
+        var fields = await UpdateBaseTypeTest(content =>
+        {
+            content.Index = 42;
+            content["Index2"] = 43;
+        });
+
+        // ASSERT-2
+        var names = string.Join(", ", fields.Keys.OrderBy(x => x));
+        Assert.AreEqual("Index, Index2, Name", names);
+        Assert.AreEqual(42, fields["Index"]);
+    }
+    private async Task<IDictionary<string, object>> UpdateBaseTypeTest(Action<dynamic> setProperties)
     {
         var restCaller = Substitute.For<IRestCaller>();
         restCaller
@@ -150,15 +203,14 @@ public class ContentSavingTests
 
         var repositories = GetRepositoryCollection(services =>
         {
-            services.RegisterGlobalContentType<TestContent_A>();
             services.AddSingleton(restCaller);
         });
         var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
             .ConfigureAwait(false);
 
         // ACT-1: Load
-        var request = new LoadContentRequest { ContentId = 999543, Select = new []{"Id", "Name", "Path", "Type", "Index"}};
-        dynamic content = await repository.LoadContentAsync<TestContent_A>(request, CancellationToken.None);
+        var request = new LoadContentRequest { ContentId = 999543, Select = new[] { "Id", "Name", "Path", "Type", "Index" } };
+        dynamic content = await repository.LoadContentAsync(request, CancellationToken.None);
 
         // ASSERT-1
         var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
@@ -171,7 +223,7 @@ public class ContentSavingTests
         Assert.AreEqual(99, ((JValue)content.Index).Value<int>());
 
         // ACT-2: Update a property and save
-        content.Index = 42;
+        setProperties(content);
         await content.SaveAsync();
 
         // ASSERT-2
@@ -182,10 +234,118 @@ public class ContentSavingTests
         var arguments = calls[1].GetArguments();
         Assert.AreEqual(999543, arguments[0]);
         dynamic data = arguments[1]!;
-        var fields = (IDictionary<string, object?>)data;
+        return data;
+    }
+
+    [TestMethod]
+    public async Task Content_T_StrongType_UpdateAsDictionary()
+    {
+        var fields = await UpdateStrongTypeTest<Content>(content =>
+        {
+            content["Index"] = 42;
+        });
+
+        // ASSERT-2
         var names = string.Join(", ", fields.Keys.OrderBy(x => x));
         Assert.AreEqual("Index, Name", names);
-        Assert.AreEqual(42, data.Index);
+        Assert.AreEqual(42, fields["Index"]);
+    }
+    [TestMethod]
+    public async Task Content_T_StrongType_UpdateAsWellKnownType()
+    {
+        var fields = await UpdateStrongTypeTest<TestContent_A>(content =>
+        {
+            content.Index = 42;
+        });
+
+        // ASSERT-2
+        var names = string.Join(", ", fields.Keys.OrderBy(x => x));
+        Assert.AreEqual("Index, Name", names);
+        Assert.AreEqual(42, fields["Index"]);
+    }
+    //UNDONE: Red test: expectation: strong property is not saved if not changed
+    //[TestMethod]
+    //public async Task Content_T_StrongType_UpdateUnknownProperty()
+    //{
+    //    var fields = await UpdateStrongTypeTest<TestContent_A>(content =>
+    //    {
+    //        content["Index2"] = 43;
+    //    });
+
+    //    // ASSERT (Strong property is not saved if not changed)
+    //    var names = string.Join(", ", fields.Keys.OrderBy(x => x));
+    //    Assert.AreEqual("Index2, Name", names);
+    //    Assert.AreEqual(43, fields["Index2"]);
+    //}
+    [TestMethod]
+    public async Task Content_T_StrongType_UpdateMixed()
+    {
+        var fields = await UpdateStrongTypeTest<TestContent_A>(content =>
+        {
+            content.Index = 42;
+            content["Index2"] = 43;
+        });
+
+        // ASSERT
+        var names = string.Join(", ", fields.Keys.OrderBy(x => x));
+        Assert.AreEqual("Index, Index2, Name", names);
+        Assert.AreEqual(42, fields["Index"]);
+    }
+    private async Task<IDictionary<string, object>> UpdateStrongTypeTest<T>(Action<T> setProperties) where T : Content
+    {
+        var restCaller = Substitute.For<IRestCaller>();
+        restCaller
+            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(@"{
+  ""d"": {
+    ""Id"": 999543,
+    ""Name"": ""MyContent"",
+    ""Path"": ""/Root/MyContent"",
+    ""Type"": ""Folder"",
+    ""Index"": 99
+  }
+}"));
+
+        restCaller
+            .PatchContentAsync(Arg.Any<int>(), Arg.Any<object>(), Arg.Any<ServerContext>(),
+                Arg.Any<CancellationToken>())
+            .Returns(new Content(null, null));
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.RegisterGlobalContentType<T>();
+            services.AddSingleton(restCaller);
+        });
+        var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+            .ConfigureAwait(false);
+
+        // ACT-1: Load
+        var request = new LoadContentRequest { ContentId = 999543, Select = new[] { "Id", "Name", "Path", "Type", "Index" } };
+        dynamic content = await repository.LoadContentAsync<T>(request, CancellationToken.None);
+
+        // ASSERT-1
+        var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
+        Assert.IsNotNull(requestedUri);
+        Assert.AreEqual("/OData.svc/content(999543)?metadata=no&$select=Id,Name,Path,Type,Index", requestedUri.PathAndQuery);
+
+        Assert.IsNotNull(content);
+        Assert.AreEqual("Folder", ((JValue)content.Type).Value<string>());
+        Assert.AreEqual("MyContent", ((JValue)content.Name).Value<string>());
+        Assert.AreEqual(99, ((JValue)content.Index).Value<int>());
+
+        // ACT-2: Update a property and save
+        setProperties(content);
+        await content.SaveAsync();
+
+        // ASSERT-2
+        var calls = restCaller.ReceivedCalls().ToArray();
+        Assert.IsNotNull(calls);
+        Assert.AreEqual(2, calls.Length);
+        Assert.AreEqual("PatchContentAsync", calls[1].GetMethodInfo().Name);
+        var arguments = calls[1].GetArguments();
+        Assert.AreEqual(999543, arguments[0]);
+        dynamic data = arguments[1]!;
+        return data;
     }
 
     /* ====================================================================== TOOLS */
