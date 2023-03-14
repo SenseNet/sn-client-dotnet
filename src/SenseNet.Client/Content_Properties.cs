@@ -8,12 +8,6 @@ using Newtonsoft.Json;
 
 namespace SenseNet.Client;
 
-//[AttributeUsage(AttributeTargets.Property)]
-//public class ReferenceFieldAttribute : Attribute
-//{
-
-//}
-
 public class Binary
 {
     [JsonProperty(PropertyName = "edit_media")]
