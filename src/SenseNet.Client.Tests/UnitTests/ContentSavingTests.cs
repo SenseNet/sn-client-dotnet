@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NSubstitute;
 using SenseNet.Extensions.DependencyInjection;
@@ -263,20 +264,19 @@ public class ContentSavingTests
         Assert.AreEqual("Index, Name", names);
         Assert.AreEqual(42, fields["Index"]);
     }
-    //UNDONE: Inactivated red test: expectation: strong property is not saved if not changed
-    //[TestMethod]
-    //public async Task Content_T_StronglyTyped_UpdateUnknownProperty()
-    //{
-    //    var fields = await UpdateStronglyTypedTest<TestContent_A>(content =>
-    //    {
-    //        content["Index2"] = 43;
-    //    });
+    [TestMethod]
+    public async Task Content_T_StronglyTyped_UpdateUnknownProperty()
+    {
+        var fields = await UpdateStronglyTypedTest<TestContent_A>(content =>
+        {
+            content["Index2"] = 43;
+        });
 
-    //    // ASSERT (Strong property is not saved if not changed)
-    //    var names = string.Join(", ", fields.Keys.OrderBy(x => x));
-    //    Assert.AreEqual("Index2, Name", names);
-    //    Assert.AreEqual(43, fields["Index2"]);
-    //}
+        // ASSERT (Strong property is not saved if not changed)
+        var names = string.Join(", ", fields.Keys.OrderBy(x => x));
+        Assert.AreEqual("Index2, Name", names);
+        Assert.AreEqual(43, fields["Index2"]);
+    }
     [TestMethod]
     public async Task Content_T_StronglyTyped_UpdateMixed()
     {
@@ -353,7 +353,9 @@ public class ContentSavingTests
     #region Nested classes: CustomType1, TestContent_CustomProperties
     private class CustomType1
     {
+        [JsonProperty(PropertyName = "property1")]
         public string Property1 { get; set; }
+        [JsonProperty(PropertyName = "property2")]
         public int Property2 { get; set; }
     }
     private class TestContent_CustomProperties : Content
@@ -486,71 +488,70 @@ public class ContentSavingTests
         Assert.AreEqual(typeof(string), data.Field_StringToDictionary.GetType());
         Assert.AreEqual("Name1:11111,Name3:333,Name4:444", data.Field_StringToDictionary);
     }
-    //UNDONE: Inactivated red test: expectation: strong property is not saved if not changed
-//    [TestMethod]
-//    public async Task Content_T_StronglyTyped_UpdateCustomProperties_OnlyChanged()
-//    {
-//        var restCaller = Substitute.For<IRestCaller>();
-//        restCaller
-//            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-//            .Returns(Task.FromResult(@"{
-//  ""d"": {
-//    ""Id"": 999543,
-//    ""Field_CustomType1"": {
-//      ""property1"": ""value1"",
-//      ""property2"": 42,
-//    },
-//    ""Field_StringToBool"": ""0"",
-//    ""Field_StringToDictionary"": ""Name1:111,Name2:222,Name3:333""
-//  }
-//}"));
+    [TestMethod]
+    public async Task Content_T_StronglyTyped_UpdateCustomProperties_OnlyChanged()
+    {
+        var restCaller = Substitute.For<IRestCaller>();
+        restCaller
+            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(@"{
+  ""d"": {
+    ""Id"": 999543,
+    ""Field_CustomType1"": {
+      ""property1"": ""value1"",
+      ""property2"": 42,
+    },
+    ""Field_StringToBool"": ""0"",
+    ""Field_StringToDictionary"": ""Name1:111,Name2:222,Name3:333""
+  }
+}"));
 
-//        restCaller
-//            .PatchContentAsync(Arg.Any<int>(), Arg.Any<object>(), Arg.Any<ServerContext>(),
-//                Arg.Any<CancellationToken>())
-//            .Returns(new Content(null, null));
+        restCaller
+            .PatchContentAsync(Arg.Any<int>(), Arg.Any<object>(), Arg.Any<ServerContext>(),
+                Arg.Any<CancellationToken>())
+            .Returns(new Content(null, null));
 
-//        var repositories = GetRepositoryCollection(services =>
-//        {
-//            services.RegisterGlobalContentType<TestContent_CustomProperties>();
-//            services.AddSingleton(restCaller);
-//        });
-//        var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
-//            .ConfigureAwait(false);
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.RegisterGlobalContentType<TestContent_CustomProperties>();
+            services.AddSingleton(restCaller);
+        });
+        var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+            .ConfigureAwait(false);
 
-//        // ACT-1 Load
-//        var request = new LoadContentRequest { Path = "/Root/Content" };
-//        var content = await repository.LoadContentAsync<TestContent_CustomProperties>(request, CancellationToken.None);
+        // ACT-1 Load
+        var request = new LoadContentRequest { Path = "/Root/Content" };
+        var content = await repository.LoadContentAsync<TestContent_CustomProperties>(request, CancellationToken.None);
 
-//        // ASSERT-1 Property original values
-//        // Field_CustomType1 is converted automatically
-//        Assert.IsNotNull(content.Field_CustomType1);
-//        Assert.AreEqual("value1", content.Field_CustomType1.Property1);
-//        Assert.AreEqual(42, content.Field_CustomType1.Property2);
-//        Assert.IsNotNull(content.Field_StringToDictionary);
-//        // Field_StringToBool is converted by the overridden ConvertToProperty method.
-//        Assert.AreEqual(false, content.Field_StringToBool);
-//        // Field_StringToDictionary is converted by the overridden ConvertToProperty method.
-//        Assert.AreEqual(3, content.Field_StringToDictionary.Count);
-//        Assert.AreEqual(111, content.Field_StringToDictionary["Name1"]);
-//        Assert.AreEqual(222, content.Field_StringToDictionary["Name2"]);
-//        Assert.AreEqual(333, content.Field_StringToDictionary["Name3"]);
+        // ASSERT-1 Property original values
+        // Field_CustomType1 is converted automatically
+        Assert.IsNotNull(content.Field_CustomType1);
+        Assert.AreEqual("value1", content.Field_CustomType1.Property1);
+        Assert.AreEqual(42, content.Field_CustomType1.Property2);
+        Assert.IsNotNull(content.Field_StringToDictionary);
+        // Field_StringToBool is converted by the overridden ConvertToProperty method.
+        Assert.AreEqual(false, content.Field_StringToBool);
+        // Field_StringToDictionary is converted by the overridden ConvertToProperty method.
+        Assert.AreEqual(3, content.Field_StringToDictionary.Count);
+        Assert.AreEqual(111, content.Field_StringToDictionary["Name1"]);
+        Assert.AreEqual(222, content.Field_StringToDictionary["Name2"]);
+        Assert.AreEqual(333, content.Field_StringToDictionary["Name3"]);
 
-//        // ACT-2 Modify properties and save
-//        content["Index2"] = 99999;
-//        await content.SaveAsync();
+        // ACT-2 Modify properties and save
+        content["Index2"] = 99999;
+        await content.SaveAsync();
 
-//        // ASSERT-2
-//        var calls = restCaller.ReceivedCalls().ToArray();
-//        Assert.IsNotNull(calls);
-//        Assert.AreEqual(2, calls.Length);
-//        Assert.AreEqual("PatchContentAsync", calls[1].GetMethodInfo().Name);
-//        var arguments = calls[1].GetArguments();
-//        Assert.AreEqual(999543, arguments[0]);
-//        var data = (IDictionary<string, object>) arguments[1]!;
-//        var names = string.Join(", ", data.Keys.OrderBy(x => x));
-//        Assert.AreEqual("Index2, Name", names);
-//    }
+        // ASSERT-2
+        var calls = restCaller.ReceivedCalls().ToArray();
+        Assert.IsNotNull(calls);
+        Assert.AreEqual(2, calls.Length);
+        Assert.AreEqual("PatchContentAsync", calls[1].GetMethodInfo().Name);
+        var arguments = calls[1].GetArguments();
+        Assert.AreEqual(999543, arguments[0]);
+        var data = (IDictionary<string, object>)arguments[1]!;
+        var names = string.Join(", ", data.Keys.OrderBy(x => x));
+        Assert.AreEqual("Index2, Name", names);
+    }
 
     /* ====================================================================== TOOLS */
 

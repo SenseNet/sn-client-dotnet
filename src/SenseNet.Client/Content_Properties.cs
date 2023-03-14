@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 using System.Reflection;
 using Newtonsoft.Json;
@@ -275,13 +276,26 @@ public partial class Content
         {"FieldNames", "Id", "Item", "Path", "ParentPath", "Repository", "Server", "ParentId"};
     private void ManagePostData(IDictionary<string, object> postData)
     {
+        var originalFields = (JObject)_responseContent;
+
         foreach (var property in this.GetType().GetProperties())
         {
-            if(_skippedProperties.Contains(property.Name))
+            if (_skippedProperties.Contains(property.Name))
                 continue;
 
             if (!TryConvertFromProperty(property.Name, out var propertyValue))
                 propertyValue = property.GetGetMethod().Invoke(this, null);
+
+            if (originalFields != null)
+            {
+                if (originalFields.TryGetValue(property.Name, out var originalValue))
+                {
+                    var originalRawValue = originalValue is JObject ? JsonHelper.Serialize(originalValue) : originalValue.ToString();
+                    var currentRawValue = propertyValue is string ? (string)propertyValue : JsonHelper.Serialize(propertyValue);
+                    if (currentRawValue == originalRawValue)
+                        continue;
+                }
+            }
 
             postData[property.Name] = propertyValue;
         }

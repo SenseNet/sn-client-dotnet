@@ -377,6 +377,118 @@ public class ContentLoadingTests
         Assert.AreEqual(false, content.IsWallContainer); // Boolean
         Assert.AreEqual(false, content.IsFollowed); // Boolean
     }
+    [TestMethod]
+    public async Task Content_T_Properties_General_ByRealRequest_Projected()
+    {
+        // ALIGN
+        var restCaller = Substitute.For<IRestCaller>();
+        restCaller
+            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(@"{
+  ""d"": {
+    ""Id"": 1368,
+    ""Name"": ""Content"",
+    ""Type"": ""Workspace""
+  }
+}"));
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<TestGenericContent>();
+            services.RegisterGlobalContentType<TestFolder>();
+            services.RegisterGlobalContentType<TestWorkspace>("Workspace");
+        });
+        var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+            .ConfigureAwait(false);
+
+        // ACT
+        var request = new LoadContentRequest()
+        {
+            Path = "/Root/Content", Select = new[] { "Id", "Name", "Type" }
+        };
+        var content = await repository.LoadContentAsync<TestWorkspace>(request, CancellationToken.None);
+
+        // ASSERT
+        var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
+        Assert.IsNotNull(requestedUri);
+        Assert.AreEqual("/OData.svc/Root('Content')?metadata=no&$select=Id,Name,Type", requestedUri.PathAndQuery);
+
+        Assert.AreEqual(1368, content.Id);
+        Assert.AreEqual(0, content.ParentId);
+        Assert.AreEqual(0, content.OwnerId);
+        Assert.IsNull(content.Owner);
+        Assert.AreEqual(0, content.VersionId);
+        Assert.AreEqual("Workspace", content.Type); // NodeType
+        //Assert.AreEqual("____", content.TypeIs); // NodeType
+        Assert.AreEqual(null, content.Icon);  // ShortText
+        Assert.AreEqual("Content", content.Name);  // ShortText
+        Assert.AreEqual(0, content.CreatedById); // Integer
+        Assert.AreEqual(0, content.ModifiedById); // Integer
+        Assert.AreEqual(null, content.Version); // Version
+        Assert.AreEqual(null, content.Path); // ShortText
+        Assert.AreEqual(0, content.Depth); // Integer
+        //Assert.AreEqual("____", content.InTree); // ShortText
+        //Assert.AreEqual("____", content.InFolder); // ShortText
+        Assert.AreEqual(false, content.IsSystemContent); // Boolean
+        Assert.AreEqual(false, content.IsFolder); // Boolean
+        Assert.AreEqual(null, content.DisplayName); // ShortText
+        Assert.AreEqual(null, content.Description); // RichText
+        Assert.AreEqual(null, content.Hidden); // Boolean
+        Assert.AreEqual(0, content.Index); // Integer
+        Assert.AreEqual(null, content.EnableLifespan); // Boolean
+        Assert.AreEqual(DateTime.Parse("0001-01-01T00:00:00Z").ToUniversalTime(), content.ValidFrom); // DateTime
+        Assert.AreEqual(null, content.ValidTill); // DateTime
+        Assert.AreEqual(null, content.AllowedChildTypes); // AllowedChildTypes
+        Assert.AreEqual(null, content.EffectiveAllowedChildTypes); // AllowedChildTypes
+        Assert.AreEqual(null, content.VersioningMode); // VersioningMode
+        Assert.AreEqual(null, content.InheritableVersioningMode); // InheritableVersioningMode
+        Assert.AreEqual(null, content.CreatedBy); // Reference
+        Assert.AreEqual(null, content.VersionCreatedBy); // Reference
+        Assert.AreEqual(null, content.CreationDate); // DateTime
+        Assert.AreEqual(null, content.VersionCreationDate); // DateTime
+        Assert.AreEqual(null, content.ModifiedBy); // Reference
+        Assert.AreEqual(null, content.VersionModifiedBy); // Reference
+        Assert.AreEqual(null, content.ModificationDate); // DateTime
+        Assert.AreEqual(null, content.VersionModificationDate); // DateTime
+        Assert.AreEqual(null, content.ApprovingMode); // ApprovingMode
+        Assert.AreEqual(null, content.InheritableApprovingMode); // InheritableApprovingMode
+        Assert.AreEqual(null, content.Locked); // Boolean
+        Assert.AreEqual(null, content.CheckedOutTo); // Reference
+        Assert.AreEqual(null, content.TrashDisabled); // Boolean
+        Assert.AreEqual(null, content.SavingState); // Choice
+        Assert.AreEqual(null, content.ExtensionData); // LongText
+        Assert.AreEqual(null, content.BrowseApplication); // Reference
+        Assert.AreEqual(null, content.Approvable); // Boolean
+        Assert.AreEqual(null, content.IsTaggable); // Boolean
+        Assert.AreEqual(null, content.Tags); // LongText
+        Assert.AreEqual(null, content.IsRateable); // Boolean
+        Assert.AreEqual(null, content.RateStr); // ShortText
+        Assert.AreEqual(null, content.RateAvg); // Number
+        Assert.AreEqual(0, content.RateCount); // Integer
+        Assert.AreEqual(null, content.Rate); // Rating
+        Assert.AreEqual(null, content.Publishable); // Boolean
+        Assert.AreEqual(null, content.Versions); // Reference
+        Assert.AreEqual(null, content.CheckInComments); // LongText
+        Assert.AreEqual(null, content.RejectReason); // LongText
+        Assert.AreEqual(null, content.Workspace); // Reference
+        Assert.AreEqual(null, content.BrowseUrl); // ShortText
+        Assert.AreEqual(null, content.Sharing); // Sharing
+        Assert.AreEqual(null, content.SharedWith); // Sharing
+        Assert.AreEqual(null, content.SharedBy); // Sharing
+        Assert.AreEqual(null, content.SharingMode); // Sharing
+        Assert.AreEqual(null, content.SharingLevel); // Sharing
+
+        Assert.AreEqual(null, content.PreviewEnabled); // Choice
+
+        Assert.AreEqual(null, content.Manager); // Reference
+        Assert.AreEqual(null, content.Deadline); // DateTime
+        Assert.AreEqual(null, content.IsActive); // Boolean
+        Assert.AreEqual(null, content.WorkspaceSkin); // Reference
+        Assert.AreEqual(null, content.IsCritical); // Boolean
+        Assert.AreEqual(null, content.IsWallContainer); // Boolean
+        Assert.AreEqual(null, content.IsFollowed); // Boolean
+    }
 
     private class TestContent_MultiChoice_StringToString : Content
     {
