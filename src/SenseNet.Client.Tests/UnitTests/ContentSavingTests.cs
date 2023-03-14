@@ -238,9 +238,9 @@ public class ContentSavingTests
     }
 
     [TestMethod]
-    public async Task Content_T_StrongType_UpdateAsDictionary()
+    public async Task Content_T_StronglyTyped_UpdateAsDictionary()
     {
-        var fields = await UpdateStrongTypeTest<Content>(content =>
+        var fields = await UpdateStronglyTypedTest<Content>(content =>
         {
             content["Index"] = 42;
         });
@@ -251,9 +251,9 @@ public class ContentSavingTests
         Assert.AreEqual(42, fields["Index"]);
     }
     [TestMethod]
-    public async Task Content_T_StrongType_UpdateAsWellKnownType()
+    public async Task Content_T_StronglyTyped_UpdateAsWellKnownType()
     {
-        var fields = await UpdateStrongTypeTest<TestContent_A>(content =>
+        var fields = await UpdateStronglyTypedTest<TestContent_A>(content =>
         {
             content.Index = 42;
         });
@@ -263,11 +263,11 @@ public class ContentSavingTests
         Assert.AreEqual("Index, Name", names);
         Assert.AreEqual(42, fields["Index"]);
     }
-    //UNDONE: Red test: expectation: strong property is not saved if not changed
+    //UNDONE: Inactivated red test: expectation: strong property is not saved if not changed
     //[TestMethod]
-    //public async Task Content_T_StrongType_UpdateUnknownProperty()
+    //public async Task Content_T_StronglyTyped_UpdateUnknownProperty()
     //{
-    //    var fields = await UpdateStrongTypeTest<TestContent_A>(content =>
+    //    var fields = await UpdateStronglyTypedTest<TestContent_A>(content =>
     //    {
     //        content["Index2"] = 43;
     //    });
@@ -278,9 +278,9 @@ public class ContentSavingTests
     //    Assert.AreEqual(43, fields["Index2"]);
     //}
     [TestMethod]
-    public async Task Content_T_StrongType_UpdateMixed()
+    public async Task Content_T_StronglyTyped_UpdateMixed()
     {
-        var fields = await UpdateStrongTypeTest<TestContent_A>(content =>
+        var fields = await UpdateStronglyTypedTest<TestContent_A>(content =>
         {
             content.Index = 42;
             content["Index2"] = 43;
@@ -291,7 +291,7 @@ public class ContentSavingTests
         Assert.AreEqual("Index, Index2, Name", names);
         Assert.AreEqual(42, fields["Index"]);
     }
-    private async Task<IDictionary<string, object>> UpdateStrongTypeTest<T>(Action<T> setProperties) where T : Content
+    private async Task<IDictionary<string, object>> UpdateStronglyTypedTest<T>(Action<T> setProperties) where T : Content
     {
         var restCaller = Substitute.For<IRestCaller>();
         restCaller
@@ -347,6 +347,210 @@ public class ContentSavingTests
         dynamic data = arguments[1]!;
         return data;
     }
+
+    /* =================================================================== CUSTOM PROPERTIES */
+
+    #region Nested classes: CustomType1, TestContent_CustomProperties
+    private class CustomType1
+    {
+        public string Property1 { get; set; }
+        public int Property2 { get; set; }
+    }
+    private class TestContent_CustomProperties : Content
+    {
+        public TestContent_CustomProperties(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }
+
+        public CustomType1 Field_CustomType1 { get; set; }
+        public bool Field_StringToBool { get; set; }
+        public Dictionary<string, int> Field_StringToDictionary { get; set; }
+
+        protected override bool TryConvertToProperty(string propertyName, JToken jsonValue, out object propertyValue)
+        {
+            if (jsonValue == null)
+            {
+                propertyValue = null;
+                return false;
+            }
+            if (propertyName == nameof(Field_StringToBool))
+            {
+                var stringValue = jsonValue.Value<string>();
+                propertyValue = !string.IsNullOrEmpty(stringValue) && "0" != stringValue;
+                return true;
+            }
+            if (propertyName == nameof(Field_StringToDictionary))
+            {
+                var stringValue = jsonValue.Value<string>();
+                if (stringValue != null)
+                {
+                    propertyValue = new Dictionary<string, int>(stringValue.Split(',').Select(x =>
+                    {
+                        var split = x.Split(':');
+                        var name = split[0].Trim();
+                        var value = int.Parse(split[1]);
+                        return new KeyValuePair<string, int>(name, value);
+                    }));
+                    return true;
+                }
+            }
+            return base.TryConvertToProperty(propertyName, jsonValue, out propertyValue);
+        }
+
+        protected override bool TryConvertFromProperty(string propertyName, out object convertedValue)
+        {
+            if (propertyName == nameof(Field_StringToBool))
+            {
+                convertedValue = Field_StringToBool ? 1 : 0;
+                return true;
+            }
+            if (propertyName == nameof(Field_StringToDictionary))
+            {
+                convertedValue = string.Join(",", Field_StringToDictionary
+                    // Ordering is needed for tests
+                    .OrderBy(x => x.Key)
+                    .Select(x => $"{x.Key}:{x.Value}"));
+                return true;
+            }
+            return base.TryConvertFromProperty(propertyName, out convertedValue);
+        }
+    }
+    #endregion
+    [TestMethod]
+    public async Task Content_T_StronglyTyped_UpdateCustomProperties()
+    {
+        var restCaller = Substitute.For<IRestCaller>();
+        restCaller
+            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(@"{
+  ""d"": {
+    ""Id"": 999543,
+    ""Field_CustomType1"": {
+      ""property1"": ""value1"",
+      ""property2"": 42,
+    },
+    ""Field_StringToBool"": ""0"",
+    ""Field_StringToDictionary"": ""Name1:111,Name2:222,Name3:333""
+  }
+}"));
+
+        restCaller
+            .PatchContentAsync(Arg.Any<int>(), Arg.Any<object>(), Arg.Any<ServerContext>(),
+                Arg.Any<CancellationToken>())
+            .Returns(new Content(null, null));
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.RegisterGlobalContentType<TestContent_CustomProperties>();
+            services.AddSingleton(restCaller);
+        });
+        var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+            .ConfigureAwait(false);
+
+        // ACT-1 Load
+        var request = new LoadContentRequest { Path = "/Root/Content" };
+        var content = await repository.LoadContentAsync<TestContent_CustomProperties>(request, CancellationToken.None);
+
+        // ASSERT-1 Property original values
+        // Field_CustomType1 is converted automatically
+        Assert.IsNotNull(content.Field_CustomType1);
+        Assert.AreEqual("value1", content.Field_CustomType1.Property1);
+        Assert.AreEqual(42, content.Field_CustomType1.Property2);
+        Assert.IsNotNull(content.Field_StringToDictionary);
+        // Field_StringToBool is converted by the overridden ConvertToProperty method.
+        Assert.AreEqual(false, content.Field_StringToBool);
+        // Field_StringToDictionary is converted by the overridden ConvertToProperty method.
+        Assert.AreEqual(3, content.Field_StringToDictionary.Count);
+        Assert.AreEqual(111, content.Field_StringToDictionary["Name1"]);
+        Assert.AreEqual(222, content.Field_StringToDictionary["Name2"]);
+        Assert.AreEqual(333, content.Field_StringToDictionary["Name3"]);
+
+        // ACT-2 Modify properties and save
+        content.Field_CustomType1.Property1 = "updated";
+        content.Field_CustomType1.Property2 = 442;
+        content.Field_StringToBool = true;
+        content.Field_StringToDictionary["Name1"] = 11111;
+        content.Field_StringToDictionary.Remove("Name2");
+        content.Field_StringToDictionary["Name4"] = 444;
+        await content.SaveAsync();
+
+        // ASSERT-2
+        var calls = restCaller.ReceivedCalls().ToArray();
+        Assert.IsNotNull(calls);
+        Assert.AreEqual(2, calls.Length);
+        Assert.AreEqual("PatchContentAsync", calls[1].GetMethodInfo().Name);
+        var arguments = calls[1].GetArguments();
+        Assert.AreEqual(999543, arguments[0]);
+        dynamic data = arguments[1]!;
+        Assert.AreEqual("updated", data.Field_CustomType1.Property1);
+        Assert.AreEqual(442, data.Field_CustomType1.Property2);
+        Assert.AreEqual(1, data.Field_StringToBool);
+        Assert.AreEqual(typeof(string), data.Field_StringToDictionary.GetType());
+        Assert.AreEqual("Name1:11111,Name3:333,Name4:444", data.Field_StringToDictionary);
+    }
+    //UNDONE: Inactivated red test: expectation: strong property is not saved if not changed
+//    [TestMethod]
+//    public async Task Content_T_StronglyTyped_UpdateCustomProperties_OnlyChanged()
+//    {
+//        var restCaller = Substitute.For<IRestCaller>();
+//        restCaller
+//            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
+//            .Returns(Task.FromResult(@"{
+//  ""d"": {
+//    ""Id"": 999543,
+//    ""Field_CustomType1"": {
+//      ""property1"": ""value1"",
+//      ""property2"": 42,
+//    },
+//    ""Field_StringToBool"": ""0"",
+//    ""Field_StringToDictionary"": ""Name1:111,Name2:222,Name3:333""
+//  }
+//}"));
+
+//        restCaller
+//            .PatchContentAsync(Arg.Any<int>(), Arg.Any<object>(), Arg.Any<ServerContext>(),
+//                Arg.Any<CancellationToken>())
+//            .Returns(new Content(null, null));
+
+//        var repositories = GetRepositoryCollection(services =>
+//        {
+//            services.RegisterGlobalContentType<TestContent_CustomProperties>();
+//            services.AddSingleton(restCaller);
+//        });
+//        var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+//            .ConfigureAwait(false);
+
+//        // ACT-1 Load
+//        var request = new LoadContentRequest { Path = "/Root/Content" };
+//        var content = await repository.LoadContentAsync<TestContent_CustomProperties>(request, CancellationToken.None);
+
+//        // ASSERT-1 Property original values
+//        // Field_CustomType1 is converted automatically
+//        Assert.IsNotNull(content.Field_CustomType1);
+//        Assert.AreEqual("value1", content.Field_CustomType1.Property1);
+//        Assert.AreEqual(42, content.Field_CustomType1.Property2);
+//        Assert.IsNotNull(content.Field_StringToDictionary);
+//        // Field_StringToBool is converted by the overridden ConvertToProperty method.
+//        Assert.AreEqual(false, content.Field_StringToBool);
+//        // Field_StringToDictionary is converted by the overridden ConvertToProperty method.
+//        Assert.AreEqual(3, content.Field_StringToDictionary.Count);
+//        Assert.AreEqual(111, content.Field_StringToDictionary["Name1"]);
+//        Assert.AreEqual(222, content.Field_StringToDictionary["Name2"]);
+//        Assert.AreEqual(333, content.Field_StringToDictionary["Name3"]);
+
+//        // ACT-2 Modify properties and save
+//        content["Index2"] = 99999;
+//        await content.SaveAsync();
+
+//        // ASSERT-2
+//        var calls = restCaller.ReceivedCalls().ToArray();
+//        Assert.IsNotNull(calls);
+//        Assert.AreEqual(2, calls.Length);
+//        Assert.AreEqual("PatchContentAsync", calls[1].GetMethodInfo().Name);
+//        var arguments = calls[1].GetArguments();
+//        Assert.AreEqual(999543, arguments[0]);
+//        var data = (IDictionary<string, object>) arguments[1]!;
+//        var names = string.Join(", ", data.Keys.OrderBy(x => x));
+//        Assert.AreEqual("Index2, Name", names);
+//    }
 
     /* ====================================================================== TOOLS */
 

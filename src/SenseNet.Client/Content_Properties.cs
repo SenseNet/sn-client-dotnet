@@ -195,7 +195,6 @@ public partial class Content
         propertyValue = null;
         return false;
     }
-    //UNDONE: Convert back custom values.
     protected virtual bool TryConvertFromProperty(string propertyName, out object convertedValue)
     {
         convertedValue = null;
@@ -278,31 +277,17 @@ public partial class Content
         throw new NotSupportedException($"GetReferences failed. Object type {input.GetType().FullName} is not supported.");
     }
 
-
+    private readonly string[] _skippedProperties = new[]
+        {"FieldNames", "Id", "Item", "Path", "ParentPath", "Repository", "Server", "ParentId"};
     private void ManagePostData(IDictionary<string, object> postData)
     {
         foreach (var property in this.GetType().GetProperties())
         {
-            if (property.Name == "FieldNames")
-                continue;
-            if (property.Name == "Id")
-                continue;
-            if (property.Name == "Item")
-                continue;
-            if (property.Name == "Path")
-                continue;
-            if(property.Name == "ParentPath")
-                continue;
-            if (property.Name == "Repository")
-                continue;
-            if (property.Name == "Server")
-                continue;
-            if (property.Name == "ParentId")
+            if(_skippedProperties.Contains(property.Name))
                 continue;
 
-            var propertyValue = property.GetGetMethod().Invoke(this, null);
-            //UNDONE: Convert back custom values.
-
+            if (!TryConvertFromProperty(property.Name, out var propertyValue))
+                propertyValue = property.GetGetMethod().Invoke(this, null);
 
             postData[property.Name] = propertyValue;
         }
