@@ -112,7 +112,7 @@ internal class Repository : IRepository
         c.Name = name;
         c.__ContentType = contentTypeName;
         c.Existing = false;
-        return c;
+        return (T)c;
     }
 
     /* ============================================================================ LOAD CONTENT */

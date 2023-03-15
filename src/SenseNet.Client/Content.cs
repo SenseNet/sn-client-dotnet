@@ -810,7 +810,17 @@ public partial class Content : DynamicObject
         }
 
         if (this.GetType() != typeof(Content))
-            ManagePostData(postData);
+        {
+            try
+            {
+                ManagePostData(postData);
+            }
+            catch (Exception ex)
+            {
+                throw new ApplicationException(
+                    $"Cannot save the content. Id: {Id}, Path: '{Path}'. See inner exception for details.", ex);
+            }
+        }
 
         dynamic responseContent;
         if (_restCaller == null)

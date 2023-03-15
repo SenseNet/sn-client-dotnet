@@ -273,7 +273,7 @@ public partial class Content
     }
 
     private readonly string[] _skippedProperties = new[]
-        {"FieldNames", "Id", "Item", "Path", "ParentPath", "Repository", "Server", "ParentId"};
+        {"FieldNames", "Id", "Item", "ParentPath", "ParentId", "Path", "Repository", "Server"};
     private void ManagePostData(IDictionary<string, object> postData)
     {
         var originalFields = (JObject)_responseContent;
@@ -284,12 +284,17 @@ public partial class Content
                 continue;
 
             if (!TryConvertFromProperty(property.Name, out var propertyValue))
+            {
                 propertyValue = property.GetGetMethod().Invoke(this, null);
+                propertyValue = ConvertFromReferredContents(property.Name, property.PropertyType, propertyValue);
+            }
 
             if (originalFields != null)
             {
                 if (originalFields.TryGetValue(property.Name, out var originalValue))
                 {
+                    if (ManageReferences(property.PropertyType, property.Name, propertyValue, originalValue, postData))
+                        continue;
                     var originalRawValue = originalValue is JObject ? JsonHelper.Serialize(originalValue) : originalValue.ToString();
                     var currentRawValue = propertyValue is string ? (string)propertyValue : JsonHelper.Serialize(propertyValue);
                     if (currentRawValue == originalRawValue)
@@ -301,4 +306,129 @@ public partial class Content
         }
     }
 
+    private object ConvertFromReferredContents(string propertyName, Type propertyType, object propertyValue)
+    {
+        if (typeof(Content).IsAssignableFrom(propertyType))
+        {
+            // Single reference
+            var referredContent = (Content) propertyValue;
+            if (referredContent == null)
+                return null;
+            if (referredContent.Id > 0)
+                return new[] { referredContent.Id };
+            else if (referredContent.Path != null)
+                return new[] { referredContent.Path };
+            throw new ApplicationException(
+                "Reference cannot be recognized. The referred content should have the Id or Path.");
+        }
+
+        if (propertyType.IsArray)
+        {
+            // Multi reference to a content array
+            var itemType = propertyType.GetElementType();
+            if (typeof(Content).IsAssignableFrom(itemType))
+            {
+                throw new NotImplementedException();
+                var referredContents = propertyValue as IEnumerable<Content>;
+                // manage by ids or paths
+                return true;
+            }
+        }
+
+        if (propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+        {
+            // Multi reference to an IEnumerable<?>
+            var itemType = propertyType.GetGenericArguments().First();
+            if (typeof(Content).IsAssignableFrom(itemType))
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        if (propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() == typeof(List<>))
+        {
+            // Multi reference to a List<?>
+            var itemType = propertyType.GetGenericArguments().First();
+            if (typeof(Content).IsAssignableFrom(itemType))
+            {
+                var result = new List<object>();
+                if (propertyValue != null)
+                {
+                    foreach (var referredContent in (IEnumerable<Content>) propertyValue)
+                    {
+                        if (referredContent == null)
+                            continue;
+                        if (referredContent.Id > 0)
+                        {
+                            result.Add(referredContent.Id);
+                            continue;
+                        }
+                        if (referredContent.Path != null)
+                        {
+                            result.Add(referredContent.Path);
+                            continue;
+                        }
+                        throw new ApplicationException("One or more referred cannot be recognized." +
+                                                       $" The referred content should have the Id or Path. FieldName: '{propertyName}'.");
+                    }
+                }
+
+                return result.ToArray();
+            }
+        }
+        return propertyValue;
+    }
+
+    private bool ManageReferences(Type propertyType, string propertyName, object propertyValue, JToken originalValue, IDictionary<string, object> postData)
+    {
+        if (typeof(Content).IsAssignableFrom(propertyType))
+        {
+            // Single reference
+            var originalReferredContent = GetReference(originalValue, propertyType);
+            //UNDONE: check reference diff by ids or paths
+            postData[propertyName] = propertyValue;
+            return true;
+        }
+
+        if (propertyType.IsArray)
+        {
+            // Multi reference to a content array
+            var itemType = propertyType.GetElementType();
+            if (typeof(Content).IsAssignableFrom(itemType))
+            {
+                var originalReferredContents = GetMultiReferenceArray(originalValue, itemType);
+                //UNDONE: check reference diff by ids or paths
+                postData[propertyName] = propertyValue;
+                return true;
+            }
+        }
+
+        if (propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+        {
+            // Multi reference to an IEnumerable<?>
+            var itemType = propertyType.GetGenericArguments().First();
+            if (typeof(Content).IsAssignableFrom(itemType))
+            {
+                var originalReferredContents = GetMultiReferenceArray(originalValue, itemType);
+                //UNDONE: check reference diff by ids or paths
+                postData[propertyName] = propertyValue;
+                return true;
+            }
+        }
+
+        if (propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() == typeof(List<>))
+        {
+            // Multi reference to a List<?>
+            var itemType = propertyType.GetGenericArguments().First();
+            if (typeof(Content).IsAssignableFrom(itemType))
+            {
+                var originalReferredContents = GetMultiReferenceArray(originalValue, itemType);
+                //UNDONE: check reference diff by ids or paths
+                postData[propertyName] = propertyValue;
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

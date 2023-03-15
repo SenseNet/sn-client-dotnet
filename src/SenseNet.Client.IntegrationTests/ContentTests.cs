@@ -206,6 +206,191 @@ namespace SenseNet.Client.IntegrationTests
 
         /* ================================================================================================== TOOLS */
 
+        private class TestMemo : Content
+        {
+            public TestMemo(IRestCaller restCaller, ILogger<TestMemo> logger) : base(restCaller, logger) { }
+
+            public string Description { get; set; }
+            public DateTime Date { get; set; }
+            public string[] MemoType { get; set; } // generic, iso, iaudit
+            public List<Content> SeeAlso { get; set; }
+        }
+
+        [TestMethod]
+        public async Task IT_Content_T_Update()
+        {
+            var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
+            var repository =
+                await GetRepositoryCollection(
+                        services => { services.RegisterGlobalContentType<TestMemo>("Memo"); })
+                    .GetRepositoryAsync("local", cancel).ConfigureAwait(false);
+            var rootPath = "/Root/Content";
+            var containerName = "MyMemos";
+            var containerType = "MemoList";
+            //var contentTypeName = "Task";
+            var containerPath = $"{rootPath}/{containerName}";
+            var contentName = "Memo1";
+            var path = $"{containerPath}/{contentName}";
+            var firstDate = new DateTime(2022, 03, 10);
+            var updatedDateDate = new DateTime(2023, 03, 10);
+
+            // OPERATIONS
+            // 1 - Delete content if exists for the clean test
+            if (await repository.IsContentExistsAsync(containerPath, cancel).ConfigureAwait(false))
+            {
+                await repository.DeleteContentAsync(containerPath, true, cancel).ConfigureAwait(false);
+                Assert.IsFalse(await repository.IsContentExistsAsync(containerPath, cancel).ConfigureAwait(false));
+            }
+
+            // 2 - Create container
+            var container = repository.CreateContent(rootPath, containerType, containerName);
+            await container.SaveAsync().ConfigureAwait(false);
+
+            // 3 - Create brand new content and test its existence
+            var content = repository.CreateContent<TestMemo>(containerPath, null, contentName);
+            content.Description = "My first memo.";
+            content.MemoType = new[] {"generic"};
+            content.Date = firstDate;
+            await content.SaveAsync().ConfigureAwait(false);
+            Assert.IsTrue(await repository.IsContentExistsAsync(path, cancel).ConfigureAwait(false));
+            var contentId = content.Id;
+            Assert.IsTrue(contentId > 0);
+            
+            // 4 - Load created content
+            var loadedContent = await repository.LoadContentAsync<TestMemo>(contentId, cancel).ConfigureAwait(false);
+            Assert.AreEqual("My first memo.", loadedContent.Description);
+            Assert.AreEqual(firstDate, loadedContent.Date);
+            Assert.AreEqual(1, loadedContent.MemoType.Length);
+            Assert.AreEqual("generic", loadedContent.MemoType[0]);
+
+            // 5 - Update content
+            loadedContent.Description = "Updated description.";
+            loadedContent.Date = updatedDateDate;
+            loadedContent.MemoType[0] = "iso";
+            await loadedContent.SaveAsync().ConfigureAwait(false);
+
+            // 6 - Load updated content
+            var reloadedContent = await repository.LoadContentAsync<TestMemo>(contentId, cancel).ConfigureAwait(false);
+            Assert.AreEqual("Updated description.", reloadedContent.Description);
+            Assert.AreEqual(updatedDateDate, reloadedContent.Date);
+            Assert.AreEqual(1, reloadedContent.MemoType.Length);
+            Assert.AreEqual("iso", reloadedContent.MemoType[0]);
+
+            // 7 - Delete the content and check the repository is clean
+            await repository.DeleteContentAsync(contentId, true, cancel).ConfigureAwait(false);
+            Assert.IsFalse(await repository.IsContentExistsAsync(path, cancel).ConfigureAwait(false));
+        }
+        [TestMethod]
+        public async Task IT_Content_T_Update_ReferenceList()
+        {
+            var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
+            var repository =
+                await GetRepositoryCollection(
+                        services => { services.RegisterGlobalContentType<TestMemo>("Memo"); })
+                    .GetRepositoryAsync("local", cancel).ConfigureAwait(false);
+            var rootPath = "/Root/Content";
+            var containerName = "MyMemos";
+            var containerType = "MemoList";
+            var contentTypeName = "Memo";
+            var containerPath = $"{rootPath}/{containerName}";
+            var contentName = "Memo1";
+            var path = $"{containerPath}/{contentName}";
+
+            // OPERATIONS
+            // 1 - Delete content if exists for the clean test
+            if (await repository.IsContentExistsAsync(containerPath, cancel).ConfigureAwait(false))
+            {
+                await repository.DeleteContentAsync(containerPath, true, cancel).ConfigureAwait(false);
+                Assert.IsFalse(await repository.IsContentExistsAsync(containerPath, cancel).ConfigureAwait(false));
+            }
+
+            // 2 - Create container and some memos
+            var container = repository.CreateContent(rootPath, containerType, containerName);
+            await container.SaveAsync().ConfigureAwait(false);
+            var referredMemos = new Content[3];
+            for (int i = 0; i < referredMemos.Length; i++)
+            {
+                referredMemos[i] = repository.CreateContent(container.Path, contentTypeName, $"ReferredMemo{i + 1}");
+                //referredMemos[i]["MemoType"] = Array.Empty<string>();
+                //referredMemos[i]["MemoType"] = new[] { "generic" };
+                ((TestMemo)referredMemos[i]).MemoType = Array.Empty<string>();
+                await referredMemos[i].SaveAsync().ConfigureAwait(false);
+            }
+
+            // 3 - Create brand new content and test its existence
+            var content = repository.CreateContent<TestMemo>(containerPath, null, contentName);
+            content.MemoType = Array.Empty<string>();
+            content.SeeAlso = referredMemos.Take(2).ToList();
+            await content.SaveAsync().ConfigureAwait(false);
+            var contentId = content.Id;
+            Assert.IsTrue(contentId > 0);
+
+            // 4 - Load created content without expanding the references
+            var loadedContent = await repository.LoadContentAsync<TestMemo>(contentId, cancel).ConfigureAwait(false);
+            Assert.AreEqual(null, loadedContent.SeeAlso);
+
+            // 5 - Load created content with expanding the references
+            var expandedRequest = new LoadContentRequest
+            {
+                ContentId = contentId,
+                Expand = new[] {nameof(TestMemo.SeeAlso)},
+                Select = new[] {"Id", "Name", "Description", "Date", "MemoType", "SeeAlso/Path", "SeeAlso/Type" }
+            };
+            loadedContent = await repository.LoadContentAsync<TestMemo>(expandedRequest, cancel).ConfigureAwait(false);
+            Assert.IsNotNull(loadedContent.SeeAlso);
+            Assert.AreEqual(2, loadedContent.SeeAlso.Count);
+            Assert.AreEqual("/Root/Content/MyMemos/ReferredMemo1", loadedContent.SeeAlso[0].Path);
+            Assert.AreEqual("/Root/Content/MyMemos/ReferredMemo2", loadedContent.SeeAlso[1].Path);
+
+            // 6 - Update content
+            loadedContent.SeeAlso[1] = referredMemos[2];
+            await loadedContent.SaveAsync().ConfigureAwait(false);
+
+            // 7 - Load updated content
+            var reloadedContent = await repository.LoadContentAsync<TestMemo>(expandedRequest, cancel).ConfigureAwait(false);
+            Assert.IsNotNull(loadedContent.SeeAlso);
+            Assert.AreEqual(2, reloadedContent.SeeAlso.Count);
+            Assert.AreEqual("/Root/Content/MyMemos/ReferredMemo1", reloadedContent.SeeAlso[0].Path);
+            Assert.AreEqual("/Root/Content/MyMemos/ReferredMemo3", reloadedContent.SeeAlso[1].Path);
+
+            // 8 - Load updated content with incompletely expanded references
+            var notCompletelyExpandedRequest = new LoadContentRequest
+            {
+                ContentId = contentId,
+                Expand = new[] { nameof(TestMemo.SeeAlso) },
+                Select = new[] { "Id", "Name", "Description", "Date", "MemoType", "SeeAlso/Description", "SeeAlso/Type" }
+            };
+            var wrongContent = await repository.LoadContentAsync<TestMemo>(notCompletelyExpandedRequest, cancel).ConfigureAwait(false);
+            Assert.IsNotNull(wrongContent.SeeAlso);
+            Assert.AreEqual(2, wrongContent.SeeAlso.Count);
+            Assert.IsNull(wrongContent.SeeAlso[0].Path);
+            Assert.IsNull(wrongContent.SeeAlso[1].Path);
+            Assert.AreEqual(0, wrongContent.SeeAlso[0].Id);
+            Assert.AreEqual(0, wrongContent.SeeAlso[1].Id);
+
+            // 9 - Try to update incompletely expanded references
+            wrongContent.SeeAlso.Add(referredMemos[2]);
+            try
+            {
+                await wrongContent.SaveAsync().ConfigureAwait(false);
+                Assert.Fail("The expected ApplicationException was not thrown.");
+            }
+            catch (ApplicationException e)
+            {
+                Assert.AreEqual($"Cannot save the content. Id: {wrongContent.Id}, Path: '{wrongContent.Path}'. " +
+                                $"See inner exception for details.", e.Message);
+                Assert.AreEqual("One or more referred cannot be recognized. " +
+                                "The referred content should have the Id or Path. FieldName: 'SeeAlso'.", e.InnerException?.Message);
+            }
+
+            // 8 - Delete the content and check the repository is clean
+            await repository.DeleteContentAsync(contentId, true, cancel).ConfigureAwait(false);
+            Assert.IsFalse(await repository.IsContentExistsAsync(path, cancel).ConfigureAwait(false));
+        }
+
+
+        /* ================================================================================================== TOOLS */
+
         private static IRepositoryCollection GetRepositoryCollection(Action<IServiceCollection> addServices = null)
         {
             var services = new ServiceCollection();
