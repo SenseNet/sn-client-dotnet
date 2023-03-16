@@ -122,7 +122,7 @@ public class ContentLoadingTests
         public bool? IsFollowed { get; set; }
     }
     [TestMethod]
-    public async Task Content_T_Properties_General_ByRealRequest()
+    public async Task LoadContent_T_Properties_General_ByRealRequest()
     {
         // ALIGN
         var restCaller = Substitute.For<IRestCaller>();
@@ -378,7 +378,7 @@ public class ContentLoadingTests
         Assert.AreEqual(false, content.IsFollowed); // Boolean
     }
     [TestMethod]
-    public async Task Content_T_Properties_General_ByRealRequest_Projected()
+    public async Task LoadContent_T_Properties_General_ByRealRequest_Projected()
     {
         // ALIGN
         var restCaller = Substitute.For<IRestCaller>();
@@ -500,7 +500,7 @@ public class ContentLoadingTests
         public string[] MultiChoice_2 { get; set; }
     }
     [TestMethod]
-    public async Task Content_T_Properties_MultiChoice_StringToString()
+    public async Task LoadContent_T_Properties_MultiChoice_StringToString()
     {
         // ALIGN
         var restCaller = Substitute.For<IRestCaller>();
@@ -563,7 +563,7 @@ public class ContentLoadingTests
         public int[] MultiChoice_2 { get; set; }
     }
     [TestMethod]
-    public async Task Content_T_Properties_MultiChoice_StringToInt()
+    public async Task LoadContent_T_Properties_MultiChoice_StringToInt()
     {
         // ALIGN
         var restCaller = Substitute.For<IRestCaller>();
@@ -632,7 +632,7 @@ public class ContentLoadingTests
         public float? Number_Single_Nullable { get; set; }
     }
     [TestMethod]
-    public async Task Content_T_Properties_Number()
+    public async Task LoadContent_T_Properties_Number()
     {
         // ALIGN
         var restCaller = Substitute.For<IRestCaller>();
@@ -693,7 +693,7 @@ public class ContentLoadingTests
         public Binary Secondary { get; set; }
     }
     [TestMethod]
-    public async Task Content_T_Properties_Binary()
+    public async Task LoadContent_T_Properties_Binary()
     {
         // ALIGN
         var restCaller = Substitute.For<IRestCaller>();
@@ -765,7 +765,7 @@ public class ContentLoadingTests
     }
 
     [TestMethod]
-    public async Task Content_T_References_Deferred()
+    public async Task LoadContent_T_References_Deferred()
     {
         // ALIGN
         var restCaller = Substitute.For<IRestCaller>();
@@ -823,7 +823,7 @@ public class ContentLoadingTests
     }
 
     [TestMethod]
-    public async Task Content_T_References_Expanded_Simple()
+    public async Task LoadContent_T_References_Expanded_Simple()
     {
         // ALIGN
         var restCaller = Substitute.For<IRestCaller>();
@@ -866,7 +866,7 @@ public class ContentLoadingTests
         Assert.IsNotNull(content.Owner);
     }
     [TestMethod]
-    public async Task Content_T_References_Expanded_Multi_IEnumerable()
+    public async Task LoadContent_T_References_Expanded_Multi_IEnumerable()
     {
         // ALIGN
         var restCaller = Substitute.For<IRestCaller>();
@@ -918,7 +918,7 @@ public class ContentLoadingTests
         Assert.AreEqual("/Root/System/Schema/ContentTypes/GenericContent/File", referredItems[2].Path);
     }
     [TestMethod]
-    public async Task Content_T_References_Expanded_Multi_Array()
+    public async Task LoadContent_T_References_Expanded_Multi_Array()
     {
         // ALIGN
         var restCaller = Substitute.For<IRestCaller>();
@@ -969,7 +969,7 @@ public class ContentLoadingTests
         Assert.AreEqual("/Root/Path3", referredItems[2].Path);
     }
     [TestMethod]
-    public async Task Content_T_References_Expanded_Multi_List()
+    public async Task LoadContent_T_References_Expanded_Multi_List()
     {
         // ALIGN
         var restCaller = Substitute.For<IRestCaller>();
@@ -1064,7 +1064,7 @@ public class ContentLoadingTests
         }
     }
     [TestMethod]
-    public async Task Content_T_Properties_Custom()
+    public async Task LoadContent_T_Properties_Custom()
     {
         // ALIGN
         var restCaller = Substitute.For<IRestCaller>();
@@ -1115,6 +1115,52 @@ public class ContentLoadingTests
         Assert.AreEqual(111, content.Field_StringToDictionary["Name1"]);
         Assert.AreEqual(222, content.Field_StringToDictionary["Name2"]);
         Assert.AreEqual(333, content.Field_StringToDictionary["Name3"]);
+    }
+
+    /* =================================================================== ERROR */
+
+    [TestMethod]
+    public async Task LoadContent_T_Error_UnknownType()
+    {
+        // ALIGN
+        var restCaller = Substitute.For<IRestCaller>();
+        restCaller
+            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(@"{
+  ""d"": {
+    ""Id"": 999543,
+    ""Type"": ""MyContent1"",
+    ""Name"": ""Content-1""
+  }
+}"));
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<MyContent>();
+        });
+        var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+            .ConfigureAwait(false);
+
+        // ACT
+        var request = new LoadContentRequest {ContentId = 999543, Select = new []{ "Id", "Type", "Name" }};
+        MyContent2? content = null;
+        try
+        {
+            content = await repository.LoadContentAsync<MyContent2>(request, CancellationToken.None);
+            Assert.Fail("The expected ApplicationException was not thrown.");
+        }
+        catch (ApplicationException ex)
+        {
+            // ASSERT
+            Assert.AreEqual("The content type is not registered: MyContent2", ex.Message);
+            Assert.AreEqual("No service for type 'SenseNet.Client.Tests.UnitTests.RepositoryTests+MyContent2' " +
+                            "has been registered.", ex.InnerException?.Message);
+        }
+
+        var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
+        Assert.IsNotNull(requestedUri);
+        Assert.AreEqual("/OData.svc/content(999543)?metadata=no&$select=Id,Type,Name", requestedUri.PathAndQuery);
     }
 
     /* ====================================================================== TOOLS */

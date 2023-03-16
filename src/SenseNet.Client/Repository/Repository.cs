@@ -155,10 +155,15 @@ internal class Repository : IRepository
 
         var type = GetTypeFromJsonModel(rs);
 
-        //UNDONE: handle InvalidOperationException: No service for type (same way as in CreateContent)
-        var content = type != null
-            ? (T) _services.GetRequiredService(type)
-            : _services.GetRequiredService<T>();
+        T content;
+        try
+        {
+            content = type != null ? (T)_services.GetRequiredService(type) : _services.GetRequiredService<T>();
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new ApplicationException("The content type is not registered: " + typeof(T).Name, ex);
+        }
 
         content.Server = Server;
         content.Repository = this;
