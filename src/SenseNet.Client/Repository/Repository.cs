@@ -19,7 +19,14 @@ internal class Repository : IRepository
     private readonly IServiceProvider _services;
     private readonly ILogger<Repository> _logger;
 
-    public ServerContext Server { get; set; }
+    internal ServerContext Server { get; set; }
+
+    ServerContext IRepository.Server
+    {
+        get => this.Server;
+        set => this.Server = value;
+    }
+
     public RegisteredContentTypes GlobalContentTypes { get; }
 
     public Repository(IRestCaller restCaller, IServiceProvider services, IOptions<RegisteredContentTypes> globalContentTypes, ILogger<Repository> logger)
@@ -46,9 +53,7 @@ internal class Repository : IRepository
         if (name == string.Empty)
             name = null;
 
-        var contentType = GetContentTypeByName(contentTypeName);
-        if (contentType == null)
-            contentType = typeof(Content);
+        var contentType = GetContentTypeByName(contentTypeName) ?? typeof(Content);
 
         var content = (Content) _services.GetRequiredService(contentType);
         return PrepareContent(content, parentPath, name, contentTypeName);
@@ -143,13 +148,14 @@ internal class Repository : IRepository
         var oDataRequest = requestData.ToODataRequest(Server);
         oDataRequest.IsCollectionRequest = false;
 
-        //TODO: error handling
         var rs = await _restCaller.GetResponseStringAsync(oDataRequest.GetUri(), Server, cancel)
             .ConfigureAwait(false);
         if (string.IsNullOrEmpty(rs))
             return null;
 
         var type = GetTypeFromJsonModel(rs);
+
+        //UNDONE: handle InvalidOperationException: No service for type (same way as in CreateContent)
         var content = type != null
             ? (T) _services.GetRequiredService(type)
             : _services.GetRequiredService<T>();
@@ -302,20 +308,16 @@ internal class Repository : IRepository
         if (contentType == null)
             return null;
 
-        if (Server.RegisteredContentTypes != null)
-        {
-            var contentTypeName = Server.RegisteredContentTypes.GetContentTypeNameByType(contentType);
-            if (contentTypeName != null)
-                return contentTypeName;
-        }
+        var contentTypeName = Server.RegisteredContentTypes?.GetContentTypeNameByType(contentType);
 
-        return GlobalContentTypes.GetContentTypeNameByType(contentType);
+        return contentTypeName ?? GlobalContentTypes.GetContentTypeNameByType(contentType);
     }
 
     /* ============================================================================ */
 
     private T CreateContentFromResponse<T>(dynamic jObject) where T : Content
     {
+        //UNDONE: use or remove this method
         var content = _services.GetRequiredService<T>();
 
         content.Server = Server;

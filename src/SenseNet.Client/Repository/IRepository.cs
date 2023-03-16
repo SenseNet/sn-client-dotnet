@@ -16,7 +16,7 @@ public interface IRepository
     /// A context object that represents a connection to a sensenet service.
     /// </summary>
     /// <remarks>A repository instance always belongs to a single sensenet service.</remarks>
-    public ServerContext Server { get; set; }
+    public ServerContext Server { get; internal set; }
 
     /// <summary>
     /// Gets the registered repository-independent content types.
@@ -40,11 +40,13 @@ public interface IRepository
     public Content CreateContent(string parentPath, string contentTypeName, string name);
     /// <summary>
     /// Creates a new content instance in memory by the given type parameter.
-    /// If the content type is registered globally or in a repository with two or more names,
+    /// If the content type is registered globally or in a repository with multiple names,
     /// use the optional parameter <paramref name="contentTypeName"/> to properly identify the type and name.
-    /// The requested type should be registered or an <see cref="ApplicationException"/> will be thrown.
     /// </summary>
-    /// <typeparam name="T">Type of the content (should be registered).</typeparam>
+    /// <remarks>The <see cref="T"/> type should be registered during application start either by the
+    /// ConfigureSenseNetRepository or the RegisterGlobalContentType methods otherwise
+    /// an <see cref="ApplicationException"/> will be thrown.</remarks>
+    /// <typeparam name="T">Type of the content.</typeparam>
     /// <param name="parentPath">Path of the already existing parent (required).</param>
     /// <param name="contentTypeName">Content type name (optional).</param>
     /// <param name="name">Name of the content (optional).</param>
@@ -59,6 +61,8 @@ public interface IRepository
     /// <summary>
     /// Creates a new content instance in memory. When saved, the content is created from the
     /// given content template on the server.
+    /// If the content type is registered globally or in a repository with multiple names,
+    /// use the optional parameter <paramref name="contentTypeName"/> to properly identify the type and name.
     /// If the requested type is not registered, the return value will be a <see cref="Content"/>.
     /// </summary>
     /// <param name="parentPath">Path of the already existing parent.</param>
@@ -74,9 +78,11 @@ public interface IRepository
     /// <summary>
     /// Creates a new content instance in memory. When saved, the content is created from the
     /// given content template on the server.
-    /// The requested type should be registered or an <see cref="ApplicationException"/> will be thrown.
     /// </summary>
-    /// <typeparam name="T">Type of the content (should be registered).</typeparam>
+    /// <remarks>The <see cref="T"/> type should be registered during application start either by the
+    /// ConfigureSenseNetRepository or the RegisterGlobalContentType methods otherwise
+    /// an <see cref="ApplicationException"/> will be thrown.</remarks>
+    /// <typeparam name="T">Type of the content.</typeparam>
     /// <param name="parentPath">Path of the already existing parent.</param>
     /// <param name="contentTypeName">Content type name (optional).</param>
     /// <param name="name">Name of the content. If it is null, the server will generate a name for the content.</param>
@@ -116,7 +122,10 @@ public interface IRepository
     /// <summary>
     /// Loads an existing content.
     /// </summary>
-    /// <typeparam name="T">Well known type of the content (should be registered)</typeparam>
+    /// <typeparam name="T">Well-known type of the content.</typeparam>
+    /// <remarks>The <see cref="T"/> type should be registered during application start either by the
+    /// ConfigureSenseNetRepository or the RegisterGlobalContentType methods otherwise
+    /// an <see cref="ApplicationException"/> will be thrown.</remarks>
     /// <param name="id">Content id</param>
     /// <param name="cancel">The token to monitor for cancellation requests.</param>
     /// <returns>A task that wraps the content or null.</returns>
@@ -124,7 +133,10 @@ public interface IRepository
     /// <summary>
     /// Loads an existing content.
     /// </summary>
-    /// <typeparam name="T">Well known type of the content (should be registered)</typeparam>
+    /// <remarks>The <see cref="T"/> type should be registered during application start either by the
+    /// ConfigureSenseNetRepository or the RegisterGlobalContentType methods otherwise
+    /// an <see cref="ApplicationException"/> will be thrown.</remarks>
+    /// <typeparam name="T">Well-known type of the content.</typeparam>
     /// <param name="path">Content path</param>
     /// <param name="cancel">The token to monitor for cancellation requests.</param>
     /// <returns>A task that wraps the content or null.</returns>
@@ -132,7 +144,10 @@ public interface IRepository
     /// <summary>
     /// Loads an existing content.
     /// </summary>
-    /// <typeparam name="T">Well known type of the content (should be registered)</typeparam>
+    /// <remarks>The <see cref="T"/> type should be registered during application start either by the
+    /// ConfigureSenseNetRepository or the RegisterGlobalContentType methods otherwise
+    /// an <see cref="ApplicationException"/> will be thrown.</remarks>
+    /// <typeparam name="T">Well-known type of the content.</typeparam>
     /// <param name="requestData">Detailed request information.</param>
     /// <param name="cancel">The token to monitor for cancellation requests.</param>
     /// <returns>A task that wraps the content or null.</returns>

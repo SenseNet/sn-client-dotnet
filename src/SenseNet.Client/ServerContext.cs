@@ -5,7 +5,6 @@ using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using SenseNet.Extensions.DependencyInjection;
 
 namespace SenseNet.Client;
 
@@ -51,8 +50,14 @@ public class ServerContext
     /// </summary>
     public Func<HttpRequestMessage, X509Certificate2, X509Chain, SslPolicyErrors, bool> ServerCertificateCustomValidationCallback { get; set; }
 
+    /// <summary>
+    /// Authentication information configured or filled by the authentication process.
+    /// </summary>
     public AuthenticationInfo Authentication { get; } = new();
 
+    /// <summary>
+    /// Gets the logger used by legacy APIs.
+    /// </summary>
     public ILogger Logger { get; set; }
 
     /// <summary>

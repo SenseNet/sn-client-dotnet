@@ -6,7 +6,7 @@ using System.Linq;
 namespace SenseNet.Client;
 
 /// <summary>
-/// Defines a class that holds the set of registered content types. Can be register one or more content types.
+/// A class that holds a set of registered content types.
 /// See the RepositoryExtensions.ConfigureSenseNetRepository extension method for registering content types
 /// to the specific repository and the RepositoryExtensions.RegisterGlobalContentType extension method for
 /// registering repository-independent content types.
@@ -31,7 +31,7 @@ public class RegisteredContentTypes
     /// Adds a content type to the set.
     /// </summary>
     /// <typeparam name="T">The content type to register.</typeparam>
-    /// <param name="contentTypeName">The name if it is different from the name of the given <paramref name="contentType"/>'s name.</param>
+    /// <param name="contentTypeName">The name if it is different from the name of the given <see cref="T"/> types name.</param>
     /// <returns>Itself to be used in fluent mode.</returns>
     public RegisteredContentTypes Add<T>(string contentTypeName = null) where T : Content
     {
@@ -41,7 +41,6 @@ public class RegisteredContentTypes
 
     internal string GetContentTypeNameByType(Type contentType)
     {
-        //return ContentTypes.FirstOrDefault(x => x.Value == contentType).Key;
         var names = ContentTypes
             .Where(x => x.Value == contentType)
             .Select(x=>x.Key)
