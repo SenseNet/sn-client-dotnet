@@ -328,10 +328,9 @@ public partial class Content
             var itemType = propertyType.GetElementType();
             if (typeof(Content).IsAssignableFrom(itemType))
             {
-                throw new NotImplementedException();
-                var referredContents = propertyValue as IEnumerable<Content>;
-                // manage by ids or paths
-                return true;
+                return propertyValue == null
+                    ? null
+                    : ConvertReferencesToRequestValue((IEnumerable<Content>) propertyValue, propertyName, true);
             }
         }
 
@@ -341,7 +340,9 @@ public partial class Content
             var itemType = propertyType.GetGenericArguments().First();
             if (typeof(Content).IsAssignableFrom(itemType))
             {
-                throw new NotImplementedException();
+                return propertyValue == null
+                    ? null
+                    : ConvertReferencesToRequestValue((IEnumerable<Content>)propertyValue, propertyName, true);
             }
         }
 
@@ -351,32 +352,41 @@ public partial class Content
             var itemType = propertyType.GetGenericArguments().First();
             if (typeof(Content).IsAssignableFrom(itemType))
             {
-                var result = new List<object>();
-                if (propertyValue != null)
-                {
-                    foreach (var referredContent in (IEnumerable<Content>) propertyValue)
-                    {
-                        if (referredContent == null)
-                            continue;
-                        if (referredContent.Id > 0)
-                        {
-                            result.Add(referredContent.Id);
-                            continue;
-                        }
-                        if (referredContent.Path != null)
-                        {
-                            result.Add(referredContent.Path);
-                            continue;
-                        }
-                        throw new ApplicationException("One or more referred cannot be recognized." +
-                                                       $" The referred content should have the Id or Path. FieldName: '{propertyName}'.");
-                    }
-                }
-
-                return result.ToArray();
+                return propertyValue == null
+                    ? null
+                    : ConvertReferencesToRequestValue((IEnumerable<Content>)propertyValue, propertyName, true);
             }
         }
         return propertyValue;
+    }
+
+    private object[] ConvertReferencesToRequestValue(IEnumerable<Content> source, string propertyName, bool throwOnError)
+    {
+        var result = new List<object>();
+
+        foreach (var content in source)
+        {
+            var item = ConvertReferenceToRequestValue(content, propertyName, throwOnError);
+            if(item != null)
+                result.Add(item);
+        }
+        return result.ToArray();
+    }
+
+    private object ConvertReferenceToRequestValue(Content content, string propertyName, bool throwOnError)
+    {
+        var result = new List<object>();
+
+        if (content == null)
+            return null;
+        if (content.Id > 0)
+            return content.Id;
+        if (content.Path != null)
+            return content.Path;
+        if (!throwOnError)
+            return null;
+        throw new ApplicationException("One or more referred content cannot be recognized." +
+                                       $" The referred content should have the Id or Path. FieldName: '{propertyName}'.");
     }
 
     private bool ManageReferences(Type propertyType, string propertyName, object propertyValue, JToken originalValue, IDictionary<string, object> postData)
@@ -385,8 +395,9 @@ public partial class Content
         {
             // Single reference
             var originalReferredContent = GetReference(originalValue, propertyType);
-            //UNDONE: check reference diff by ids or paths
-            postData[propertyName] = propertyValue;
+            var originalRequest = ConvertReferenceToRequestValue(originalReferredContent, propertyName, false);
+            if (originalRequest == null || propertyValue == null || JsonHelper.Serialize(new[] { originalRequest }) != JsonHelper.Serialize(propertyValue))
+                postData[propertyName] = propertyValue;
             return true;
         }
 
@@ -396,9 +407,10 @@ public partial class Content
             var itemType = propertyType.GetElementType();
             if (typeof(Content).IsAssignableFrom(itemType))
             {
-                var originalReferredContents = GetMultiReferenceArray(originalValue, itemType);
-                //UNDONE: check reference diff by ids or paths
-                postData[propertyName] = propertyValue;
+                var originalReferredContents = (IEnumerable<Content>)GetMultiReferenceArray(originalValue, itemType);
+                var originalRequest = ConvertReferencesToRequestValue(originalReferredContents, propertyName, false);
+                if (originalRequest == null || propertyValue == null || JsonHelper.Serialize(originalRequest) != JsonHelper.Serialize(propertyValue))
+                    postData[propertyName] = propertyValue;
                 return true;
             }
         }
@@ -409,9 +421,10 @@ public partial class Content
             var itemType = propertyType.GetGenericArguments().First();
             if (typeof(Content).IsAssignableFrom(itemType))
             {
-                var originalReferredContents = GetMultiReferenceArray(originalValue, itemType);
-                //UNDONE: check reference diff by ids or paths
-                postData[propertyName] = propertyValue;
+                var originalReferredContents = (IEnumerable<Content>)GetMultiReferenceArray(originalValue, itemType);
+                var originalRequest = ConvertReferencesToRequestValue(originalReferredContents, propertyName, false);
+                if (originalRequest == null || propertyValue == null || JsonHelper.Serialize(originalRequest) != JsonHelper.Serialize(propertyValue))
+                    postData[propertyName] = propertyValue;
                 return true;
             }
         }
@@ -422,9 +435,10 @@ public partial class Content
             var itemType = propertyType.GetGenericArguments().First();
             if (typeof(Content).IsAssignableFrom(itemType))
             {
-                var originalReferredContents = GetMultiReferenceArray(originalValue, itemType);
-                //UNDONE: check reference diff by ids or paths
-                postData[propertyName] = propertyValue;
+                var originalReferredContents = (IEnumerable<Content>)GetMultiReferenceArray(originalValue, itemType);
+                var originalRequest = ConvertReferencesToRequestValue(originalReferredContents, propertyName, false);
+                if (originalRequest == null || propertyValue == null || JsonHelper.Serialize(originalRequest) != JsonHelper.Serialize(propertyValue))
+                    postData[propertyName] = propertyValue;
                 return true;
             }
         }

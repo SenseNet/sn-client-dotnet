@@ -204,7 +204,7 @@ namespace SenseNet.Client.IntegrationTests
             }
         }
 
-        /* ================================================================================================== TOOLS */
+        /* ================================================================================================== UPDATE */
 
         private class TestMemo : Content
         {
@@ -379,11 +379,11 @@ namespace SenseNet.Client.IntegrationTests
             {
                 Assert.AreEqual($"Cannot save the content. Id: {wrongContent.Id}, Path: '{wrongContent.Path}'. " +
                                 $"See inner exception for details.", e.Message);
-                Assert.AreEqual("One or more referred cannot be recognized. " +
+                Assert.AreEqual("One or more referred content cannot be recognized. " +
                                 "The referred content should have the Id or Path. FieldName: 'SeeAlso'.", e.InnerException?.Message);
             }
 
-            // 8 - Delete the content and check the repository is clean
+            // 10 - Delete the content and check the repository is clean
             await repository.DeleteContentAsync(contentId, true, cancel).ConfigureAwait(false);
             Assert.IsFalse(await repository.IsContentExistsAsync(path, cancel).ConfigureAwait(false));
         }

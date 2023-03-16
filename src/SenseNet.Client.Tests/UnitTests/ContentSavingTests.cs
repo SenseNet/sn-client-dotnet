@@ -6,6 +6,8 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NSubstitute;
 using SenseNet.Extensions.DependencyInjection;
+// ReSharper disable InconsistentNaming
+// ReSharper disable ClassNeverInstantiated.Local
 
 namespace SenseNet.Client.Tests.UnitTests;
 
@@ -551,6 +553,196 @@ public class ContentSavingTests
         var data = (IDictionary<string, object>)arguments[1]!;
         var names = string.Join(", ", data.Keys.OrderBy(x => x));
         Assert.AreEqual("Index2, Name", names);
+    }
+
+    private class ReferredContent : Content
+    {
+        public ReferredContent(IRestCaller restCaller, ILogger<ReferredContent> logger) : base(restCaller, logger) { }
+    }
+    private class TestContent_References : Content
+    {
+        public TestContent_References(IRestCaller restCaller, ILogger<TestContent_References> logger) : base(restCaller, logger) { }
+
+        public Content Reference_Content { get; set; }
+        public Content[] References_ContentArray { get; set; }
+        public IEnumerable<Content> References_ContentEnumerable { get; set; }
+        public List<Content> References_ContentList { get; set; }
+        public ReferredContent Reference_WellKnown { get; set; }
+        public ReferredContent[] References_WellKnownArray { get; set; }
+        public IEnumerable<ReferredContent> References_WellKnownEnumerable { get; set; }
+        public List<ReferredContent> References_WellKnownList { get; set; }
+    }
+    [TestMethod]
+    public async Task Content_T_StronglyTyped_References_SaveFirst()
+    {
+        var restCaller = Substitute.For<IRestCaller>();
+        restCaller
+            .PostContentAsync(Arg.Any<string>(), Arg.Any<object>(), Arg.Any<ServerContext>(),
+                Arg.Any<CancellationToken>())
+            .Returns(new Content(null, null));
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.RegisterGlobalContentType<ReferredContent>();
+            services.RegisterGlobalContentType<TestContent_References>();
+            services.AddSingleton(restCaller);
+        });
+        var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+            .ConfigureAwait(false);
+
+        var contents = new Content[7];
+        for (int i = 0; i < contents.Length; i++)
+        {
+            contents[i] = new Content(null, null)
+            {
+                Id = i % 2 == 0 ? 100001 + i : 0,
+                Name = $"Content-{i + 1}",
+                Path = $"/Root/Refs/Content-{i + 1}",
+                ParentId = 100000,
+                ParentPath = "/Root/Refs",
+                Repository = repository,
+                Server = repository.Server
+            };
+        }
+        var referredContents = new ReferredContent[7];
+        for (int i = 0; i < contents.Length; i++)
+        {
+            referredContents[i] = new ReferredContent(null, null)
+            {
+                Id = i % 2 == 1 ? 200001 + i : 0,
+                Name = $"ReferredContent-{i + 1}",
+                Path = $"/Root/Refs/ReferredContent-{i + 1}",
+                ParentId = 100000,
+                ParentPath = "/Root/Refs",
+                Repository = repository,
+                Server = repository.Server
+            };
+        }
+
+        // ACT
+        var content = repository.CreateContent<TestContent_References>("/Root/Content", null, "MyContent-1");
+        content.Reference_Content = contents[0];
+        content.References_ContentArray = new[] { contents[1], contents[2] };
+        content.References_ContentEnumerable = new[] { contents[3], contents[4] };
+        content.References_ContentList = new List<Content> { contents[5], contents[6] };
+        content.Reference_WellKnown = referredContents[0];
+        content.References_WellKnownArray = new[] { referredContents[1], referredContents[2] };
+        content.References_WellKnownEnumerable = new[] { referredContents[3], referredContents[4] };
+        content.References_WellKnownList = new List<ReferredContent> { referredContents[5], referredContents[6] };
+        await content.SaveAsync().ConfigureAwait(false);
+
+        // ASSERT
+        var arguments = restCaller.ReceivedCalls().Single().GetArguments();
+        Assert.AreEqual("/Root/Content", arguments[0]); // parentPath
+        dynamic data = arguments[1]!;
+        var fields = (IDictionary<string, object?>)data;
+
+        var names = string.Join(", ", fields.Keys.OrderBy(x => x));
+        Assert.AreEqual("__ContentType, Existing, Name, Reference_Content, Reference_WellKnown," +
+                        " References_ContentArray, References_ContentEnumerable, References_ContentList," +
+                        " References_WellKnownArray, References_WellKnownEnumerable, References_WellKnownList", names);
+        Assert.IsNotNull(data);
+        Assert.AreEqual("{\"Name\":\"MyContent-1\",\"__ContentType\":\"TestContent_References\",\"Existing\":false," +
+                        "\"Reference_Content\":[100001]," +
+                        "\"References_ContentArray\":[\"/Root/Refs/Content-2\",100003]," +
+                        "\"References_ContentEnumerable\":[\"/Root/Refs/Content-4\",100005]," +
+                        "\"References_ContentList\":[\"/Root/Refs/Content-6\",100007]," +
+                        "\"Reference_WellKnown\":[\"/Root/Refs/ReferredContent-1\"]," +
+                        "\"References_WellKnownArray\":[200002,\"/Root/Refs/ReferredContent-3\"]," +
+                        "\"References_WellKnownEnumerable\":[200004,\"/Root/Refs/ReferredContent-5\"]," +
+                        "\"References_WellKnownList\":[200006,\"/Root/Refs/ReferredContent-7\"]}", JsonHelper.Serialize(data));
+    }
+    [TestMethod]
+    public async Task Content_T_StronglyTyped_References_Update()
+    {
+        var restCaller = Substitute.For<IRestCaller>();
+        restCaller
+            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(@"{
+  ""d"": {
+    ""Id"": 899612,
+    ""Reference_Content"": [{ ""Id"": 100001 }],
+    ""References_ContentArray"": [{ ""Id"": 100002 },{ ""Id"": 100003 }],
+    ""References_ContentEnumerable"": [{ ""Id"": 100004 },{ ""Id"": 100005 }],
+    ""References_ContentList"": [{ ""Id"": 100006 },{ ""Id"": 100007 }],
+    ""Reference_WellKnown"": [{ ""Id"": 200001 }],
+    ""References_WellKnownArray"": [{ ""Id"": 200002 },{ ""Id"": 200003 }],
+    ""References_WellKnownEnumerable"": [{ ""Id"": 200004 },{ ""Id"": 200005 }],
+    ""References_WellKnownList"": [{ ""Id"": 200006 },{ ""Id"": 200007 }],
+  }
+}
+"));
+        restCaller
+            .PatchContentAsync(Arg.Any<int>(), Arg.Any<object>(), Arg.Any<ServerContext>(),
+                Arg.Any<CancellationToken>())
+            .Returns(new Content(null, null));
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.RegisterGlobalContentType<ReferredContent>();
+            services.RegisterGlobalContentType<TestContent_References>();
+            services.AddSingleton(restCaller);
+        });
+        var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+            .ConfigureAwait(false);
+
+        var contents = new Content[7];
+        for (int i = 0; i < contents.Length; i++)
+        {
+            contents[i] = new Content(null, null)
+            {
+                Id = i % 2 == 0 ? 300001 + i : 0,
+                Name = $"Content-{i + 1}",
+                Path = $"/Root/Refs2/Content-{i + 1}",
+                ParentId = 100000,
+                ParentPath = "/Root/Refs2",
+                Repository = repository,
+                Server = repository.Server
+            };
+        }
+        var referredContents = new ReferredContent[7];
+        for (int i = 0; i < contents.Length; i++)
+        {
+            referredContents[i] = new ReferredContent(null, null)
+            {
+                Id = i % 2 == 1 ? 400001 + i : 0,
+                Name = $"ReferredContent-{i + 1}",
+                Path = $"/Root/Refs2/ReferredContent-{i + 1}",
+                ParentId = 100000,
+                ParentPath = "/Root/Refs2",
+                Repository = repository,
+                Server = repository.Server
+            };
+        }
+        var request = new LoadContentRequest { ContentId = 999543, Select = new[] { "Id", "Name", "Path", "Type", "Index" } };
+        dynamic content = await repository.LoadContentAsync<TestContent_References>(request, CancellationToken.None);
+
+        // ACT
+        content.Reference_Content = contents[0];
+        content.References_ContentEnumerable = new[] { contents[3], contents[4] };
+        content.References_WellKnownArray = new[] { referredContents[1], referredContents[2] };
+        content.References_WellKnownList = new List<ReferredContent> { referredContents[5], referredContents[6] };
+        await content.SaveAsync().ConfigureAwait(false);
+
+        // ASSERT
+        var calls = restCaller.ReceivedCalls().ToArray();
+        Assert.IsNotNull(calls);
+        Assert.AreEqual(2, calls.Length);
+        Assert.AreEqual("PatchContentAsync", calls[1].GetMethodInfo().Name);
+        var arguments = calls[1].GetArguments();
+        Assert.AreEqual(899612, arguments[0]);
+        //Assert.AreEqual("/Root/Content", arguments[0]); // parentPath
+        dynamic data = arguments[1]!;
+        var fields = (IDictionary<string, object?>)data;
+
+        var names = string.Join(", ", fields.Keys.OrderBy(x => x));
+        Assert.AreEqual("Name, Reference_Content, References_ContentEnumerable, References_WellKnownArray, References_WellKnownList", names);
+        Assert.IsNotNull(data);
+        Assert.AreEqual("{\"Name\":null," +
+                        "\"Reference_Content\":[300001]," +
+                        "\"References_ContentEnumerable\":[\"/Root/Refs2/Content-4\",300005]," +
+                        "\"References_WellKnownArray\":[400002,\"/Root/Refs2/ReferredContent-3\"]," +
+                        "\"References_WellKnownList\":[400006,\"/Root/Refs2/ReferredContent-7\"]}", JsonHelper.Serialize(data));
     }
 
     /* ====================================================================== TOOLS */
