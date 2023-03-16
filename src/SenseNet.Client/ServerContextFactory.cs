@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -44,7 +43,7 @@ internal class ServerContextFactory : IServerContextFactory
     private readonly ILogger<ServerContextFactory> _logger;
     private readonly ServerContextOptions _serverContextOptions;
     private readonly RepositoryOptions _repositoryOptions;
-    private readonly SemaphoreSlim _asyncLock = new SemaphoreSlim(1, 1);
+    private readonly SemaphoreSlim _asyncLock = new(1, 1);
     private readonly IDictionary<string, ServerContext> _servers = new Dictionary<string, ServerContext>();
 
     public ServerContextFactory(ITokenStore tokenStore, IOptions<ServerContextOptions> serverContextOptions,
@@ -55,8 +54,7 @@ internal class ServerContextFactory : IServerContextFactory
         _serverContextOptions = serverContextOptions.Value;
         _repositoryOptions = repositoryOptions.Value;
     }
-        
-    [SuppressMessage("ReSharper", "InconsistentlySynchronizedField")]
+    
     public async Task<ServerContext> GetServerAsync(string name = null, string token = null)
     {
         ServerContext CloneWithToken(ServerContext original)

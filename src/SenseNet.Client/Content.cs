@@ -835,7 +835,6 @@ public partial class Content : DynamicObject
         else
         {
             // Modernized version
-            //UNDONE: Use _restCaller
             responseContent = Existing
                 ? (this.Id > 0
                     ? await _restCaller.PatchContentAsync(this.Id, postData, Server, CancellationToken.None).ConfigureAwait(false)
