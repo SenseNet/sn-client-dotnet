@@ -793,7 +793,12 @@ public partial class Content : DynamicObject
     /// <summary>
     /// Saves the content to the server.
     /// </summary>
-    public async Task SaveAsync()
+    [Obsolete("Use overload SaveAsync(CancellationToken).")]
+    public Task SaveAsync()
+    {
+        return SaveAsync(CancellationToken.None);
+    }
+    public async Task SaveAsync(CancellationToken cancel)
     {
         dynamic postData = new ExpandoObject();
         postData.Name = this.Name;
@@ -838,9 +843,9 @@ public partial class Content : DynamicObject
             //UNDONE: Use _restCaller
             responseContent = Existing
                 ? (this.Id > 0
-                    ? await _restCaller.PatchContentAsync(this.Id, postData, Server, CancellationToken.None).ConfigureAwait(false)
-                    : await _restCaller.PatchContentAsync(this.Path, postData, Server, CancellationToken.None).ConfigureAwait(false))
-                : await _restCaller.PostContentAsync(this.ParentPath, postData, Server, CancellationToken.None).ConfigureAwait(false);
+                    ? await _restCaller.PatchContentAsync(this.Id, postData, Server, cancel).ConfigureAwait(false)
+                    : await _restCaller.PatchContentAsync(this.Path, postData, Server, cancel).ConfigureAwait(false))
+                : await _restCaller.PostContentAsync(this.ParentPath, postData, Server, cancel).ConfigureAwait(false);
         }
 
         // reset local values

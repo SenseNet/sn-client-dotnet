@@ -27,6 +27,8 @@ public partial class Content
     {
         foreach (var property in this.GetType().GetProperties())
         {
+//UNDONE: Skip property if it has not setter.
+
             var jsonValue = responseContent[property.Name];
 
             if (TryConvertToProperty(property.Name, jsonValue, out object propertyValue))
@@ -180,8 +182,7 @@ public partial class Content
                 continue;
             }
 
-            //UNDONE: ? set default instead of throw exception.
-            throw new NotImplementedException("#1");
+            // Property could not be bound: do nothing.
         }
     }
 
@@ -392,6 +393,7 @@ public partial class Content
 
     private bool ManageReferences(Type propertyType, string propertyName, object propertyValue, JToken originalValue, IDictionary<string, object> postData)
     {
+//UNDONE: arrays, lists, etc. need to be sorted.
         if (typeof(Content).IsAssignableFrom(propertyType))
         {
             // Single reference
