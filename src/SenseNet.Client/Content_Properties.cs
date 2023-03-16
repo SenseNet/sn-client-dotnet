@@ -308,18 +308,18 @@ public partial class Content
 
     private object ConvertFromReferredContents(string propertyName, Type propertyType, object propertyValue)
     {
+        if (propertyValue == null)
+            return null;
+
         if (typeof(Content).IsAssignableFrom(propertyType))
         {
             // Single reference
             var referredContent = (Content) propertyValue;
-            if (referredContent == null)
-                return null;
             if (referredContent.Id > 0)
                 return new[] { referredContent.Id };
-            else if (referredContent.Path != null)
+            if (referredContent.Path != null)
                 return new[] { referredContent.Path };
-            throw new ApplicationException(
-                "Reference cannot be recognized. The referred content should have the Id or Path.");
+            throw CreateReferenceCannotBeRecognizedException(propertyName);
         }
 
         if (propertyType.IsArray)
@@ -328,9 +328,8 @@ public partial class Content
             var itemType = propertyType.GetElementType();
             if (typeof(Content).IsAssignableFrom(itemType))
             {
-                return propertyValue == null
-                    ? null
-                    : ConvertReferencesToRequestValue((IEnumerable<Content>) propertyValue, propertyName, true);
+                var items = ConvertReferencesToRequestValue((IEnumerable<Content>)propertyValue, propertyName, true);
+                return items.Length == 0 ? null : items;
             }
         }
 
@@ -340,9 +339,8 @@ public partial class Content
             var itemType = propertyType.GetGenericArguments().First();
             if (typeof(Content).IsAssignableFrom(itemType))
             {
-                return propertyValue == null
-                    ? null
-                    : ConvertReferencesToRequestValue((IEnumerable<Content>)propertyValue, propertyName, true);
+                var items = ConvertReferencesToRequestValue((IEnumerable<Content>)propertyValue, propertyName, true);
+                return items.Length == 0 ? null : items;
             }
         }
 
@@ -352,9 +350,8 @@ public partial class Content
             var itemType = propertyType.GetGenericArguments().First();
             if (typeof(Content).IsAssignableFrom(itemType))
             {
-                return propertyValue == null
-                    ? null
-                    : ConvertReferencesToRequestValue((IEnumerable<Content>)propertyValue, propertyName, true);
+                var items = ConvertReferencesToRequestValue((IEnumerable<Content>)propertyValue, propertyName, true);
+                return items.Length == 0 ? null : items;
             }
         }
         return propertyValue;
@@ -385,6 +382,10 @@ public partial class Content
             return content.Path;
         if (!throwOnError)
             return null;
+        throw CreateReferenceCannotBeRecognizedException(propertyName);
+    }
+    private Exception CreateReferenceCannotBeRecognizedException(string propertyName)
+    {
         throw new ApplicationException("One or more referred content cannot be recognized." +
                                        $" The referred content should have the Id or Path. FieldName: '{propertyName}'.");
     }
