@@ -25,10 +25,10 @@ public partial class Content
 {
     private void SetProperties(dynamic responseContent)
     {
-        foreach (var property in this.GetType().GetProperties())
+        foreach (var property in this.GetType()
+                     .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                     .Where(p => p.CanRead && p.CanWrite))
         {
-//UNDONE: Skip property if it has not setter.
-
             var jsonValue = responseContent[property.Name];
 
             if (TryConvertToProperty(property.Name, jsonValue, out object propertyValue))
@@ -127,11 +127,9 @@ public partial class Content
                 }
                 continue;
             }
-            //UNDONE: Are there more supported int and string enumerable types?
+            //TODO: Are there more supported int and string enumerable types?
 
-
-            //if (property.GetCustomAttribute<ReferenceFieldAttribute>() == null)
-
+            // Handle reference fields
             if (typeof(Content).IsAssignableFrom(propertyType))
             {
                 // Single reference
@@ -176,6 +174,7 @@ public partial class Content
                 }
             }
 
+            // General object 
             if (jsonValue is JObject customObject)
             {
                 property.SetMethod.Invoke(this, new[] {customObject.ToObject(propertyType)});

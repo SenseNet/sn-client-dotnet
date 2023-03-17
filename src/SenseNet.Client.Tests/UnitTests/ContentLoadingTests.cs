@@ -490,6 +490,52 @@ public class ContentLoadingTests
         Assert.AreEqual(null, content.IsFollowed); // Boolean
     }
 
+    private class TestContent_RelevantProperties : Content
+    {
+        public TestContent_RelevantProperties(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }
+
+        public static string Static { get; set; }
+        public string ReadOnly { get; }
+        internal string Internal { get; set; }
+        public string PublicInstanceReadWrite { get; set; }
+    }
+    [TestMethod]
+    public async Task LoadContent_T_OnlyPublicInstanceReadWritePropertiesArBoundButNoErrors()
+    {
+        // ALIGN
+        var restCaller = Substitute.For<IRestCaller>();
+        restCaller
+            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(@"{
+  ""d"": {
+    ""Id"": 9998987,
+    ""Name"": ""Content-1"",
+    ""Static"": ""Value1"",
+    ""ReadOnly"": ""Value2"",
+    ""Internal"": ""Value3"",
+    ""PublicInstanceReadWrite"": ""Value4"",
+  }
+}"));
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<TestContent_RelevantProperties>();
+        });
+        var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+            .ConfigureAwait(false);
+
+        // ACT
+        var request = new LoadContentRequest {ContentId = 9998987};
+        var content = await repository.LoadContentAsync<TestContent_RelevantProperties>(request, CancellationToken.None);
+
+        // ASSERT
+        Assert.IsNull(TestContent_RelevantProperties.Static);
+        Assert.IsNull(content.Internal);
+        Assert.IsNull(content.ReadOnly);
+        Assert.AreEqual("Value4", content.PublicInstanceReadWrite);
+    }
+
     private class TestContent_MultiChoice_StringToString : Content
     {
         public TestContent_MultiChoice_StringToString(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }
