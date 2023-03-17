@@ -500,7 +500,7 @@ public class ContentLoadingTests
         public string PublicInstanceReadWrite { get; set; }
     }
     [TestMethod]
-    public async Task LoadContent_T_OnlyPublicInstanceReadWritePropertiesArBoundButNoErrors()
+    public async Task LoadContent_T_OnlyPublicInstanceReadWritePropertiesAreBoundButNoErrors()
     {
         // ALIGN
         var restCaller = Substitute.For<IRestCaller>();
