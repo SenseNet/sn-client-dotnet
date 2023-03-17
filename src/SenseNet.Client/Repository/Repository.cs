@@ -207,18 +207,9 @@ internal class Repository : IRepository
         var clause = $"InFolder:'{folderPath}'";
         return MoveSettingsToTheEnd($"+{clause} +({contentQuery})").Trim();
     }
-    private async Task<IEnumerable<Content>> LoadCollectionAsync(ODataRequest requestData, CancellationToken cancel)
+    private Task<IEnumerable<Content>> LoadCollectionAsync(ODataRequest requestData, CancellationToken cancel)
     {
-        requestData.IsCollectionRequest = true;
-        requestData.SiteUrl = ServerContext.GetUrl(Server);
-
-            var response = await _restCaller.GetResponseStringAsync(requestData.GetUri(), Server, cancel).ConfigureAwait(false);
-            if (string.IsNullOrEmpty(response))
-                return Array.Empty<Content>();
-
-            var items = JsonHelper.Deserialize(response).d.results as JArray;
-
-        return items?.Select(x => CreateContentFromResponse(x)) ?? Array.Empty<Content>();
+        return LoadCollectionAsync<Content>(requestData, cancel);
     }
     private async Task<IEnumerable<T>> LoadCollectionAsync<T>(ODataRequest requestData, CancellationToken cancel) where T :Content
     {
@@ -258,7 +249,7 @@ internal class Repository : IRepository
         return LoadCollectionAsync(oDataRequest, cancel);
     }
 
-    public Task<IEnumerable<T>> QueryForAdminAsync<T>(QueryContentRequest requestData, CancellationToken cancel)
+    public Task<IEnumerable<T>> QueryForAdminAsync<T>(QueryContentRequest requestData, CancellationToken cancel) where T : Content
     {
         throw new NotImplementedException();
     }
@@ -268,7 +259,7 @@ internal class Repository : IRepository
         return LoadCollectionAsync(requestData.ToODataRequest(Server), cancel);
     }
 
-    public Task<IEnumerable<T>> QueryAsync<T>(QueryContentRequest requestData, CancellationToken cancel)
+    public Task<IEnumerable<T>> QueryAsync<T>(QueryContentRequest requestData, CancellationToken cancel) where T : Content
     {
         throw new NotImplementedException();
     }

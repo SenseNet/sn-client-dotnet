@@ -163,6 +163,14 @@ public interface IRepository
     /// <param name="cancel">The token to monitor for cancellation requests.</param>
     /// <returns>Children of the provided content.</returns>
     public Task<IEnumerable<Content>> LoadCollectionAsync(LoadCollectionRequest requestData, CancellationToken cancel);
+    /// <summary>
+    /// Loads child elements of the provided content.
+    /// </summary>
+    /// <typeparam name="T">Well-known type of the content.</typeparam>
+    /// <param name="requestData">Collection request parameters.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>Children of the provided content.</returns>
+    /// <exception cref="InvalidCastException"></exception>
     public Task<IEnumerable<T>> LoadCollectionAsync<T>(LoadCollectionRequest requestData, CancellationToken cancel) where T : Content;
 
     /// <summary>
@@ -194,8 +202,17 @@ public interface IRepository
     /// <param name="cancel">The token to monitor for cancellation requests.</param>
     /// <returns>List of contents returned by the provided content query.</returns>
     public Task<IEnumerable<Content>> QueryForAdminAsync(QueryContentRequest requestData, CancellationToken cancel);
-    public Task<IEnumerable<T>> QueryForAdminAsync<T>(QueryContentRequest requestData, CancellationToken cancel);
-    
+    /// <summary>
+    /// Loads content items by a query with lifespan and system filters switched OFF.
+    /// </summary>
+    /// <remarks>This method is able to load contents from the whole repository, not only a single folder.</remarks>
+    /// <typeparam name="T">Well-known type of the content.</typeparam>
+    /// <param name="requestData">Query request parameters.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>List of contents returned by the provided content query.</returns>
+    /// <exception cref="InvalidCastException"></exception>
+    public Task<IEnumerable<T>> QueryForAdminAsync<T>(QueryContentRequest requestData, CancellationToken cancel) where T : Content;
+
     /// <summary>
     /// Loads content items by a query.
     /// </summary>
@@ -204,7 +221,16 @@ public interface IRepository
     /// <param name="cancel">The token to monitor for cancellation requests.</param>
     /// <returns>List of contents returned by the provided content query.</returns>
     public Task<IEnumerable<Content>> QueryAsync(QueryContentRequest requestData, CancellationToken cancel);
-    public Task<IEnumerable<T>> QueryAsync<T>(QueryContentRequest requestData, CancellationToken cancel);
+    /// <summary>
+    /// Loads content items by a query.
+    /// </summary>
+    /// <remarks>This method is able to load contents from the whole repository, not only a single folder.</remarks>
+    /// <typeparam name="T">Well-known type of the content.</typeparam>
+    /// <param name="requestData">Query request parameters.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>List of contents returned by the provided content query.</returns>
+    /// <exception cref="InvalidCastException"></exception>
+    public Task<IEnumerable<T>> QueryAsync<T>(QueryContentRequest requestData, CancellationToken cancel) where T : Content;
 
     /// <summary>
     /// Gets the count of content items by a query with lifespan and system filters switched OFF.
