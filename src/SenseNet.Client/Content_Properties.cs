@@ -397,17 +397,18 @@ public partial class Content
                                        $" The referred content should have the Id or Path. FieldName: '{propertyName}'.");
     }
 
-    private bool ManageReferences(Type propertyType, string propertyName, object propertyValue, JToken originalValue, IDictionary<string, object> postData)
+    // Compares the serialized converted property value and original values and adds the property value
+    // to the posted data if it is changed. It is also considered a change if the order of the elements has changed.
+    private bool ManageReferences(Type propertyType, string propertyName, object propertyValue, JToken originalValue,
+        IDictionary<string, object> postData)
     {
-//UNDONE: arrays, lists, etc. need to be sorted.
         if (typeof(Content).IsAssignableFrom(propertyType))
         {
             // Single reference
-            var originalReferredContent = GetReference(originalValue, propertyType);
-            var originalRequest = ConvertReferenceToRequestValue(originalReferredContent, propertyName, false);
-            if (originalRequest == null || propertyValue == null || JsonHelper.Serialize(new[] { originalRequest }) != JsonHelper.Serialize(propertyValue))
+            if (MultiReferenceIsChanged(propertyValue, propertyName, originalValue, propertyType))
                 postData[propertyName] = propertyValue;
             return true;
+
         }
 
         if (propertyType.IsArray)
@@ -416,9 +417,7 @@ public partial class Content
             var itemType = propertyType.GetElementType();
             if (typeof(Content).IsAssignableFrom(itemType))
             {
-                var originalReferredContents = (IEnumerable<Content>)GetMultiReferenceArray(originalValue, itemType);
-                var originalRequest = ConvertReferencesToRequestValue(originalReferredContents, propertyName, false);
-                if (originalRequest == null || propertyValue == null || JsonHelper.Serialize(originalRequest) != JsonHelper.Serialize(propertyValue))
+                if (MultiReferenceIsChanged(propertyValue, propertyName, originalValue, itemType))
                     postData[propertyName] = propertyValue;
                 return true;
             }
@@ -430,9 +429,7 @@ public partial class Content
             var itemType = propertyType.GetGenericArguments().First();
             if (typeof(Content).IsAssignableFrom(itemType))
             {
-                var originalReferredContents = (IEnumerable<Content>)GetMultiReferenceArray(originalValue, itemType);
-                var originalRequest = ConvertReferencesToRequestValue(originalReferredContents, propertyName, false);
-                if (originalRequest == null || propertyValue == null || JsonHelper.Serialize(originalRequest) != JsonHelper.Serialize(propertyValue))
+                if (MultiReferenceIsChanged(propertyValue, propertyName, originalValue, itemType))
                     postData[propertyName] = propertyValue;
                 return true;
             }
@@ -444,14 +441,23 @@ public partial class Content
             var itemType = propertyType.GetGenericArguments().First();
             if (typeof(Content).IsAssignableFrom(itemType))
             {
-                var originalReferredContents = (IEnumerable<Content>)GetMultiReferenceArray(originalValue, itemType);
-                var originalRequest = ConvertReferencesToRequestValue(originalReferredContents, propertyName, false);
-                if (originalRequest == null || propertyValue == null || JsonHelper.Serialize(originalRequest) != JsonHelper.Serialize(propertyValue))
+                if (MultiReferenceIsChanged(propertyValue, propertyName, originalValue, itemType))
                     postData[propertyName] = propertyValue;
                 return true;
             }
         }
 
+        return false;
+    }
+    private bool MultiReferenceIsChanged(object propertyValue, string propertyName,
+        JToken originalValue, Type itemType)
+    {
+        var originalReferredContents = (IEnumerable<Content>) GetMultiReferenceArray(originalValue, itemType);
+        var originalRequest = ConvertReferencesToRequestValue(originalReferredContents, propertyName, false);
+        if (originalRequest == null || propertyValue == null)
+            return true;
+        if (JsonHelper.Serialize(originalRequest) != JsonHelper.Serialize(propertyValue))
+            return true;
         return false;
     }
 }
