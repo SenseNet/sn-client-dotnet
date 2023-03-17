@@ -34,7 +34,15 @@ public partial class Content
             if (TryConvertToProperty(property.Name, jsonValue, out object propertyValue))
             {
                 //UNDONE: handle error: type mismatch in conversion.
-                property.SetMethod.Invoke(this, new[] { propertyValue });
+                try
+                {
+                    property.SetMethod.Invoke(this, new[] { propertyValue });
+                }
+                catch (Exception e)
+                {
+                    throw new ApplicationException($"The property '{property.Name}' cannot be set. " +
+                                                   $"See inner exception for details.", e);
+                }
                 continue;
             }
 

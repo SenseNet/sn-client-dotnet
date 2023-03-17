@@ -1163,6 +1163,67 @@ public class ContentLoadingTests
         Assert.AreEqual(333, content.Field_StringToDictionary["Name3"]);
     }
 
+    private class TestContent_CustomProperties_WrongConversion : TestContent_CustomProperties
+    {
+        public TestContent_CustomProperties_WrongConversion(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }
+        protected override bool TryConvertToProperty(string propertyName, JToken jsonValue, out object propertyValue)
+        {
+            if (propertyName == nameof(Field_StringToBool))
+            {
+                propertyValue = "Returns a wrong value but bool expected.";
+                return true;
+            }
+            return base.TryConvertToProperty(propertyName, jsonValue, out propertyValue);
+        }
+    }
+    [TestMethod]
+    public async Task LoadContent_T_Properties_Error_TypeMismatch()
+    {
+        // ALIGN
+        var restCaller = Substitute.For<IRestCaller>();
+        restCaller
+            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(@"{
+  ""d"": {
+    ""Id"": 999543,
+    ""Field_CustomType1"": {
+      ""property1"": ""value1"",
+      ""property2"": 42,
+    },
+    ""Field_TypeMismatch"": {
+      ""property3"": ""value3"",
+      ""property4"": 44,
+    },
+    ""Field_StringToBool"": ""1"",
+    ""Field_StringToDictionary"": ""Name1:111,Name2:222,Name3:333""
+  }
+}"));
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<TestContent_CustomProperties_WrongConversion>();
+        });
+        var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+            .ConfigureAwait(false);
+
+        var request = new LoadContentRequest { Path = "/Root/Content" };
+        try
+        {
+            // ACT
+            var _ = await repository.LoadContentAsync<TestContent_CustomProperties_WrongConversion>(request, CancellationToken.None);
+            Assert.Fail("The expected ApplicationException was not thrown.");
+        }
+        catch (ApplicationException ex)
+        {
+            // ASSERT
+            Assert.AreEqual("The property 'Field_StringToBool' cannot be set." +
+                            " See inner exception for details.", ex.Message);
+            Assert.AreEqual("Object of type 'System.String' " +
+                            "cannot be converted to type 'System.Boolean'.", ex.InnerException?.Message);
+        }
+    }
+
     /* =================================================================== ERROR */
 
     [TestMethod]
