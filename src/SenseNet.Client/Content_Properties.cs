@@ -33,7 +33,6 @@ public partial class Content
 
             if (TryConvertToProperty(property.Name, jsonValue, out object propertyValue))
             {
-                //UNDONE: handle error: type mismatch in conversion.
                 try
                 {
                     property.SetMethod.Invoke(this, new[] { propertyValue });
