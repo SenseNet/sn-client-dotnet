@@ -181,6 +181,12 @@ internal class Repository : IRepository
             requestData.ContentQuery = AddInFolderRestriction(requestData.ContentQuery, requestData.Path);
         return LoadCollectionAsync(requestData.ToODataRequest(Server), cancel);
     }
+    public Task<IEnumerable<T>> LoadCollectionAsync<T>(LoadCollectionRequest requestData, CancellationToken cancel) where T :Content
+    {
+        if (requestData.ContentQuery != null)
+            requestData.ContentQuery = AddInFolderRestriction(requestData.ContentQuery, requestData.Path);
+        return LoadCollectionAsync<T>(requestData.ToODataRequest(Server), cancel);
+    }
 
     public async Task<int> GetContentCountAsync(LoadCollectionRequest requestData, CancellationToken cancel)
     {
@@ -214,6 +220,19 @@ internal class Repository : IRepository
 
         return items?.Select(x => CreateContentFromResponse(x)) ?? Array.Empty<Content>();
     }
+    private async Task<IEnumerable<T>> LoadCollectionAsync<T>(ODataRequest requestData, CancellationToken cancel) where T :Content
+    {
+        requestData.IsCollectionRequest = true;
+        requestData.SiteUrl = ServerContext.GetUrl(Server);
+
+        var response = await _restCaller.GetResponseStringAsync(requestData.GetUri(), Server, cancel).ConfigureAwait(false);
+        if (string.IsNullOrEmpty(response))
+            return Array.Empty<T>();
+
+        var items = JsonHelper.Deserialize(response).d.results as JArray;
+
+        return items?.Select(CreateContentFromResponse<T>) ?? Array.Empty<T>();
+    }
 
     /* ============================================================================ EXISTENCE */
 
@@ -238,9 +257,20 @@ internal class Repository : IRepository
         oDataRequest.LifespanFilter = FilterStatus.Disabled;
         return LoadCollectionAsync(oDataRequest, cancel);
     }
+
+    public Task<IEnumerable<T>> QueryForAdminAsync<T>(QueryContentRequest requestData, CancellationToken cancel)
+    {
+        throw new NotImplementedException();
+    }
+
     public Task<IEnumerable<Content>> QueryAsync(QueryContentRequest requestData, CancellationToken cancel)
     {
         return LoadCollectionAsync(requestData.ToODataRequest(Server), cancel);
+    }
+
+    public Task<IEnumerable<T>> QueryAsync<T>(QueryContentRequest requestData, CancellationToken cancel)
+    {
+        throw new NotImplementedException();
     }
 
     public Task<int> QueryCountForAdminAsync(QueryContentRequest requestData, CancellationToken cancel)
@@ -322,14 +352,8 @@ internal class Repository : IRepository
 
     private T CreateContentFromResponse<T>(dynamic jObject) where T : Content
     {
-        //UNDONE: use or remove this method (LoadCollectionAsync<T> will use this method)
-        var content = _services.GetRequiredService<T>();
-
-        content.Server = Server;
-        content.Repository = this;
-
-        content.InitializeFromResponse(jObject);
-
+        //var content = _services.GetRequiredService<T>();
+        var content = (T)CreateContentFromResponse(jObject);
         return content;
     }
     private Content CreateContentFromResponse(dynamic jObject, Type contentType = null)

@@ -1596,6 +1596,62 @@ namespace SenseNet.Client.Tests.UnitTests
             Assert.AreEqual("MyContent, MyContent2, MyContent3, Content", typeNames);
         }
 
+        private class Item1 : Content { public Item1(IRestCaller rc, ILogger<MyContent> l) : base(rc, l) { } }
+        private class Item2 : Item1 { public Item2(IRestCaller rc, ILogger<MyContent> l) : base(rc, l) { } }
+        private class Item3 : Item2 { public Item3(IRestCaller rc, ILogger<MyContent> l) : base(rc, l) { } }
+        private class Item4 : Item3 { public Item4(IRestCaller rc, ILogger<MyContent> l) : base(rc, l) { } }
+        [TestMethod] public Task Repository_T_LoadCollection_T_Content() => LoadCollectionTest<Content>(false);
+        [TestMethod] public Task Repository_T_LoadCollection_T_Item1() => LoadCollectionTest<Item1>(false);
+        [TestMethod] public Task Repository_T_LoadCollection_T_Item2() => LoadCollectionTest<Item2>(true);
+        [TestMethod] public Task Repository_T_LoadCollection_T_Item3() => LoadCollectionTest<Item3>(true);
+        private async Task LoadCollectionTest<T>(bool isExceptionExpected) where T : Content
+        {
+            // ALIGN
+            var restCaller = Substitute.For<IRestCaller>();
+            restCaller
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(@"{""d"": {""__count"": 4, ""results"": [
+                    {""Id"": 10001, ""Name"": ""Content1"", ""Type"": ""Item1""},
+                    {""Id"": 10002, ""Name"": ""Content2"", ""Type"": ""Item2""},
+                    {""Id"": 10003, ""Name"": ""Content3"", ""Type"": ""Item3""},
+                    {""Id"": 10004, ""Name"": ""Content4"", ""Type"": ""Item4""},
+                    ]}}"));
+
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton(restCaller);
+                services.RegisterGlobalContentType<Item1>();
+                services.RegisterGlobalContentType<Item2>();
+                services.RegisterGlobalContentType<Item3>();
+                services.RegisterGlobalContentType<Item4>();
+            });
+            var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+            var request = new LoadCollectionRequest { Path = "/Root/Somewhere", Select = new[] { "Id", "Name", "Type" } };
+
+            // ACT
+            T[] contents;
+            try
+            {
+                var collection = await repository.LoadCollectionAsync<T>(request, CancellationToken.None);
+                contents = collection.ToArray();
+                if (isExceptionExpected)
+                    Assert.Fail("The expected InvalidCastException was not thrown.");
+            }
+            catch (InvalidCastException e)
+            {
+                // Unable to cast object of type 'Item1' to type '{T}'.
+                Assert.AreEqual($"Unable to cast object of type 'Item1' to type '{typeof(T).Name}'.", e.Message);
+                return;
+            }
+
+            // ASSERT
+            Assert.AreEqual(4, contents.Length);
+            var typeNames = string.Join(", ", contents.Select(x => x.GetType().Name));
+            var tname = typeof(T).Name;
+            Assert.AreEqual("Item1, Item2, Item3, Item4", typeNames);
+        }
+
         /* ====================================================================== TOOLS */
 
         private static IRepositoryCollection GetRepositoryCollection(Action<IServiceCollection>? addServices = null)

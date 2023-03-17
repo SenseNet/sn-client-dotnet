@@ -163,6 +163,7 @@ public interface IRepository
     /// <param name="cancel">The token to monitor for cancellation requests.</param>
     /// <returns>Children of the provided content.</returns>
     public Task<IEnumerable<Content>> LoadCollectionAsync(LoadCollectionRequest requestData, CancellationToken cancel);
+    public Task<IEnumerable<T>> LoadCollectionAsync<T>(LoadCollectionRequest requestData, CancellationToken cancel) where T : Content;
 
     /// <summary>
     /// Gets the count of a children collection. 
@@ -193,6 +194,8 @@ public interface IRepository
     /// <param name="cancel">The token to monitor for cancellation requests.</param>
     /// <returns>List of contents returned by the provided content query.</returns>
     public Task<IEnumerable<Content>> QueryForAdminAsync(QueryContentRequest requestData, CancellationToken cancel);
+    public Task<IEnumerable<T>> QueryForAdminAsync<T>(QueryContentRequest requestData, CancellationToken cancel);
+    
     /// <summary>
     /// Loads content items by a query.
     /// </summary>
@@ -201,6 +204,7 @@ public interface IRepository
     /// <param name="cancel">The token to monitor for cancellation requests.</param>
     /// <returns>List of contents returned by the provided content query.</returns>
     public Task<IEnumerable<Content>> QueryAsync(QueryContentRequest requestData, CancellationToken cancel);
+    public Task<IEnumerable<T>> QueryAsync<T>(QueryContentRequest requestData, CancellationToken cancel);
 
     /// <summary>
     /// Gets the count of content items by a query with lifespan and system filters switched OFF.
