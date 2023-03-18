@@ -243,25 +243,25 @@ internal class Repository : IRepository
 
     public Task<IEnumerable<Content>> QueryForAdminAsync(QueryContentRequest requestData, CancellationToken cancel)
     {
-        var oDataRequest = requestData.ToODataRequest(Server);
-        oDataRequest.AutoFilters = FilterStatus.Disabled;
-        oDataRequest.LifespanFilter = FilterStatus.Disabled;
-        return LoadCollectionAsync(oDataRequest, cancel);
+        return QueryForAdminAsync<Content>(requestData, cancel);
     }
 
     public Task<IEnumerable<T>> QueryForAdminAsync<T>(QueryContentRequest requestData, CancellationToken cancel) where T : Content
     {
-        throw new NotImplementedException();
+        var oDataRequest = requestData.ToODataRequest(Server);
+        oDataRequest.AutoFilters = FilterStatus.Disabled;
+        oDataRequest.LifespanFilter = FilterStatus.Disabled;
+        return LoadCollectionAsync<T>(oDataRequest, cancel);
     }
 
     public Task<IEnumerable<Content>> QueryAsync(QueryContentRequest requestData, CancellationToken cancel)
     {
-        return LoadCollectionAsync(requestData.ToODataRequest(Server), cancel);
+        return QueryAsync<Content>(requestData, cancel);
     }
 
     public Task<IEnumerable<T>> QueryAsync<T>(QueryContentRequest requestData, CancellationToken cancel) where T : Content
     {
-        throw new NotImplementedException();
+        return LoadCollectionAsync<T>(requestData.ToODataRequest(Server), cancel);
     }
 
     public Task<int> QueryCountForAdminAsync(QueryContentRequest requestData, CancellationToken cancel)
