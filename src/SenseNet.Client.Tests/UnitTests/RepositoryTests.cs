@@ -1,14 +1,19 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Linq;
-using System.Net.Http;
-using System.Threading;
-using SenseNet.Extensions.DependencyInjection;
-using System.Threading.Tasks;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Configuration;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NSubstitute;
+using SenseNet.Client;
+using SenseNet.Extensions.DependencyInjection;
+using SenseNet.Tests.Accessors;
+
+namespace DifferentNamespace
+{
+    public class MyContent : Content
+    {
+        public MyContent(IRestCaller restCaller, ILogger<MyContent> logger) : base(restCaller, logger) { }
+    }
+}
 
 namespace SenseNet.Client.Tests.UnitTests
 {
@@ -54,6 +59,86 @@ namespace SenseNet.Client.Tests.UnitTests
         }
 
         /* ====================================================================== CONTENT CREATION */
+
+        [TestMethod]
+        public async Task Repository_CreateExistingContent_ById()
+        {
+            var repository = await GetRepositoryCollection().GetRepositoryAsync("local", CancellationToken.None);
+
+            // ACT
+            var content = repository.CreateExistingContent(42);
+
+            // ASSERT
+            Assert.AreEqual(null, content.Path);
+            Assert.AreEqual(42, content.Id);
+            // technical structure
+            Assert.AreSame(repository, content.Repository);
+            Assert.AreSame(repository.Server, content.Server);
+            Assert.IsNull(content.ParentPath);
+            Assert.IsNull(content.Name);
+            Assert.AreEqual(true, ((dynamic)content).Existing);
+        }
+        [TestMethod]
+        public async Task Repository_CreateExistingContent_ByPath()
+        {
+            var repository = await GetRepositoryCollection().GetRepositoryAsync("local", CancellationToken.None);
+
+            // ACT
+            var content = repository.CreateExistingContent("/Root/MyContent");
+
+            // ASSERT
+            Assert.AreEqual("/Root/MyContent", content.Path);
+            Assert.AreEqual(0, content.Id);
+            // technical structure
+            Assert.AreSame(repository, content.Repository);
+            Assert.AreSame(repository.Server, content.Server);
+            Assert.IsNull(content.ParentPath);
+            Assert.IsNull(content.Name);
+            Assert.AreEqual(true, ((dynamic)content).Existing);
+        }
+        [TestMethod]
+        public async Task Repository_CreateExistingContent_T_ById()
+        {
+            var repository = await GetRepositoryCollection(
+                    services => services.RegisterGlobalContentType<MyContent>())
+                .GetRepositoryAsync("local", CancellationToken.None);
+
+            // ACT
+            var content = repository.CreateExistingContent<MyContent>(42);
+
+            // ASSERT
+            Assert.AreEqual(null, content.Path);
+            Assert.AreEqual(42, content.Id);
+            // technical structure
+            Assert.IsInstanceOfType(content, typeof(MyContent));
+            Assert.AreSame(repository, content.Repository);
+            Assert.AreSame(repository.Server, content.Server);
+            Assert.IsNull(content.ParentPath);
+            Assert.IsNull(content.Name);
+            Assert.AreEqual(true, ((dynamic)content).Existing);
+        }
+        [TestMethod]
+        public async Task Repository_CreateExistingContent_T_ByPath()
+        {
+            var repository = await GetRepositoryCollection(
+                    services => services.RegisterGlobalContentType<MyContent>())
+                .GetRepositoryAsync("local", CancellationToken.None);
+
+            // ACT
+            var content = repository.CreateExistingContent<MyContent>("/Root/MyContent");
+
+            // ASSERT
+            Assert.AreEqual("/Root/MyContent", content.Path);
+            Assert.AreEqual(0, content.Id);
+            // technical structure
+            Assert.IsInstanceOfType(content, typeof(MyContent));
+            Assert.AreSame(repository, content.Repository);
+            Assert.AreSame(repository.Server, content.Server);
+            Assert.IsNull(content.ParentPath);
+            Assert.IsNull(content.Name);
+            Assert.AreEqual(true, ((dynamic)content).Existing);
+        }
+
 
         [TestMethod]
         public async Task Repository_CreateContent()
@@ -117,7 +202,6 @@ namespace SenseNet.Client.Tests.UnitTests
                 "Value cannot be empty. (Parameter 'contentTypeName')").ConfigureAwait(false);
         }
 
-
         [TestMethod]
         public async Task Repository_CreateContentByTemplate()
         {
@@ -148,21 +232,6 @@ namespace SenseNet.Client.Tests.UnitTests
                 "Value cannot be empty. (Parameter 'contentTemplate')").ConfigureAwait(false);
         }
 
-        public async Task TestParameterError<TException>(Action<IRepository> callback, string expectedMessage) where TException : Exception
-        {
-            var repository = await GetRepositoryCollection().GetRepositoryAsync("local", CancellationToken.None);
-
-            try
-            {
-                callback(repository);
-                Assert.Fail($"The expected {typeof(TException).Name} was not thrown.");
-            }
-            catch (TException e)
-            {
-                Assert.AreEqual(expectedMessage, e.Message);
-            }
-        }
-
         /* ====================================================================== LOAD CONTENT */
 
         [TestMethod]
@@ -178,7 +247,7 @@ namespace SenseNet.Client.Tests.UnitTests
                 .ConfigureAwait(false);
 
             // ASSERT
-            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First();
+            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
             Assert.IsNotNull(requestedUri);
             Assert.AreEqual("/OData.svc/Root('Content')?metadata=no", requestedUri.PathAndQuery);
 
@@ -198,7 +267,7 @@ namespace SenseNet.Client.Tests.UnitTests
                 .ConfigureAwait(false);
 
             // ASSERT
-            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First();
+            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
             Assert.IsNotNull(requestedUri);
             Assert.AreEqual("/OData.svc/content(42)?metadata=no", requestedUri.PathAndQuery);
 
@@ -210,14 +279,14 @@ namespace SenseNet.Client.Tests.UnitTests
         public async Task Repository_LoadContent_ByOdataRequest_IdVersion()
         {
             await ODataRequestForLoadContentTest(
-                repository => new LoadContentRequest { ContentId = 42, Version = "V1.0.A" },
+                _ => new LoadContentRequest { ContentId = 42, Version = "V1.0.A" },
                 "/OData.svc/content(42)?metadata=no&version=V1.0.A");
         }
         [TestMethod]
         public async Task Repository_LoadContent_ByOdataRequest_PathVersion()
         {
             await ODataRequestForLoadContentTest(
-                repository => new LoadContentRequest { Path = "/Root/Content/MyFolder", Version = "V1.0.A" },
+                _ => new LoadContentRequest { Path = "/Root/Content/MyFolder", Version = "V1.0.A" },
                 "/OData.svc/Root/Content('MyFolder')?metadata=no&version=V1.0.A");
         }
 
@@ -250,11 +319,11 @@ namespace SenseNet.Client.Tests.UnitTests
                 .ConfigureAwait(false);
 
             // ACT
-            var content = await repository.LoadContentAsync(getLoadContentRequest(repository), CancellationToken.None)
+            var _ = await repository.LoadContentAsync(getLoadContentRequest(repository), CancellationToken.None)
                 .ConfigureAwait(false);
 
             // ASSERT
-            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First();
+            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
             Assert.IsNotNull(requestedUri);
             Assert.AreEqual(expectedUrl, requestedUri.PathAndQuery);
         }
@@ -283,7 +352,7 @@ namespace SenseNet.Client.Tests.UnitTests
             var collection = await repository.LoadCollectionAsync(request, CancellationToken.None);
 
             // ASSERT
-            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First();
+            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
             Assert.IsNotNull(requestedUri);
             Assert.AreEqual("/OData.svc/Root?metadata=no&$select=Id,Name,Type", requestedUri.PathAndQuery);
 
@@ -299,6 +368,36 @@ namespace SenseNet.Client.Tests.UnitTests
             Assert.AreEqual("System", content.Name);
             Assert.AreEqual("SystemFolder", content["Type"].ToString());
         }
+        [TestMethod]
+        public async Task Repository_LoadCollection_WithQuery()
+        {
+            // ALIGN
+            var restCaller = Substitute.For<IRestCaller>();
+            restCaller
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(@"{""d"": {""__count"": 2, ""results"": [
+                    {""Id"": 3, ""Name"": ""IMS"", ""Type"": ""Domains""},
+                    {""Id"": 1000, ""Name"": ""System"", ""Type"": ""SystemFolder""}]}}"));
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton(restCaller);
+            });
+            var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACT
+            var request = new LoadCollectionRequest { Path = "/Root/MyContent", ContentQuery = "TypeIs:File", Select = new[] { "Id", "Name", "Type" } };
+            var collection = await repository.LoadCollectionAsync(request, CancellationToken.None);
+
+            // ASSERT
+            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
+            Assert.IsNotNull(requestedUri);
+            // decoded query expectation: query=+InFolder:'/Root/MyContent' +(TypeIs:File)
+            Assert.AreEqual("/OData.svc/Root/MyContent?metadata=no&$select=Id,Name,Type&" +
+                            "query=%2BInFolder%3A%27%2FRoot%2FMyContent%27%20%2B%28TypeIs%3AFile%29",
+                requestedUri.PathAndQuery);
+        }
+
         [TestMethod]
         public async Task Repository_GetContentCount()
         {
@@ -319,11 +418,36 @@ namespace SenseNet.Client.Tests.UnitTests
             var count = await repository.GetContentCountAsync(request, CancellationToken.None);
 
             // ASSERT
-            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First();
+            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
             Assert.IsNotNull(requestedUri);
             Assert.AreEqual("/OData.svc/Root/$count?metadata=no&$select=Id,Name,Type", requestedUri.PathAndQuery);
 
             Assert.AreEqual(42, count);
+        }
+
+        [TestMethod]
+        public async Task Repository_InFolderRestriction_1()
+        {
+            var repository = await GetRepositoryCollection().GetRepositoryAsync("local", CancellationToken.None);
+            var repositoryAcc = new ObjectAccessor(repository);
+
+            void Test(string query, string path, string expected)
+            {
+                var result = (string) repositoryAcc.Invoke("AddInFolderRestriction",
+                    new[] {typeof(string), typeof(string)},
+                    new[] {query, path});
+                Assert.AreEqual(expected, result);
+            }
+
+            Test("Type:Folder", "/Root", "+InFolder:'/Root' +(Type:Folder)");
+            Test("Type:Folder .SORT:Name", "/Root", "+InFolder:'/Root' +(Type:Folder ) .SORT:Name");
+            Test(".SORT:Name Type:Folder", "/Root", "+InFolder:'/Root' +( Type:Folder) .SORT:Name");
+
+            Test(".TOP:10 +Type:Folder +Name:a*", "/Root",
+                "+InFolder:'/Root' +( +Type:Folder +Name:a*) .TOP:10");
+
+            Test(".TOP:10 +Type:Folder .SKIP:5 +Name:a* .SORT:Index", "/Root",
+                "+InFolder:'/Root' +( +Type:Folder  +Name:a* ) .TOP:10  .SKIP:5  .SORT:Index");
         }
 
         /* ====================================================================== QUERY CONTENT */
@@ -352,7 +476,7 @@ namespace SenseNet.Client.Tests.UnitTests
             var collection = await repository.QueryForAdminAsync(request, CancellationToken.None);
 
             // ASSERT
-            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First();
+            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
             Assert.IsNotNull(requestedUri);
             Assert.AreEqual("/OData.svc/Root?metadata=no&$select=Name&enableautofilters=false&enablelifespanfilter=false&query=TypeIs%3AUser%20.SORT%3AName", requestedUri.PathAndQuery);
 
@@ -383,7 +507,7 @@ namespace SenseNet.Client.Tests.UnitTests
             var collection = await repository.QueryAsync(request, CancellationToken.None);
 
             // ASSERT
-            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First();
+            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
             Assert.IsNotNull(requestedUri);
             Assert.AreEqual("/OData.svc/Root?metadata=no&$select=Name&query=TypeIs%3AUser%20.SORT%3AName", requestedUri.PathAndQuery);
 
@@ -411,7 +535,7 @@ namespace SenseNet.Client.Tests.UnitTests
             var count = await repository.QueryCountForAdminAsync(request, CancellationToken.None);
 
             // ASSERT
-            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First();
+            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
             Assert.IsNotNull(requestedUri);
             Assert.AreEqual("/OData.svc/Root/$count?metadata=no&$select=Name&enableautofilters=false&enablelifespanfilter=false&query=TypeIs%3AUser%20.SORT%3AName", requestedUri.PathAndQuery);
 
@@ -437,7 +561,7 @@ namespace SenseNet.Client.Tests.UnitTests
             var count = await repository.QueryCountAsync(request, CancellationToken.None);
 
             // ASSERT
-            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First();
+            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
             Assert.IsNotNull(requestedUri);
             Assert.AreEqual("/OData.svc/Root/$count?metadata=no&$select=Name&query=TypeIs%3AUser%20.SORT%3AName", requestedUri.PathAndQuery);
 
@@ -462,7 +586,7 @@ namespace SenseNet.Client.Tests.UnitTests
                 .ConfigureAwait(false);
 
             // ASSERT REQUEST
-            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First();
+            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
             Assert.IsNotNull(requestedUri);
             Assert.AreEqual("/OData.svc/Root/Content('MyContent')?metadata=no&$select=Id", requestedUri.PathAndQuery);
             // ASSERT RESPONSE
@@ -484,7 +608,7 @@ namespace SenseNet.Client.Tests.UnitTests
                 .ConfigureAwait(false);
 
             // ASSERT REQUEST
-            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First();
+            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
             Assert.IsNotNull(requestedUri);
             Assert.AreEqual("/OData.svc/Root/Content('MyContent')?metadata=no&$select=Id", requestedUri.PathAndQuery);
             // ASSERT RESPONSE
@@ -507,7 +631,6 @@ namespace SenseNet.Client.Tests.UnitTests
             });
             var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
                 .ConfigureAwait(false);
-            var request = new ODataRequest(repository.Server) { Path = "/Root", Select = new[] { "Id", "Name", "Type" } };
 
             // ACT
             await repository.DeleteContentAsync("/Root/Content/MyContent", true, CancellationToken.None);
@@ -539,7 +662,6 @@ namespace SenseNet.Client.Tests.UnitTests
             });
             var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
                 .ConfigureAwait(false);
-            var request = new ODataRequest(repository.Server) { Path = "/Root", Select = new[] { "Id", "Name", "Type" } };
 
             // ACT
             await repository.DeleteContentAsync("/Root/Content/MyContent", false, CancellationToken.None);
@@ -571,7 +693,6 @@ namespace SenseNet.Client.Tests.UnitTests
             });
             var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
                 .ConfigureAwait(false);
-            var request = new ODataRequest(repository.Server) { Path = "/Root", Select = new[] { "Id", "Name", "Type" } };
 
             // ACT
             var paths = new[] { "/Root/F1", "/Root/F2", "/Root/F3" };
@@ -604,7 +725,6 @@ namespace SenseNet.Client.Tests.UnitTests
             });
             var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
                 .ConfigureAwait(false);
-            var request = new ODataRequest(repository.Server) { Path = "/Root", Select = new[] { "Id", "Name", "Type" } };
 
             // ACT
             await repository.DeleteContentAsync(1234, false, CancellationToken.None);
@@ -636,7 +756,6 @@ namespace SenseNet.Client.Tests.UnitTests
             });
             var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
                 .ConfigureAwait(false);
-            var request = new ODataRequest(repository.Server) { Path = "/Root", Select = new[] { "Id", "Name", "Type" } };
 
             // ACT
             var ids = new[] { 1234, 1235, 1236, 1237 };
@@ -669,7 +788,6 @@ namespace SenseNet.Client.Tests.UnitTests
             });
             var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
                 .ConfigureAwait(false);
-            var request = new ODataRequest(repository.Server) { Path = "/Root", Select = new[] { "Id", "Name", "Type" } };
 
             // ACT
             var idsOrPaths = new object[] { "/Root/F1", 1234, "/Root/F2", 1235, 1236 };
@@ -689,9 +807,1039 @@ namespace SenseNet.Client.Tests.UnitTests
             Assert.AreEqual("models=[{\"permanent\":false,\"paths\":[\"/Root/F1\",1234,\"/Root/F2\",1235,1236]}]", jsonBody);
         }
 
+        [TestMethod]
+        public async Task Repository_Delete_Error_MissingIdsOrPaths()
+        {
+            await TestParameterError<ArgumentNullException>(
+                callback: async repository => await repository.DeleteContentAsync(
+                    (object[])null, false, CancellationToken.None).ConfigureAwait(false),
+                expectedMessage: "Value cannot be null. (Parameter 'idsOrPaths')").ConfigureAwait(false);
+        }
+
+        /* =================================================================== CONTENT TYPE REGISTRATION */
+
+        public class MyContent : Content
+        {
+            public string HelloMessage => $"Hello {this.Name}!";
+            public MyContent(IRestCaller restCaller, ILogger<MyContent> logger) : base(restCaller, logger) { }
+        }
+        public class MyContent2 : Content { public MyContent2(IRestCaller restCaller, ILogger<MyContent> logger) : base(restCaller, logger) { } }
+        public class MyContent3 : Content { public MyContent3(IRestCaller restCaller, ILogger<MyContent> logger) : base(restCaller, logger) { } }
+        public class MyContent4 : Content { public MyContent4(IRestCaller restCaller, ILogger<MyContent> logger) : base(restCaller, logger) { } }
+
+        [TestMethod]
+        public async Task Repository_T_RegisterGlobalContentType_TypeParam()
+        {
+            // ACTION
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.RegisterGlobalContentType<MyContent>();
+            });
+
+            // ASSERT
+            var repository = await repositories.GetRepositoryAsync(CancellationToken.None)
+                .ConfigureAwait(false);
+            repository.GlobalContentTypes.ContentTypes.TryGetValue("MyContent", out var contentType);
+            Assert.IsNotNull(contentType);
+            Assert.AreEqual(typeof(MyContent), contentType);
+        }
+        [TestMethod]
+        public async Task Repository_T_RegisterGlobalContentType_TypeParamAndDifferentName()
+        {
+            // ACTION
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.RegisterGlobalContentType<MyContent>("MyType");
+            });
+
+            // ASSERT
+            var repository = await repositories.GetRepositoryAsync(CancellationToken.None)
+                .ConfigureAwait(false);
+            repository.GlobalContentTypes.ContentTypes.TryGetValue("MyType", out var contentType);
+            Assert.IsNotNull(contentType);
+            Assert.AreEqual(typeof(MyContent), contentType);
+        }
+        [TestMethod]
+        public async Task Repository_T_RegisterGlobalContentType_Type()
+        {
+            // ACTION
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.RegisterGlobalContentType(typeof(MyContent));
+            });
+
+            // ASSERT
+            var repository = await repositories.GetRepositoryAsync(CancellationToken.None)
+                .ConfigureAwait(false);
+            repository.GlobalContentTypes.ContentTypes.TryGetValue("MyContent", out var contentType);
+            Assert.IsNotNull(contentType);
+            Assert.AreEqual(typeof(MyContent), contentType);
+        }
+        [TestMethod]
+        public async Task Repository_T_RegisterGlobalContentType_TypeAndDifferentName()
+        {
+            // ACTION
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.RegisterGlobalContentType(typeof(MyContent), "MyType");
+            });
+
+            // ASSERT
+            var repository = await repositories.GetRepositoryAsync(CancellationToken.None)
+                .ConfigureAwait(false);
+            repository.GlobalContentTypes.ContentTypes.TryGetValue("MyType", out var contentType);
+            Assert.IsNotNull(contentType);
+            Assert.AreEqual(typeof(MyContent), contentType);
+        }
+
+        [TestMethod]
+        public async Task Repository_T_RegisterContentTypes()
+        {
+            // ALIGN
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.ConfigureSenseNetRepository(
+                    configure: options => { options.Url = ExampleUrl; },
+                    registerContentTypes: contentTypes =>
+                    {
+                        contentTypes
+                            .Add<MyContent>()
+                            .Add<MyContent2>("MyContent_2")
+                            .Add(typeof(MyContent3))
+                            .Add(typeof(MyContent4), "MyContent_4")
+                            ;
+                    });
+            });
+
+            // ACTION
+            var repository = await repositories.GetRepositoryAsync(CancellationToken.None).ConfigureAwait(false);
+
+            // ASSERT
+            var repositoryAcc = new ObjectAccessor(repository);
+            var services = (IServiceProvider)repositoryAcc.GetField("_services");
+            Assert.AreEqual(ExampleUrl, repository.Server.Url);
+            Assert.AreEqual(0, repository.GlobalContentTypes.ContentTypes.Count);
+            var contentTypeRegistrations = repository.Server.RegisteredContentTypes.ContentTypes
+                .OrderBy(x => x.Value.Name)
+                .ToArray();
+
+            Assert.AreEqual(4, contentTypeRegistrations.Length);
+
+            Assert.IsNotNull(services.GetService<MyContent>());
+            Assert.AreEqual("MyContent", contentTypeRegistrations[0].Key);
+            Assert.AreEqual(typeof(MyContent), contentTypeRegistrations[0].Value);
+
+            Assert.IsNotNull(services.GetService<MyContent2>());
+            Assert.AreEqual("MyContent_2", contentTypeRegistrations[1].Key);
+            Assert.AreEqual(typeof(MyContent2), contentTypeRegistrations[1].Value);
+
+            Assert.IsNotNull(services.GetService<MyContent3>());
+            Assert.AreEqual("MyContent3", contentTypeRegistrations[2].Key);
+            Assert.AreEqual(typeof(MyContent3), contentTypeRegistrations[2].Value);
+
+            Assert.IsNotNull(services.GetService<MyContent4>());
+            Assert.AreEqual("MyContent_4", contentTypeRegistrations[3].Key);
+            Assert.AreEqual(typeof(MyContent4), contentTypeRegistrations[3].Value);
+        }
+        [TestMethod]
+        public async Task Repository_T_RegisterContentTypes_DifferentTypeSameName()
+        {
+            // ALIGN
+            var repo1Name = "Repo1";
+            var repo2Name = "Repo2";
+            var exampleUrl2 = "https://example2.com";
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.ConfigureSenseNetRepository(repo1Name,
+                    configure: options => { options.Url = ExampleUrl; },
+                    registerContentTypes: contentTypes =>
+                    {
+                        contentTypes.Add<MyContent>();
+                    });
+                services.ConfigureSenseNetRepository(repo2Name,
+                    configure: options => { options.Url = exampleUrl2; },
+                    registerContentTypes: contentTypes =>
+                    {
+                        contentTypes.Add<DifferentNamespace.MyContent>();
+                    });
+            });
+
+            // ACT
+            var repository1 = await repositories.GetRepositoryAsync(repo1Name, CancellationToken.None).ConfigureAwait(false);
+            var repository2 = await repositories.GetRepositoryAsync(repo2Name, CancellationToken.None).ConfigureAwait(false);
+
+            // ASSERT
+            // check repo1
+            Assert.AreEqual(ExampleUrl, repository1.Server.Url);
+            Assert.AreEqual(0, repository1.GlobalContentTypes.ContentTypes.Count);
+            var contentTypeRegistrations1 = repository1.Server.RegisteredContentTypes.ContentTypes
+                .OrderBy(x => x.Value.Name)
+                .ToArray();
+            Assert.AreEqual(1, contentTypeRegistrations1.Length);
+            Assert.AreEqual("MyContent", contentTypeRegistrations1[0].Key);
+            Assert.AreEqual(typeof(MyContent), contentTypeRegistrations1[0].Value);
+
+            // check repo2
+            Assert.AreEqual(exampleUrl2, repository2.Server.Url);
+            Assert.AreEqual(0, repository2.GlobalContentTypes.ContentTypes.Count);
+            var contentTypeRegistrations2 = repository2.Server.RegisteredContentTypes.ContentTypes
+                .OrderBy(x => x.Value.Name)
+                .ToArray();
+            Assert.AreEqual(1, contentTypeRegistrations2.Length);
+            Assert.AreEqual("MyContent", contentTypeRegistrations2[0].Key);
+            Assert.AreEqual(typeof(DifferentNamespace.MyContent), contentTypeRegistrations2[0].Value);
+
+            // check services
+            var repositoryAcc = new ObjectAccessor(repository1);
+            var services = (IServiceProvider)repositoryAcc.GetField("_services");
+            Assert.IsNotNull(services.GetService<MyContent>());
+            Assert.IsNotNull(services.GetService<DifferentNamespace.MyContent>());
+        }
+
+        /* =================================================================== CREATE REGISTERED CONTENT */
+
+        [TestMethod]
+        public async Task Repository_T_CreateContent_Global()
+        {
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.RegisterGlobalContentType<MyContent>();
+            });
+            var repository = await repositories.GetRepositoryAsync(CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACTION
+            var content = repository.CreateContent<MyContent>("/Root/Content", null, "MyContent-1");
+
+            // ASSERT
+            Assert.IsNotNull(content);
+            Assert.IsInstanceOfType(content, typeof(MyContent));
+        }
+        [TestMethod]
+        public async Task Repository_T_CreateContent_ByName_Global()
+        {
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.RegisterGlobalContentType<MyContent>();
+            });
+            var repository = await repositories.GetRepositoryAsync(CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACTION
+            var content = repository.CreateContent("/Root/Content", "MyContent", null);
+
+            // ASSERT
+            Assert.IsNotNull(content);
+            Assert.IsInstanceOfType(content, typeof(MyContent));
+        }
+        [TestMethod]
+        public async Task Repository_T_CreateContent()
+        {
+            var repoName = "MyRepo";
+            var repositories = GetRepositoryCollection(services =>
+            {
+                //services.RegisterGlobalContentType<MyContent>();
+                services.ConfigureSenseNetRepository(repoName,
+                    configure: options => { options.Url = ExampleUrl; },
+                    registerContentTypes: contentTypes => { contentTypes.Add<MyContent>(); });
+            });
+            var repository = await repositories.GetRepositoryAsync(repoName, CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACTION
+            var content = repository.CreateContent<MyContent>("/Root/Content", null, "MyContent-1");
+
+            // ASSERT
+            Assert.IsNotNull(content);
+            Assert.IsInstanceOfType(content, typeof(MyContent));
+        }
+        [TestMethod]
+        public async Task Repository_T_CreateContent_ByName()
+        {
+            var repoName = "MyRepo";
+            var contentTypeName = "MyContent_2";
+            var repositories = GetRepositoryCollection(services =>
+            {
+                //services.RegisterGlobalContentType<MyContent>();
+                services.ConfigureSenseNetRepository(repoName,
+                    configure: options => { options.Url = ExampleUrl; },
+                    registerContentTypes: contentTypes => { contentTypes.Add<MyContent2>(contentTypeName); });
+            });
+            var repository = await repositories.GetRepositoryAsync(repoName, CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACTION
+            var content = repository.CreateContent("/Root/Content", contentTypeName, null);
+
+            // ASSERT
+            Assert.IsNotNull(content);
+            Assert.IsInstanceOfType(content, typeof(MyContent2));
+        }
+        [TestMethod]
+        public async Task Repository_T_CreateContent_DifferentTypeSameName()
+        {
+            // ALIGN
+            var repo1Name = "Repo1";
+            var repo2Name = "Repo2";
+            var exampleUrl2 = "https://example2.com";
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.ConfigureSenseNetRepository(repo1Name,
+                    configure: options => { options.Url = ExampleUrl; },
+                    registerContentTypes: contentTypes =>
+                    {
+                        contentTypes.Add<MyContent>();
+                    });
+                services.ConfigureSenseNetRepository(repo2Name,
+                    configure: options => { options.Url = exampleUrl2; },
+                    registerContentTypes: contentTypes =>
+                    {
+                        contentTypes.Add<DifferentNamespace.MyContent>();
+                    });
+            });
+            var repository1 = await repositories.GetRepositoryAsync(repo1Name, CancellationToken.None).ConfigureAwait(false);
+            var repository2 = await repositories.GetRepositoryAsync(repo2Name, CancellationToken.None).ConfigureAwait(false);
+
+            // ACT
+            var content1 = repository1.CreateContent("/Root/Content", "MyContent", null);
+            var content2 = repository2.CreateContent("/Root/Content", "MyContent", null);
+
+            // ASSERT
+            Assert.IsNotNull(content1);
+            Assert.IsInstanceOfType(content1, typeof(MyContent));
+            Assert.IsNotNull(content2);
+            Assert.IsInstanceOfType(content2, typeof(DifferentNamespace.MyContent));
+        }
+        [TestMethod]
+        public async Task Repository_T_CreateContent_Unknown_ByType()
+        {
+            var repositories = GetRepositoryCollection();
+            var repository = await repositories.GetRepositoryAsync(CancellationToken.None)
+                .ConfigureAwait(false);
+            Exception? exception = null;
+
+            // ACTION
+            try
+            {
+                var _ = repository.CreateContent<MyContent>("/Root/Content", null, "MyContent-1");
+                // ASSERT
+                Assert.Fail($"The expected {nameof(ApplicationException)} was not thrown.");
+            }
+            catch (ApplicationException e)
+            {
+                exception = e;
+            }
+            Assert.IsTrue(exception.Message.Contains(nameof(MyContent)));
+            Assert.IsNotNull(exception.InnerException, "The exception.InnerException is null");
+        }
+        [TestMethod]
+        public async Task Repository_T_CreateContent_Unknown_ByName()
+        {
+            var repositories = GetRepositoryCollection();
+            var repository = await repositories.GetRepositoryAsync(CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACTION
+            var content = repository.CreateContent("/Root/Content", nameof(MyContent), null);
+
+            // ASSERT
+            Assert.AreEqual(typeof(Content), content.GetType());
+        }
+
+
+        [TestMethod]
+        public async Task Repository_T_CreateContentByTemplate()
+        {
+            var repoName = "MyRepo";
+            var repositories = GetRepositoryCollection(services =>
+            {
+                //services.RegisterGlobalContentType<MyContent>();
+                services.ConfigureSenseNetRepository(repoName,
+                    configure: options => { options.Url = ExampleUrl; },
+                    registerContentTypes: contentTypes => { contentTypes.Add<MyContent>(); });
+            });
+            var repository = await repositories.GetRepositoryAsync(repoName, CancellationToken.None)
+                .ConfigureAwait(false);
+
+            dynamic content = repository.CreateContentByTemplate<MyContent>(
+                "/Root/Content", null, "Content1", "Template1");
+
+            Assert.AreEqual("/Root/Content", content.ParentPath);
+            Assert.AreEqual("MyContent", content.__ContentType);
+            Assert.AreEqual("Content1", content.Name);
+            Assert.AreEqual("Template1", content.__ContentTemplate);
+        }
+        [TestMethod]
+        public async Task Repository_T_CreateContentByTemplate_Error_MissingContentTemplate()
+        {
+            var repoName = "MyRepo";
+            var repositories = GetRepositoryCollection(services =>
+            {
+                //services.RegisterGlobalContentType<MyContent>();
+                services.ConfigureSenseNetRepository(repoName,
+                    configure: options => { options.Url = ExampleUrl; },
+                    registerContentTypes: contentTypes => { contentTypes.Add<MyContent>(); });
+            });
+            var repository = await repositories.GetRepositoryAsync(repoName, CancellationToken.None)
+                .ConfigureAwait(false);
+
+            try
+            {
+                repository.CreateContentByTemplate<MyContent>(
+                    "/Root/Content", null, "Content1", null);
+                Assert.Fail($"The expected {nameof(ArgumentNullException)} was not thrown.");
+            }
+            catch (ArgumentNullException e)
+            {
+                Assert.AreEqual("Value cannot be null. (Parameter 'contentTemplate')", e.Message);
+            }
+        }
+        [TestMethod]
+        public async Task Repository_T_CreateContentByTemplate_Error_EmptyContentTemplate()
+        {
+            var repoName = "MyRepo";
+            var repositories = GetRepositoryCollection(services =>
+            {
+                //services.RegisterGlobalContentType<MyContent>();
+                services.ConfigureSenseNetRepository(repoName,
+                    configure: options => { options.Url = ExampleUrl; },
+                    registerContentTypes: contentTypes => { contentTypes.Add<MyContent>(); });
+            });
+            var repository = await repositories.GetRepositoryAsync(repoName, CancellationToken.None)
+                .ConfigureAwait(false);
+
+            try
+            {
+                repository.CreateContentByTemplate<MyContent>(
+                    "/Root/Content", null, "Content1", "");
+                Assert.Fail($"The expected {nameof(ArgumentException)} was not thrown.");
+            }
+            catch (ArgumentException e)
+            {
+                Assert.AreEqual("Value cannot be empty. (Parameter 'contentTemplate')", e.Message);
+            }
+        }
+
+        [TestMethod]
+        public async Task Repository_T_CreateContent_Error_MissingParentPath()
+        {
+            await TestParameterError<ArgumentNullException>(
+                repository => repository.CreateContent<MyContent>(null, null, null),
+                "Value cannot be null. (Parameter 'parentPath')").ConfigureAwait(false);
+        }
+        [TestMethod]
+        public async Task Repository_T_CreateContent_Error_EmptyParentPath()
+        {
+            await TestParameterError<ArgumentException>(
+                repository => repository.CreateContent<MyContent>("", null, null),
+                "Value cannot be empty. (Parameter 'parentPath')").ConfigureAwait(false);
+        }
+
+        [TestMethod]
+        public async Task Repository_T_GetContentTypeNameByType_Template()
+        {
+            var repoName = "MyRepo";
+            var repositories = GetRepositoryCollection(services =>
+            {
+                //services.RegisterGlobalContentType<MyContent>();
+                services.ConfigureSenseNetRepository(repoName,
+                    configure: options => { options.Url = ExampleUrl; },
+                    registerContentTypes: contentTypes =>
+                    {
+                        contentTypes.Add<MyContent>();
+                        contentTypes.Add<MyContent2>("MyContent_2");
+                        contentTypes.Add<MyContent3>();
+                    });
+            });
+            var repository = (Repository) await repositories.GetRepositoryAsync(repoName, CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACT
+            var contentTypeNames = new[]
+            {
+                repository.GetContentTypeNameByType<MyContent>(),
+                repository.GetContentTypeNameByType<MyContent2>(),
+                repository.GetContentTypeNameByType<MyContent3>(),
+            };
+
+            // ASSERT
+            var allNames = string.Join(", ", contentTypeNames);
+            Assert.AreEqual("MyContent, MyContent_2, MyContent3", allNames);
+        }
+        [TestMethod]
+        public async Task Repository_T_GetContentTypeNameByType_Type()
+        {
+            var repoName = "MyRepo";
+            var repositories = GetRepositoryCollection(services =>
+            {
+                //services.RegisterGlobalContentType<MyContent>();
+                services.ConfigureSenseNetRepository(repoName,
+                    configure: options => { options.Url = ExampleUrl; },
+                    registerContentTypes: contentTypes =>
+                    {
+                        contentTypes.Add<MyContent>();
+                        contentTypes.Add<MyContent2>("MyContent_2");
+                        contentTypes.Add<MyContent3>();
+                    });
+            });
+            var repository = (Repository) await repositories.GetRepositoryAsync(repoName, CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACT
+            var contentTypeNames = new[]
+            {
+                repository.GetContentTypeNameByType(null),
+                repository.GetContentTypeNameByType(typeof(MyContent)),
+                repository.GetContentTypeNameByType(typeof(MyContent2)),
+                repository.GetContentTypeNameByType(typeof(MyContent3)),
+            };
+
+            // ASSERT
+            var allNames = string.Join(", ", contentTypeNames);
+            Assert.AreEqual(", MyContent, MyContent_2, MyContent3", allNames);
+        }
+        [TestMethod]
+        public async Task Repository_T_GetContentTypeNameByType_Error_NotSpecifiedName()
+        {
+            var repoName = "MyRepo";
+            var repositories = GetRepositoryCollection(services =>
+            {
+                //services.RegisterGlobalContentType<MyContent>();
+                services.ConfigureSenseNetRepository(repoName,
+                    configure: options => { options.Url = ExampleUrl; },
+                    registerContentTypes: contentTypes =>
+                    {
+                        contentTypes.Add<MyContent2>();
+                        contentTypes.Add<MyContent2>("MyContent_2");
+                        contentTypes.Add<MyContent2>("MyContent_Two");
+                    });
+            });
+            var repository = (Repository) await repositories.GetRepositoryAsync(repoName, CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACT
+            try
+            {
+                var _ = repository.GetContentTypeNameByType(typeof(MyContent2));
+                // ASSERT
+                Assert.Fail($"The expected {nameof(InvalidOperationException)} was not thrown.");
+            }
+            catch (InvalidOperationException ex)
+            {
+                Assert.AreEqual("Cannot resolve the content type name for the type MyContent2 " +
+                                "because two or more names are registered: " +
+                                "MyContent2, MyContent_2, MyContent_Two.", ex.Message);
+            }
+        }
+
+        [TestMethod]
+        public async Task Repository_T_CreateContentAndSave_Global()
+        {
+            var restCaller = Substitute.For<IRestCaller>();
+            restCaller
+                .PostContentAsync(Arg.Any<string>(), Arg.Any<object>(), Arg.Any<ServerContext>(),
+                    Arg.Any<CancellationToken>())
+                .Returns(new Content(null, null));
+
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.RegisterGlobalContentType<MyContent>();
+                services.AddSingleton(restCaller);
+            });
+            var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACT
+            var content = repository.CreateContent<MyContent> ("/Root/Content", null, "MyContent-1");
+            await content.SaveAsync().ConfigureAwait(false);
+
+            // ASSERT
+            var arguments = restCaller.ReceivedCalls().Single().GetArguments();
+            Assert.AreEqual("/Root/Content", arguments[0]); // parentPath
+            dynamic data = arguments[1]!;
+            Assert.IsNotNull(data);
+            Assert.AreEqual("MyContent-1", data.Name);
+            Assert.AreEqual("MyContent", data.__ContentType);
+        }
+
+        [TestMethod]
+        public async Task Repository_T_CreateContentAndSave_LocalAndDifferentName()
+        {
+            var restCaller = Substitute.For<IRestCaller>();
+            restCaller
+                .PostContentAsync(Arg.Any<string>(), Arg.Any<object>(), Arg.Any<ServerContext>(),
+                    Arg.Any<CancellationToken>())
+                .Returns(new Content(null, null));
+
+            var repoName = "MyRepo";
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton(restCaller);
+                services.ConfigureSenseNetRepository(repoName,
+                    configure: options => { options.Url = ExampleUrl; },
+                    registerContentTypes: contentTypes =>
+                    {
+                        contentTypes.Add<MyContent2>("MyContent_Two");
+                    });
+            });
+            var repository = await repositories.GetRepositoryAsync(repoName, CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACT
+            var content = repository.CreateContent<MyContent2>("/Root/Content", null, "MyContent-1");
+            await content.SaveAsync().ConfigureAwait(false);
+
+            // ASSERT
+            var arguments = restCaller.ReceivedCalls().Single().GetArguments();
+            Assert.AreEqual("/Root/Content", arguments[0]); // parentPath
+            dynamic data = arguments[1]!;
+            Assert.IsNotNull(data);
+            Assert.AreEqual("MyContent-1", data.Name);
+            Assert.AreEqual("MyContent_Two", data.__ContentType);
+        }
+        [TestMethod]
+        public async Task Repository_T_CreateContentAndSave_SpecifiedDifferentName()
+        {
+            var restCaller = Substitute.For<IRestCaller>();
+            restCaller
+                .PostContentAsync(Arg.Any<string>(), Arg.Any<object>(), Arg.Any<ServerContext>(),
+                    Arg.Any<CancellationToken>())
+                .Returns(new Content(null, null));
+
+            var repoName = "MyRepo";
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton(restCaller);
+                services.ConfigureSenseNetRepository(repoName,
+                    configure: options => { options.Url = ExampleUrl; },
+                    registerContentTypes: contentTypes =>
+                    {
+                        contentTypes.Add<MyContent2>();
+                        contentTypes.Add<MyContent2>("MyContent_2");
+                        contentTypes.Add<MyContent2>("MyContent_Two");
+                    });
+            });
+            var repository = await repositories.GetRepositoryAsync(repoName, CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACT
+            var content = repository.CreateContent<MyContent2>("/Root/Content", "MyContent_Two", "MyContent-1");
+            await content.SaveAsync().ConfigureAwait(false);
+
+            // ASSERT
+            var arguments = restCaller.ReceivedCalls().Single().GetArguments();
+            Assert.AreEqual("/Root/Content", arguments[0]); // parentPath
+            dynamic data = arguments[1]!;
+            Assert.IsNotNull(data);
+            Assert.AreEqual("MyContent-1", data.Name);
+            Assert.AreEqual("MyContent_Two", data.__ContentType);
+        }
+        
+        /* =================================================================== CONTENT REGISTRATION AND CREATION EXAMPLES */
+
+        [TestMethod]
+        public async Task Repository_T_CreateContent_EXAMPLE_GlobalContentTypes()
+        {
+            var cancel = new CancellationTokenSource().Token;
+            var services = new ServiceCollection()
+                .AddLogging()
+                .AddSenseNetClient()
+                .RegisterGlobalContentType<MyContent>()
+                .RegisterGlobalContentType<MyContent2>()
+                .ConfigureSenseNetRepository(repositoryOptions => { })
+                .BuildServiceProvider();
+            var repository = await services.GetRequiredService<IRepositoryCollection>().GetRepositoryAsync(cancel);
+
+            // ACTION
+            var content = repository.CreateContent<MyContent2>("/Root/Content", null, "MyContent-1");
+
+            // ASSERT
+            Assert.IsNotNull(content);
+            Assert.IsInstanceOfType(content, typeof(MyContent2));
+        }
+        [TestMethod]
+        public async Task Repository_T_CreateContent_EXAMPLE_LocalContentTypes()
+        {
+            var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(2)).Token;
+            var services = new ServiceCollection()
+                .AddLogging()
+                .AddSenseNetClient()
+                .ConfigureSenseNetRepository(repositoryOptions => { },
+                    registeredContentTypes =>
+                    {
+                        registeredContentTypes.Add<MyContent>();
+                        registeredContentTypes.Add<MyContent2>();
+                    })
+                .BuildServiceProvider();
+
+            // ACT
+            var repository = await services.GetRequiredService<IRepositoryCollection>().GetRepositoryAsync(cancel);
+
+            // ACTION
+            var content = repository.CreateContent<MyContent2>("/Root/Content", null, "MyContent-1");
+
+            // ASSERT
+            Assert.IsNotNull(content);
+            Assert.IsInstanceOfType(content, typeof(MyContent2));
+        }
+        [TestMethod]
+        public async Task Repository_T_CreateContent_EXAMPLE_ReRegisterLocally()
+        {
+            var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(2)).Token;
+            var services = new ServiceCollection()
+                .AddLogging()
+                .AddSenseNetClient()
+                .RegisterGlobalContentType<MyContent>()
+                .RegisterGlobalContentType<MyContent2>()
+                .ConfigureSenseNetRepository(repositoryOptions => { },
+                    registeredContentTypes =>
+                    {
+                        registeredContentTypes.Add<MyContent3>("MyContent2");
+                    })
+                .BuildServiceProvider();
+
+            // ACT
+            var repository = await services.GetRequiredService<IRepositoryCollection>().GetRepositoryAsync(cancel);
+
+            // ACTION
+            var content = repository.CreateContent("/Root/Content", "MyContent2", "MyContent-1");
+
+            // ASSERT
+            Assert.IsNotNull(content);
+            Assert.IsInstanceOfType(content, typeof(MyContent3));
+        }
+
+        /* =================================================================== LOAD CONTENT */
+
+        [TestMethod]
+        public async Task Repository_LoadContent_Request_ByPath()
+        {
+            // ALIGN
+            var restCaller = Substitute.For<IRestCaller>();
+            restCaller
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(@"{ ""d"": { ""Name"": ""Content"" }}"));
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton(restCaller);
+            });
+            var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACT
+            var content = await repository.LoadContentAsync("/Root/Content", CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ASSERT
+            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
+            Assert.IsNotNull(requestedUri);
+            Assert.AreEqual("/OData.svc/Root('Content')?metadata=no", requestedUri.PathAndQuery);
+
+            Assert.IsNotNull(content);
+            Assert.AreEqual("Content", content.Name);
+        }
+
+        [TestMethod]
+        public async Task Repository_LoadContent_GeneralType()
+        {
+            // ALIGN
+            var restCaller = Substitute.For<IRestCaller>();
+            restCaller
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(@"{ ""d"": { ""Name"": ""Content"" }}"));
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton(restCaller);
+            });
+            var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACTION
+            var content = await repository.LoadContentAsync("/Root/Content", CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ASSERT
+            Assert.IsNotNull(content);
+            Assert.AreEqual("Content", content.Name);
+        }
+        [TestMethod]
+        public async Task Repository_LoadContent_KnownCustomTypeById()
+        {
+            // ALIGN
+            var restCaller = Substitute.For<IRestCaller>();
+            restCaller
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(@"{ ""d"": { ""Name"": ""Content"" }}"));
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton(restCaller);
+                services.AddTransient<MyContent, MyContent>();
+            });
+            var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACTION
+            var content = await repository.LoadContentAsync<MyContent>(42, CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ASSERT
+            Assert.AreEqual("Hello Content!", content.HelloMessage);
+        }
+        [TestMethod]
+        public async Task Repository_LoadContent_KnownCustomType_ByPath()
+        {
+            // ALIGN
+            var restCaller = Substitute.For<IRestCaller>();
+            restCaller
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(@"{ ""d"": { ""Name"": ""Content"" }}"));
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton(restCaller);
+                services.AddTransient<MyContent, MyContent>();
+            });
+            var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACTION
+            var content = await repository.LoadContentAsync<MyContent>("/Root/Content", CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ASSERT
+            Assert.AreEqual("Hello Content!", content.HelloMessage);
+        }
+        [TestMethod]
+        public async Task Repository_LoadContent_KnownCustomTypeAsGeneral()
+        {
+            // ALIGN
+            var restCaller = Substitute.For<IRestCaller>();
+            restCaller
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(@"{ ""d"": { ""Type"": ""MyContent"", ""Name"": ""Content"" }}"));
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton(restCaller);
+
+                services.RegisterGlobalContentType<MyContent>();
+            });
+            var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACTION
+            var content = await repository.LoadContentAsync("/Root/Content", CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ASSERT
+            Assert.IsNotNull(content);
+            Assert.AreEqual("Content", content.Name);
+            Assert.AreEqual(typeof(MyContent), content.GetType());
+        }
+
+        /* =================================================================== LOAD COLLECTION */
+
+        [TestMethod]
+        public async Task Repository_T_LoadCollection()
+        {
+            // ALIGN
+            var restCaller = Substitute.For<IRestCaller>();
+            restCaller
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(@"{""d"": {""__count"": 4, ""results"": [
+                    {""Id"": 10001, ""Name"": ""Content1"", ""Type"": ""MyContent""},
+                    {""Id"": 10002, ""Name"": ""Content2"", ""Type"": ""MyContent2""},
+                    {""Id"": 10003, ""Name"": ""Content3"", ""Type"": ""MyContent3""},
+                    {""Id"": 10004, ""Name"": ""Content4"", ""Type"": ""MyContent4""},
+                    ]}}"));
+
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton(restCaller);
+                services.RegisterGlobalContentType<MyContent>();
+                services.RegisterGlobalContentType<MyContent2>();
+                services.RegisterGlobalContentType<MyContent3>();
+            });
+            var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+            var request = new LoadCollectionRequest { Path = "/Root/Somewhere", Select = new[] { "Id", "Name", "Type" } };
+
+            // ACT
+            var collection = await repository.LoadCollectionAsync(request, CancellationToken.None);
+
+            // ASSERT
+            var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
+            Assert.IsNotNull(requestedUri);
+            Assert.AreEqual("/OData.svc/Root/Somewhere?metadata=no&$select=Id,Name,Type", requestedUri.PathAndQuery);
+
+            var contents = collection.ToArray();
+            Assert.AreEqual(4, contents.Length);
+            var typeNames = string.Join(", ", contents.Select(x => x.GetType().Name));
+            Assert.AreEqual("MyContent, MyContent2, MyContent3, Content", typeNames);
+        }
+
+        private class Item1 : Content { public Item1(IRestCaller rc, ILogger<MyContent> l) : base(rc, l) { } }
+        private class Item2 : Item1 { public Item2(IRestCaller rc, ILogger<MyContent> l) : base(rc, l) { } }
+        private class Item3 : Item2 { public Item3(IRestCaller rc, ILogger<MyContent> l) : base(rc, l) { } }
+        private class Item4 : Item3 { public Item4(IRestCaller rc, ILogger<MyContent> l) : base(rc, l) { } }
+        [TestMethod] public Task Repository_T_LoadCollection_T_Content() => LoadCollectionTest<Content>(false);
+        [TestMethod] public Task Repository_T_LoadCollection_T_Item1() => LoadCollectionTest<Item1>(false);
+        [TestMethod] public Task Repository_T_LoadCollection_T_Item2() => LoadCollectionTest<Item2>(true);
+        [TestMethod] public Task Repository_T_LoadCollection_T_Item3() => LoadCollectionTest<Item3>(true);
+        private async Task LoadCollectionTest<T>(bool isExceptionExpected) where T : Content
+        {
+            // ALIGN
+            var restCaller = Substitute.For<IRestCaller>();
+            restCaller
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(@"{""d"": {""__count"": 4, ""results"": [
+                    {""Id"": 10001, ""Name"": ""Content1"", ""Type"": ""Item1""},
+                    {""Id"": 10002, ""Name"": ""Content2"", ""Type"": ""Item2""},
+                    {""Id"": 10003, ""Name"": ""Content3"", ""Type"": ""Item3""},
+                    {""Id"": 10004, ""Name"": ""Content4"", ""Type"": ""Item4""},
+                    ]}}"));
+
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton(restCaller);
+                services.RegisterGlobalContentType<Item1>();
+                services.RegisterGlobalContentType<Item2>();
+                services.RegisterGlobalContentType<Item3>();
+                services.RegisterGlobalContentType<Item4>();
+            });
+            var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+            var request = new LoadCollectionRequest { Path = "/Root/Somewhere", Select = new[] { "Id", "Name", "Type" } };
+
+            // ACT
+            T[] contents;
+            try
+            {
+                var collection = await repository.LoadCollectionAsync<T>(request, CancellationToken.None);
+                contents = collection.ToArray();
+                if (isExceptionExpected)
+                    Assert.Fail("The expected InvalidCastException was not thrown.");
+            }
+            catch (InvalidCastException e)
+            {
+                // Unable to cast object of type 'Item1' to type '{T}'.
+                Assert.AreEqual($"Unable to cast object of type 'Item1' to type '{typeof(T).Name}'.", e.Message);
+                return;
+            }
+
+            // ASSERT
+            Assert.AreEqual(4, contents.Length);
+            var typeNames = string.Join(", ", contents.Select(x => x.GetType().Name));
+            Assert.AreEqual("Item1, Item2, Item3, Item4", typeNames);
+        }
+
+        /* =================================================================== QUERY */
+
+        [TestMethod] public Task Repository_T_Query_T_Content() => QueryTest<Content>(false);
+        [TestMethod] public Task Repository_T_Query_T_Item1() => QueryTest<Item1>(false);
+        [TestMethod] public Task Repository_T_Query_T_Item2() => QueryTest<Item2>(true);
+        [TestMethod] public Task Repository_T_Query_T_Item3() => QueryTest<Item3>(true);
+        private async Task QueryTest<T>(bool isExceptionExpected) where T : Content
+        {
+            // ALIGN
+            var restCaller = Substitute.For<IRestCaller>();
+            restCaller
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(@"{""d"": {""__count"": 4, ""results"": [
+                    {""Id"": 10001, ""Name"": ""Content1"", ""Type"": ""Item1""},
+                    {""Id"": 10002, ""Name"": ""Content2"", ""Type"": ""Item2""},
+                    {""Id"": 10003, ""Name"": ""Content3"", ""Type"": ""Item3""},
+                    {""Id"": 10004, ""Name"": ""Content4"", ""Type"": ""Item4""},
+                    ]}}"));
+
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton(restCaller);
+                services.RegisterGlobalContentType<Item1>();
+                services.RegisterGlobalContentType<Item2>();
+                services.RegisterGlobalContentType<Item3>();
+                services.RegisterGlobalContentType<Item4>();
+            });
+            var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+            var request = new QueryContentRequest { /* Irrelevant because of mocking */ };
+
+            // ACT
+            T[] contents;
+            try
+            {
+                var collection = await repository.QueryAsync<T>(request, CancellationToken.None);
+                contents = collection.ToArray();
+                if (isExceptionExpected)
+                    Assert.Fail("The expected InvalidCastException was not thrown.");
+            }
+            catch (InvalidCastException e)
+            {
+                // Unable to cast object of type 'Item1' to type '{T}'.
+                Assert.AreEqual($"Unable to cast object of type 'Item1' to type '{typeof(T).Name}'.", e.Message);
+                return;
+            }
+
+            // ASSERT
+            Assert.AreEqual(4, contents.Length);
+            var typeNames = string.Join(", ", contents.Select(x => x.GetType().Name));
+            Assert.AreEqual("Item1, Item2, Item3, Item4", typeNames);
+        }
+
+
+        [TestMethod] public Task Repository_T_QueryForAdmin_T_Content() => QueryForAdminTest<Content>(false);
+        [TestMethod] public Task Repository_T_QueryForAdmin_T_Item1() => QueryForAdminTest<Item1>(false);
+        [TestMethod] public Task Repository_T_QueryForAdmin_T_Item2() => QueryForAdminTest<Item2>(true);
+        [TestMethod] public Task Repository_T_QueryForAdmin_T_Item3() => QueryForAdminTest<Item3>(true);
+        private async Task QueryForAdminTest<T>(bool isExceptionExpected) where T : Content
+        {
+            // ALIGN
+            var restCaller = Substitute.For<IRestCaller>();
+            restCaller
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(@"{""d"": {""__count"": 4, ""results"": [
+                    {""Id"": 10001, ""Name"": ""Content1"", ""Type"": ""Item1""},
+                    {""Id"": 10002, ""Name"": ""Content2"", ""Type"": ""Item2""},
+                    {""Id"": 10003, ""Name"": ""Content3"", ""Type"": ""Item3""},
+                    {""Id"": 10004, ""Name"": ""Content4"", ""Type"": ""Item4""},
+                    ]}}"));
+
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton(restCaller);
+                services.RegisterGlobalContentType<Item1>();
+                services.RegisterGlobalContentType<Item2>();
+                services.RegisterGlobalContentType<Item3>();
+                services.RegisterGlobalContentType<Item4>();
+            });
+            var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+            var request = new QueryContentRequest { /* Irrelevant because of mocking */ };
+
+            // ACT
+            T[] contents;
+            try
+            {
+                var collection = await repository.QueryForAdminAsync<T>(request, CancellationToken.None);
+                contents = collection.ToArray();
+                if (isExceptionExpected)
+                    Assert.Fail("The expected InvalidCastException was not thrown.");
+            }
+            catch (InvalidCastException e)
+            {
+                // Unable to cast object of type 'Item1' to type '{T}'.
+                Assert.AreEqual($"Unable to cast object of type 'Item1' to type '{typeof(T).Name}'.", e.Message);
+                return;
+            }
+
+            // ASSERT
+            Assert.AreEqual(4, contents.Length);
+            var typeNames = string.Join(", ", contents.Select(x => x.GetType().Name));
+            Assert.AreEqual("Item1, Item2, Item3, Item4", typeNames);
+        }
+
+
         /* ====================================================================== TOOLS */
 
-        private static IRepositoryCollection GetRepositoryCollection(Action<IServiceCollection> addServices = null)
+        private static IRepositoryCollection GetRepositoryCollection(Action<IServiceCollection>? addServices = null)
         {
             var services = new ServiceCollection();
 
@@ -702,7 +1850,7 @@ namespace SenseNet.Client.Tests.UnitTests
             });
 
             var config = new ConfigurationBuilder()
-                .AddJsonFile("appsettings.json", optional: true)
+                .AddJsonFile("appSettings.json", optional: true)
                 .AddUserSecrets<RepositoryTests>()
                 .Build();
 
@@ -721,6 +1869,35 @@ namespace SenseNet.Client.Tests.UnitTests
 
             var provider = services.BuildServiceProvider();
             return provider.GetRequiredService<IRepositoryCollection>();
+        }
+
+        public async Task TestParameterError<TException>(Action<IRepository> callback, string expectedMessage) where TException : Exception
+        {
+            var repository = await GetRepositoryCollection().GetRepositoryAsync("local", CancellationToken.None);
+
+            try
+            {
+                callback(repository);
+                Assert.Fail($"The expected {typeof(TException).Name} was not thrown.");
+            }
+            catch (TException e)
+            {
+                Assert.AreEqual(expectedMessage, e.Message);
+            }
+        }
+        public async Task TestParameterError<TException>(Func<IRepository, Task> callback, string expectedMessage) where TException : Exception
+        {
+            var repository = await GetRepositoryCollection().GetRepositoryAsync("local", CancellationToken.None);
+
+            try
+            {
+                await callback(repository);
+                Assert.Fail($"The expected {typeof(TException).Name} was not thrown.");
+            }
+            catch (TException e)
+            {
+                Assert.AreEqual(expectedMessage, e.Message);
+            }
         }
     }
 }
