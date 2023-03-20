@@ -163,6 +163,7 @@ public partial class Content : DynamicObject
     /// <param name="name">Name of the new content.</param>
     /// <param name="contentTemplate">Content template path.</param>
     /// <param name="server">Target server.</param>
+    [Obsolete("Use CreateContent or CreateContentByTemplate methods of the IRepository.")]
     public static Content CreateNew(string parentPath, string contentType, string name, string contentTemplate = null, ServerContext server = null)
     {
         return CreateNew<Content>(parentPath, contentType, name, contentTemplate, server);
@@ -176,6 +177,7 @@ public partial class Content : DynamicObject
     /// <param name="name">Name of the new content.</param>
     /// <param name="contentTemplate">Content template path.</param>
     /// <param name="server">Target server.</param>
+    [Obsolete("Use CreateContent<T> or CreateContentByTemplate<T> methods of the IRepository.")]
     public static T CreateNew<T>(string parentPath, string contentType, string name, string contentTemplate = null, ServerContext server = null) where T : Content
     {
         if (string.IsNullOrEmpty(parentPath))
@@ -219,6 +221,7 @@ public partial class Content : DynamicObject
     /// </summary>
     /// <param name="id">Content id.</param>
     /// <param name="server">Target server.</param>
+    [Obsolete("Use LoadContentAsync(int id, CancellationToken cancel) method of the IRepository.")]
     public static async Task<Content> LoadAsync(int id, ServerContext server = null)
     {
         return await RESTCaller.GetContentAsync(id, server).ConfigureAwait(false);
@@ -228,6 +231,7 @@ public partial class Content : DynamicObject
     /// </summary>
     /// <param name="path">Content path.</param>
     /// <param name="server">Target server.</param>
+    [Obsolete("Use LoadContentAsync(string path, CancellationToken cancel) method of the IRepository.")]
     public static async Task<Content> LoadAsync(string path, ServerContext server = null)
     {
         return await RESTCaller.GetContentAsync(path, server).ConfigureAwait(false);
@@ -238,6 +242,7 @@ public partial class Content : DynamicObject
     /// </summary>
     /// <param name="requestData">Detailed information that will be sent as part of the request.</param>
     /// <param name="server">Target server.</param>
+    [Obsolete("Use LoadContentAsync<T>(LoadContentRequest requestData, CancellationToken cancel) method of the IRepository.")]
     public static async Task<Content> LoadAsync(ODataRequest requestData, ServerContext server = null)
     {
         return await RESTCaller.GetContentAsync(requestData, server).ConfigureAwait(false);
@@ -248,6 +253,7 @@ public partial class Content : DynamicObject
     /// </summary>
     /// <param name="path">Content path.</param>
     /// <param name="server">Target server.</param>
+    [Obsolete("Use IsContentExistsAsync(string path, CancellationToken cancel) method of the IRepository.")]
     public static async Task<bool> ExistsAsync(string path, ServerContext server = null)
     {
         var requestData = new ODataRequest(server)
@@ -267,6 +273,7 @@ public partial class Content : DynamicObject
     /// <param name="path">Path of the container.</param>
     /// <param name="server">Target server.</param>
     /// <returns></returns>
+    [Obsolete("Use LoadCollectionAsync or LoadCollectionAsync<T> methods of the IRepository.")]
     public static async Task<IEnumerable<Content>> LoadCollectionAsync(string path, ServerContext server = null)
     {
         return await RESTCaller.GetCollectionAsync(path, server).ConfigureAwait(false);
@@ -277,6 +284,7 @@ public partial class Content : DynamicObject
     /// <param name="requestData">Detailed information that will be sent as part of the request.
     /// For example Top, Skip, Select, etc.</param>
     /// <param name="server">Target server.</param>
+    [Obsolete("Use LoadCollectionAsync or LoadCollectionAsync<T> methods of the IRepository.")]
     public static async Task<IEnumerable<Content>> LoadCollectionAsync(ODataRequest requestData, ServerContext server = null)
     {
         return await RESTCaller.GetCollectionAsync(requestData, server).ConfigureAwait(false);
@@ -392,6 +400,7 @@ public partial class Content : DynamicObject
     /// <param name="query">Content query text. If it is empty, the count of children will be returned.</param>
     /// <param name="server">Target server.</param>
     /// <returns>Count of result content.</returns>
+    [Obsolete("Use GetContentCountAsync, QueryCountAsync or QueryCountForAdminAsync methods of the IRepository.")]
     public static async Task<int> GetCountAsync(string path, string query, ServerContext server = null)
     {
         var request = new ODataRequest(server)
@@ -415,6 +424,7 @@ public partial class Content : DynamicObject
     /// <param name="expand">Fields to expand.</param>
     /// <param name="settings">Query settings.</param>
     /// <param name="server">Target server.</param>
+    [Obsolete("Use QueryForAdminAsync or QueryForAdminAsync<T> methods of the IRepository.")]
     public static async Task<IEnumerable<Content>> QueryForAdminAsync(string queryText, string[] select = null, string[] expand = null, QuerySettings settings = null, ServerContext server = null)
     {
         if (settings == null)
@@ -433,6 +443,7 @@ public partial class Content : DynamicObject
     /// <param name="expand">Fields to expand.</param>
     /// <param name="settings">Query settings.</param>
     /// <param name="server">Target server.</param>
+    [Obsolete("Use QueryAsync or QueryAsync<T> method of the IRepository.")]
     public static async Task<IEnumerable<Content>> QueryAsync(string queryText, string[] select = null, string[] expand = null, QuerySettings settings = null, ServerContext server = null)
     {
         if (settings == null)
@@ -723,6 +734,7 @@ public partial class Content : DynamicObject
     /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
     /// <param name="server">Target server. If null, the first one will be used from the configuration.</param>
     /// <returns>A task that represents an asynchronous operation.</returns>
+    [Obsolete("Use DeleteContentAsync(string path, bool permanent, CancellationToken cancel) method of the IRepository.")]
     public static async Task DeleteAsync(string path, bool permanent, CancellationToken cancellationToken,
         ServerContext server = null)
     {
@@ -737,6 +749,7 @@ public partial class Content : DynamicObject
     /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
     /// <param name="server">Target server. If null, the first one will be used from the configuration.</param>
     /// <returns>A task that represents an asynchronous operation.</returns>
+    [Obsolete("Use DeleteContentAsync(string[] paths, bool permanent, CancellationToken cancel) method of the IRepository.")]
     public static async Task DeleteAsync(string[] paths, bool permanent, CancellationToken cancellationToken,
         ServerContext server = null)
     {
@@ -750,6 +763,7 @@ public partial class Content : DynamicObject
     /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
     /// <param name="server">Target server. If null, the first one will be used from the configuration.</param>
     /// <returns>A task that represents an asynchronous operation.</returns>
+    [Obsolete("Use DeleteContentAsync(int id, bool permanent, CancellationToken cancel) method of the IRepository.")]
     public static async Task DeleteAsync(int id, bool permanent, CancellationToken cancellationToken,
         ServerContext server = null)
     {
@@ -763,6 +777,7 @@ public partial class Content : DynamicObject
     /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
     /// <param name="server">Target server. If null, the first one will be used from the configuration.</param>
     /// <returns>A task that represents an asynchronous operation.</returns>
+    [Obsolete("Use DeleteContentAsync(int[] ids, bool permanent, CancellationToken cancel) method of the IRepository.")]
     public static async Task DeleteAsync(int[] ids, bool permanent, CancellationToken cancellationToken,
         ServerContext server = null)
     {
@@ -776,6 +791,7 @@ public partial class Content : DynamicObject
     /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
     /// <param name="server">Target server. If null, the first one will be used from the configuration.</param>
     /// <returns>A task that represents an asynchronous operation.</returns>
+    [Obsolete("Use DeleteContentAsync(object[] idsOrPaths, bool permanent, CancellationToken cancel) method of the IRepository.")]
     public static async Task DeleteAsync(object[] idsOrPaths, bool permanent, CancellationToken cancellationToken,
         ServerContext server = null)
     {
