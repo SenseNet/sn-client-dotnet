@@ -9,6 +9,8 @@ using Newtonsoft.Json.Linq;
 using System.Net.Http;
 using Microsoft.Extensions.Options;
 using System.Text.RegularExpressions;
+using System.IO;
+using System.Net.Mime;
 
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client;
@@ -38,6 +40,51 @@ internal class Repository : IRepository
     }
 
     /* ============================================================================ CREATION */
+
+    public Content CreateExistingContent(int id)
+    {
+        if (id <= 0)
+            throw new ArgumentException($"Value cannot be less than or equal 0. (Parameter '{nameof(id)}')");
+
+        return CreateExistingContent<Content>(id, null);
+    }
+    public Content CreateExistingContent(string path)
+    {
+        if (path == null)
+            throw new ArgumentNullException(nameof(path));
+        if (path.Length == 0)
+            throw new ArgumentException($"Value cannot be empty. (Parameter '{nameof(path)}')");
+
+        return CreateExistingContent<Content>(0, path);
+    }
+    public T CreateExistingContent<T>(int id) where T : Content
+    {
+        if (id <= 0)
+            throw new ArgumentException($"Value cannot be less than or equal 0. (Parameter '{nameof(id)}')");
+
+        return CreateExistingContent<T>(id, null);
+    }
+    public T CreateExistingContent<T>(string path) where T : Content
+    {
+        if (path == null)
+            throw new ArgumentNullException(nameof(path));
+        if (path.Length == 0)
+            throw new ArgumentException($"Value cannot be empty. (Parameter '{nameof(path)}')");
+
+        return CreateExistingContent<T>(0, path);
+    }
+    private T CreateExistingContent<T>(int id, string path) where T : Content
+    {
+        var content = (T) _services.GetRequiredService(typeof(T));
+        content.Existing = true;
+        if (id > 0)
+            content.Id = id;
+        else
+            content.Path = path;
+        return content;
+    }
+
+    /* ---------------------------------------------------------------------------- */
 
     public Content CreateContent(string parentPath, string contentTypeName, string name)
     {

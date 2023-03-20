@@ -63,7 +63,7 @@ public partial class Content : DynamicObject
 
     //============================================================================= Technical properties
 
-    private bool Existing { get; set; }
+    internal bool Existing { get; set; }
 
     /// <summary>
     /// The target server that this content belongs to.
@@ -130,6 +130,7 @@ public partial class Content : DynamicObject
     /// </summary>
     /// <param name="id">Content id.</param>
     /// <param name="server">Target server.</param>
+    [Obsolete("Use CreateExistingContent(int id) or CreateExistingContent<T>(int id) methods of the IRepository.")]
     public static Content Create(int id, ServerContext server = null)
     {
         return new Content(server)
@@ -143,6 +144,7 @@ public partial class Content : DynamicObject
     /// </summary>
     /// <param name="path">Content path.</param>
     /// <param name="server">Target server.</param>
+    [Obsolete("Use CreateExistingContent(string path) or CreateExistingContent<T>(string path) methods of the IRepository.")]
     public static Content Create(string path, ServerContext server = null)
     {
         if (string.IsNullOrEmpty(path))

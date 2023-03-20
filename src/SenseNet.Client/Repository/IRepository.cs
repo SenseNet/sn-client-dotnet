@@ -26,6 +26,43 @@ public interface IRepository
     /* ============================================================================ CREATION */
 
     /// <summary>
+    /// Creates a new in-memory local representation of an existing content without loading it from the server.
+    /// </summary>
+    /// <param name="id">Content id.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="id"/> is less than or equal 0.</exception>
+    public Content CreateExistingContent(int id);
+    /// <summary>
+    /// Creates a new in-memory local representation of an existing content without loading it from the server.
+    /// </summary>
+    /// <param name="path">Content path.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="path"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="path"/> is empty.</exception>
+    public Content CreateExistingContent(string path);
+    /// <summary>
+    /// Creates a new specialized in-memory local representation of an existing content without loading it from the server.
+    /// </summary>
+    /// <remarks>The <see cref="T"/> type should be registered during application start either by the
+    /// ConfigureSenseNetRepository or the RegisterGlobalContentType methods otherwise
+    /// an <see cref="ApplicationException"/> will be thrown.</remarks>
+    /// <typeparam name="T">Type of the content.</typeparam>
+    /// <param name="id">Content id.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="id"/> is less than or equal 0.</exception>
+    public T CreateExistingContent<T>(int id) where T : Content;
+    /// <summary>
+    /// Creates a new specialized in-memory local representation of an existing content without loading it from the server.
+    /// </summary>
+    /// <remarks>The <see cref="T"/> type should be registered during application start either by the
+    /// ConfigureSenseNetRepository or the RegisterGlobalContentType methods otherwise
+    /// an <see cref="ApplicationException"/> will be thrown.</remarks>
+    /// <typeparam name="T">Type of the content.</typeparam>
+    /// <param name="path">Content path.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="path"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="path"/> is empty.</exception>
+    /// <exception cref="ApplicationException">Thrown when the requested type is registered.</exception>
+    public T CreateExistingContent<T>(string path) where T : Content;
+
+
+    /// <summary>
     /// Creates a new content instance in memory.
     /// If the requested type is not registered, the return value will be a <see cref="Content"/>.
     /// </summary>
