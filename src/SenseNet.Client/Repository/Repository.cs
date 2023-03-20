@@ -76,11 +76,14 @@ internal class Repository : IRepository
     private T CreateExistingContent<T>(int id, string path) where T : Content
     {
         var content = (T) _services.GetRequiredService(typeof(T));
-        content.Existing = true;
+        content.Server = Server;
+        content.Repository = this;
         if (id > 0)
             content.Id = id;
         else
             content.Path = path;
+        dynamic c = content;
+        c.Existing = true;
         return content;
     }
 

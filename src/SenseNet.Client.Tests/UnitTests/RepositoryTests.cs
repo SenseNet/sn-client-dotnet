@@ -61,6 +61,86 @@ namespace SenseNet.Client.Tests.UnitTests
         /* ====================================================================== CONTENT CREATION */
 
         [TestMethod]
+        public async Task Repository_CreateExistingContent_ById()
+        {
+            var repository = await GetRepositoryCollection().GetRepositoryAsync("local", CancellationToken.None);
+
+            // ACT
+            var content = repository.CreateExistingContent(42);
+
+            // ASSERT
+            Assert.AreEqual(null, content.Path);
+            Assert.AreEqual(42, content.Id);
+            // technical structure
+            Assert.AreSame(repository, content.Repository);
+            Assert.AreSame(repository.Server, content.Server);
+            Assert.IsNull(content.ParentPath);
+            Assert.IsNull(content.Name);
+            Assert.AreEqual(true, ((dynamic)content).Existing);
+        }
+        [TestMethod]
+        public async Task Repository_CreateExistingContent_ByPath()
+        {
+            var repository = await GetRepositoryCollection().GetRepositoryAsync("local", CancellationToken.None);
+
+            // ACT
+            var content = repository.CreateExistingContent("/Root/MyContent");
+
+            // ASSERT
+            Assert.AreEqual("/Root/MyContent", content.Path);
+            Assert.AreEqual(0, content.Id);
+            // technical structure
+            Assert.AreSame(repository, content.Repository);
+            Assert.AreSame(repository.Server, content.Server);
+            Assert.IsNull(content.ParentPath);
+            Assert.IsNull(content.Name);
+            Assert.AreEqual(true, ((dynamic)content).Existing);
+        }
+        [TestMethod]
+        public async Task Repository_CreateExistingContent_T_ById()
+        {
+            var repository = await GetRepositoryCollection(
+                    services => services.RegisterGlobalContentType<MyContent>())
+                .GetRepositoryAsync("local", CancellationToken.None);
+
+            // ACT
+            var content = repository.CreateExistingContent<MyContent>(42);
+
+            // ASSERT
+            Assert.AreEqual(null, content.Path);
+            Assert.AreEqual(42, content.Id);
+            // technical structure
+            Assert.IsInstanceOfType(content, typeof(MyContent));
+            Assert.AreSame(repository, content.Repository);
+            Assert.AreSame(repository.Server, content.Server);
+            Assert.IsNull(content.ParentPath);
+            Assert.IsNull(content.Name);
+            Assert.AreEqual(true, ((dynamic)content).Existing);
+        }
+        [TestMethod]
+        public async Task Repository_CreateExistingContent_T_ByPath()
+        {
+            var repository = await GetRepositoryCollection(
+                    services => services.RegisterGlobalContentType<MyContent>())
+                .GetRepositoryAsync("local", CancellationToken.None);
+
+            // ACT
+            var content = repository.CreateExistingContent<MyContent>("/Root/MyContent");
+
+            // ASSERT
+            Assert.AreEqual("/Root/MyContent", content.Path);
+            Assert.AreEqual(0, content.Id);
+            // technical structure
+            Assert.IsInstanceOfType(content, typeof(MyContent));
+            Assert.AreSame(repository, content.Repository);
+            Assert.AreSame(repository.Server, content.Server);
+            Assert.IsNull(content.ParentPath);
+            Assert.IsNull(content.Name);
+            Assert.AreEqual(true, ((dynamic)content).Existing);
+        }
+
+
+        [TestMethod]
         public async Task Repository_CreateContent()
         {
             var repository = await GetRepositoryCollection().GetRepositoryAsync("local", CancellationToken.None);

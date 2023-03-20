@@ -63,7 +63,7 @@ public partial class Content : DynamicObject
 
     //============================================================================= Technical properties
 
-    internal bool Existing { get; set; }
+    private bool Existing { get; set; }
 
     /// <summary>
     /// The target server that this content belongs to.
