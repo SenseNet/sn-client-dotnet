@@ -587,21 +587,21 @@ namespace SenseNet.Client.TestsForDocs
 
         /* ====================================================================================== Metadata */
 
+        /// <tab category="basic-concepts" article="metadata" example="metadata" />
         [TestMethod]
         [Description("Metadata")]
-        public async Task Docs_BasicConcepts_MetadataFormat()
+        public async Task Docs2_BasicConcepts_MetadataFormat()
         {
-            var content =
-                // ACTION for doc
-                await Content.LoadAsync(new ODataRequest
+            var content = /*<doc>*/await repository.LoadContentAsync(new LoadContentRequest
                 {
                     Path = "/Root/Content/IT",
-                    Metadata = MetadataFormat.None,
-                });
+                    Metadata = MetadataFormat.None
+                }, cancel)/*</doc>*/.ConfigureAwait(false);
 
-            // ASSERT
-            Assert.Inconclusive();
+            Assert.IsNull(content["__metadata"]);
         }
+
+        /// <tab category="basic-concepts" article="metadata" example="global-metadata" />
         [TestMethod]
         [Description("$metadata 1")]
         public async Task Docs_BasicConcepts_GlobalMetadata()
@@ -616,6 +616,8 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// <tab category="basic-concepts" article="metadata" example="doclib-metadata" />
         [TestMethod]
         [Description("$metadata 2")]
         public async Task Docs_BasicConcepts_LocalMetadata()
@@ -634,63 +636,61 @@ namespace SenseNet.Client.TestsForDocs
             Assert.Inconclusive();
         }
 
-        /* ====================================================================================== Metadata */
+        /* ====================================================================================== Autofilters */
 
+        /// <tab category="basic-concepts" article="system-content" example="autofilter" />
         [TestMethod]
         [Description("Accessing system content")]
-        public async Task Docs_BasicConcepts_AutoFilters()
+        public async Task Docs2_BasicConcepts_AutoFilters()
         {
-            // ACTION for doc
-            var result = await Content.LoadCollectionAsync(new ODataRequest
+            await EnsureContentAsync("/Root/Content/IT/SystemFolder-1", "SystemFolder");
+
+            var result = /*<doc>*/await repository.LoadCollectionAsync(new LoadCollectionRequest
             {
                 Path = "/Root/Content/IT",
-                AutoFilters = FilterStatus.Disabled,
-            });
-            //foreach(var content in result)
-            //    Console.WriteLine(content.Name);
+                AutoFilters = FilterStatus.Disabled
+            }, cancel)/*/<doc>*/.ConfigureAwait(false);
 
-            // ASSERT
-            Assert.Inconclusive();
+            var contents = result.ToArray();
+            Assert.IsTrue(2 < contents.Length);
+            var types = contents.Select(c => c["Type"].ToString()).Distinct().OrderBy(x => x).ToArray();
+            Assert.IsTrue(types.Contains("SystemFolder"));
         }
 
         /* ====================================================================================== Lifespan */
 
-        [TestMethod]
+        /// <tab category="basic-concepts" article="lifespan" example="lifespanfilter" />
+        [TestMethod] //TODO: Missing assertion in this test
         [Description("Filter content by lifespan validity")]
-        public async Task Docs_BasicConcepts_LifespanFilter()
+        public async Task Docs2_BasicConcepts_LifespanFilter()
         {
             // ACTION for doc
-            var result = await Content.LoadCollectionAsync(new ODataRequest
+            var result = /*<doc>*/await repository.LoadCollectionAsync(new LoadCollectionRequest
             {
                 Path = "/Root/Content/IT",
-                LifespanFilter = FilterStatus.Enabled,
-            });
-            //foreach (var content in result)
-            //    Console.WriteLine(content.Name);
-
-            // ASSERT
-            Assert.Inconclusive();
+                LifespanFilter = FilterStatus.Enabled
+            }, cancel)/*/<doc>*/.ConfigureAwait(false);
         }
 
         /* ====================================================================================== Actions */
 
+        /// <tab category="basic-concepts" article="action" example="actions" />
         [TestMethod]
         [Description("Exploring actions")]
-        public async Task Docs_BasicConcepts_Actions()
+        public async Task Docs2_BasicConcepts_Actions()
         {
-            // ACTION for doc
-            dynamic content = await RESTCaller.GetContentAsync(new ODataRequest
+            dynamic content = /*<doc>*/await repository.LoadContentAsync(new LoadContentRequest
             {
                 Path = "/Root/Content/IT",
                 Expand = new[] { "Actions" },
                 Select = new[] { "Actions" },
-            });
-            //foreach(var item in content.Actions)
-            //    Console.WriteLine(item.Name);
+            }, cancel)/*</doc>*/.ConfigureAwait(false);
 
-            // ASSERT
-            Assert.Inconclusive();
+            var actions = content["Actions"];
+            Assert.IsTrue(10 < actions.Count);
         }
+
+        /// <tab category="basic-concepts" article="action" example="scenario" />
         [TestMethod]
         [Description("Scenario")]
         public async Task Docs_BasicConcepts_Scenario()
@@ -721,6 +721,7 @@ namespace SenseNet.Client.TestsForDocs
 
         /* ====================================================================================== Schema */
 
+        /// 
         [TestMethod]
         [Description("Get schema")]
         public async Task Docs_BasicConcepts_GetSchema()
@@ -731,6 +732,8 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// 
         [TestMethod]
         [Description("Change the schema")]
         public async Task Docs_BasicConcepts_GetCtd()
