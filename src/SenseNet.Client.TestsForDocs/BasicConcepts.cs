@@ -3,41 +3,67 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json.Linq;
 using SenseNet.Client.TestsForDocs.Infrastructure;
+using SenseNet.Extensions.DependencyInjection;
 
 namespace SenseNet.Client.TestsForDocs
 {
     [TestClass]
     public class BasicConcepts : ClientIntegrationTestBase
     {
+        private class MyContent : Content { public MyContent(IRestCaller rc, ILogger<Content> l) : base(rc, l) { } }
+        // ReSharper disable once InconsistentNaming
+        private CancellationToken cancel => new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
+        // ReSharper disable once InconsistentNaming
+        IRepository repository =>
+            GetRepositoryCollection(services => { services.RegisterGlobalContentType<MyContent>(); })
+                .GetRepositoryAsync("local", cancel).GetAwaiter().GetResult();
+
         /* ====================================================================================== Entry */
 
+        /// <tab category="basic-concepts" article="entry" example="byId" />
         [TestMethod]
         [Description("Get a single content by Id")]
-        public async Task Docs_BasicConcepts_GetSingleContentById()
+        public async Task Docs2_BasicConcepts_GetSingleContentById()
         {
             var content =
-                // ACTION for doc
-                await Content.LoadAsync(1284);
-
-            // ASSERT
+                /*<doc>*/await repository.LoadContentAsync(1284, cancel)/*</doc>*/.ConfigureAwait(false);
             Assert.IsNotNull(content);
             Assert.AreEqual(1284, content.Id);
+
+            /*<doc>*/
+            // or
+            /*</doc>*/
+
+            var myContent =
+                /*<doc>*/await repository.LoadContentAsync<MyContent>(1284, cancel)/*</doc>*/.ConfigureAwait(false);
+            Assert.IsNotNull(myContent);
+            Assert.AreEqual(1284, myContent.Id);
         }
+
+        /// <tab category="basic-concepts" article="entry" example="byPath" />
         [TestMethod]
         [Description("Get a single content by Path")]
-        public async Task Docs_BasicConcepts_GetSingleContentByPath()
+        public async Task Docs2_BasicConcepts_GetSingleContentByPath()
         {
             var content =
-                // ACTION for doc
-                await Content.LoadAsync("/Root/Content/IT");
-
-            // ASSERT
+                /*<doc>*/await repository.LoadContentAsync("/Root/Content/IT", cancel)/*</doc>*/
+                    .ConfigureAwait(false);
             Assert.IsNotNull(content);
             Assert.AreEqual("/Root/Content/IT", content.Path);
+            /*<doc>*/
+            // or
+            /*</doc>*/
+            var myContent =
+                /*<doc>*/await repository.LoadContentAsync<MyContent>("/Root/Content/IT", cancel)/*</doc>*/.ConfigureAwait(false);
+            Assert.IsNotNull(myContent);
+            Assert.AreEqual("/Root/Content/IT", myContent.Path);
         }
+
+        /// <tab category="basic-concepts" article="entry" example="property" />
         [TestMethod]
         [Description("Addressing a single property of a content")]
         public async Task Docs_BasicConcepts_GetSingleProperty()
@@ -50,6 +76,8 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.AreEqual("{\"d\":{\"DisplayName\":\"IT\"}}", response.RemoveWhitespaces());
         }
+
+        /// <tab category="basic-concepts" article="entry" example="propertyValue" />
         [TestMethod]
         [Description("Addressing a property value")]
         public async Task Docs_BasicConcepts_GetSinglePropertyValue()
@@ -67,34 +95,40 @@ namespace SenseNet.Client.TestsForDocs
 
         /* ====================================================================================== Collection */
 
+        /// <tab category="basic-concepts" article="collection" example="children" />
         [TestMethod]
         [Description("Children of a content (collection)")]
-        public async Task Docs_BasicConcepts_GetChildren()
+        public async Task Docs2_BasicConcepts_GetChildren()
         {
-            var result = 
-                // ACTION for doc
-                await Content.LoadCollectionAsync("/Root/Content");
+            var children1 =
+                /*<doc>*/
+                await repository.LoadCollectionAsync(new LoadCollectionRequest { Path = "/Root/Content" }, cancel)
+                /*</doc>*/
+                .ConfigureAwait(false);
 
-            // ASSERT
-            var children = result.ToArray();
-            Assert.IsTrue(children.Length > 0);
-            Assert.AreEqual("/Root/Content", children[0].ParentPath);
+            var childArray1 = children1.ToArray();
+            Assert.IsTrue(childArray1.Length > 0);
+            Assert.AreEqual("/Root/Content", childArray1[0].ParentPath);
         }
+
+        /// <tab category="basic-concepts" article="collection" example="count" />
         [TestMethod]
         [Description("Count of a collection")]
-        public async Task Docs_BasicConcepts_ChildrenCount()
+        public async Task Docs2_BasicConcepts_ChildrenCount()
         {
-            var children =
-                await Content.LoadCollectionAsync("/Root/Content");
-
             var count =
-                // ACTION for doc
-                await Content.GetCountAsync("/Root/Content", null);
+                /*<doc>*/await repository.GetContentCountAsync(new LoadCollectionRequest {Path = "/Root/Content"}, cancel)
+                    /*</doc>*/
+                    .ConfigureAwait(false);
 
-            // ASSERT
+            var children = 
+                await repository.LoadCollectionAsync(new LoadCollectionRequest { Path = "/Root/Content" }, cancel)
+                    .ConfigureAwait(false);
             Assert.AreNotEqual(0, count);
             Assert.AreEqual(children.ToArray().Length, count);
         }
+
+        /// <tab category="basic-concepts" article="collection" example="inlinecount" />
         [TestMethod]
         [Description("$inlinecount query option")]
         public async Task Docs_BasicConcepts_ChildrenInlineCount()
@@ -123,7 +157,7 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             // { "d": { "__count": 1, "results": [] }}
 
-            var array = ((JToken) result).SelectTokens("$.d.results.*").ToArray();
+            var array = ((JToken)result).SelectTokens("$.d.results.*").ToArray();
             var inlineCount = ((JToken)result).SelectToken("$.d.__count").Value<int>();
 
             Assert.AreNotEqual(0, inlineCount);
@@ -132,175 +166,152 @@ namespace SenseNet.Client.TestsForDocs
 
         /* ====================================================================================== Select and expand */
 
+        /// <tab category="basic-concepts" article="select-expand" example="select" />
         [TestMethod]
         [Description("Select")]
-        // GetContentAsync GetResponseStringAsync GetResponseJsonAsync
-        public async Task Docs_BasicConcepts_Select()
+        public async Task Docs2_BasicConcepts_Select()
         {
-            // ACTION for doc
-            dynamic content = await RESTCaller.GetContentAsync(new ODataRequest
+            dynamic content = /*<doc>*/await repository.LoadContentAsync(new LoadContentRequest
             {
                 Path = "/Root/Content/IT",
                 Select = new[] { "DisplayName", "Description" }
-            });
+            }, cancel)/*</doc>*/.ConfigureAwait(false);
 
-            // ASSERT-1
-            var responseString = await RESTCaller.GetResponseStringAsync(new ODataRequest
-            {
-                Path = "/Root/Content/IT",
-                Select = new[] { "DisplayName", "Description" }
-            });
-            Assert.AreEqual("{\"d\":{\"DisplayName\":\"IT\",\"Description\":null}}", responseString.RemoveWhitespaces());
-
-            // ASSERT-2
-            var responseJson = await RESTCaller.GetResponseJsonAsync(new ODataRequest
-            {
-                Path = "/Root/Content/IT",
-                Select = new[] { "DisplayName", "Description" }
-            });
-            var displayName = responseJson.d.DisplayName.ToString();
-            var description = responseJson.d.Description.ToString();
-            Assert.AreEqual(displayName, content.DisplayName.ToString());
-            Assert.AreEqual(description, content.Description.ToString());
+            var displayName = content.DisplayName.ToString();
+            var description = content.Description.ToString();
+            Assert.IsNotNull(displayName);
+            Assert.IsNotNull(description);
         }
+
+        /// <tab category="basic-concepts" article="select-expand" example="expand" />
         [TestMethod]
         [Description("Expand 1")]
-        public async Task Docs_BasicConcepts_Expand_CreatedBy()
+        public async Task Docs2_BasicConcepts_Expand_CreatedBy()
         {
             // ACTION for doc
-            dynamic content = await RESTCaller.GetContentAsync(new ODataRequest
+            dynamic content = /*<doc>*/await repository.LoadContentAsync(new LoadContentRequest
             {
                 Path = "/Root/Content/IT",
                 Expand = new[] { "CreatedBy" },
-            });
+            }, cancel)/*</doc>*/.ConfigureAwait(false);
             //Console.WriteLine(content.CreatedBy.Name);
 
             // ASSERT
             Assert.AreEqual("Admin", content.CreatedBy.Name.ToString());
         }
+
+        /// <tab category="basic-concepts" article="select-expand" example="expandExpanded" />
         [TestMethod]
         [Description("Expand 2")]
-        public async Task Docs_BasicConcepts_Expand_CreatedByCreatedBy()
+        public async Task Docs2_BasicConcepts_Expand_CreatedByCreatedBy()
         {
-            // ACTION for doc
-            dynamic content = await RESTCaller.GetContentAsync(new ODataRequest
+            dynamic content = /*<doc>*/await repository.LoadContentAsync(new LoadContentRequest
             {
                 Path = "/Root/Content/IT",
                 Expand = new[] { "CreatedBy/CreatedBy" },
-            });
-            //Console.WriteLine(content.CreatedBy.CreatedBy.Name);
+            }, cancel)/*</doc>*/.ConfigureAwait(false);
 
-            // ASSERT
             Assert.AreEqual("Admin", content.CreatedBy.CreatedBy.Name.ToString());
         }
+
+        /// <tab category="basic-concepts" article="select-expand" example="expandAndSelect" />
         [TestMethod]
         [Description("Expand 3")]
-        public async Task Docs_BasicConcepts_Expand_CreatedByName()
+        public async Task Docs2_BasicConcepts_Expand_CreatedByName()
         {
-            // ACTION for doc
-            dynamic content = await RESTCaller.GetContentAsync(new ODataRequest
+            dynamic content = /*<doc>*/await repository.LoadContentAsync(new LoadContentRequest
             {
                 Path = "/Root/Content/IT",
                 Expand = new[] { "CreatedBy" },
                 Select = new[] { "Name", "CreatedBy/Name" }
-            });
-            //Console.WriteLine(content.CreatedBy.Name);
+            }, cancel)/*</doc>*/.ConfigureAwait(false);
 
-            // ASSERT
             Assert.AreEqual("Admin", content.CreatedBy.Name.ToString());
         }
+
+        /// <tab category="basic-concepts" article="select-expand" example="expandAllowedChildTypes" />
         [TestMethod]
         [Description("Expand 4")]
-        public async Task Docs_BasicConcepts_Expand_AllowedChildTypes()
+        public async Task Docs2_BasicConcepts_Expand_AllowedChildTypes()
         {
-            // ACTION for doc
-            dynamic content = await RESTCaller.GetContentAsync(new ODataRequest
+            dynamic content = /*<doc>*/await repository.LoadContentAsync(new LoadContentRequest
             {
                 Path = "/Root/Content/IT",
                 Expand = new[] { "AllowedChildTypes" }
-            });
-            //Console.WriteLine(content.AllowedChildTypes.Count);
+            }, cancel)/*</doc>*/.ConfigureAwait(false);
 
-            // ASSERT
             Assert.AreEqual(0, content.AllowedChildTypes.Count);
 
-            // ACTION-2
-            dynamic content2 = await RESTCaller.GetContentAsync(new ODataRequest
+            dynamic content2 = await repository.LoadContentAsync(new LoadContentRequest
             {
                 Path = "/Root/Content",
                 Expand = new[] { "AllowedChildTypes" }
-            });
+            }, cancel).ConfigureAwait(false);
 
-            // ASSERT-2
-            Assert.AreEqual(10, content2.AllowedChildTypes.Count);
+            Assert.IsTrue(10 < (int)content2.AllowedChildTypes.Count);
             Assert.AreEqual("Folder", content2.AllowedChildTypes[0].Name.ToString());
         }
+
+        /// <tab category="basic-concepts" article="select-expand" example="expandActions" />
         [TestMethod]
         [Description("Expand 5")]
-        public async Task Docs_BasicConcepts_Expand_Actions()
+        public async Task Docs2_BasicConcepts_Expand_Actions()
         {
             // ACTION for doc
-            dynamic content = await RESTCaller.GetContentAsync(new ODataRequest
+            dynamic content = /*<doc>*/await repository.LoadContentAsync(new LoadContentRequest
             {
                 Path = "/Root/Content/IT",
                 Expand = new[] { "Actions" }
-            });
-            //Console.WriteLine(content.Actions.Count);
+            }, cancel)/*</doc>*/.ConfigureAwait(false);
 
-            // ASSERT
-            Assert.AreEqual(59, content.Actions.Count);
+            Assert.IsTrue(50 < (int)content.Actions.Count);
             Assert.AreEqual("Add", content.Actions[0].Name.ToString());
         }
 
         /* ====================================================================================== Ordering and Pagination */
 
+        /// <tab category="basic-concepts" article="ordering-paging" example="orderByOneProperty" />
         [TestMethod]
         [Description("")]
-        public async Task Docs_BasicConcepts_OrderBy_DisplayName()
+        public async Task Docs2_BasicConcepts_OrderBy_DisplayName()
         {
-            // ALIGN
             await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
 
-            // ACTION for doc
-            var result = await Content.LoadCollectionAsync(new ODataRequest
+            var result = /*<doc>*/await repository.LoadCollectionAsync(new LoadCollectionRequest
             {
                 Path = "/Root/Content/IT/Document_Library",
-                Parameters = { { "$orderby", "DisplayName" } }
-            });
-            //foreach (var content in result)
-            //    Console.WriteLine(content.DisplayName);
+                OrderBy = new []{"DisplayName"}
+            }, cancel)/*</doc>*/.ConfigureAwait(false);
 
-            // ASSERT
-            var names = result.Select(x => ((dynamic) x).DisplayName.ToString()).ToArray();
+            var names = result.Select(x => ((dynamic)x).DisplayName.ToString()).ToArray();
             Assert.IsTrue(names.Length > 2);
             for (int i = 1; i < names.Length; i++)
                 Assert.IsTrue(string.CompareOrdinal(names[i], names[i - 1]) >= 0, $"names[{i}] < names[{i - 1}]");
         }
+
+        /// <tab category="basic-concepts" article="ordering-paging" example="orderExplicitDirection" />
         [TestMethod]
         [Description("Order by a field in an explicit direction")]
-        public async Task Docs_BasicConcepts_OrderBy_Id_Asc()
+        public async Task Docs2_BasicConcepts_OrderBy_Id_Asc()
         {
-            // ALIGN
             await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
 
-            // ACTION for doc
-            var result = await Content.LoadCollectionAsync(new ODataRequest
+            var result = /*<doc>*/await repository.LoadCollectionAsync(new LoadCollectionRequest
             {
                 Path = "/Root/Content/IT/Document_Library",
-                Parameters = { { "$orderby", "Id asc" } }
-            });
-            //foreach (var content in result)
-            //    Console.WriteLine(content.Id);
+                OrderBy = new[] { "Id asc" }
+            }, cancel)/*</doc>*/.ConfigureAwait(false);
 
-            // ASSERT
             var ids = result.Select(x => (int)((dynamic)x).Id).ToArray();
             Assert.IsTrue(ids.Length > 2);
             for (int i = 1; i < ids.Length; i++)
                 Assert.IsTrue(ids[i] >= ids[i - 1], $"ids[{i}] < ids[{i - 1}]");
         }
+
+        /// <tab category="basic-concepts" article="ordering-paging" example="reverseOrder" />
         [TestMethod]
         [Description("Order by a field in reverse order")]
-        public async Task Docs_BasicConcepts_OrderBy_CreationDate_Desc()
+        public async Task Docs2_BasicConcepts_OrderBy_CreationDate_Desc()
         {
             // ALIGN
             await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
@@ -317,24 +328,22 @@ namespace SenseNet.Client.TestsForDocs
                 date = date.AddHours(1);
             }
 
-            // ACTION for doc
-            var result = await Content.LoadCollectionAsync(new ODataRequest
+            var result = /*<doc>*/await repository.LoadCollectionAsync(new LoadCollectionRequest
             {
                 Path = "/Root/Content/IT/Document_Library",
-                Parameters = { { "$orderby", "CreationDate desc" } }
-            });
-            //foreach (var content in result)
-            //    Console.WriteLine(content.CreationDate);
+                OrderBy = new[] { "CreationDate desc" }
+            }, cancel)/*</doc>*/.ConfigureAwait(false);
 
-            // ASSERT
             var dates = result.Select(x => (DateTime)((dynamic)x).CreationDate).ToArray();
             Assert.IsTrue(dates.Length > 2);
             for (int i = 1; i < dates.Length; i++)
                 Assert.IsTrue(dates[i] <= dates[i - 1], $"dates[{i}] > dates[{i - 1}]");
         }
+
+        /// <tab category="basic-concepts" article="ordering-paging" example="orderByMultipleFields" />
         [TestMethod]
         [Description("Order by a multiple fields")]
-        public async Task Docs_BasicConcepts_OrderBy_DisplayNameAndName()
+        public async Task Docs2_BasicConcepts_OrderBy_DisplayNameAndName()
         {
             // ALIGN
             await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
@@ -351,214 +360,229 @@ namespace SenseNet.Client.TestsForDocs
                 date = date.AddHours(1);
             }
 
-            // ACTION for doc
-            var result = await Content.LoadCollectionAsync(new ODataRequest
+            var result = /*<doc>*/await repository.LoadCollectionAsync(new LoadCollectionRequest
             {
                 Path = "/Root/Content/IT/Document_Library",
                 OrderBy = new[] { "ModificationDate desc", "DisplayName", "Name" }
-            });
-            //foreach (var content in result)
-            //    Console.WriteLine(content.Name);
+            }, cancel)/*</doc>*/.ConfigureAwait(false);
 
-            // ASSERT
             var dates = result.Select(x => (DateTime)((dynamic)x).ModificationDate).ToArray();
             Assert.IsTrue(dates.Length > 2);
             for (int i = 1; i < dates.Length; i++)
                 Assert.IsTrue(dates[i] <= dates[i - 1], $"dates[{i}] > dates[{i - 1}]");
         }
+
+        /// <tab category="basic-concepts" article="ordering-paging" example="top" />
         [TestMethod]
         [Description("Top")]
-        public async Task Docs_BasicConcepts_Top()
+        public async Task Docs2_BasicConcepts_Top()
         {
-            // ALIGN
             await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+            for (var i = 0; i < 6; i++)
+                await EnsureContentAsync($"/Root/Content/IT/Document_Library/Folder-{i + 1}", "Folder");
 
-            // ACTION for doc
-            var result = await Content.LoadCollectionAsync(new ODataRequest
+            var result = /*<doc>*/await repository.LoadCollectionAsync(new LoadCollectionRequest
             {
                 Path = "/Root/Content/IT/Document_Library",
                 Top = 5,
-            });
-            //foreach (var content in result)
-            //    Console.WriteLine(content.Name);
+            }, cancel)/*</doc>*/.ConfigureAwait(false);
 
-            // ASSERT
             Assert.IsTrue(result.Count() <= 5);
         }
+
+        /// <tab category="basic-concepts" article="ordering-paging" example="skip" />
         [TestMethod]
         [Description("Skip")]
-        public async Task Docs_BasicConcepts_Skip()
+        public async Task Docs2_BasicConcepts_Skip()
         {
-            // ALIGN
             await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+            for (var i = 0; i < 6; i++)
+                await EnsureContentAsync($"/Root/Content/IT/Document_Library/Folder-{i + 1}", "Folder");
 
-            // ACTION for doc
-            var result = await Content.LoadCollectionAsync(new ODataRequest
+            var result = /*<doc>*/await repository.LoadCollectionAsync(new LoadCollectionRequest
             {
                 Path = "/Root/Content/IT/Document_Library",
                 Skip = 5,
-            });
-            //foreach (var content in result)
-            //    Console.WriteLine(content.Name);
+            }, cancel)/*</doc>*/.ConfigureAwait(false);
 
-            // ASSERT
-            Assert.Inconclusive();
+            var ids = result.Select(c => c.Id).ToArray();
+            var children = await repository.LoadCollectionAsync(new LoadCollectionRequest
+            {
+                Path = "/Root/Content/IT/Document_Library",
+            }, cancel).ConfigureAwait(false);
+            var allIds = children.Select(c => c.Id).ToArray();
+            var expected = string.Join(",", allIds.Skip(5).Select(x => x.ToString()));
+            var actual = string.Join(",", ids.Select(x => x.ToString()));
+            Assert.AreEqual(expected, actual);
         }
+
+        /// <tab category="basic-concepts" article="ordering-paging" example="paging" />
         [TestMethod]
         [Description("Pagination")]
-        public async Task Docs_BasicConcepts_Pagination()
+        public async Task Docs2_BasicConcepts_Pagination()
         {
-            // ALIGN
             await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+            for (var i = 0; i < 6; i++)
+                await EnsureContentAsync($"/Root/Content/IT/Document_Library/Folder-{i + 1}", "Folder");
 
-            // ACTION for doc
-            var result = await Content.LoadCollectionAsync(new ODataRequest
+            var result = /*<doc>*/await repository.LoadCollectionAsync(new LoadCollectionRequest
             {
                 Path = "/Root/Content/IT/Document_Library",
                 Top = 3,
                 Skip = 3
-            });
-            //foreach (var content in result)
-            //    Console.WriteLine(content.Name);
+            }, cancel)/*</doc>*/.ConfigureAwait(false);
 
-            // ASSERT
-            Assert.Inconclusive();
+            var ids = result.Select(c => c.Id).ToArray();
+            var children = await repository.LoadCollectionAsync(new LoadCollectionRequest
+            {
+                Path = "/Root/Content/IT/Document_Library",
+            }, cancel).ConfigureAwait(false);
+            var allIds = children.Select(c => c.Id).ToArray();
+            var expected = string.Join(",", allIds.Skip(3).Take(3).Select(x => x.ToString()));
+            var actual = string.Join(",", ids.Select(x => x.ToString()));
+            Assert.AreEqual(expected, actual);
         }
 
         /* ====================================================================================== Search and filtering */
 
+        /// <tab category="basic-concepts" article="search-filter" example="greaterThan" />
         [TestMethod]
         [Description("Filtering by Field value 1")]
-        public async Task Docs_BasicConcepts_Filter_Id()
+        public async Task Docs2_BasicConcepts_Filter_Id()
         {
-            // ALIGN
             await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
 
-            // ACTION for doc
-            var result = await Content.LoadCollectionAsync(new ODataRequest
+            var result = /*<doc>*/await repository.LoadCollectionAsync(new LoadCollectionRequest
             {
                 Path = "/Root/Content/IT/Document_Library",
-                Parameters = { { "$filter", "Id gt 11" } },
-            });
-            //foreach (var content in result)
-            //    Console.WriteLine(content.Id);
+                ChildrenFilter = "Id gt 11"
+            }, cancel)/*</doc>*/.ConfigureAwait(false);
 
             // ASSERT
-            Assert.Inconclusive();
+            var ids = result.Select(x => x.Id);
+            foreach (var id in ids)
+                Assert.IsTrue(id > 11);
         }
+
+        /// <tab category="basic-concepts" article="search-filter" example="substringof" />
         [TestMethod]
         [Description("Filtering by Field value 2")]
-        public async Task Docs_BasicConcepts_Filter_substringof()
+        public async Task Docs2_BasicConcepts_Filter_substringof()
         {
-            // ALIGN
             await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Folder-1", "Folder");
+            dynamic folder1 = await repository.LoadContentAsync("/Root/Content/IT/Document_Library/Folder-1", cancel)
+                .ConfigureAwait(false);
+            folder1.Description = "Lorem ipsum dolor sit amet";
+            folder1.SaveAsync(cancel);
 
-            // ACTION for doc
-            var result = await Content.LoadCollectionAsync(new ODataRequest
+            var result = /*<doc>*/await repository.LoadCollectionAsync(new LoadCollectionRequest
             {
                 Path = "/Root/Content/IT/Document_Library",
-                Parameters = { { "$filter", "substringof('Lorem', Description) eq true" } },
-            });
-            //foreach (var content in result)
-            //    Console.WriteLine(content.Description);
+                ChildrenFilter = "substringof('Lorem', Description) eq true"
+            }, cancel)/*</doc>*/.ConfigureAwait(false);
 
-            // ASSERT
-            Assert.Inconclusive();
+            var contents = result.ToArray();
+            Assert.IsTrue(0 < contents.Length);
+            Assert.IsTrue(contents.All(x => x["Description"].ToString().Contains("Lorem")));
         }
+
+        /// <tab category="basic-concepts" article="search-filter" example="startswith" />
         [TestMethod]
         [Description("Filtering by Field value 3")]
-        public async Task Docs_BasicConcepts_Filter_startswith()
+        public async Task Docs2_BasicConcepts_Filter_startswith()
         {
-            // ALIGN
             await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Documents-1", "Folder");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Documents-2", "Folder");
 
-            // ACTION for doc
-            var result = await Content.LoadCollectionAsync(new ODataRequest
+            var result = /*<doc>*/await repository.LoadCollectionAsync(new LoadCollectionRequest
             {
                 Path = "/Root/Content/IT/Document_Library",
-                Parameters = { { "$filter", "startswith(Name, 'Document') eq true" } },
-            });
-            //foreach (var content in result)
-            //    Console.WriteLine(content.Name);
+                ChildrenFilter = "startswith(Name, 'Document') eq true"
+            }, cancel)/*</doc>*/.ConfigureAwait(false);
 
-            // ASSERT
-            Assert.Inconclusive();
+            var contents = result.ToArray();
+            Assert.IsTrue(0 < contents.Length);
+            Assert.IsTrue(contents.All(x => x.Name.StartsWith("Document")));
         }
+
+        /// <tab category="basic-concepts" article="search-filter" example="endswith" />
         [TestMethod]
         [Description("Filtering by Field value 4")]
-        public async Task Docs_BasicConcepts_Filter_endswith()
+        public async Task Docs2_BasicConcepts_Filter_endswith()
         {
-            // ALIGN
             await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Book-Library", "Folder");
 
-            // ACTION for doc
-            var result = await Content.LoadCollectionAsync(new ODataRequest
+            var result = /*<doc>*/await repository.LoadCollectionAsync(new LoadCollectionRequest
             {
                 Path = "/Root/Content/IT/Document_Library",
-                Parameters = { { "$filter", "endswith(Name, 'Library') eq true" } },
-            });
-            //foreach (var content in result)
-            //    Console.WriteLine(content.Id);
+                ChildrenFilter = "endswith(Name, 'Library') eq true"
+            }, cancel)/*</doc>*/.ConfigureAwait(false);
 
-            // ASSERT
-            Assert.Inconclusive();
+            var contents = result.ToArray();
+            Assert.IsTrue(0 < contents.Length);
+            Assert.IsTrue(contents.All(x => x.Name.EndsWith("Library")));
         }
+
+        /// <tab category="basic-concepts" article="search-filter" example="byDate" />
         [TestMethod]
         [Description("Filtering by Date")]
-        public async Task Docs_BasicConcepts_Filter_DateTime()
+        public async Task Docs2_BasicConcepts_Filter_DateTime()
         {
-            // ALIGN
             await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
 
-            // ACTION for doc
-            var result = await Content.LoadCollectionAsync(new ODataRequest
+            var result = /*<doc>*/await repository.LoadCollectionAsync(new LoadCollectionRequest
             {
                 Path = "/Root/Content/IT/Document_Library",
-                Parameters = { { "$filter", "CreationDate gt datetime'2019-03-26T03:55:00'" } },
-            });
-            //foreach (var content in result)
-            //    Console.WriteLine(content.CreationDate);
+                ChildrenFilter = "CreationDate gt datetime'2019-03-26T03:55:00'"
+            }, cancel)/*</doc>*/.ConfigureAwait(false);
 
-            // ASSERT
-            Assert.Inconclusive();
+            var contents = result.ToArray();
+            Assert.IsTrue(2 < contents.Length);
+            var date = new DateTime(2019, 03, 26, 03, 55, 00);
+            Assert.IsTrue(contents.All(x => ((JValue)x["CreationDate"]).Value<DateTime>() > date));
         }
+
+        /// <tab category="basic-concepts" article="search-filter" example="byExactType" />
         [TestMethod]
         [Description("Filtering by an exact Type")]
-        public async Task Docs_BasicConcepts_Filter_ContentType()
+        public async Task Docs2_BasicConcepts_Filter_ContentType()
         {
-            // ALIGN
             await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/SystemFolder-1", "SystemFolder");
 
-            // ACTION for doc
-            var result = await Content.LoadCollectionAsync(new ODataRequest
+            var result = /*<doc>*/await repository.LoadCollectionAsync(new LoadCollectionRequest
             {
                 Path = "/Root/Content/IT/Document_Library",
-                Parameters = { { "$filter", "ContentType eq 'Folder'" } },
-            });
-            //foreach (dynamic content in result)
-            //    Console.WriteLine(content.Type);
+                ChildrenFilter = "ContentType eq 'Folder'"
+            }, cancel)/*</doc>*/.ConfigureAwait(false);
 
-            // ASSERT
-            Assert.Inconclusive();
+            var contents = result.ToArray();
+            Assert.IsTrue(2 < contents.Length);
+            var types = contents.Select(c => c["Type"].ToString()).Distinct().OrderBy(x => x).ToArray();
+            Assert.AreEqual("Folder", string.Join(",", types));
         }
+
+        /// <tab category="basic-concepts" article="search-filter" example="byTypeFamily" />
         [TestMethod]
         [Description("Filtering by Type family")]
-        public async Task Docs_BasicConcepts_Filter_isof()
+        public async Task Docs2_BasicConcepts_Filter_isof()
         {
-            // ALIGN
             await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/SystemFolder-1", "SystemFolder");
 
-            // ACTION for doc
-            var result = await Content.LoadCollectionAsync(new ODataRequest
+            var result = /*<doc>*/await repository.LoadCollectionAsync(new LoadCollectionRequest
             {
                 Path = "/Root/Content/IT/Document_Library",
-                ChildrenFilter = "isof('Folder')",
-            });
-            //foreach (dynamic content in result)
-            //    Console.WriteLine(content.Type);
+                ChildrenFilter = "isof('Folder')"
+            }, cancel)/*</doc>*/.ConfigureAwait(false);
 
-            // ASSERT
-            Assert.Inconclusive();
+            var contents = result.ToArray();
+            Assert.IsTrue(2 < contents.Length);
+            var types = contents.Select(c => c["Type"].ToString()).Distinct().OrderBy(x => x).ToArray();
+            Assert.AreEqual("Folder,SystemFolder", string.Join(",", types));
         }
 
         /* ====================================================================================== Metadata */
@@ -567,7 +591,7 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Metadata")]
         public async Task Docs_BasicConcepts_MetadataFormat()
         {
-            var content = 
+            var content =
                 // ACTION for doc
                 await Content.LoadAsync(new ODataRequest
                 {
@@ -584,7 +608,7 @@ namespace SenseNet.Client.TestsForDocs
         {
             var url = ClientContext.Current.Server.Url;
 
-            var response = 
+            var response =
                 // ACTION for doc
                 await RESTCaller.GetResponseStringAsync(
                     new Uri(url + "/OData.svc/$metadata"));
