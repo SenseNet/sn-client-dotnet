@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using SenseNet.Client.Authentication;
 using SenseNet.Diagnostics;
 using SenseNet.Extensions.DependencyInjection;
 
@@ -18,14 +19,9 @@ namespace SenseNet.Client.TestsForDocs.Infrastructure
         public static readonly string Url = "https://localhost:44362";
 
         [AssemblyInitialize]
-        public static void InititalizeAllTests(TestContext testContext)
+        public static void InititalizeAllTests(TestContext context)
         {
-            ClientContext.Current.AddServer(new ServerContext
-            {
-                Url = Url,
-                Username = "builtin\\admin",
-                Password = "admin"
-            });
+            InitServer(context);
 
             EnsureBasicStructureAsync().ConfigureAwait(false).GetAwaiter().GetResult();
 
@@ -94,14 +90,43 @@ namespace SenseNet.Client.TestsForDocs.Infrastructure
         [TestInitialize]
         public void InitializeTest()
         {
-            var ctx = ClientContext.Current;
-            ctx.RemoveServers(ctx.Servers);
-            ctx.AddServer(new ServerContext
+        }
+
+        private static void InitServer(TestContext context)
+        {
+            var server = new ServerContext
             {
                 Url = Url,
                 Username = "builtin\\admin",
                 Password = "admin"
-            });
+            };
+
+            // workaround for authenticating using the configured client id and secret
+            var config = new ConfigurationBuilder()
+                .SetBasePath(context.DeploymentDirectory)
+                .AddJsonFile("appsettings.json", optional: true)
+                .AddUserSecrets<ClientIntegrationTestBase>()
+                .Build();
+
+            var options = new RepositoryOptions();
+            config.GetSection("sensenet:repository").Bind(options);
+
+            var services = new ServiceCollection()
+                .AddLogging()
+                .AddSenseNetClientTokenStore()
+                .BuildServiceProvider();
+
+            var tokenStore = services.GetRequiredService<ITokenStore>();
+            var token = tokenStore.GetTokenAsync(server,
+                options.Authentication.ClientId,
+                options.Authentication.ClientSecret,
+                CancellationToken.None).ConfigureAwait(false).GetAwaiter().GetResult();
+
+            server.Authentication.AccessToken = token;
+
+            var ctx = ClientContext.Current;
+            ctx.RemoveServers(ctx.Servers);
+            ctx.AddServer(server);
         }
 
         protected Task<Content> EnsureContentAsync(string path, string typeName)
@@ -144,7 +169,7 @@ namespace SenseNet.Client.TestsForDocs.Infrastructure
 
             var config = new ConfigurationBuilder()
                 .AddJsonFile("appsettings.json", optional: true)
-                //.AddUserSecrets<ContentTests>()
+                .AddUserSecrets<ClientIntegrationTestBase>()
                 .Build();
 
             services

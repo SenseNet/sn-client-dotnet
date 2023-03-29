@@ -7,9 +7,9 @@ namespace SenseNet.Client.IntegrationTests.Legacy
     public class CertificateValidationTests
     {
         [ClassInitialize]
-        public static void ClassInitializer(TestContext _)
+        public static void ClassInitializer(TestContext context)
         {
-            Initializer.InitializeServer();
+            Initializer.InitializeServer(context);
         }
 
 
