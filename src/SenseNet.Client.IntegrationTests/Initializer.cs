@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using SenseNet.Client.Authentication;
 using SenseNet.Extensions.DependencyInjection;
 
 namespace SenseNet.Client.IntegrationTests;
@@ -30,21 +29,21 @@ public class Initializer
                 .AddUserSecrets<Initializer>()
                 .Build();
 
-            var options = new RepositoryOptions();
-            config.GetSection("sensenet:repository").Bind(options);
-
+            // create a service collection and register the sensenet client
             var services = new ServiceCollection()
                 .AddLogging()
-                .AddSenseNetClientTokenStore()
+                .AddSenseNetClient()
+                .ConfigureSenseNetRepository(repositoryOptions =>
+                {
+                    config.GetSection("sensenet:repository").Bind(repositoryOptions);
+                })
                 .BuildServiceProvider();
 
-            var tokenStore = services.GetRequiredService<ITokenStore>();
-            var token = tokenStore.GetTokenAsync(server,
-                options.Authentication.ClientId,
-                options.Authentication.ClientSecret,
-                CancellationToken.None).ConfigureAwait(false).GetAwaiter().GetResult();
-
-            server.Authentication.AccessToken = token;
+            // get the repository amd extract the server context
+            var repositories = services.GetRequiredService<IRepositoryCollection>();
+            var repository = repositories.GetRepositoryAsync(CancellationToken.None).GetAwaiter().GetResult();
+            
+            server = repository.Server;
         }
 
         ClientContext.Current.RemoveAllServers();

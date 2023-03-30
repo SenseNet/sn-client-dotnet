@@ -94,13 +94,6 @@ namespace SenseNet.Client.TestsForDocs.Infrastructure
 
         private static void InitServer(TestContext context)
         {
-            var server = new ServerContext
-            {
-                Url = Url,
-                Username = "builtin\\admin",
-                Password = "admin"
-            };
-
             // workaround for authenticating using the configured client id and secret
             var config = new ConfigurationBuilder()
                 .SetBasePath(context.DeploymentDirectory)
@@ -108,21 +101,21 @@ namespace SenseNet.Client.TestsForDocs.Infrastructure
                 .AddUserSecrets<ClientIntegrationTestBase>()
                 .Build();
 
-            var options = new RepositoryOptions();
-            config.GetSection("sensenet:repository").Bind(options);
-
+            // create a service collection and register the sensenet client
             var services = new ServiceCollection()
                 .AddLogging()
-                .AddSenseNetClientTokenStore()
+                .AddSenseNetClient()
+                .ConfigureSenseNetRepository(repositoryOptions =>
+                {
+                    config.GetSection("sensenet:repository").Bind(repositoryOptions);
+                })
                 .BuildServiceProvider();
 
-            var tokenStore = services.GetRequiredService<ITokenStore>();
-            var token = tokenStore.GetTokenAsync(server,
-                options.Authentication.ClientId,
-                options.Authentication.ClientSecret,
-                CancellationToken.None).ConfigureAwait(false).GetAwaiter().GetResult();
-
-            server.Authentication.AccessToken = token;
+            // get the repository amd extract the server context
+            var repositories = services.GetRequiredService<IRepositoryCollection>();
+            var repository = repositories.GetRepositoryAsync(CancellationToken.None).GetAwaiter().GetResult();
+            
+            var server = repository.Server;
 
             var ctx = ClientContext.Current;
             ctx.RemoveServers(ctx.Servers);
