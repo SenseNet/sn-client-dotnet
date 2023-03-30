@@ -31,7 +31,6 @@ public class Initializer
 
             // create a service collection and register the sensenet client
             var services = new ServiceCollection()
-                .AddLogging()
                 .AddSenseNetClient()
                 .ConfigureSenseNetRepository(repositoryOptions =>
                 {

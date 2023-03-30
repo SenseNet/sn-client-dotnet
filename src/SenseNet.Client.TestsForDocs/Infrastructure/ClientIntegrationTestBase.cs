@@ -19,7 +19,7 @@ namespace SenseNet.Client.TestsForDocs.Infrastructure
         public static readonly string Url = "https://localhost:44362";
 
         [AssemblyInitialize]
-        public static void InititalizeAllTests(TestContext context)
+        public static void InitializeAllTests(TestContext context)
         {
             InitServer(context);
 
@@ -103,7 +103,6 @@ namespace SenseNet.Client.TestsForDocs.Infrastructure
 
             // create a service collection and register the sensenet client
             var services = new ServiceCollection()
-                .AddLogging()
                 .AddSenseNetClient()
                 .ConfigureSenseNetRepository(repositoryOptions =>
                 {

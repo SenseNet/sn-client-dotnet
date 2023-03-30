@@ -46,6 +46,7 @@ public static class RepositoryExtensions
             .AddTransient<IRepository, Repository>()
             .AddTransient<Content, Content>()
             .AddSenseNetRetrier()
+            .AddLogging()
             .Configure<ServerContextOptions>(_ => { });
     }
 
