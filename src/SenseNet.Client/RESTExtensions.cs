@@ -53,6 +53,10 @@ namespace SenseNet.Client
                 ClientException { StatusCode: HttpStatusCode.InternalServerError } cex
                     when cex.Message.Contains("Error in datastore when loading nodes.") ||
                          cex.Message.Contains("Data layer timeout occurred.") => true,
+
+                // Add more well-known exceptions that can be retried here.
+                // All unknown exceptions should be thrown immediately
+                // (FALSE means do not retry).
                 _ => false
             };
         }
