@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Net.Mime;
 using Microsoft.Extensions.DependencyInjection;
 using SenseNet.Client;
 
@@ -49,6 +45,8 @@ public static class RepositoryExtensions
             .AddSingleton<IRestCaller, DefaultRestCaller>()
             .AddTransient<IRepository, Repository>()
             .AddTransient<Content, Content>()
+            .AddSenseNetRetrier()
+            .AddLogging()
             .Configure<ServerContextOptions>(_ => { });
     }
 

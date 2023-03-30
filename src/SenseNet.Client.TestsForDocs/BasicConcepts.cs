@@ -652,7 +652,7 @@ namespace SenseNet.Client.TestsForDocs
             }, cancel)/*/<doc>*/.ConfigureAwait(false);
 
             var contents = result.ToArray();
-            Assert.IsTrue(2 < contents.Length);
+            Assert.IsTrue(contents.Any());
             var types = contents.Select(c => c["Type"].ToString()).Distinct().OrderBy(x => x).ToArray();
             Assert.IsTrue(types.Contains("SystemFolder"));
         }

@@ -9,8 +9,6 @@ using Newtonsoft.Json.Linq;
 using System.Net.Http;
 using Microsoft.Extensions.Options;
 using System.Text.RegularExpressions;
-using System.IO;
-using System.Net.Mime;
 
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client;
@@ -21,14 +19,8 @@ internal class Repository : IRepository
     private readonly IServiceProvider _services;
     private readonly ILogger<Repository> _logger;
 
-    internal ServerContext Server { get; set; }
-
-    ServerContext IRepository.Server
-    {
-        get => this.Server;
-        set => this.Server = value;
-    }
-
+    public ServerContext Server { get; set; }
+    
     public RegisteredContentTypes GlobalContentTypes { get; }
 
     public Repository(IRestCaller restCaller, IServiceProvider services, IOptions<RegisteredContentTypes> globalContentTypes, ILogger<Repository> logger)

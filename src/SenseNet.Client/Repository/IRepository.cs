@@ -16,7 +16,7 @@ public interface IRepository
     /// A context object that represents a connection to a sensenet service.
     /// </summary>
     /// <remarks>A repository instance always belongs to a single sensenet service.</remarks>
-    public ServerContext Server { get; internal set; }
+    public ServerContext Server { get; set; }
 
     /// <summary>
     /// Gets the registered repository-independent content types.

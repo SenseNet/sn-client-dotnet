@@ -90,6 +90,17 @@ public class ServerContext
                         Select = select,
                         Expand = expand
                     };
+                else
+                {
+                    // subject not available, but this still can be a valid token
+                    request = new ODataRequest(this)
+                    {
+                        Path = "/Root",
+                        ActionName = "GetCurrentUser",
+                        Select = select,
+                        Expand = expand
+                    };
+                }
             }
             catch (Exception ex)
             {

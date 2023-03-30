@@ -59,7 +59,7 @@
         [ClassInitialize]
         public static void Cleanup(TestContext context)
         {
-            Initializer.InitializeServer();
+            Initializer.InitializeServer(context);
 
             var root = Content.LoadAsync(RootPath).Result;
             root?.DeleteAsync().ConfigureAwait(false).GetAwaiter().GetResult();
