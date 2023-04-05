@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Threading.Tasks;
 using System.Threading;
 using Newtonsoft.Json.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
 
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client;
@@ -328,4 +331,25 @@ public interface IRepository
     /// <param name="cancel">The token to monitor for cancellation requests.</param>
     /// <returns>A task that represents an asynchronous operation.</returns>
     public Task DeleteContentAsync(object[] idsOrPaths, bool permanent, CancellationToken cancel);
+
+    /* ============================================================================ MIDDLE LEVEL API */
+
+    Task<T> GetResponseAsync<T>(ODataRequest requestData, HttpMethod method, CancellationToken cancel);
+    Task<dynamic> GetResponseJsonAsync(ODataRequest requestData, HttpMethod method, CancellationToken cancel);
+    Task<string> GetResponseStringAsync(ODataRequest requestData, HttpMethod method, CancellationToken cancel);
+
+    Task<string> GetResponseStringAsync(Uri uri, HttpMethod method, string postData,
+        Dictionary<string, IEnumerable<string>> additionalHeaders, CancellationToken cancel);
+
+    /* ============================================================================ LOW LEVEL API */
+
+    Task ProcessWebResponseAsync(string relativeUrl, HttpMethod method, Dictionary<string, IEnumerable<string>> additionalHeaders,
+        HttpContent httpContent,
+        Action<HttpResponseMessage> responseProcessor,
+        CancellationToken cancel);
+
+    Task ProcessWebRequestResponseAsync(string relativeUrl, HttpMethod method, Dictionary<string, IEnumerable<string>> additionalHeaders,
+        Action<HttpClientHandler, HttpClient, HttpRequestMessage> requestProcessor,
+        Action<HttpResponseMessage> responseProcessor,
+        CancellationToken cancel);
 }

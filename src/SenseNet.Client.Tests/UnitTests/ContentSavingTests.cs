@@ -12,7 +12,7 @@ using SenseNet.Extensions.DependencyInjection;
 namespace SenseNet.Client.Tests.UnitTests;
 
 [TestClass]
-public class ContentSavingTests
+public class ContentSavingTests : TestBase
 {
     public class TestContent_A : Content
     {
@@ -186,10 +186,7 @@ public class ContentSavingTests
     }
     private async Task<IDictionary<string, object>> UpdateBaseTypeTest(Action<dynamic> setProperties)
     {
-        var restCaller = Substitute.For<IRestCaller>();
-        restCaller
-            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(@"{
+        var restCaller = CreateRestCallerFor(@"{
   ""d"": {
     ""Id"": 999543,
     ""Name"": ""MyContent"",
@@ -197,7 +194,7 @@ public class ContentSavingTests
     ""Type"": ""Folder"",
     ""Index"": 99
   }
-}"));
+}");
 
         restCaller
             .PatchContentAsync(Arg.Any<int>(), Arg.Any<object>(), Arg.Any<ServerContext>(),
@@ -295,10 +292,7 @@ public class ContentSavingTests
     }
     private async Task<IDictionary<string, object>> UpdateStronglyTypedTest<T>(Action<T> setProperties) where T : Content
     {
-        var restCaller = Substitute.For<IRestCaller>();
-        restCaller
-            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(@"{
+        var restCaller = CreateRestCallerFor(@"{
   ""d"": {
     ""Id"": 999543,
     ""Name"": ""MyContent"",
@@ -306,7 +300,7 @@ public class ContentSavingTests
     ""Type"": ""Folder"",
     ""Index"": 99
   }
-}"));
+}");
 
         restCaller
             .PatchContentAsync(Arg.Any<int>(), Arg.Any<object>(), Arg.Any<ServerContext>(),
@@ -421,10 +415,7 @@ public class ContentSavingTests
     [TestMethod]
     public async Task Content_T_StronglyTyped_UpdateCustomProperties()
     {
-        var restCaller = Substitute.For<IRestCaller>();
-        restCaller
-            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(@"{
+        var restCaller = CreateRestCallerFor(@"{
   ""d"": {
     ""Id"": 999543,
     ""Field_CustomType1"": {
@@ -434,7 +425,7 @@ public class ContentSavingTests
     ""Field_StringToBool"": ""0"",
     ""Field_StringToDictionary"": ""Name1:111,Name2:222,Name3:333""
   }
-}"));
+}");
 
         restCaller
             .PatchContentAsync(Arg.Any<int>(), Arg.Any<object>(), Arg.Any<ServerContext>(),
@@ -493,10 +484,7 @@ public class ContentSavingTests
     [TestMethod]
     public async Task Content_T_StronglyTyped_UpdateCustomProperties_OnlyChanged()
     {
-        var restCaller = Substitute.For<IRestCaller>();
-        restCaller
-            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(@"{
+        var restCaller = CreateRestCallerFor(@"{
   ""d"": {
     ""Id"": 999543,
     ""Field_CustomType1"": {
@@ -506,7 +494,7 @@ public class ContentSavingTests
     ""Field_StringToBool"": ""0"",
     ""Field_StringToDictionary"": ""Name1:111,Name2:222,Name3:333""
   }
-}"));
+}");
 
         restCaller
             .PatchContentAsync(Arg.Any<int>(), Arg.Any<object>(), Arg.Any<ServerContext>(),
@@ -655,10 +643,7 @@ public class ContentSavingTests
     [TestMethod]
     public async Task Content_T_StronglyTyped_References_Update()
     {
-        var restCaller = Substitute.For<IRestCaller>();
-        restCaller
-            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(@"{
+        var restCaller = CreateRestCallerFor(@"{
   ""d"": {
     ""Id"": 899612,
     ""Reference_Content"": [{ ""Id"": 100001 }],
@@ -671,7 +656,7 @@ public class ContentSavingTests
     ""References_WellKnownList"": [{ ""Id"": 200006 },{ ""Id"": 200007 }],
   }
 }
-"));
+");
         restCaller
             .PatchContentAsync(Arg.Any<int>(), Arg.Any<object>(), Arg.Any<ServerContext>(),
                 Arg.Any<CancellationToken>())
@@ -747,10 +732,7 @@ public class ContentSavingTests
     [TestMethod]
     public async Task Content_T_StronglyTyped_References_Update_Null()
     {
-        var restCaller = Substitute.For<IRestCaller>();
-        restCaller
-            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(@"{
+        var restCaller = CreateRestCallerFor(@"{
   ""d"": {
     ""Id"": 899612,
     ""Reference_Content"": [{ ""Id"": 100001 }],
@@ -763,7 +745,7 @@ public class ContentSavingTests
     ""References_WellKnownList"": [{ ""Id"": 200006 },{ ""Id"": 200007 }],
   }
 }
-"));
+");
         restCaller
             .PatchContentAsync(Arg.Any<int>(), Arg.Any<object>(), Arg.Any<ServerContext>(),
                 Arg.Any<CancellationToken>())
@@ -911,10 +893,7 @@ public class ContentSavingTests
     }
     private async Task TestStronglyTypedReferencesError(string fieldName, Action<TestContent_References> updateAction)
     {
-        var restCaller = Substitute.For<IRestCaller>();
-        restCaller
-            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(@"{
+        var restCaller = CreateRestCallerFor(@"{
   ""d"": {
     ""Id"": 999999,
     ""Path"": ""/Root/MyContent"",
@@ -928,7 +907,7 @@ public class ContentSavingTests
     ""References_WellKnownList"": [{ ""Id"": 200006 },{ ""Id"": 200007 }],
   }
 }
-"));
+");
         restCaller
             .PatchContentAsync(Arg.Any<int>(), Arg.Any<object>(), Arg.Any<ServerContext>(),
                 Arg.Any<CancellationToken>())

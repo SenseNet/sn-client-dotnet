@@ -27,7 +27,7 @@ using Newtonsoft.Json.Linq;
 namespace SenseNet.Client.Tests.UnitTests;
 
 [TestClass]
-public class ContentLoadingTests
+public class ContentLoadingTests : TestBase
 {
     /* =================================================================== GENERAL PROPERTIES */
 
@@ -125,10 +125,7 @@ public class ContentLoadingTests
     public async Task LoadContent_T_Properties_General_ByRealRequest()
     {
         // ALIGN
-        var restCaller = Substitute.For<IRestCaller>();
-        restCaller
-            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(@"{
+        var restCaller = CreateRestCallerFor(@"{
   ""d"": {
     ""Name"": ""Content"",
     ""DisplayName"": ""Content"",
@@ -278,7 +275,7 @@ public class ContentLoadingTests
       }
     }
   }
-}"));
+}");
 
         var repositories = GetRepositoryCollection(services =>
         {
@@ -381,16 +378,13 @@ public class ContentLoadingTests
     public async Task LoadContent_T_Properties_General_ByRealRequest_Projected()
     {
         // ALIGN
-        var restCaller = Substitute.For<IRestCaller>();
-        restCaller
-            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(@"{
+        var restCaller = CreateRestCallerFor(@"{
   ""d"": {
     ""Id"": 1368,
     ""Name"": ""Content"",
     ""Type"": ""Workspace""
   }
-}"));
+}");
 
         var repositories = GetRepositoryCollection(services =>
         {
@@ -503,10 +497,7 @@ public class ContentLoadingTests
     public async Task LoadContent_T_OnlyPublicInstanceReadWritePropertiesAreBoundButNoErrors()
     {
         // ALIGN
-        var restCaller = Substitute.For<IRestCaller>();
-        restCaller
-            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(@"{
+        var restCaller = CreateRestCallerFor(@"{
   ""d"": {
     ""Id"": 9998987,
     ""Name"": ""Content-1"",
@@ -515,7 +506,7 @@ public class ContentLoadingTests
     ""Internal"": ""Value3"",
     ""PublicInstanceReadWrite"": ""Value4"",
   }
-}"));
+}");
 
         var repositories = GetRepositoryCollection(services =>
         {
@@ -549,10 +540,7 @@ public class ContentLoadingTests
     public async Task LoadContent_T_Properties_MultiChoice_StringToString()
     {
         // ALIGN
-        var restCaller = Substitute.For<IRestCaller>();
-        restCaller
-            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(@"{
+        var restCaller = CreateRestCallerFor(@"{
   ""d"": {
     ""Name"": ""Content"",
     ""MultiChoice_Null"": null,
@@ -565,7 +553,7 @@ public class ContentLoadingTests
       ""42"",
     ],
   }
-}"));
+}");
 
         var repositories = GetRepositoryCollection(services =>
         {
@@ -612,10 +600,7 @@ public class ContentLoadingTests
     public async Task LoadContent_T_Properties_MultiChoice_StringToInt()
     {
         // ALIGN
-        var restCaller = Substitute.For<IRestCaller>();
-        restCaller
-            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(@"{
+        var restCaller = CreateRestCallerFor(@"{
   ""d"": {
     ""Name"": ""Content"",
     ""MultiChoice_Null"": null,
@@ -628,7 +613,7 @@ public class ContentLoadingTests
       ""42"",
     ],
   }
-}"));
+}");
 
         var repositories = GetRepositoryCollection(services =>
         {
@@ -681,10 +666,7 @@ public class ContentLoadingTests
     public async Task LoadContent_T_Properties_Number()
     {
         // ALIGN
-        var restCaller = Substitute.For<IRestCaller>();
-        restCaller
-            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(@"{
+        var restCaller = CreateRestCallerFor(@"{
   ""d"": {
     ""Number_Long_Null"": null,
     ""Number_Long_Nullable_Null"": null,
@@ -697,7 +679,7 @@ public class ContentLoadingTests
     ""Number_Single"": 1234567.8987,
     ""Number_Single_Nullable"": null,
   }
-}"));
+}");
 
         var repositories = GetRepositoryCollection(services =>
         {
@@ -742,10 +724,7 @@ public class ContentLoadingTests
     public async Task LoadContent_T_Properties_Binary()
     {
         // ALIGN
-        var restCaller = Substitute.For<IRestCaller>();
-        restCaller
-            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(@"{
+        var restCaller = CreateRestCallerFor(@"{
   ""d"": {
     ""Binary"": {
       ""__mediaresource"": {
@@ -764,7 +743,7 @@ public class ContentLoadingTests
       }
     }
   }
-}"));
+}");
 
         var repositories = GetRepositoryCollection(services =>
         {
@@ -814,10 +793,7 @@ public class ContentLoadingTests
     public async Task LoadContent_T_References_Deferred()
     {
         // ALIGN
-        var restCaller = Substitute.For<IRestCaller>();
-        restCaller
-            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(@"{
+        var restCaller = CreateRestCallerFor(@"{
   ""d"": {
     ""Name"": ""Content"",
     ""Type"": ""Workspace"",
@@ -837,7 +813,7 @@ public class ContentLoadingTests
       }
     }
   }
-}"));
+}");
 
         var repositories = GetRepositoryCollection(services =>
         {
@@ -872,16 +848,13 @@ public class ContentLoadingTests
     public async Task LoadContent_T_References_Expanded_Simple()
     {
         // ALIGN
-        var restCaller = Substitute.For<IRestCaller>();
-        restCaller
-            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(@"{ ""d"": { ""Name"": ""Content"", ""Type"": ""Workspace"",
+        var restCaller = CreateRestCallerFor(@"{ ""d"": { ""Name"": ""Content"", ""Type"": ""Workspace"",
     // single reference
     ""Owner"": { ""Path"": ""/Root/IMS/BuiltIn/Portal/Admin"" },
     // null reference
     ""Manager"": null
   }
-}"));
+}");
 
         var repositories = GetRepositoryCollection(services =>
         {
@@ -915,10 +888,7 @@ public class ContentLoadingTests
     public async Task LoadContent_T_References_Expanded_Multi_IEnumerable()
     {
         // ALIGN
-        var restCaller = Substitute.For<IRestCaller>();
-        restCaller
-            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(@"{ ""d"": { ""Name"": ""Content"", ""Type"": ""Workspace"",
+        var restCaller = CreateRestCallerFor(@"{ ""d"": { ""Name"": ""Content"", ""Type"": ""Workspace"",
     // multi reference
     ""AllowedChildTypes"": [
       { ""Path"": ""/Root/System/Schema/ContentTypes/GenericContent/Folder"" },
@@ -926,7 +896,7 @@ public class ContentLoadingTests
       { ""Path"": ""/Root/System/Schema/ContentTypes/GenericContent/File"" }
     ]
   }
-}"));
+}");
 
         var repositories = GetRepositoryCollection(services =>
         {
@@ -967,10 +937,7 @@ public class ContentLoadingTests
     public async Task LoadContent_T_References_Expanded_Multi_Array()
     {
         // ALIGN
-        var restCaller = Substitute.For<IRestCaller>();
-        restCaller
-            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(@"{ ""d"": { ""Name"": ""Content"", ""Type"": ""Workspace"",
+        var restCaller = CreateRestCallerFor(@"{ ""d"": { ""Name"": ""Content"", ""Type"": ""Workspace"",
     // multi reference
     ""Reference_Array"": [
       { ""Path"": ""/Root/Path1"" },
@@ -978,7 +945,7 @@ public class ContentLoadingTests
       { ""Path"": ""/Root/Path3"" }
     ]
   }
-}"));
+}");
 
         var repositories = GetRepositoryCollection(services =>
         {
@@ -1018,10 +985,7 @@ public class ContentLoadingTests
     public async Task LoadContent_T_References_Expanded_Multi_List()
     {
         // ALIGN
-        var restCaller = Substitute.For<IRestCaller>();
-        restCaller
-            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(@"{ ""d"": { ""Name"": ""Content"", ""Type"": ""Workspace"",
+        var restCaller = CreateRestCallerFor(@"{ ""d"": { ""Name"": ""Content"", ""Type"": ""Workspace"",
     // multi reference
     ""Reference_List"": [
       { ""Path"": ""/Root/Path1"" },
@@ -1029,7 +993,7 @@ public class ContentLoadingTests
       { ""Path"": ""/Root/Path3"" }
     ]
   }
-}"));
+}");
 
         var repositories = GetRepositoryCollection(services =>
         {
@@ -1113,10 +1077,7 @@ public class ContentLoadingTests
     public async Task LoadContent_T_Properties_Custom()
     {
         // ALIGN
-        var restCaller = Substitute.For<IRestCaller>();
-        restCaller
-            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(@"{
+        var restCaller = CreateRestCallerFor(@"{
   ""d"": {
     ""Id"": 999543,
     ""Field_CustomType1"": {
@@ -1130,7 +1091,7 @@ public class ContentLoadingTests
     ""Field_StringToBool"": ""1"",
     ""Field_StringToDictionary"": ""Name1:111,Name2:222,Name3:333""
   }
-}"));
+}");
 
         var repositories = GetRepositoryCollection(services =>
         {
@@ -1180,10 +1141,7 @@ public class ContentLoadingTests
     public async Task LoadContent_T_Properties_Error_TypeMismatch()
     {
         // ALIGN
-        var restCaller = Substitute.For<IRestCaller>();
-        restCaller
-            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(@"{
+        var restCaller = CreateRestCallerFor(@"{
   ""d"": {
     ""Id"": 999543,
     ""Field_CustomType1"": {
@@ -1197,7 +1155,7 @@ public class ContentLoadingTests
     ""Field_StringToBool"": ""1"",
     ""Field_StringToDictionary"": ""Name1:111,Name2:222,Name3:333""
   }
-}"));
+}");
 
         var repositories = GetRepositoryCollection(services =>
         {
@@ -1230,16 +1188,13 @@ public class ContentLoadingTests
     public async Task LoadContent_T_Error_UnknownType()
     {
         // ALIGN
-        var restCaller = Substitute.For<IRestCaller>();
-        restCaller
-            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(@"{
+        var restCaller = CreateRestCallerFor(@"{
   ""d"": {
     ""Id"": 999543,
     ""Type"": ""MyContent1"",
     ""Name"": ""Content-1""
   }
-}"));
+}");
 
         var repositories = GetRepositoryCollection(services =>
         {

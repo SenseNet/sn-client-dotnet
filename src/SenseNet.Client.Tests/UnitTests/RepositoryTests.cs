@@ -18,7 +18,7 @@ namespace DifferentNamespace
 namespace SenseNet.Client.Tests.UnitTests
 {
     [TestClass]
-    public class RepositoryTests
+    public class RepositoryTests : TestBase
     {
         private const string ExampleUrl = "https://example.com";
 
@@ -292,10 +292,7 @@ namespace SenseNet.Client.Tests.UnitTests
 
         private async Task<(IRepository Repository, IRestCaller RestCaller)> GetDefaultRepositoryAndRestCallerMock()
         {
-            var restCaller = Substitute.For<IRestCaller>();
-            restCaller
-                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-                .Returns(Task.FromResult(@"{ ""d"": { ""Name"": ""Content"" }}"));
+            var restCaller = CreateRestCallerFor(@"{ ""d"": { ""Name"": ""Content"" }}");
             var repositories = GetRepositoryCollection(services =>
             {
                 services.AddSingleton(restCaller);
@@ -307,10 +304,7 @@ namespace SenseNet.Client.Tests.UnitTests
         private async Task ODataRequestForLoadContentTest(Func<IRepository, LoadContentRequest> getLoadContentRequest, string expectedUrl)
         {
             // ALIGN
-            var restCaller = Substitute.For<IRestCaller>();
-            restCaller
-                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-                .Returns(Task.FromResult(@"{ ""d"": { ""Name"": ""Content"" }}"));
+            var restCaller = CreateRestCallerFor(@"{ ""d"": { ""Name"": ""Content"" }}");
             var repositories = GetRepositoryCollection(services =>
             {
                 services.AddSingleton(restCaller);
@@ -334,12 +328,9 @@ namespace SenseNet.Client.Tests.UnitTests
         public async Task Repository_LoadCollection()
         {
             // ALIGN
-            var restCaller = Substitute.For<IRestCaller>();
-            restCaller
-                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-                .Returns(Task.FromResult(@"{""d"": {""__count"": 2, ""results"": [
+            var restCaller = CreateRestCallerFor(@"{""d"": {""__count"": 2, ""results"": [
                     {""Id"": 3, ""Name"": ""IMS"", ""Type"": ""Domains""},
-                    {""Id"": 1000, ""Name"": ""System"", ""Type"": ""SystemFolder""}]}}"));
+                    {""Id"": 1000, ""Name"": ""System"", ""Type"": ""SystemFolder""}]}}");
             var repositories = GetRepositoryCollection(services =>
             {
                 services.AddSingleton(restCaller);
@@ -372,12 +363,9 @@ namespace SenseNet.Client.Tests.UnitTests
         public async Task Repository_LoadCollection_WithQuery()
         {
             // ALIGN
-            var restCaller = Substitute.For<IRestCaller>();
-            restCaller
-                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-                .Returns(Task.FromResult(@"{""d"": {""__count"": 2, ""results"": [
+            var restCaller = CreateRestCallerFor(@"{""d"": {""__count"": 2, ""results"": [
                     {""Id"": 3, ""Name"": ""IMS"", ""Type"": ""Domains""},
-                    {""Id"": 1000, ""Name"": ""System"", ""Type"": ""SystemFolder""}]}}"));
+                    {""Id"": 1000, ""Name"": ""System"", ""Type"": ""SystemFolder""}]}}");
             var repositories = GetRepositoryCollection(services =>
             {
                 services.AddSingleton(restCaller);
@@ -402,10 +390,7 @@ namespace SenseNet.Client.Tests.UnitTests
         public async Task Repository_GetContentCount()
         {
             // ALIGN
-            var restCaller = Substitute.For<IRestCaller>();
-            restCaller
-                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-                .Returns(Task.FromResult(@"42"));
+            var restCaller = CreateRestCallerFor(@"42");
             var repositories = GetRepositoryCollection(services =>
             {
                 services.AddSingleton(restCaller);
@@ -456,14 +441,11 @@ namespace SenseNet.Client.Tests.UnitTests
         public async Task Repository_QueryForAdmin()
         {
             // ALIGN
-            var restCaller = Substitute.For<IRestCaller>();
-            restCaller
-                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-                .Returns(Task.FromResult(@"{""d"": {""__count"": 4, ""results"": [
+            var restCaller = CreateRestCallerFor(@"{""d"": {""__count"": 4, ""results"": [
       {""Name"": ""Admin""},
       {""Name"": ""PublicAdmin""},
       {""Name"": ""Somebody""},
-      {""Name"": ""Visitor""}]}}"));
+      {""Name"": ""Visitor""}]}}");
             var repositories = GetRepositoryCollection(services =>
             {
                 services.AddSingleton(restCaller);
@@ -487,14 +469,11 @@ namespace SenseNet.Client.Tests.UnitTests
         public async Task Repository_Query()
         {
             // ALIGN
-            var restCaller = Substitute.For<IRestCaller>();
-            restCaller
-                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-                .Returns(Task.FromResult(@"{""d"": {""__count"": 4, ""results"": [
+            var restCaller = CreateRestCallerFor(@"{""d"": {""__count"": 4, ""results"": [
       {""Name"": ""Admin""},
       {""Name"": ""PublicAdmin""},
       {""Name"": ""Somebody""},
-      {""Name"": ""Visitor""}]}}"));
+      {""Name"": ""Visitor""}]}}");
             var repositories = GetRepositoryCollection(services =>
             {
                 services.AddSingleton(restCaller);
@@ -519,10 +498,7 @@ namespace SenseNet.Client.Tests.UnitTests
         public async Task Repository_QueryCountForAdmin()
         {
             // ALIGN
-            var restCaller = Substitute.For<IRestCaller>();
-            restCaller
-                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-                .Returns(Task.FromResult(@"42"));
+            var restCaller = CreateRestCallerFor(@"42");
             var repositories = GetRepositoryCollection(services =>
             {
                 services.AddSingleton(restCaller);
@@ -545,10 +521,7 @@ namespace SenseNet.Client.Tests.UnitTests
         public async Task Repository_QueryCount()
         {
             // ALIGN
-            var restCaller = Substitute.For<IRestCaller>();
-            restCaller
-                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-                .Returns(Task.FromResult(@"42"));
+            var restCaller = CreateRestCallerFor(@"42");
             var repositories = GetRepositoryCollection(services =>
             {
                 services.AddSingleton(restCaller);
@@ -578,7 +551,9 @@ namespace SenseNet.Client.Tests.UnitTests
             var restCaller = infrastructure.RestCaller;
             var repository = infrastructure.Repository;
 
-            restCaller.GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
+            restCaller
+//.GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<HttpMethod>(), Arg.Any<string>(), Arg.Any<Dictionary<string, IEnumerable<string>>>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult(@"{ ""d"": { ""Id"": 42 }}"));
 
             // ACT
@@ -600,7 +575,9 @@ namespace SenseNet.Client.Tests.UnitTests
             var restCaller = infrastructure.RestCaller;
             var repository = infrastructure.Repository;
 
-            restCaller.GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
+            restCaller
+//.GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
+                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<HttpMethod>(), Arg.Any<string>(), Arg.Any<Dictionary<string, IEnumerable<string>>>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
                 .Returns(Task.FromResult(string.Empty));
 
             // ACT
@@ -621,10 +598,7 @@ namespace SenseNet.Client.Tests.UnitTests
         public async Task Repository_Delete_Permanent_ByPath()
         {
             // ALIGN
-            var restCaller = Substitute.For<IRestCaller>();
-            restCaller
-                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-                .Returns(Task.FromResult(""));
+            var restCaller = CreateRestCallerFor("");
             var repositories = GetRepositoryCollection(services =>
             {
                 services.AddSingleton(restCaller);
@@ -637,14 +611,14 @@ namespace SenseNet.Client.Tests.UnitTests
 
             // ASSERT
             var arguments = restCaller.ReceivedCalls().Single().GetArguments();
-            Assert.AreEqual(5, arguments.Length);
+            Assert.AreEqual(6, arguments.Length);
             var requestedUri = arguments[0] as Uri;
             Assert.IsNotNull(requestedUri);
             Assert.AreEqual("/OData.svc/('Root')/DeleteBatch?metadata=no", requestedUri.PathAndQuery);
-            var method = arguments[3] as HttpMethod;
+            var method = arguments[1] as HttpMethod;
             Assert.IsNotNull(method);
             Assert.AreEqual(HttpMethod.Post, method);
-            var jsonBody = arguments[4] as string;
+            var jsonBody = arguments[2] as string;
             Assert.IsNotNull(jsonBody);
             Assert.AreEqual("models=[{\"permanent\":true,\"paths\":[\"/Root/Content/MyContent\"]}]", jsonBody);
         }
@@ -652,10 +626,7 @@ namespace SenseNet.Client.Tests.UnitTests
         public async Task Repository_Delete_ByPath()
         {
             // ALIGN
-            var restCaller = Substitute.For<IRestCaller>();
-            restCaller
-                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-                .Returns(Task.FromResult(""));
+            var restCaller = CreateRestCallerFor("");
             var repositories = GetRepositoryCollection(services =>
             {
                 services.AddSingleton(restCaller);
@@ -668,14 +639,14 @@ namespace SenseNet.Client.Tests.UnitTests
 
             // ASSERT
             var arguments = restCaller.ReceivedCalls().Single().GetArguments();
-            Assert.AreEqual(5, arguments.Length);
+            Assert.AreEqual(6, arguments.Length);
             var requestedUri = arguments[0] as Uri;
             Assert.IsNotNull(requestedUri);
             Assert.AreEqual("/OData.svc/('Root')/DeleteBatch?metadata=no", requestedUri.PathAndQuery);
-            var method = arguments[3] as HttpMethod;
+            var method = arguments[1] as HttpMethod;
             Assert.IsNotNull(method);
             Assert.AreEqual(HttpMethod.Post, method);
-            var jsonBody = arguments[4] as string;
+            var jsonBody = arguments[2] as string;
             Assert.IsNotNull(jsonBody);
             Assert.AreEqual("models=[{\"permanent\":false,\"paths\":[\"/Root/Content/MyContent\"]}]", jsonBody);
         }
@@ -683,10 +654,7 @@ namespace SenseNet.Client.Tests.UnitTests
         public async Task Repository_Delete_ByPaths()
         {
             // ALIGN
-            var restCaller = Substitute.For<IRestCaller>();
-            restCaller
-                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-                .Returns(Task.FromResult(""));
+            var restCaller = CreateRestCallerFor("");
             var repositories = GetRepositoryCollection(services =>
             {
                 services.AddSingleton(restCaller);
@@ -700,14 +668,14 @@ namespace SenseNet.Client.Tests.UnitTests
 
             // ASSERT
             var arguments = restCaller.ReceivedCalls().Single().GetArguments();
-            Assert.AreEqual(5, arguments.Length);
+            Assert.AreEqual(6, arguments.Length);
             var requestedUri = arguments[0] as Uri;
             Assert.IsNotNull(requestedUri);
             Assert.AreEqual("/OData.svc/('Root')/DeleteBatch?metadata=no", requestedUri.PathAndQuery);
-            var method = arguments[3] as HttpMethod;
+            var method = arguments[1] as HttpMethod;
             Assert.IsNotNull(method);
             Assert.AreEqual(HttpMethod.Post, method);
-            var jsonBody = arguments[4] as string;
+            var jsonBody = arguments[2] as string;
             Assert.IsNotNull(jsonBody);
             Assert.AreEqual("models=[{\"permanent\":false,\"paths\":[\"/Root/F1\",\"/Root/F2\",\"/Root/F3\"]}]", jsonBody);
         }
@@ -715,10 +683,7 @@ namespace SenseNet.Client.Tests.UnitTests
         public async Task Repository_Delete_ById()
         {
             // ALIGN
-            var restCaller = Substitute.For<IRestCaller>();
-            restCaller
-                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-                .Returns(Task.FromResult(""));
+            var restCaller = CreateRestCallerFor("");
             var repositories = GetRepositoryCollection(services =>
             {
                 services.AddSingleton(restCaller);
@@ -731,14 +696,14 @@ namespace SenseNet.Client.Tests.UnitTests
 
             // ASSERT
             var arguments = restCaller.ReceivedCalls().Single().GetArguments();
-            Assert.AreEqual(5, arguments.Length);
+            Assert.AreEqual(6, arguments.Length);
             var requestedUri = arguments[0] as Uri;
             Assert.IsNotNull(requestedUri);
             Assert.AreEqual("/OData.svc/('Root')/DeleteBatch?metadata=no", requestedUri.PathAndQuery);
-            var method = arguments[3] as HttpMethod;
+            var method = arguments[1] as HttpMethod;
             Assert.IsNotNull(method);
             Assert.AreEqual(HttpMethod.Post, method);
-            var jsonBody = arguments[4] as string;
+            var jsonBody = arguments[2] as string;
             Assert.IsNotNull(jsonBody);
             Assert.AreEqual("models=[{\"permanent\":false,\"paths\":[1234]}]", jsonBody);
         }
@@ -746,10 +711,7 @@ namespace SenseNet.Client.Tests.UnitTests
         public async Task Repository_Delete_ByIds()
         {
             // ALIGN
-            var restCaller = Substitute.For<IRestCaller>();
-            restCaller
-                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-                .Returns(Task.FromResult(""));
+            var restCaller = CreateRestCallerFor("");
             var repositories = GetRepositoryCollection(services =>
             {
                 services.AddSingleton(restCaller);
@@ -763,14 +725,14 @@ namespace SenseNet.Client.Tests.UnitTests
 
             // ASSERT
             var arguments = restCaller.ReceivedCalls().Single().GetArguments();
-            Assert.AreEqual(5, arguments.Length);
+            Assert.AreEqual(6, arguments.Length);
             var requestedUri = arguments[0] as Uri;
             Assert.IsNotNull(requestedUri);
             Assert.AreEqual("/OData.svc/('Root')/DeleteBatch?metadata=no", requestedUri.PathAndQuery);
-            var method = arguments[3] as HttpMethod;
+            var method = arguments[1] as HttpMethod;
             Assert.IsNotNull(method);
             Assert.AreEqual(HttpMethod.Post, method);
-            var jsonBody = arguments[4] as string;
+            var jsonBody = arguments[2] as string;
             Assert.IsNotNull(jsonBody);
             Assert.AreEqual("models=[{\"permanent\":false,\"paths\":[1234,1235,1236,1237]}]", jsonBody);
         }
@@ -778,10 +740,7 @@ namespace SenseNet.Client.Tests.UnitTests
         public async Task Repository_Delete_ByIdsOrPaths()
         {
             // ALIGN
-            var restCaller = Substitute.For<IRestCaller>();
-            restCaller
-                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-                .Returns(Task.FromResult(""));
+            var restCaller = CreateRestCallerFor("");
             var repositories = GetRepositoryCollection(services =>
             {
                 services.AddSingleton(restCaller);
@@ -795,14 +754,14 @@ namespace SenseNet.Client.Tests.UnitTests
 
             // ASSERT
             var arguments = restCaller.ReceivedCalls().Single().GetArguments();
-            Assert.AreEqual(5, arguments.Length);
+            Assert.AreEqual(6, arguments.Length);
             var requestedUri = arguments[0] as Uri;
             Assert.IsNotNull(requestedUri);
             Assert.AreEqual("/OData.svc/('Root')/DeleteBatch?metadata=no", requestedUri.PathAndQuery);
-            var method = arguments[3] as HttpMethod;
+            var method = arguments[1] as HttpMethod;
             Assert.IsNotNull(method);
             Assert.AreEqual(HttpMethod.Post, method);
-            var jsonBody = arguments[4] as string;
+            var jsonBody = arguments[2] as string;
             Assert.IsNotNull(jsonBody);
             Assert.AreEqual("models=[{\"permanent\":false,\"paths\":[\"/Root/F1\",1234,\"/Root/F2\",1235,1236]}]", jsonBody);
         }
@@ -1515,10 +1474,7 @@ namespace SenseNet.Client.Tests.UnitTests
         public async Task Repository_LoadContent_Request_ByPath()
         {
             // ALIGN
-            var restCaller = Substitute.For<IRestCaller>();
-            restCaller
-                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-                .Returns(Task.FromResult(@"{ ""d"": { ""Name"": ""Content"" }}"));
+            var restCaller = CreateRestCallerFor(@"{ ""d"": { ""Name"": ""Content"" }}");
             var repositories = GetRepositoryCollection(services =>
             {
                 services.AddSingleton(restCaller);
@@ -1543,10 +1499,7 @@ namespace SenseNet.Client.Tests.UnitTests
         public async Task Repository_LoadContent_GeneralType()
         {
             // ALIGN
-            var restCaller = Substitute.For<IRestCaller>();
-            restCaller
-                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-                .Returns(Task.FromResult(@"{ ""d"": { ""Name"": ""Content"" }}"));
+            var restCaller = CreateRestCallerFor(@"{ ""d"": { ""Name"": ""Content"" }}");
             var repositories = GetRepositoryCollection(services =>
             {
                 services.AddSingleton(restCaller);
@@ -1566,10 +1519,7 @@ namespace SenseNet.Client.Tests.UnitTests
         public async Task Repository_LoadContent_KnownCustomTypeById()
         {
             // ALIGN
-            var restCaller = Substitute.For<IRestCaller>();
-            restCaller
-                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-                .Returns(Task.FromResult(@"{ ""d"": { ""Name"": ""Content"" }}"));
+            var restCaller = CreateRestCallerFor(@"{ ""d"": { ""Name"": ""Content"" }}");
             var repositories = GetRepositoryCollection(services =>
             {
                 services.AddSingleton(restCaller);
@@ -1589,10 +1539,7 @@ namespace SenseNet.Client.Tests.UnitTests
         public async Task Repository_LoadContent_KnownCustomType_ByPath()
         {
             // ALIGN
-            var restCaller = Substitute.For<IRestCaller>();
-            restCaller
-                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-                .Returns(Task.FromResult(@"{ ""d"": { ""Name"": ""Content"" }}"));
+            var restCaller = CreateRestCallerFor(@"{ ""d"": { ""Name"": ""Content"" }}");
             var repositories = GetRepositoryCollection(services =>
             {
                 services.AddSingleton(restCaller);
@@ -1612,10 +1559,7 @@ namespace SenseNet.Client.Tests.UnitTests
         public async Task Repository_LoadContent_KnownCustomTypeAsGeneral()
         {
             // ALIGN
-            var restCaller = Substitute.For<IRestCaller>();
-            restCaller
-                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-                .Returns(Task.FromResult(@"{ ""d"": { ""Type"": ""MyContent"", ""Name"": ""Content"" }}"));
+            var restCaller = CreateRestCallerFor(@"{ ""d"": { ""Type"": ""MyContent"", ""Name"": ""Content"" }}");
             var repositories = GetRepositoryCollection(services =>
             {
                 services.AddSingleton(restCaller);
@@ -1641,15 +1585,12 @@ namespace SenseNet.Client.Tests.UnitTests
         public async Task Repository_T_LoadCollection()
         {
             // ALIGN
-            var restCaller = Substitute.For<IRestCaller>();
-            restCaller
-                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-                .Returns(Task.FromResult(@"{""d"": {""__count"": 4, ""results"": [
+            var restCaller = CreateRestCallerFor(@"{""d"": {""__count"": 4, ""results"": [
                     {""Id"": 10001, ""Name"": ""Content1"", ""Type"": ""MyContent""},
                     {""Id"": 10002, ""Name"": ""Content2"", ""Type"": ""MyContent2""},
                     {""Id"": 10003, ""Name"": ""Content3"", ""Type"": ""MyContent3""},
                     {""Id"": 10004, ""Name"": ""Content4"", ""Type"": ""MyContent4""},
-                    ]}}"));
+                    ]}}");
 
             var repositories = GetRepositoryCollection(services =>
             {
@@ -1687,15 +1628,12 @@ namespace SenseNet.Client.Tests.UnitTests
         private async Task LoadCollectionTest<T>(bool isExceptionExpected) where T : Content
         {
             // ALIGN
-            var restCaller = Substitute.For<IRestCaller>();
-            restCaller
-                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-                .Returns(Task.FromResult(@"{""d"": {""__count"": 4, ""results"": [
+            var restCaller = CreateRestCallerFor(@"{""d"": {""__count"": 4, ""results"": [
                     {""Id"": 10001, ""Name"": ""Content1"", ""Type"": ""Item1""},
                     {""Id"": 10002, ""Name"": ""Content2"", ""Type"": ""Item2""},
                     {""Id"": 10003, ""Name"": ""Content3"", ""Type"": ""Item3""},
                     {""Id"": 10004, ""Name"": ""Content4"", ""Type"": ""Item4""},
-                    ]}}"));
+                    ]}}");
 
             var repositories = GetRepositoryCollection(services =>
             {
@@ -1740,15 +1678,12 @@ namespace SenseNet.Client.Tests.UnitTests
         private async Task QueryTest<T>(bool isExceptionExpected) where T : Content
         {
             // ALIGN
-            var restCaller = Substitute.For<IRestCaller>();
-            restCaller
-                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-                .Returns(Task.FromResult(@"{""d"": {""__count"": 4, ""results"": [
+            var restCaller = CreateRestCallerFor(@"{""d"": {""__count"": 4, ""results"": [
                     {""Id"": 10001, ""Name"": ""Content1"", ""Type"": ""Item1""},
                     {""Id"": 10002, ""Name"": ""Content2"", ""Type"": ""Item2""},
                     {""Id"": 10003, ""Name"": ""Content3"", ""Type"": ""Item3""},
                     {""Id"": 10004, ""Name"": ""Content4"", ""Type"": ""Item4""},
-                    ]}}"));
+                    ]}}");
 
             var repositories = GetRepositoryCollection(services =>
             {
@@ -1792,15 +1727,12 @@ namespace SenseNet.Client.Tests.UnitTests
         private async Task QueryForAdminTest<T>(bool isExceptionExpected) where T : Content
         {
             // ALIGN
-            var restCaller = Substitute.For<IRestCaller>();
-            restCaller
-                .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-                .Returns(Task.FromResult(@"{""d"": {""__count"": 4, ""results"": [
+            var restCaller = CreateRestCallerFor(@"{""d"": {""__count"": 4, ""results"": [
                     {""Id"": 10001, ""Name"": ""Content1"", ""Type"": ""Item1""},
                     {""Id"": 10002, ""Name"": ""Content2"", ""Type"": ""Item2""},
                     {""Id"": 10003, ""Name"": ""Content3"", ""Type"": ""Item3""},
                     {""Id"": 10004, ""Name"": ""Content4"", ""Type"": ""Item4""},
-                    ]}}"));
+                    ]}}");
 
             var repositories = GetRepositoryCollection(services =>
             {
