@@ -860,14 +860,60 @@ public partial class Content : DynamicObject
             // Modernized version
             responseContent = Existing
                 ? (this.Id > 0
-                    ? await _restCaller.PatchContentAsync(this.Id, postData, Server, cancel).ConfigureAwait(false)
-                    : await _restCaller.PatchContentAsync(this.Path, postData, Server, cancel).ConfigureAwait(false))
-                : await _restCaller.PostContentAsync(this.ParentPath, postData, Server, cancel).ConfigureAwait(false);
+                    ? await PatchContentAsync(this.Id, postData, cancel).ConfigureAwait(false)
+                    : await PatchContentAsync(this.Path, postData, cancel).ConfigureAwait(false))
+                : await PostContentAsync(this.ParentPath, postData, cancel).ConfigureAwait(false);
         }
 
         // reset local values
         InitializeFromResponse(responseContent);
     }
+    private async Task<dynamic> PostContentAsync(string parentPath, object postData, CancellationToken cancel)
+    {
+        return await PostContentInternalAsync(parentPath, postData, HttpMethod.Post, cancel).ConfigureAwait(false);
+    }
+    private async Task<dynamic> PatchContentAsync(int contentId, object postData, CancellationToken cancel)
+    {
+        return await PostContentInternalAsync(contentId, postData, HttpMethods.PATCH, cancel).ConfigureAwait(false);
+    }
+    private async Task<dynamic> PatchContentAsync(string path, object postData, CancellationToken cancel)
+    {
+        return await PostContentInternalAsync(path, postData, HttpMethods.PATCH, cancel).ConfigureAwait(false);
+    }
+    private async Task<dynamic> PutContentAsync(string path, object postData, CancellationToken cancel)
+    {
+        return await PostContentInternalAsync(path, postData, HttpMethod.Put, cancel).ConfigureAwait(false);
+    }
+    private async Task<dynamic> PostContentInternalAsync(string path, object postData, HttpMethod method, CancellationToken cancel)
+    {
+        var reqData = new ODataRequest(Server)
+        {
+            Path = path,
+            PostData = JsonHelper.GetJsonPostModel(postData)
+        };
+        var rs = await Repository.GetResponseStringAsync(reqData, method, cancel).ConfigureAwait(false);
+        return JsonHelper.Deserialize(rs).d;
+    }
+    private async Task<dynamic> PostContentInternalAsync(int contentId, object postData, HttpMethod method, CancellationToken cancel)
+    {
+        var reqData = new ODataRequest(Server)
+        {
+            ContentId = contentId,
+            PostData = JsonHelper.GetJsonPostModel(postData)
+        };
+        var rs = await Repository.GetResponseStringAsync(reqData, method, cancel).ConfigureAwait(false);
+        return JsonHelper.Deserialize(rs).d;
+    }
+
+
+
+
+
+
+
+
+
+
 
     /// <summary>
     /// Deletes the content.

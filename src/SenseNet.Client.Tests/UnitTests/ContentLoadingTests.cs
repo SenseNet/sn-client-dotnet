@@ -295,7 +295,7 @@ public class ContentLoadingTests : TestBase
         var content = await repository.LoadContentAsync<TestWorkspace>(request, CancellationToken.None);
 
         // ASSERT
-        var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
+        var requestedUri = (Uri)restCaller.ReceivedCalls().ToArray()[1].GetArguments().First()!;
         Assert.IsNotNull(requestedUri);
         Assert.AreEqual("/OData.svc/Root('Content')?metadata=no", requestedUri.PathAndQuery);
 
@@ -404,7 +404,7 @@ public class ContentLoadingTests : TestBase
         var content = await repository.LoadContentAsync<TestWorkspace>(request, CancellationToken.None);
 
         // ASSERT
-        var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
+        var requestedUri = (Uri)restCaller.ReceivedCalls().ToArray()[1].GetArguments().First()!;
         Assert.IsNotNull(requestedUri);
         Assert.AreEqual("/OData.svc/Root('Content')?metadata=no&$select=Id,Name,Type", requestedUri.PathAndQuery);
 
@@ -571,7 +571,7 @@ public class ContentLoadingTests : TestBase
         var content = await repository.LoadContentAsync<TestContent_MultiChoice_StringToString>(request, CancellationToken.None);
 
         // ASSERT
-        var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
+        var requestedUri = (Uri)restCaller.ReceivedCalls().ToArray()[1].GetArguments().First()!;
         Assert.IsNotNull(requestedUri);
         Assert.AreEqual("/OData.svc/Root('Content')?metadata=no", requestedUri.PathAndQuery);
 
@@ -631,7 +631,7 @@ public class ContentLoadingTests : TestBase
         var content = await repository.LoadContentAsync<TestContent_MultiChoice_StringToInt>(request, CancellationToken.None);
 
         // ASSERT
-        var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
+        var requestedUri = (Uri)restCaller.ReceivedCalls().ToArray()[1].GetArguments().First()!;
         Assert.IsNotNull(requestedUri);
         Assert.AreEqual("/OData.svc/Root('Content')?metadata=no", requestedUri.PathAndQuery);
 
@@ -697,7 +697,7 @@ public class ContentLoadingTests : TestBase
         var content = await repository.LoadContentAsync<TestContent_Number>(request, CancellationToken.None);
 
         // ASSERT
-        var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
+        var requestedUri = (Uri)restCaller.ReceivedCalls().ToArray()[1].GetArguments().First()!;
         Assert.IsNotNull(requestedUri);
         Assert.AreEqual("/OData.svc/Root('Content')?metadata=no", requestedUri.PathAndQuery);
 
@@ -761,7 +761,7 @@ public class ContentLoadingTests : TestBase
         var content = await repository.LoadContentAsync<TestContent_Binaries>(request, CancellationToken.None);
 
         // ASSERT
-        var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
+        var requestedUri = (Uri)restCaller.ReceivedCalls().ToArray()[1].GetArguments().First()!;
         Assert.IsNotNull(requestedUri);
         Assert.AreEqual("/OData.svc/Root('Content')?metadata=no", requestedUri.PathAndQuery);
 
@@ -835,7 +835,7 @@ public class ContentLoadingTests : TestBase
         var content = await repository.LoadContentAsync<TestContentForReferences>(request, CancellationToken.None);
 
         // ASSERT
-        var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
+        var requestedUri = (Uri)restCaller.ReceivedCalls().ToArray()[1].GetArguments().First()!;
         Assert.IsNotNull(requestedUri);
         Assert.AreEqual("/OData.svc/Root('Content')?metadata=no&$select=Name,Type,Owner,Manager,AllowedChildTypes", requestedUri.PathAndQuery);
 
@@ -877,7 +877,7 @@ public class ContentLoadingTests : TestBase
         var content = await repository.LoadContentAsync<TestContentForReferences>(request, CancellationToken.None);
 
         // ASSERT
-        var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
+        var requestedUri = (Uri)restCaller.ReceivedCalls().ToArray()[1].GetArguments().First()!;
         Assert.IsNotNull(requestedUri);
         Assert.AreEqual("/OData.svc/Root('Content')?metadata=no&$expand=Owner,Manager&$select=Name,Type,Owner/Path,Manager/Path", requestedUri.PathAndQuery);
 
@@ -919,7 +919,7 @@ public class ContentLoadingTests : TestBase
         var content = await repository.LoadContentAsync<TestContentForReferences>(request, CancellationToken.None);
 
         // ASSERT
-        var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
+        var requestedUri = (Uri)restCaller.ReceivedCalls().ToArray()[1].GetArguments().First()!;
         Assert.IsNotNull(requestedUri);
         Assert.AreEqual("/OData.svc/Root('Content')?metadata=no&$expand=AllowedChildTypes&$select=Name,Type,AllowedChildTypes/Path", requestedUri.PathAndQuery);
 
@@ -968,7 +968,7 @@ public class ContentLoadingTests : TestBase
         var content = await repository.LoadContentAsync<TestContentForReferences>(request, CancellationToken.None);
 
         // ASSERT
-        var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
+        var requestedUri = (Uri)restCaller.ReceivedCalls().ToArray()[1].GetArguments().First()!;
         Assert.IsNotNull(requestedUri);
         Assert.AreEqual("/OData.svc/Root('Content')?metadata=no&$expand=AllowedChildTypes&$select=Name,Type,AllowedChildTypes/Path", requestedUri.PathAndQuery);
 
@@ -1016,7 +1016,7 @@ public class ContentLoadingTests : TestBase
         var content = await repository.LoadContentAsync<TestContentForReferences>(request, CancellationToken.None);
 
         // ASSERT
-        var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
+        var requestedUri = (Uri)restCaller.ReceivedCalls().ToArray()[1].GetArguments().First()!;
         Assert.IsNotNull(requestedUri);
         Assert.AreEqual("/OData.svc/Root('Content')?metadata=no&$expand=AllowedChildTypes&$select=Name,Type,AllowedChildTypes/Path", requestedUri.PathAndQuery);
 
@@ -1220,7 +1220,7 @@ public class ContentLoadingTests : TestBase
                             "has been registered.", ex.InnerException?.Message);
         }
 
-        var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
+        var requestedUri = (Uri)restCaller.ReceivedCalls().ToArray()[1].GetArguments().First()!;
         Assert.IsNotNull(requestedUri);
         Assert.AreEqual("/OData.svc/content(999543)?metadata=no&$select=Id,Type,Name", requestedUri.PathAndQuery);
     }

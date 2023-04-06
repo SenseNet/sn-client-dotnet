@@ -22,8 +22,18 @@ internal class Repository : IRepository
     private readonly IServiceProvider _services;
     private readonly ILogger<Repository> _logger;
 
-    public ServerContext Server { get; set; }
-    
+    private ServerContext _server;
+
+    public ServerContext Server
+    {
+        get => _server;
+        set
+        {
+            _server = value;
+            _restCaller.Server = value;
+        }
+    }
+
     public RegisteredContentTypes GlobalContentTypes { get; }
 
     public Repository(IRestCaller restCaller, IServiceProvider services, IOptions<RegisteredContentTypes> globalContentTypes, ILogger<Repository> logger)
@@ -259,7 +269,7 @@ internal class Repository : IRepository
     private async Task<IEnumerable<T>> LoadCollectionAsync<T>(ODataRequest requestData, CancellationToken cancel) where T :Content
     {
         requestData.IsCollectionRequest = true;
-        requestData.SiteUrl = ServerContext.GetUrl(Server); //UNDONE: Why set the requestData.SiteUrl?
+        //requestData.SiteUrl = ServerContext.GetUrl(Server); //UNDONE: Why set the requestData.SiteUrl?
 
         var response = await GetResponseStringAsync(requestData, HttpMethod.Get, cancel).ConfigureAwait(false);
         if (string.IsNullOrEmpty(response))
@@ -394,7 +404,7 @@ internal class Repository : IRepository
     public Task<string> GetResponseStringAsync(Uri uri, HttpMethod method, string postData,
         Dictionary<string, IEnumerable<string>> additionalHeaders, CancellationToken cancel)
     {
-        return _restCaller.GetResponseStringAsync(uri, method, postData, additionalHeaders, Server, cancel);
+        return _restCaller.GetResponseStringAsync(uri, method, postData, additionalHeaders, cancel);
     }
 
     /* ============================================================================ LOW LEVEL API */
@@ -403,7 +413,7 @@ internal class Repository : IRepository
         HttpContent httpContent, Action<HttpResponseMessage> responseProcessor, CancellationToken cancel)
     {
         return _restCaller.ProcessWebResponseAsync(relativeUrl, method, additionalHeaders,
-            httpContent, responseProcessor, Server, cancel);
+            httpContent, responseProcessor, cancel);
     }
 
     public Task ProcessWebRequestResponseAsync(string relativeUrl, HttpMethod method, Dictionary<string, IEnumerable<string>> additionalHeaders,
@@ -411,7 +421,7 @@ internal class Repository : IRepository
         Action<HttpResponseMessage> responseProcessor, CancellationToken cancel)
     {
         return _restCaller.ProcessWebRequestResponseAsync(relativeUrl, method, additionalHeaders,
-            requestProcessor, responseProcessor, Server, cancel);
+            requestProcessor, responseProcessor, cancel);
     }
 
     /* ============================================================================ TOOLS */
