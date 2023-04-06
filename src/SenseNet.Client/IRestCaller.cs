@@ -15,10 +15,9 @@ public interface IRestCaller
 
     Task ProcessWebResponseAsync(string relativeUrl, HttpMethod method, Dictionary<string, IEnumerable<string>> additionalHeaders,
         HttpContent postData,
-        Action<HttpResponseMessage> responseProcessor, CancellationToken cancel);
+        Func<HttpResponseMessage, CancellationToken, Task> responseProcessor, CancellationToken cancel);
 
-    //UNDONE: responseProcessor and requestProcessor(?) should be async.
     Task ProcessWebRequestResponseAsync(string relativeUrl, HttpMethod method, Dictionary<string, IEnumerable<string>> additionalHeaders,
         Action<HttpClientHandler, HttpClient, HttpRequestMessage> requestProcessor,
-        Action<HttpResponseMessage> responseProcessor, CancellationToken cancel);
+        Func<HttpResponseMessage, CancellationToken, Task> responseProcessor, CancellationToken cancel);
 }

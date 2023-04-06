@@ -410,7 +410,7 @@ internal class Repository : IRepository
     /* ============================================================================ LOW LEVEL API */
 
     public Task ProcessWebResponseAsync(string relativeUrl, HttpMethod method, Dictionary<string, IEnumerable<string>> additionalHeaders,
-        HttpContent httpContent, Action<HttpResponseMessage> responseProcessor, CancellationToken cancel)
+        HttpContent httpContent, Func<HttpResponseMessage, CancellationToken, Task> responseProcessor, CancellationToken cancel)
     {
         return _restCaller.ProcessWebResponseAsync(relativeUrl, method, additionalHeaders,
             httpContent, responseProcessor, cancel);
@@ -418,7 +418,7 @@ internal class Repository : IRepository
 
     public Task ProcessWebRequestResponseAsync(string relativeUrl, HttpMethod method, Dictionary<string, IEnumerable<string>> additionalHeaders,
         Action<HttpClientHandler, HttpClient, HttpRequestMessage> requestProcessor,
-        Action<HttpResponseMessage> responseProcessor, CancellationToken cancel)
+        Func<HttpResponseMessage, CancellationToken, Task> responseProcessor, CancellationToken cancel)
     {
         return _restCaller.ProcessWebRequestResponseAsync(relativeUrl, method, additionalHeaders,
             requestProcessor, responseProcessor, cancel);

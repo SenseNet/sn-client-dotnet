@@ -345,11 +345,11 @@ public interface IRepository
 
     Task ProcessWebResponseAsync(string relativeUrl, HttpMethod method, Dictionary<string, IEnumerable<string>> additionalHeaders,
         HttpContent httpContent,
-        Action<HttpResponseMessage> responseProcessor,
+        Func<HttpResponseMessage, CancellationToken, Task> responseProcessor,
         CancellationToken cancel);
 
     Task ProcessWebRequestResponseAsync(string relativeUrl, HttpMethod method, Dictionary<string, IEnumerable<string>> additionalHeaders,
         Action<HttpClientHandler, HttpClient, HttpRequestMessage> requestProcessor,
-        Action<HttpResponseMessage> responseProcessor,
+        Func<HttpResponseMessage, CancellationToken, Task> responseProcessor,
         CancellationToken cancel);
 }

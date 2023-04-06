@@ -28,17 +28,22 @@ public class DefaultRestCaller : IRestCaller
         string result = null;
         await ProcessWebResponseAsync(uri.ToString(), method, additionalHeaders,
             postData != null ? new StringContent(postData) : null,
-            response =>
+            async (response, cancel) =>
             {
+                cancel.ThrowIfCancellationRequested();
                 if (response != null)
-                    result = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+#if NET6_0_OR_GREATER
+                    result = await response.Content.ReadAsStringAsync(cancel);
+#else
+                    result = await response.Content.ReadAsStringAsync();
+#endif
             }, cancel).ConfigureAwait(false);
 
         return result;
     }
 
     public Task ProcessWebResponseAsync(string relativeUrl, HttpMethod method, Dictionary<string, IEnumerable<string>> additionalHeaders,
-        HttpContent postData, Action<HttpResponseMessage> responseProcessor, CancellationToken cancel)
+        HttpContent postData, Func<HttpResponseMessage, CancellationToken, Task> responseProcessor, CancellationToken cancel)
     {
         return _retrier.RetryAsync(
             () => ProcessWebRequestResponseAsync(relativeUrl, method, additionalHeaders,
@@ -53,8 +58,8 @@ public class DefaultRestCaller : IRestCaller
     }
 
     public Task ProcessWebRequestResponseAsync(string relativeUrl, HttpMethod method, Dictionary<string, IEnumerable<string>> additionalHeaders,
-        Action<HttpClientHandler, HttpClient, HttpRequestMessage> requestProcessor, Action<HttpResponseMessage> responseProcessor,
-        CancellationToken cancel)
+        Action<HttpClientHandler, HttpClient, HttpRequestMessage> requestProcessor,
+        Func<HttpResponseMessage, CancellationToken, Task> responseProcessor, CancellationToken cancel)
     {
         //UNDONE: relative url
         return _retrier.RetryAsync(
@@ -72,7 +77,7 @@ public class DefaultRestCaller : IRestCaller
 
     private async Task ProcessWebRequestResponsePrivateAsync(string url, HttpMethod method, ServerContext server,
     Action<HttpClientHandler, HttpClient, HttpRequestMessage> requestProcessor,
-    Action<HttpResponseMessage> responseProcessor, CancellationToken cancellationToken)
+    Func<HttpResponseMessage, CancellationToken, Task> responseProcessor, CancellationToken cancel)
     {
         if (method == null)
             throw new ArgumentNullException(nameof(method));
@@ -98,7 +103,7 @@ public class DefaultRestCaller : IRestCaller
 
         try
         {
-            using var response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            using var response = await client.SendAsync(request, cancel).ConfigureAwait(false);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -123,7 +128,7 @@ public class DefaultRestCaller : IRestCaller
                 }
             }
 
-            responseProcessor(response);
+            await responseProcessor(response, cancel);
         }
         catch (HttpRequestException ex)
         {
