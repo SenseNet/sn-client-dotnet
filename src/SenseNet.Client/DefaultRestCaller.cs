@@ -92,7 +92,8 @@ public class DefaultRestCaller : IRestCaller
                 ?? ServerContext.DefaultServerCertificateCustomValidationCallback;
 
         using var client = new HttpClient(handler);
-        using var request = new HttpRequestMessage(method, url);
+        var requestUri = GetRealUri(url, server.Url);
+        using var request = new HttpRequestMessage(method, requestUri);
 
         // this will close the connection instead of keeping it alive
         request.Version = HttpVersion.Version10;
@@ -100,6 +101,8 @@ public class DefaultRestCaller : IRestCaller
         SetAuthenticationForRequest(handler, request, server);
 
         requestProcessor?.Invoke(handler, client, request);
+
+        cancel.ThrowIfCancellationRequested();
 
         try
         {
@@ -135,6 +138,22 @@ public class DefaultRestCaller : IRestCaller
             throw await GetClientExceptionAsync(ex, url, method).ConfigureAwait(false);
         }
     }
+
+    private Uri GetRealUri(string url, string serverUrl)
+    {
+        var serverUri = new Uri(serverUrl);
+        // Avoid UriFormatException: "Invalid URI: The hostname could not be parsed."
+        if (url.StartsWith("/"))
+            url = "host" + url;
+        var result = new UriBuilder(url)
+        {
+            Scheme = serverUri.Scheme,
+            Host = serverUri.Host,
+            Port = serverUri.Port
+        };
+        return result.Uri;
+    }
+
     private void SetAuthenticationForRequest(HttpClientHandler handler, HttpRequestMessage request, ServerContext server)
     {
         server ??= ClientContext.Current.Server;
