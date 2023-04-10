@@ -61,7 +61,6 @@ public class DefaultRestCaller : IRestCaller
         Action<HttpClientHandler, HttpClient, HttpRequestMessage> requestProcessor,
         Func<HttpResponseMessage, CancellationToken, Task> responseProcessor, CancellationToken cancel)
     {
-        //UNDONE: relative url
         return _retrier.RetryAsync(
             () => ProcessWebRequestResponsePrivateAsync(relativeUrl, method, Server,
                 (handler, client, request) =>

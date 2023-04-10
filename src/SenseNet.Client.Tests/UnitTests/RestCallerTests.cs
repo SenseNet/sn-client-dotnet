@@ -182,6 +182,8 @@ public class RestCallerTests
         Assert.AreEqual(apiKey, value1);
     }
 
+    /* =============================================================================== TOOLS */
+
     public async Task<HttpRequestMessage?> ProcessWebRequestResponseTestAsync(string url, HttpMethod method,
         Dictionary<string, IEnumerable<string>>? headers, ServerContext? server = null)
     {

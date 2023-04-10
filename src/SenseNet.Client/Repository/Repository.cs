@@ -383,16 +383,22 @@ internal class Repository : IRepository
 
     /* ============================================================================ MIDDLE LEVEL API */
 
-    public Task<T> GetResponseAsync<T>(ODataRequest requestData, HttpMethod method, CancellationToken cancel)
+    public async Task<T> GetResponseAsync<T>(ODataRequest requestData, HttpMethod method, CancellationToken cancel)
     {
-        //UNDONE: not implemented: GetResponseAsync<T>(ODataRequest, HttpMethod, CancellationToken)
-        throw new NotImplementedException();
+        object jsonResult = await GetResponseJsonAsync(requestData, method, cancel);
+        if (jsonResult == null)
+            return default;
+        if (jsonResult is JObject jObject)
+            return jObject.ToObject<T>();
+
+        var result = Convert.ChangeType(jsonResult, typeof(T));
+        return (T)result;
     }
 
-    public Task<dynamic> GetResponseJsonAsync(ODataRequest requestData, HttpMethod method, CancellationToken cancel)
+    public async Task<dynamic> GetResponseJsonAsync(ODataRequest requestData, HttpMethod method, CancellationToken cancel)
     {
-        //UNDONE: not implemented: GetResponseJsonAsync(ODataRequest, HttpMethod, CancellationToken)
-        throw new NotImplementedException();
+        var stringResult = await GetResponseStringAsync(requestData, method, cancel).ConfigureAwait(false);
+        return stringResult == null ? null : JsonHelper.Deserialize(stringResult);
     }
 
     public Task<string> GetResponseStringAsync(ODataRequest requestData, HttpMethod method, CancellationToken cancel)

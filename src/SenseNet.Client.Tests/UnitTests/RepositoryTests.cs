@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using System.Globalization;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -1791,6 +1792,123 @@ namespace SenseNet.Client.Tests.UnitTests
             Assert.AreEqual("Item1, Item2, Item3, Item4", typeNames);
         }
 
+        /* ====================================================================== CUSTOM REQUESTS */
+
+        private class CustomNestedObject
+        {
+            public string Property11 { get; set; }
+            public int Property12 { get; set; }
+        }
+        private class CustomObject
+        {
+            public string Property1 { get; set; }
+            public CustomNestedObject Property2 { get; set; }
+            public int[] Property3 { get; set; }
+        }
+
+        [TestMethod]
+        public async Task Repository_CustomRequest_Json()
+        {
+            // ALIGN
+            var restCaller = CreateRestCallerFor(@"{
+""Property1"": ""Value1"",
+""Property2"": {
+    ""Property11"": ""Value11"",
+    ""Property12"": 122,
+  },
+""Property3"": [1, 42, 999],
+}");
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton(restCaller);
+            });
+            var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACT
+            var request = new ODataRequest {ContentId = 42, ActionName = "Whatever" /* just for mock request */ };
+            var jsonResult = await repository.GetResponseJsonAsync(request, HttpMethod.Get, default);
+
+            // ASSERT
+            var requestedUri = (Uri)restCaller.ReceivedCalls().ToArray()[1].GetArguments().First()!;
+            Assert.IsNotNull(requestedUri);
+            Assert.AreEqual("/OData.svc/content(42)/Whatever?metadata=no", requestedUri.PathAndQuery);
+
+            var jObject = jsonResult as JObject;
+            Assert.IsNotNull(jObject);
+            var customObject = jObject.ToObject<CustomObject>();
+            Assert.AreEqual("Value1", customObject.Property1);
+            Assert.AreEqual("Value11", customObject.Property2.Property11);
+            Assert.AreEqual(122, customObject.Property2.Property12);
+            Assert.AreEqual("1,42,999", string.Join(",", customObject.Property3.Select(x=>x.ToString())));
+        }
+        [TestMethod]
+        public async Task Repository_CustomRequest_CustomObject()
+        {
+            // ALIGN
+            var restCaller = CreateRestCallerFor(@"{
+""Property1"": ""Value1"",
+""Property2"": {
+    ""Property11"": ""Value11"",
+    ""Property12"": 122,
+  },
+""Property3"": [1, 42, 999],
+}");
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton(restCaller);
+            });
+            var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACT
+            var request = new ODataRequest { ContentId = 42, ActionName = "Whatever" /* just for mock request */ };
+            var customObject = await repository.GetResponseAsync<CustomObject>(request, HttpMethod.Get, default);
+
+            // ASSERT
+            var requestedUri = (Uri)restCaller.ReceivedCalls().ToArray()[1].GetArguments().First()!;
+            Assert.IsNotNull(requestedUri);
+            Assert.AreEqual("/OData.svc/content(42)/Whatever?metadata=no", requestedUri.PathAndQuery);
+
+            Assert.IsNotNull(customObject);
+            Assert.AreEqual("Value1", customObject.Property1);
+            Assert.AreEqual("Value11", customObject.Property2.Property11);
+            Assert.AreEqual(122, customObject.Property2.Property12);
+            Assert.AreEqual("1,42,999", string.Join(",", customObject.Property3.Select(x => x.ToString())));
+        }
+        [TestMethod]
+        public async Task Repository_CustomRequest_IntegralTypeResponse()
+        {
+            Assert.AreEqual(145, await IntegralTypeResponseTest<int>("145"));
+            Assert.AreEqual(145L, await IntegralTypeResponseTest<long>("145"));
+            Assert.AreEqual(145.789d, await IntegralTypeResponseTest<double>("145.789"));
+            Assert.AreEqual(145.789d.ToString(CultureInfo.CurrentCulture),
+                await IntegralTypeResponseTest<string>("145.789"));
+        }
+
+        private async Task<T> IntegralTypeResponseTest<T>(string odataResponse)
+        {
+            // ALIGN
+            var restCaller = CreateRestCallerFor(odataResponse);
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton(restCaller);
+            });
+            var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACT
+            var request = new ODataRequest { ContentId = 42, ActionName = "Whatever" /* just for mock request */ };
+            var customObject = await repository.GetResponseAsync<T>(request, HttpMethod.Get, default);
+
+            // ASSERT
+            var requestedUri = (Uri)restCaller.ReceivedCalls().ToArray()[1].GetArguments().First()!;
+            Assert.IsNotNull(requestedUri);
+            Assert.AreEqual("/OData.svc/content(42)/Whatever?metadata=no", requestedUri.PathAndQuery);
+
+            Assert.IsNotNull(customObject);
+            return customObject;
+        }
 
         /* ====================================================================== TOOLS */
 
