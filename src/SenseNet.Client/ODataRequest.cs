@@ -283,9 +283,15 @@ namespace SenseNet.Client
         /// </summary>
         public string[] OrderBy { get; set; }
 
-public Dictionary<string, IEnumerable<string>> AdditionalRequestHeaders { get; } = new();
+        /// <summary>
+        /// Gets a dictionary for setting additional request headers.
+        /// </summary>
+        public Dictionary<string, IEnumerable<string>> AdditionalRequestHeaders { get; } = new();
 
-public string PostData { get; set; }
+        /// <summary>
+        /// Gets or sets body of the request when the method is POST, PATCH, etc.
+        /// </summary>
+        public string PostData { get; set; }
 
         //============================================================================= Constructors and overrides
 
