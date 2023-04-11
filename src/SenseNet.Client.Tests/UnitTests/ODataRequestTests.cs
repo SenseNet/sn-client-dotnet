@@ -615,6 +615,16 @@ namespace SenseNet.Client.Tests.UnitTests
                 request.ToODataRequest(null).ToString());
 
         }
+        [TestMethod]
+        public void LoadContentRequest_Headers()
+        {
+            var request = new LoadContentRequest { ContentId = 42 };
+            request.AdditionalRequestHeaders.Add("Header1", new[] {"Value1"});
+            var actualHeaders = request.ToODataRequest(null).AdditionalRequestHeaders;
+            var header = actualHeaders.Single();
+            Assert.AreEqual("Header1", header.Key);
+            Assert.AreEqual("Value1", header.Value.Single());
+        }
 
         #endregion
 
@@ -745,6 +755,16 @@ namespace SenseNet.Client.Tests.UnitTests
             var request = new QueryContentRequest { OrderBy = new[] { "Name", "Index desc" } };
             Assert.AreEqual($"{_baseUri}/OData.svc/Root?metadata=no&$orderby=Name,Index desc",
                 request.ToODataRequest(null).ToString());
+        }
+        [TestMethod]
+        public void QueryContentRequest_Headers()
+        {
+            var request = new QueryContentRequest { ContentQuery = "Id:42"};
+            request.AdditionalRequestHeaders.Add("Header1", new[] { "Value1" });
+            var actualHeaders = request.ToODataRequest(null).AdditionalRequestHeaders;
+            var header = actualHeaders.Single();
+            Assert.AreEqual("Header1", header.Key);
+            Assert.AreEqual("Value1", header.Value.Single());
         }
 
         #endregion
@@ -877,7 +897,6 @@ namespace SenseNet.Client.Tests.UnitTests
             Assert.AreEqual($"{_baseUri}/OData.svc/Root/MyContent?metadata=no&$orderby=Name,Index desc",
                 request.ToODataRequest(null).ToString());
         }
-
         [TestMethod]
         public void LoadCollectionRequest_Error_QueryAndFilter()
         {
@@ -898,6 +917,16 @@ namespace SenseNet.Client.Tests.UnitTests
                     "Invalid request properties: ContentQuery and ChildrenFilter cannot be specified at the same time.",
                     ex.Message);
             }
+        }
+        [TestMethod]
+        public void LoadCollectionRequest_Headers()
+        {
+            var request = new LoadCollectionRequest { Path = "/Root" };
+            request.AdditionalRequestHeaders.Add("Header1", new[] { "Value1" });
+            var actualHeaders = request.ToODataRequest(null).AdditionalRequestHeaders;
+            var header = actualHeaders.Single();
+            Assert.AreEqual("Header1", header.Key);
+            Assert.AreEqual("Value1", header.Value.Single());
         }
 
         #endregion

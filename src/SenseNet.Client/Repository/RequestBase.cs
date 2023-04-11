@@ -86,6 +86,11 @@ public abstract class RequestBase
     public ODataRequestParameterCollection Parameters { get; }
 
     /// <summary>
+    /// Gets a dictionary for setting additional request headers.
+    /// </summary>
+    public Dictionary<string, IEnumerable<string>> AdditionalRequestHeaders { get; } = new();
+
+    /// <summary>
     /// Initializes an instance of the LoadContentRequest class.
     /// </summary>
     protected RequestBase()
@@ -111,6 +116,9 @@ public abstract class RequestBase
 
         if(Format != default)
             oDataRequest.Parameters.Add(P.Format, Format.ToString().ToLowerInvariant());
+
+        foreach (var item in AdditionalRequestHeaders)
+            oDataRequest.AdditionalRequestHeaders.Add(item.Key, item.Value);
 
         return oDataRequest;
     }
