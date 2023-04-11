@@ -291,7 +291,7 @@ namespace SenseNet.Client
         /// <summary>
         /// Gets or sets body of the request when the method is POST, PATCH, etc.
         /// </summary>
-        public string PostData { get; set; }
+        public object PostData { get; set; }
 
         //============================================================================= Constructors and overrides
 

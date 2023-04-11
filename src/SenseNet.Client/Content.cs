@@ -889,7 +889,7 @@ public partial class Content : DynamicObject
         var reqData = new ODataRequest(Server)
         {
             Path = path,
-            PostData = JsonHelper.GetJsonPostModel(postData)
+            PostData = postData
         };
         var rs = await Repository.GetResponseStringAsync(reqData, method, cancel).ConfigureAwait(false);
         return JsonHelper.Deserialize(rs).d;
@@ -899,7 +899,7 @@ public partial class Content : DynamicObject
         var reqData = new ODataRequest(Server)
         {
             ContentId = contentId,
-            PostData = JsonHelper.GetJsonPostModel(postData)
+            PostData = postData
         };
         var rs = await Repository.GetResponseStringAsync(reqData, method, cancel).ConfigureAwait(false);
         return JsonHelper.Deserialize(rs).d;

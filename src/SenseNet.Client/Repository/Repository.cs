@@ -366,11 +366,11 @@ internal class Repository : IRepository
         {
             Path = "/Root",
             ActionName = "DeleteBatch",
-            PostData = JsonHelper.GetJsonPostModel(new
+            PostData = new
             {
                 permanent,
                 paths = idsOrPaths
-            })
+            }
         };
 
         await GetResponseStringAsync(oDataRequest, HttpMethod.Post, cancel)
@@ -403,7 +403,8 @@ internal class Repository : IRepository
 
     public Task<string> GetResponseStringAsync(ODataRequest requestData, HttpMethod method, CancellationToken cancel)
     {
-        return GetResponseStringAsync(requestData.GetUri(), method, requestData.PostData,
+        return GetResponseStringAsync(requestData.GetUri(), method,
+            JsonHelper.GetJsonPostModel(requestData.PostData),
             requestData.AdditionalRequestHeaders, cancel);
     }
 
