@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http.Headers;
 
 namespace SenseNet.Client
 {
@@ -281,6 +282,16 @@ namespace SenseNet.Client
         /// (space + "asc" or "desc" e. g. "CreationDate desc")
         /// </summary>
         public string[] OrderBy { get; set; }
+
+        /// <summary>
+        /// Gets a dictionary for setting additional request headers.
+        /// </summary>
+        public Dictionary<string, IEnumerable<string>> AdditionalRequestHeaders { get; } = new();
+
+        /// <summary>
+        /// Gets or sets body of the request when the method is POST, PATCH, etc.
+        /// </summary>
+        public object PostData { get; set; }
 
         //============================================================================= Constructors and overrides
 

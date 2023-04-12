@@ -2,13 +2,16 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using Microsoft.Extensions.Options;
 using System.Text.RegularExpressions;
+using SenseNet.Diagnostics;
 
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client;
@@ -19,8 +22,18 @@ internal class Repository : IRepository
     private readonly IServiceProvider _services;
     private readonly ILogger<Repository> _logger;
 
-    public ServerContext Server { get; set; }
-    
+    private ServerContext _server;
+
+    public ServerContext Server
+    {
+        get => _server;
+        set
+        {
+            _server = value;
+            _restCaller.Server = value;
+        }
+    }
+
     public RegisteredContentTypes GlobalContentTypes { get; }
 
     public Repository(IRestCaller restCaller, IServiceProvider services, IOptions<RegisteredContentTypes> globalContentTypes, ILogger<Repository> logger)
@@ -190,7 +203,7 @@ internal class Repository : IRepository
         var oDataRequest = requestData.ToODataRequest(Server);
         oDataRequest.IsCollectionRequest = false;
 
-        var rs = await _restCaller.GetResponseStringAsync(oDataRequest.GetUri(), Server, cancel)
+        var rs = await GetResponseStringAsync(oDataRequest, HttpMethod.Get, cancel)
             .ConfigureAwait(false);
         if (string.IsNullOrEmpty(rs))
             return null;
@@ -236,7 +249,7 @@ internal class Repository : IRepository
         oDataRequest.IsCollectionRequest = true;
         oDataRequest.CountOnly = true;
 
-        var response = await _restCaller.GetResponseStringAsync(oDataRequest.GetUri(), Server, cancel).ConfigureAwait(false);
+        var response = await GetResponseStringAsync(oDataRequest, HttpMethod.Get, cancel).ConfigureAwait(false);
             
         if (int.TryParse(response, out var count))
             return count;
@@ -256,9 +269,9 @@ internal class Repository : IRepository
     private async Task<IEnumerable<T>> LoadCollectionAsync<T>(ODataRequest requestData, CancellationToken cancel) where T :Content
     {
         requestData.IsCollectionRequest = true;
-        requestData.SiteUrl = ServerContext.GetUrl(Server);
+        //requestData.SiteUrl = ServerContext.GetUrl(Server); //UNDONE: Why set the requestData.SiteUrl?
 
-        var response = await _restCaller.GetResponseStringAsync(requestData.GetUri(), Server, cancel).ConfigureAwait(false);
+        var response = await GetResponseStringAsync(requestData, HttpMethod.Get, cancel).ConfigureAwait(false);
         if (string.IsNullOrEmpty(response))
             return Array.Empty<T>();
 
@@ -318,7 +331,7 @@ internal class Repository : IRepository
         var oDataRequest = requestData.ToODataRequest(Server);
         oDataRequest.CountOnly = true;
 
-        var response = await _restCaller.GetResponseStringAsync(oDataRequest.GetUri(), Server, cancel).ConfigureAwait(false);
+        var response = await GetResponseStringAsync(oDataRequest, HttpMethod.Get, cancel).ConfigureAwait(false);
 
         if (int.TryParse(response, out var count))
             return count;
@@ -352,20 +365,70 @@ internal class Repository : IRepository
         var oDataRequest = new ODataRequest(Server)
         {
             Path = "/Root",
-            ActionName = "DeleteBatch"
+            ActionName = "DeleteBatch",
+            PostData = new
+            {
+                permanent,
+                paths = idsOrPaths
+            }
         };
 
-        await _restCaller.GetResponseStringAsync(oDataRequest.GetUri(), Server, cancel, HttpMethod.Post,
-                JsonHelper.GetJsonPostModel(new
-                {
-                    permanent,
-                    paths = idsOrPaths
-                }))
+        await GetResponseStringAsync(oDataRequest, HttpMethod.Post, cancel)
             .ConfigureAwait(false);
 
         _logger?.LogTrace(idsOrPaths.Length == 1
             ? $"Content {idsOrPaths[0]} was deleted."
             : $"{idsOrPaths.Length} contents were deleted.");
+    }
+
+    /* ============================================================================ MIDDLE LEVEL API */
+
+    public async Task<T> GetResponseAsync<T>(ODataRequest requestData, HttpMethod method, CancellationToken cancel)
+    {
+        object jsonResult = await GetResponseJsonAsync(requestData, method, cancel);
+        if (jsonResult == null)
+            return default;
+        if (jsonResult is JObject jObject)
+            return jObject.ToObject<T>();
+
+        var result = Convert.ChangeType(jsonResult, typeof(T));
+        return (T)result;
+    }
+
+    public async Task<dynamic> GetResponseJsonAsync(ODataRequest requestData, HttpMethod method, CancellationToken cancel)
+    {
+        var stringResult = await GetResponseStringAsync(requestData, method, cancel).ConfigureAwait(false);
+        return stringResult == null ? null : JsonHelper.Deserialize(stringResult);
+    }
+
+    public Task<string> GetResponseStringAsync(ODataRequest requestData, HttpMethod method, CancellationToken cancel)
+    {
+        return GetResponseStringAsync(requestData.GetUri(), method,
+            JsonHelper.GetJsonPostModel(requestData.PostData),
+            requestData.AdditionalRequestHeaders, cancel);
+    }
+
+    public Task<string> GetResponseStringAsync(Uri uri, HttpMethod method, string postData,
+        Dictionary<string, IEnumerable<string>> additionalHeaders, CancellationToken cancel)
+    {
+        return _restCaller.GetResponseStringAsync(uri, method, postData, additionalHeaders, cancel);
+    }
+
+    /* ============================================================================ LOW LEVEL API */
+
+    public Task ProcessWebResponseAsync(string relativeUrl, HttpMethod method, Dictionary<string, IEnumerable<string>> additionalHeaders,
+        HttpContent httpContent, Func<HttpResponseMessage, CancellationToken, Task> responseProcessor, CancellationToken cancel)
+    {
+        return _restCaller.ProcessWebResponseAsync(relativeUrl, method, additionalHeaders,
+            httpContent, responseProcessor, cancel);
+    }
+
+    public Task ProcessWebRequestResponseAsync(string relativeUrl, HttpMethod method, Dictionary<string, IEnumerable<string>> additionalHeaders,
+        Action<HttpClientHandler, HttpClient, HttpRequestMessage> requestProcessor,
+        Func<HttpResponseMessage, CancellationToken, Task> responseProcessor, CancellationToken cancel)
+    {
+        return _restCaller.ProcessWebRequestResponseAsync(relativeUrl, method, additionalHeaders,
+            requestProcessor, responseProcessor, cancel);
     }
 
     /* ============================================================================ TOOLS */

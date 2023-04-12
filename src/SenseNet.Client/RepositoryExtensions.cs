@@ -42,7 +42,7 @@ public static class RepositoryExtensions
         return services.AddSenseNetClientTokenStore()
             .AddSingleton<IServerContextFactory, ServerContextFactory>()
             .AddSingleton<IRepositoryCollection, RepositoryCollection>()
-            .AddSingleton<IRestCaller, DefaultRestCaller>()
+            .AddTransient<IRestCaller, DefaultRestCaller>()
             .AddTransient<IRepository, Repository>()
             .AddTransient<Content, Content>()
             .AddSenseNetRetrier()

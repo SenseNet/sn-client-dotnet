@@ -1,10 +1,13 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using System.Security.Cryptography.X509Certificates;
+using AngleSharp.Common;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NSubstitute;
+using NSubstitute.Core;
 using SenseNet.Extensions.DependencyInjection;
 // ReSharper disable InconsistentNaming
 // ReSharper disable ClassNeverInstantiated.Local
@@ -12,7 +15,7 @@ using SenseNet.Extensions.DependencyInjection;
 namespace SenseNet.Client.Tests.UnitTests;
 
 [TestClass]
-public class ContentSavingTests
+public class ContentSavingTests : TestBase
 {
     public class TestContent_A : Content
     {
@@ -23,11 +26,15 @@ public class ContentSavingTests
     [TestMethod]
     public async Task Content_T_SaveFirst_Dynamic_AddProperty()
     {
-        var restCaller = Substitute.For<IRestCaller>();
-        restCaller
-            .PostContentAsync(Arg.Any<string>(), Arg.Any<object>(), Arg.Any<ServerContext>(),
-                Arg.Any<CancellationToken>())
-            .Returns(new Content(null, null));
+        var restCaller = CreateRestCallerFor(@"{
+  ""d"": {
+    ""Id"": 999543,
+    ""Name"": ""MyContent"",
+    ""Path"": ""/Root/MyContent"",
+    ""Type"": ""Folder"",
+    ""Index"": 99
+  }
+}");
 
         var repositories = GetRepositoryCollection(services =>
         {
@@ -42,27 +49,38 @@ public class ContentSavingTests
         await content.SaveAsync().ConfigureAwait(false);
 
         // ASSERT
-        var arguments = restCaller.ReceivedCalls().Single().GetArguments();
-        Assert.AreEqual("/Root/Content", arguments[0]); // parentPath
-        dynamic data = arguments[1]!;
-        var fields = (IDictionary<string, object?>)data;
+        var calls = restCaller.ReceivedCalls().ToArray();
+        Assert.IsNotNull(calls);
+        Assert.AreEqual(2, calls.Length);
+        Assert.AreEqual("GetResponseStringAsync", calls[1].GetMethodInfo().Name);
+        var arguments = calls[1].GetArguments();
+        Assert.IsTrue(arguments[0].ToString().Contains("Root('Content')"));
+        Assert.AreEqual(HttpMethod.Post, arguments[1]);
+        var json = (string)arguments[2]!;
+        json = json.Substring("models=[".Length).TrimEnd(']');
+        dynamic data = JsonHelper.Deserialize(json);
+        Dictionary<string, object> fields = data.ToObject<Dictionary<string, object>>();
 
         var names = string.Join(", ", fields.Keys.OrderBy(x => x));
         Assert.AreEqual("__ContentType, Existing, Index, Name", names);
         Assert.IsNotNull(data);
-        Assert.AreEqual("Folder", data.__ContentType);
-        Assert.AreEqual("MyContent-1", data.Name);
-        Assert.AreEqual(false, data.Existing);
-        Assert.AreEqual(9999, data.Index);
+        Assert.AreEqual("Folder", data.__ContentType.ToString());
+        Assert.AreEqual("MyContent-1", data.Name.ToString());
+        Assert.AreEqual("False", data.Existing.ToString());
+        Assert.AreEqual("9999", data.Index.ToString());
     }
     [TestMethod]
     public async Task Content_T_SaveFirst_Custom_SetProperty()
     {
-        var restCaller = Substitute.For<IRestCaller>();
-        restCaller
-            .PostContentAsync(Arg.Any<string>(), Arg.Any<object>(), Arg.Any<ServerContext>(),
-                Arg.Any<CancellationToken>())
-            .Returns(new Content(null, null));
+        var restCaller = CreateRestCallerFor(@"{
+  ""d"": {
+    ""Id"": 999543,
+    ""Name"": ""MyContent"",
+    ""Path"": ""/Root/MyContent"",
+    ""Type"": ""Folder"",
+    ""Index"": 99
+  }
+}");
 
         var repositories = GetRepositoryCollection(services =>
         {
@@ -78,27 +96,38 @@ public class ContentSavingTests
         await content.SaveAsync().ConfigureAwait(false);
 
         // ASSERT
-        var arguments = restCaller.ReceivedCalls().Single().GetArguments();
-        Assert.AreEqual("/Root/Content", arguments[0]); // parentPath
-        dynamic data = arguments[1]!;
-        var fields = (IDictionary<string, object?>) data;
+        var calls = restCaller.ReceivedCalls().ToArray();
+        Assert.IsNotNull(calls);
+        Assert.AreEqual(2, calls.Length);
+        Assert.AreEqual("GetResponseStringAsync", calls[1].GetMethodInfo().Name);
+        var arguments = calls[1].GetArguments();
+        Assert.IsTrue(arguments[0].ToString().Contains("Root('Content')"));
+        Assert.AreEqual(HttpMethod.Post, arguments[1]);
+        var json = (string)arguments[2]!;
+        json = json.Substring("models=[".Length).TrimEnd(']');
+        dynamic data = JsonHelper.Deserialize(json);
+        Dictionary<string, object> fields = data.ToObject<Dictionary<string, object>>();
 
         var names = string.Join(", ", fields.Keys.OrderBy(x => x));
         Assert.AreEqual("__ContentType, Existing, Index, Name", names);
         Assert.IsNotNull(data);
-        Assert.AreEqual("TestContent_A", data.__ContentType);
-        Assert.AreEqual("MyContent-1", data.Name);
-        Assert.AreEqual(false, data.Existing);
-        Assert.AreEqual(9998, (int)data.Index);
+        Assert.AreEqual("TestContent_A", data.__ContentType.ToString());
+        Assert.AreEqual("MyContent-1", data.Name.ToString());
+        Assert.AreEqual("False", data.Existing.ToString());
+        Assert.AreEqual("9998", data.Index.ToString());
     }
     [TestMethod]
     public async Task Content_T_SaveFirst_Custom_AddAndSetProperty()
     {
-        var restCaller = Substitute.For<IRestCaller>();
-        restCaller
-            .PostContentAsync(Arg.Any<string>(), Arg.Any<object>(), Arg.Any<ServerContext>(),
-                Arg.Any<CancellationToken>())
-            .Returns(new Content(null, null));
+        var restCaller = CreateRestCallerFor(@"{
+  ""d"": {
+    ""Id"": 999543,
+    ""Name"": ""MyContent"",
+    ""Path"": ""/Root/MyContent"",
+    ""Type"": ""Folder"",
+    ""Index"": 99
+  }
+}");
 
         var repositories = GetRepositoryCollection(services =>
         {
@@ -115,19 +144,26 @@ public class ContentSavingTests
         await content.SaveAsync().ConfigureAwait(false);
 
         // ASSERT
-        var arguments = restCaller.ReceivedCalls().Single().GetArguments();
-        Assert.AreEqual("/Root/Content", arguments[0]); // parentPath
-        dynamic data = arguments[1]!;
-        var fields = (IDictionary<string, object?>)data;
+        var calls = restCaller.ReceivedCalls().ToArray();
+        Assert.IsNotNull(calls);
+        Assert.AreEqual(2, calls.Length);
+        Assert.AreEqual("GetResponseStringAsync", calls[1].GetMethodInfo().Name);
+        var arguments = calls[1].GetArguments();
+        Assert.IsTrue(arguments[0].ToString().Contains("Root('Content')"));
+        Assert.AreEqual(HttpMethod.Post, arguments[1]);
+        var json = (string)arguments[2]!;
+        json = json.Substring("models=[".Length).TrimEnd(']');
+        dynamic data = JsonHelper.Deserialize(json);
+        Dictionary<string, object> fields = data.ToObject<Dictionary<string, object>>();
 
         var names = string.Join(", ", fields.Keys.OrderBy(x => x));
         Assert.AreEqual("__ContentType, Existing, Index, Index2, Name", names);
         Assert.IsNotNull(data);
-        Assert.AreEqual("TestContent_A", data.__ContentType);
-        Assert.AreEqual("MyContent-1", data.Name);
-        Assert.AreEqual(false, data.Existing);
-        Assert.AreEqual(9997, (int)data.Index);
-        Assert.AreEqual(9996, (int)data.Index2);
+        Assert.AreEqual("TestContent_A", data.__ContentType.ToString());
+        Assert.AreEqual("MyContent-1", data.Name.ToString());
+        Assert.AreEqual("False", data.Existing.ToString());
+        Assert.AreEqual("9997", data.Index.ToString());
+        Assert.AreEqual("9996", data.Index2.ToString());
     }
 
     [TestMethod]
@@ -141,7 +177,7 @@ public class ContentSavingTests
         // ASSERT-2
         var names = string.Join(", ", fields.Keys.OrderBy(x => x));
         Assert.AreEqual("Index, Name", names);
-        Assert.AreEqual(42, fields["Index"]);
+        Assert.AreEqual(42L, fields["Index"]);
     }
     [TestMethod]
     public async Task Content_T_BaseType_Update_2()
@@ -154,7 +190,7 @@ public class ContentSavingTests
         // ASSERT-2
         var names = string.Join(", ", fields.Keys.OrderBy(x => x));
         Assert.AreEqual("Index, Name", names);
-        Assert.AreEqual(42, fields["Index"]);
+        Assert.AreEqual(42L, fields["Index"]);
     }
     [TestMethod]
     public async Task Content_T_BaseType_Update_3()
@@ -168,7 +204,7 @@ public class ContentSavingTests
         // ASSERT-2
         var names = string.Join(", ", fields.Keys.OrderBy(x => x));
         Assert.AreEqual("Index2, Name", names);
-        Assert.AreEqual(43, fields["Index2"]);
+        Assert.AreEqual(43L, fields["Index2"]);
     }
     [TestMethod]
     public async Task Content_T_BaseType_Update_4()
@@ -182,14 +218,11 @@ public class ContentSavingTests
         // ASSERT-2
         var names = string.Join(", ", fields.Keys.OrderBy(x => x));
         Assert.AreEqual("Index, Index2, Name", names);
-        Assert.AreEqual(42, fields["Index"]);
+        Assert.AreEqual(42L, fields["Index"]);
     }
     private async Task<IDictionary<string, object>> UpdateBaseTypeTest(Action<dynamic> setProperties)
     {
-        var restCaller = Substitute.For<IRestCaller>();
-        restCaller
-            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(@"{
+        var restCaller = CreateRestCallerFor(@"{
   ""d"": {
     ""Id"": 999543,
     ""Name"": ""MyContent"",
@@ -197,12 +230,7 @@ public class ContentSavingTests
     ""Type"": ""Folder"",
     ""Index"": 99
   }
-}"));
-
-        restCaller
-            .PatchContentAsync(Arg.Any<int>(), Arg.Any<object>(), Arg.Any<ServerContext>(),
-                Arg.Any<CancellationToken>())
-            .Returns(new Content(null, null));
+}");
 
         var repositories = GetRepositoryCollection(services =>
         {
@@ -216,7 +244,11 @@ public class ContentSavingTests
         dynamic content = await repository.LoadContentAsync(request, CancellationToken.None);
 
         // ASSERT-1
-        var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
+        var calls = restCaller.ReceivedCalls()
+            .Select<ICall, (string Name, object?[] Arguments)>(c => (c.GetMethodInfo().Name, c.GetArguments()))
+            .ToArray();
+
+        var requestedUri = (Uri)calls[1].Arguments.First()!;
         Assert.IsNotNull(requestedUri);
         Assert.AreEqual("/OData.svc/content(999543)?metadata=no&$select=Id,Name,Path,Type,Index", requestedUri.PathAndQuery);
 
@@ -230,14 +262,16 @@ public class ContentSavingTests
         await content.SaveAsync();
 
         // ASSERT-2
-        var calls = restCaller.ReceivedCalls().ToArray();
-        Assert.IsNotNull(calls);
-        Assert.AreEqual(2, calls.Length);
-        Assert.AreEqual("PatchContentAsync", calls[1].GetMethodInfo().Name);
-        var arguments = calls[1].GetArguments();
-        Assert.AreEqual(999543, arguments[0]);
-        dynamic data = arguments[1]!;
-        return data;
+        calls = restCaller.ReceivedCalls()
+            .Select<ICall, (string Name, object?[] Args)>(c => (Name: c.GetMethodInfo().Name, Args: c.GetArguments()))
+            .ToArray();
+        Assert.AreEqual(3, calls.Length);
+        Assert.AreEqual("GetResponseStringAsync", calls[2].Name);
+        var json = (string)calls[2].Arguments[2]!;
+        json = json.Substring("models=[".Length).TrimEnd(']');
+        JObject data = JsonHelper.Deserialize(json);
+        var dict = data.ToObject<Dictionary<string, object>>();
+        return dict;
     }
 
     [TestMethod]
@@ -251,7 +285,7 @@ public class ContentSavingTests
         // ASSERT-2
         var names = string.Join(", ", fields.Keys.OrderBy(x => x));
         Assert.AreEqual("Index, Name", names);
-        Assert.AreEqual(42, fields["Index"]);
+        Assert.AreEqual(42L, fields["Index"]);
     }
     [TestMethod]
     public async Task Content_T_StronglyTyped_UpdateAsWellKnownType()
@@ -264,7 +298,7 @@ public class ContentSavingTests
         // ASSERT-2
         var names = string.Join(", ", fields.Keys.OrderBy(x => x));
         Assert.AreEqual("Index, Name", names);
-        Assert.AreEqual(42, fields["Index"]);
+        Assert.AreEqual(42L, fields["Index"]);
     }
     [TestMethod]
     public async Task Content_T_StronglyTyped_UpdateUnknownProperty()
@@ -277,7 +311,7 @@ public class ContentSavingTests
         // ASSERT (Strong property is not saved if not changed)
         var names = string.Join(", ", fields.Keys.OrderBy(x => x));
         Assert.AreEqual("Index2, Name", names);
-        Assert.AreEqual(43, fields["Index2"]);
+        Assert.AreEqual(43L, fields["Index2"]);
     }
     [TestMethod]
     public async Task Content_T_StronglyTyped_UpdateMixed()
@@ -291,14 +325,11 @@ public class ContentSavingTests
         // ASSERT
         var names = string.Join(", ", fields.Keys.OrderBy(x => x));
         Assert.AreEqual("Index, Index2, Name", names);
-        Assert.AreEqual(42, fields["Index"]);
+        Assert.AreEqual(42L, fields["Index"]);
     }
     private async Task<IDictionary<string, object>> UpdateStronglyTypedTest<T>(Action<T> setProperties) where T : Content
     {
-        var restCaller = Substitute.For<IRestCaller>();
-        restCaller
-            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(@"{
+        var restCaller = CreateRestCallerFor(@"{
   ""d"": {
     ""Id"": 999543,
     ""Name"": ""MyContent"",
@@ -306,12 +337,7 @@ public class ContentSavingTests
     ""Type"": ""Folder"",
     ""Index"": 99
   }
-}"));
-
-        restCaller
-            .PatchContentAsync(Arg.Any<int>(), Arg.Any<object>(), Arg.Any<ServerContext>(),
-                Arg.Any<CancellationToken>())
-            .Returns(new Content(null, null));
+}");
 
         var repositories = GetRepositoryCollection(services =>
         {
@@ -326,7 +352,11 @@ public class ContentSavingTests
         dynamic content = await repository.LoadContentAsync<T>(request, CancellationToken.None);
 
         // ASSERT-1
-        var requestedUri = (Uri)restCaller.ReceivedCalls().Single().GetArguments().First()!;
+        var calls = restCaller.ReceivedCalls()
+            .Select<ICall, (string Name, object?[] Arguments)>(c => (c.GetMethodInfo().Name, c.GetArguments()))
+            .ToArray();
+
+        var requestedUri = (Uri)calls[1].Arguments.First()!;
         Assert.IsNotNull(requestedUri);
         Assert.AreEqual("/OData.svc/content(999543)?metadata=no&$select=Id,Name,Path,Type,Index", requestedUri.PathAndQuery);
 
@@ -340,14 +370,16 @@ public class ContentSavingTests
         await content.SaveAsync();
 
         // ASSERT-2
-        var calls = restCaller.ReceivedCalls().ToArray();
-        Assert.IsNotNull(calls);
-        Assert.AreEqual(2, calls.Length);
-        Assert.AreEqual("PatchContentAsync", calls[1].GetMethodInfo().Name);
-        var arguments = calls[1].GetArguments();
-        Assert.AreEqual(999543, arguments[0]);
-        dynamic data = arguments[1]!;
-        return data;
+        calls = restCaller.ReceivedCalls()
+            .Select<ICall, (string Name, object?[] Args)>(c => (Name: c.GetMethodInfo().Name, Args: c.GetArguments()))
+            .ToArray();
+        Assert.AreEqual(3, calls.Length);
+        Assert.AreEqual("GetResponseStringAsync", calls[2].Name);
+        var json = (string)calls[2].Arguments[2]!;
+        json = json.Substring("models=[".Length).TrimEnd(']');
+        JObject data = JsonHelper.Deserialize(json);
+        var dict = data.ToObject<Dictionary<string, object>>();
+        return dict;
     }
 
     /* =================================================================== CUSTOM PROPERTIES */
@@ -421,10 +453,7 @@ public class ContentSavingTests
     [TestMethod]
     public async Task Content_T_StronglyTyped_UpdateCustomProperties()
     {
-        var restCaller = Substitute.For<IRestCaller>();
-        restCaller
-            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(@"{
+        var restCaller = CreateRestCallerFor(@"{
   ""d"": {
     ""Id"": 999543,
     ""Field_CustomType1"": {
@@ -434,12 +463,7 @@ public class ContentSavingTests
     ""Field_StringToBool"": ""0"",
     ""Field_StringToDictionary"": ""Name1:111,Name2:222,Name3:333""
   }
-}"));
-
-        restCaller
-            .PatchContentAsync(Arg.Any<int>(), Arg.Any<object>(), Arg.Any<ServerContext>(),
-                Arg.Any<CancellationToken>())
-            .Returns(new Content(null, null));
+}");
 
         var repositories = GetRepositoryCollection(services =>
         {
@@ -479,24 +503,22 @@ public class ContentSavingTests
         // ASSERT-2
         var calls = restCaller.ReceivedCalls().ToArray();
         Assert.IsNotNull(calls);
-        Assert.AreEqual(2, calls.Length);
-        Assert.AreEqual("PatchContentAsync", calls[1].GetMethodInfo().Name);
-        var arguments = calls[1].GetArguments();
-        Assert.AreEqual(999543, arguments[0]);
-        dynamic data = arguments[1]!;
-        Assert.AreEqual("updated", data.Field_CustomType1.Property1);
-        Assert.AreEqual(442, data.Field_CustomType1.Property2);
-        Assert.AreEqual(1, data.Field_StringToBool);
-        Assert.AreEqual(typeof(string), data.Field_StringToDictionary.GetType());
-        Assert.AreEqual("Name1:11111,Name3:333,Name4:444", data.Field_StringToDictionary);
+        Assert.AreEqual(3, calls.Length);
+        Assert.AreEqual("GetResponseStringAsync", calls[2].GetMethodInfo().Name);
+        var arguments = calls[2].GetArguments();
+        var json = (string)arguments[2]!;
+        json = json.Substring("models=[".Length).TrimEnd(']');
+        dynamic data = JsonHelper.Deserialize(json);
+        //var dict = data.ToObject<Dictionary<string, object>>();
+        Assert.AreEqual("updated", data.Field_CustomType1.property1.ToString());
+        Assert.AreEqual("442", data.Field_CustomType1.property2.ToString());
+        Assert.AreEqual("1", data.Field_StringToBool.ToString());
+        Assert.AreEqual("Name1:11111,Name3:333,Name4:444", data.Field_StringToDictionary.ToString());
     }
     [TestMethod]
     public async Task Content_T_StronglyTyped_UpdateCustomProperties_OnlyChanged()
     {
-        var restCaller = Substitute.For<IRestCaller>();
-        restCaller
-            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(@"{
+        var restCaller = CreateRestCallerFor(@"{
   ""d"": {
     ""Id"": 999543,
     ""Field_CustomType1"": {
@@ -506,12 +528,7 @@ public class ContentSavingTests
     ""Field_StringToBool"": ""0"",
     ""Field_StringToDictionary"": ""Name1:111,Name2:222,Name3:333""
   }
-}"));
-
-        restCaller
-            .PatchContentAsync(Arg.Any<int>(), Arg.Any<object>(), Arg.Any<ServerContext>(),
-                Arg.Any<CancellationToken>())
-            .Returns(new Content(null, null));
+}");
 
         var repositories = GetRepositoryCollection(services =>
         {
@@ -546,12 +563,14 @@ public class ContentSavingTests
         // ASSERT-2
         var calls = restCaller.ReceivedCalls().ToArray();
         Assert.IsNotNull(calls);
-        Assert.AreEqual(2, calls.Length);
-        Assert.AreEqual("PatchContentAsync", calls[1].GetMethodInfo().Name);
-        var arguments = calls[1].GetArguments();
-        Assert.AreEqual(999543, arguments[0]);
-        var data = (IDictionary<string, object>)arguments[1]!;
-        var names = string.Join(", ", data.Keys.OrderBy(x => x));
+        Assert.AreEqual(3, calls.Length);
+        Assert.AreEqual("GetResponseStringAsync", calls[2].GetMethodInfo().Name);
+        var arguments = calls[2].GetArguments();
+        var json = (string)arguments[2]!;
+        json = json.Substring("models=[".Length).TrimEnd(']');
+        var data = JsonHelper.Deserialize(json);
+        Dictionary<string, object> dict = data.ToObject<Dictionary<string, object>>();
+        var names = string.Join(", ", dict.Keys.OrderBy(x => x));
         Assert.AreEqual("Index2, Name", names);
     }
 
@@ -575,11 +594,21 @@ public class ContentSavingTests
     [TestMethod]
     public async Task Content_T_StronglyTyped_References_SaveFirst()
     {
-        var restCaller = Substitute.For<IRestCaller>();
-        restCaller
-            .PostContentAsync(Arg.Any<string>(), Arg.Any<object>(), Arg.Any<ServerContext>(),
-                Arg.Any<CancellationToken>())
-            .Returns(new Content(null, null));
+        //var restCaller = Substitute.For<IRestCaller>();
+        //restCaller
+        //    .PostContentAsync(Arg.Any<string>(), Arg.Any<object>(), Arg.Any<CancellationToken>())
+        //    .Returns(new Content(null, null));
+        var restCaller = CreateRestCallerFor(@"{
+  ""d"": {
+    ""Id"": 999543,
+    ""Field_CustomType1"": {
+      ""property1"": ""value1"",
+      ""property2"": 42,
+    },
+    ""Field_StringToBool"": ""0"",
+    ""Field_StringToDictionary"": ""Name1:111,Name2:222,Name3:333""
+  }
+}");
 
         var repositories = GetRepositoryCollection(services =>
         {
@@ -632,10 +661,19 @@ public class ContentSavingTests
         await content.SaveAsync().ConfigureAwait(false);
 
         // ASSERT
-        var arguments = restCaller.ReceivedCalls().Single().GetArguments();
-        Assert.AreEqual("/Root/Content", arguments[0]); // parentPath
-        dynamic data = arguments[1]!;
-        var fields = (IDictionary<string, object?>)data;
+        var calls = restCaller.ReceivedCalls()
+            .Select<ICall, (string Name, object?[] Arguments)>(c => (Name: c.GetMethodInfo().Name, Args: c.GetArguments()))
+            .ToArray();
+        Assert.AreEqual(2, calls.Length);
+        Assert.AreEqual("GetResponseStringAsync", calls[1].Name);
+
+        var arguments = calls[1].Arguments;
+        Assert.IsTrue(arguments[0].ToString().Contains("/Root('Content')")); // parentPath
+
+        var json = (string)arguments[2]!;
+        json = json.Substring("models=[".Length).TrimEnd(']');
+        JObject data = JsonHelper.Deserialize(json);
+        var fields = data.ToObject<Dictionary<string, object>>();
 
         var names = string.Join(", ", fields.Keys.OrderBy(x => x));
         Assert.AreEqual("__ContentType, Existing, Name, Reference_Content, Reference_WellKnown," +
@@ -651,14 +689,12 @@ public class ContentSavingTests
                         "\"References_WellKnownArray\":[200002,\"/Root/Refs/ReferredContent-3\"]," +
                         "\"References_WellKnownEnumerable\":[200004,\"/Root/Refs/ReferredContent-5\"]," +
                         "\"References_WellKnownList\":[200006,\"/Root/Refs/ReferredContent-7\"]}", JsonHelper.Serialize(data));
+
     }
     [TestMethod]
     public async Task Content_T_StronglyTyped_References_Update()
     {
-        var restCaller = Substitute.For<IRestCaller>();
-        restCaller
-            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(@"{
+        var restCaller = CreateRestCallerFor(@"{
   ""d"": {
     ""Id"": 899612,
     ""Reference_Content"": [{ ""Id"": 100001 }],
@@ -671,11 +707,7 @@ public class ContentSavingTests
     ""References_WellKnownList"": [{ ""Id"": 200006 },{ ""Id"": 200007 }],
   }
 }
-"));
-        restCaller
-            .PatchContentAsync(Arg.Any<int>(), Arg.Any<object>(), Arg.Any<ServerContext>(),
-                Arg.Any<CancellationToken>())
-            .Returns(new Content(null, null));
+");
 
         var repositories = GetRepositoryCollection(services =>
         {
@@ -727,13 +759,15 @@ public class ContentSavingTests
         // ASSERT
         var calls = restCaller.ReceivedCalls().ToArray();
         Assert.IsNotNull(calls);
-        Assert.AreEqual(2, calls.Length);
-        Assert.AreEqual("PatchContentAsync", calls[1].GetMethodInfo().Name);
-        var arguments = calls[1].GetArguments();
-        Assert.AreEqual(899612, arguments[0]);
-        //Assert.AreEqual("/Root/Content", arguments[0]); // parentPath
-        dynamic data = arguments[1]!;
-        var fields = (IDictionary<string, object?>)data;
+        Assert.AreEqual(3, calls.Length);
+        Assert.AreEqual("GetResponseStringAsync", calls[2].GetMethodInfo().Name);
+        var arguments = calls[2].GetArguments();
+        Assert.IsTrue(arguments[0].ToString().Contains("content(899612)"));
+        Assert.AreEqual(HttpMethod.Patch, arguments[1]);
+        var json = (string)arguments[2]!;
+        json = json.Substring("models=[".Length).TrimEnd(']');
+        JObject data = JsonHelper.Deserialize(json);
+        var fields = data.ToObject<Dictionary<string, object>>();
 
         var names = string.Join(", ", fields.Keys.OrderBy(x => x));
         Assert.AreEqual("Name, Reference_Content, References_ContentEnumerable, References_WellKnownArray, References_WellKnownList", names);
@@ -747,10 +781,7 @@ public class ContentSavingTests
     [TestMethod]
     public async Task Content_T_StronglyTyped_References_Update_Null()
     {
-        var restCaller = Substitute.For<IRestCaller>();
-        restCaller
-            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(@"{
+        var restCaller = CreateRestCallerFor(@"{
   ""d"": {
     ""Id"": 899612,
     ""Reference_Content"": [{ ""Id"": 100001 }],
@@ -763,11 +794,7 @@ public class ContentSavingTests
     ""References_WellKnownList"": [{ ""Id"": 200006 },{ ""Id"": 200007 }],
   }
 }
-"));
-        restCaller
-            .PatchContentAsync(Arg.Any<int>(), Arg.Any<object>(), Arg.Any<ServerContext>(),
-                Arg.Any<CancellationToken>())
-            .Returns(new Content(null, null));
+");
 
         var repositories = GetRepositoryCollection(services =>
         {
@@ -819,13 +846,15 @@ public class ContentSavingTests
         // ASSERT
         var calls = restCaller.ReceivedCalls().ToArray();
         Assert.IsNotNull(calls);
-        Assert.AreEqual(2, calls.Length);
-        Assert.AreEqual("PatchContentAsync", calls[1].GetMethodInfo().Name);
-        var arguments = calls[1].GetArguments();
-        Assert.AreEqual(899612, arguments[0]);
-        //Assert.AreEqual("/Root/Content", arguments[0]); // parentPath
-        dynamic data = arguments[1]!;
-        var fields = (IDictionary<string, object?>)data;
+        Assert.AreEqual(3, calls.Length);
+        Assert.AreEqual("GetResponseStringAsync", calls[2].GetMethodInfo().Name);
+        var arguments = calls[2].GetArguments();
+        Assert.IsTrue(arguments[0].ToString().Contains("content(899612)"));
+        Assert.AreEqual(HttpMethod.Patch, arguments[1]);
+        var json = (string)arguments[2]!;
+        json = json.Substring("models=[".Length).TrimEnd(']');
+        JObject data = JsonHelper.Deserialize(json);
+        var fields = data.ToObject<Dictionary<string, object>>();
 
         var names = string.Join(", ", fields.Keys.OrderBy(x => x));
         Assert.AreEqual("Name, Reference_Content, References_ContentEnumerable, References_WellKnownArray, References_WellKnownList", names);
@@ -911,10 +940,7 @@ public class ContentSavingTests
     }
     private async Task TestStronglyTypedReferencesError(string fieldName, Action<TestContent_References> updateAction)
     {
-        var restCaller = Substitute.For<IRestCaller>();
-        restCaller
-            .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<ServerContext>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(@"{
+        var restCaller = CreateRestCallerFor(@"{
   ""d"": {
     ""Id"": 999999,
     ""Path"": ""/Root/MyContent"",
@@ -928,11 +954,7 @@ public class ContentSavingTests
     ""References_WellKnownList"": [{ ""Id"": 200006 },{ ""Id"": 200007 }],
   }
 }
-"));
-        restCaller
-            .PatchContentAsync(Arg.Any<int>(), Arg.Any<object>(), Arg.Any<ServerContext>(),
-                Arg.Any<CancellationToken>())
-            .Returns(new Content(null, null));
+");
 
         var repositories = GetRepositoryCollection(services =>
         {
