@@ -227,13 +227,13 @@ internal class Repository : IRepository
 
     /* ============================================================================ LOAD COLLECTION */
 
-    public Task<ContentCollection<Content>> LoadCollectionAsync(LoadCollectionRequest requestData, CancellationToken cancel)
+    public Task<IContentCollection<Content>> LoadCollectionAsync(LoadCollectionRequest requestData, CancellationToken cancel)
     {
         if (requestData.ContentQuery != null)
             requestData.ContentQuery = AddInFolderRestriction(requestData.ContentQuery, requestData.Path);
         return LoadCollectionAsync(requestData.ToODataRequest(Server), cancel);
     }
-    public Task<ContentCollection<T>> LoadCollectionAsync<T>(LoadCollectionRequest requestData, CancellationToken cancel) where T :Content
+    public Task<IContentCollection<T>> LoadCollectionAsync<T>(LoadCollectionRequest requestData, CancellationToken cancel) where T :Content
     {
         if (requestData.ContentQuery != null)
             requestData.ContentQuery = AddInFolderRestriction(requestData.ContentQuery, requestData.Path);
@@ -259,11 +259,11 @@ internal class Repository : IRepository
         var clause = $"InFolder:'{folderPath}'";
         return MoveSettingsToTheEnd($"+{clause} +({contentQuery})").Trim();
     }
-    private Task<ContentCollection<Content>> LoadCollectionAsync(ODataRequest requestData, CancellationToken cancel)
+    private Task<IContentCollection<Content>> LoadCollectionAsync(ODataRequest requestData, CancellationToken cancel)
     {
         return LoadCollectionAsync<Content>(requestData, cancel);
     }
-    private async Task<ContentCollection<T>> LoadCollectionAsync<T>(ODataRequest requestData, CancellationToken cancel) where T :Content
+    private async Task<IContentCollection<T>> LoadCollectionAsync<T>(ODataRequest requestData, CancellationToken cancel) where T :Content
     {
         requestData.IsCollectionRequest = true;
         var response = await GetResponseStringAsync(requestData, HttpMethod.Get, cancel).ConfigureAwait(false);
@@ -296,12 +296,12 @@ internal class Repository : IRepository
 
     /* ============================================================================ QUERY */
 
-    public Task<ContentCollection<Content>> QueryForAdminAsync(QueryContentRequest requestData, CancellationToken cancel)
+    public Task<IContentCollection<Content>> QueryForAdminAsync(QueryContentRequest requestData, CancellationToken cancel)
     {
         return QueryForAdminAsync<Content>(requestData, cancel);
     }
 
-    public Task<ContentCollection<T>> QueryForAdminAsync<T>(QueryContentRequest requestData, CancellationToken cancel) where T : Content
+    public Task<IContentCollection<T>> QueryForAdminAsync<T>(QueryContentRequest requestData, CancellationToken cancel) where T : Content
     {
         var oDataRequest = requestData.ToODataRequest(Server);
         oDataRequest.AutoFilters = FilterStatus.Disabled;
@@ -309,12 +309,12 @@ internal class Repository : IRepository
         return LoadCollectionAsync<T>(oDataRequest, cancel);
     }
 
-    public Task<ContentCollection<Content>> QueryAsync(QueryContentRequest requestData, CancellationToken cancel)
+    public Task<IContentCollection<Content>> QueryAsync(QueryContentRequest requestData, CancellationToken cancel)
     {
         return QueryAsync<Content>(requestData, cancel);
     }
 
-    public Task<ContentCollection<T>> QueryAsync<T>(QueryContentRequest requestData, CancellationToken cancel) where T : Content
+    public Task<IContentCollection<T>> QueryAsync<T>(QueryContentRequest requestData, CancellationToken cancel) where T : Content
     {
         return LoadCollectionAsync<T>(requestData.ToODataRequest(Server), cancel);
     }
