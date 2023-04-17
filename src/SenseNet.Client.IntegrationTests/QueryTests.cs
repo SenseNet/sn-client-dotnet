@@ -6,9 +6,9 @@ namespace SenseNet.Client.IntegrationTests;
 [TestClass]
 public class QueryTests : IntegrationTestBase
 {
-    private class Identity : Content { public Identity(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { } }
-    private class TestUser : Identity { public TestUser(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { } }
-    private class TestGroup : Identity { public TestGroup(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { } }
+    public class Identity : Content { public Identity(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { } }
+    public class TestUser : Identity { public TestUser(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { } }
+    public class TestGroup : Identity { public TestGroup(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { } }
 
     [TestMethod]
     public async Task IT_Content_Query_T_AllUsers()

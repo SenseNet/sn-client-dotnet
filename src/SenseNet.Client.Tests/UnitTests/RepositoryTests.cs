@@ -387,6 +387,35 @@ namespace SenseNet.Client.Tests.UnitTests
                             "query=%2BInFolder%3A%27%2FRoot%2FMyContent%27%20%2B%28TypeIs%3AFile%29",
                 requestedUri.PathAndQuery);
         }
+        [TestMethod]
+        public async Task Repository_LoadCollection_TotalCount()
+        {
+            // ALIGN
+            var restCaller = CreateRestCallerFor(@"{""d"": {""__count"": 7, ""results"": [
+                    {""Id"": 3, ""Name"": ""IMS"", ""Type"": ""Domains""},
+                    {""Id"": 1000, ""Name"": ""System"", ""Type"": ""SystemFolder""}]}}");
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton(restCaller);
+            });
+            var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+            var request = new LoadCollectionRequest { Path = "/Root", Select = new[] { "Id", "Name", "Type" } };
+
+            // ACT
+            var collection = await repository.LoadCollectionAsync(request, CancellationToken.None);
+
+            // ASSERT
+            var requestedUri = (Uri)restCaller.ReceivedCalls().ToArray()[1].GetArguments().First()!;
+            Assert.IsNotNull(requestedUri);
+            Assert.AreEqual("/OData.svc/Root?metadata=no&$select=Id,Name,Type", requestedUri.PathAndQuery);
+
+            Assert.AreEqual(2, collection.Count);
+            Assert.AreEqual(7, collection.TotalCount);
+
+            var contents = collection.ToArray();
+            Assert.AreEqual(collection.Count, contents.Length);
+        }
 
         [TestMethod]
         public async Task Repository_GetContentCount()
@@ -1640,11 +1669,47 @@ namespace SenseNet.Client.Tests.UnitTests
             var typeNames = string.Join(", ", contents.Select(x => x.GetType().Name));
             Assert.AreEqual("MyContent, MyContent2, MyContent3, Content", typeNames);
         }
+        [TestMethod]
+        public async Task Repository_T_LoadCollection_TotalCount()
+        {
+            // ALIGN
+            var restCaller = CreateRestCallerFor(@"{""d"": {""__count"": 11, ""results"": [
+                    {""Id"": 10001, ""Name"": ""Content1"", ""Type"": ""MyContent""},
+                    {""Id"": 10002, ""Name"": ""Content2"", ""Type"": ""MyContent2""},
+                    {""Id"": 10003, ""Name"": ""Content3"", ""Type"": ""MyContent3""},
+                    {""Id"": 10004, ""Name"": ""Content4"", ""Type"": ""MyContent4""},
+                    ]}}");
 
-        private class Item1 : Content { public Item1(IRestCaller rc, ILogger<MyContent> l) : base(rc, l) { } }
-        private class Item2 : Item1 { public Item2(IRestCaller rc, ILogger<MyContent> l) : base(rc, l) { } }
-        private class Item3 : Item2 { public Item3(IRestCaller rc, ILogger<MyContent> l) : base(rc, l) { } }
-        private class Item4 : Item3 { public Item4(IRestCaller rc, ILogger<MyContent> l) : base(rc, l) { } }
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton(restCaller);
+                services.RegisterGlobalContentType<MyContent>();
+                services.RegisterGlobalContentType<MyContent2>();
+                services.RegisterGlobalContentType<MyContent3>();
+            });
+            var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+            var request = new LoadCollectionRequest { Path = "/Root/Somewhere", Select = new[] { "Id", "Name", "Type" } };
+
+            // ACT
+            var collection = await repository.LoadCollectionAsync(request, CancellationToken.None);
+
+            // ASSERT
+            var requestedUri = (Uri)restCaller.ReceivedCalls().ToArray()[1].GetArguments().First()!;
+            Assert.IsNotNull(requestedUri);
+            Assert.AreEqual("/OData.svc/Root/Somewhere?metadata=no&$select=Id,Name,Type", requestedUri.PathAndQuery);
+
+            Assert.AreEqual(4, collection.Count);
+            Assert.AreEqual(11, collection.TotalCount);
+
+            var contents = collection.ToArray();
+            Assert.AreEqual(collection.Count, contents.Length);
+        }
+
+        public class Item1 : Content { public Item1(IRestCaller rc, ILogger<MyContent> l) : base(rc, l) { } }
+        public class Item2 : Item1 { public Item2(IRestCaller rc, ILogger<MyContent> l) : base(rc, l) { } }
+        public class Item3 : Item2 { public Item3(IRestCaller rc, ILogger<MyContent> l) : base(rc, l) { } }
+        public class Item4 : Item3 { public Item4(IRestCaller rc, ILogger<MyContent> l) : base(rc, l) { } }
         [TestMethod] public Task Repository_T_LoadCollection_T_Content() => LoadCollectionTest<Content>(false);
         [TestMethod] public Task Repository_T_LoadCollection_T_Item1() => LoadCollectionTest<Item1>(false);
         [TestMethod] public Task Repository_T_LoadCollection_T_Item2() => LoadCollectionTest<Item2>(true);
