@@ -341,12 +341,11 @@ internal class Repository : IRepository
     }
 
     /* ============================================================================ UPLOAD */
-
+    
+    public Task<Content> UploadAsync(UploadRequest request, Stream stream, CancellationToken cancel) => throw new NotImplementedException();
     public Task<Content> UploadAsync(UploadRequest request, Stream stream, Action<int> progressCallback, CancellationToken cancel) => throw new NotImplementedException();
-
-    public Task<Content> UploadTextAsync(UploadRequest request, string fileText, CancellationToken cancel) => throw new NotImplementedException();
-
-    public Task UploadBlobAsync(UploadRequest request, long fileSize, Func<int, int, string, Task> blobCallback, CancellationToken cancel) => throw new NotImplementedException();
+    public Task<Content> UploadAsync(UploadRequest request, string fileText, CancellationToken cancel) => throw new NotImplementedException();
+    public Task UploadAsync(UploadRequest request, long fileSize, Func<int, int, string, Task> blobCallback, CancellationToken cancel) => throw new NotImplementedException();
 
     /* ============================================================================ DOWNLOAD */
 
