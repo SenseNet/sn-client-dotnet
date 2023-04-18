@@ -2,16 +2,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Threading.Tasks;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using Microsoft.Extensions.Options;
 using System.Text.RegularExpressions;
-using SenseNet.Diagnostics;
 
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client;
@@ -230,13 +227,13 @@ internal class Repository : IRepository
 
     /* ============================================================================ LOAD COLLECTION */
 
-    public Task<IEnumerable<Content>> LoadCollectionAsync(LoadCollectionRequest requestData, CancellationToken cancel)
+    public Task<IContentCollection<Content>> LoadCollectionAsync(LoadCollectionRequest requestData, CancellationToken cancel)
     {
         if (requestData.ContentQuery != null)
             requestData.ContentQuery = AddInFolderRestriction(requestData.ContentQuery, requestData.Path);
         return LoadCollectionAsync(requestData.ToODataRequest(Server), cancel);
     }
-    public Task<IEnumerable<T>> LoadCollectionAsync<T>(LoadCollectionRequest requestData, CancellationToken cancel) where T :Content
+    public Task<IContentCollection<T>> LoadCollectionAsync<T>(LoadCollectionRequest requestData, CancellationToken cancel) where T :Content
     {
         if (requestData.ContentQuery != null)
             requestData.ContentQuery = AddInFolderRestriction(requestData.ContentQuery, requestData.Path);
@@ -262,22 +259,25 @@ internal class Repository : IRepository
         var clause = $"InFolder:'{folderPath}'";
         return MoveSettingsToTheEnd($"+{clause} +({contentQuery})").Trim();
     }
-    private Task<IEnumerable<Content>> LoadCollectionAsync(ODataRequest requestData, CancellationToken cancel)
+    private Task<IContentCollection<Content>> LoadCollectionAsync(ODataRequest requestData, CancellationToken cancel)
     {
         return LoadCollectionAsync<Content>(requestData, cancel);
     }
-    private async Task<IEnumerable<T>> LoadCollectionAsync<T>(ODataRequest requestData, CancellationToken cancel) where T :Content
+    private async Task<IContentCollection<T>> LoadCollectionAsync<T>(ODataRequest requestData, CancellationToken cancel) where T :Content
     {
         requestData.IsCollectionRequest = true;
-        //requestData.SiteUrl = ServerContext.GetUrl(Server); //UNDONE: Why set the requestData.SiteUrl?
-
         var response = await GetResponseStringAsync(requestData, HttpMethod.Get, cancel).ConfigureAwait(false);
         if (string.IsNullOrEmpty(response))
-            return Array.Empty<T>();
+            return ContentCollection<T>.Empty;
 
-        var items = JsonHelper.Deserialize(response).d.results as JArray;
-
-        return items?.Select(CreateContentFromResponse<T>) ?? Array.Empty<T>();
+        var jsonResponse = JsonHelper.Deserialize(response);
+        var totalCount = Convert.ToInt32(jsonResponse.d.__count ?? 0);
+        var items = jsonResponse.d.results as JArray;
+        var count = items?.Count ?? 0;
+        var resultEnumerable = items?.Select(CreateContentFromResponse<T>).ToArray() ?? Array.Empty<T>();
+        var x = new List<T>(resultEnumerable);
+        return new ContentCollection<T>(resultEnumerable, count,
+            totalCount);
     }
 
     /* ============================================================================ EXISTENCE */
@@ -296,12 +296,12 @@ internal class Repository : IRepository
 
     /* ============================================================================ QUERY */
 
-    public Task<IEnumerable<Content>> QueryForAdminAsync(QueryContentRequest requestData, CancellationToken cancel)
+    public Task<IContentCollection<Content>> QueryForAdminAsync(QueryContentRequest requestData, CancellationToken cancel)
     {
         return QueryForAdminAsync<Content>(requestData, cancel);
     }
 
-    public Task<IEnumerable<T>> QueryForAdminAsync<T>(QueryContentRequest requestData, CancellationToken cancel) where T : Content
+    public Task<IContentCollection<T>> QueryForAdminAsync<T>(QueryContentRequest requestData, CancellationToken cancel) where T : Content
     {
         var oDataRequest = requestData.ToODataRequest(Server);
         oDataRequest.AutoFilters = FilterStatus.Disabled;
@@ -309,12 +309,12 @@ internal class Repository : IRepository
         return LoadCollectionAsync<T>(oDataRequest, cancel);
     }
 
-    public Task<IEnumerable<Content>> QueryAsync(QueryContentRequest requestData, CancellationToken cancel)
+    public Task<IContentCollection<Content>> QueryAsync(QueryContentRequest requestData, CancellationToken cancel)
     {
         return QueryAsync<Content>(requestData, cancel);
     }
 
-    public Task<IEnumerable<T>> QueryAsync<T>(QueryContentRequest requestData, CancellationToken cancel) where T : Content
+    public Task<IContentCollection<T>> QueryAsync<T>(QueryContentRequest requestData, CancellationToken cancel) where T : Content
     {
         return LoadCollectionAsync<T>(requestData.ToODataRequest(Server), cancel);
     }

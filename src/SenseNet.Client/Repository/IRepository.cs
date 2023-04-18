@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Net;
 using System.Threading.Tasks;
 using System.Threading;
 using Newtonsoft.Json.Linq;
 using System.Net.Http;
-using System.Net.Http.Headers;
 
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client;
@@ -202,7 +200,7 @@ public interface IRepository
     /// <param name="requestData">Collection request parameters.</param>
     /// <param name="cancel">The token to monitor for cancellation requests.</param>
     /// <returns>Children of the provided content.</returns>
-    public Task<IEnumerable<Content>> LoadCollectionAsync(LoadCollectionRequest requestData, CancellationToken cancel);
+    public Task<IContentCollection<Content>> LoadCollectionAsync(LoadCollectionRequest requestData, CancellationToken cancel);
     /// <summary>
     /// Loads child elements of the provided content.
     /// </summary>
@@ -211,7 +209,7 @@ public interface IRepository
     /// <param name="cancel">The token to monitor for cancellation requests.</param>
     /// <returns>Children of the provided content.</returns>
     /// <exception cref="InvalidCastException"></exception>
-    public Task<IEnumerable<T>> LoadCollectionAsync<T>(LoadCollectionRequest requestData, CancellationToken cancel) where T : Content;
+    public Task<IContentCollection<T>> LoadCollectionAsync<T>(LoadCollectionRequest requestData, CancellationToken cancel) where T : Content;
 
     /// <summary>
     /// Gets the count of a children collection. 
@@ -241,7 +239,7 @@ public interface IRepository
     /// <param name="requestData">Query request parameters.</param>
     /// <param name="cancel">The token to monitor for cancellation requests.</param>
     /// <returns>List of contents returned by the provided content query.</returns>
-    public Task<IEnumerable<Content>> QueryForAdminAsync(QueryContentRequest requestData, CancellationToken cancel);
+    public Task<IContentCollection<Content>> QueryForAdminAsync(QueryContentRequest requestData, CancellationToken cancel);
     /// <summary>
     /// Loads content items by a query with lifespan and system filters switched OFF.
     /// </summary>
@@ -251,7 +249,7 @@ public interface IRepository
     /// <param name="cancel">The token to monitor for cancellation requests.</param>
     /// <returns>List of contents returned by the provided content query.</returns>
     /// <exception cref="InvalidCastException"></exception>
-    public Task<IEnumerable<T>> QueryForAdminAsync<T>(QueryContentRequest requestData, CancellationToken cancel) where T : Content;
+    public Task<IContentCollection<T>> QueryForAdminAsync<T>(QueryContentRequest requestData, CancellationToken cancel) where T : Content;
 
     /// <summary>
     /// Loads content items by a query.
@@ -260,7 +258,7 @@ public interface IRepository
     /// <param name="requestData">Query request parameters.</param>
     /// <param name="cancel">The token to monitor for cancellation requests.</param>
     /// <returns>List of contents returned by the provided content query.</returns>
-    public Task<IEnumerable<Content>> QueryAsync(QueryContentRequest requestData, CancellationToken cancel);
+    public Task<IContentCollection<Content>> QueryAsync(QueryContentRequest requestData, CancellationToken cancel);
     /// <summary>
     /// Loads content items by a query.
     /// </summary>
@@ -270,7 +268,7 @@ public interface IRepository
     /// <param name="cancel">The token to monitor for cancellation requests.</param>
     /// <returns>List of contents returned by the provided content query.</returns>
     /// <exception cref="InvalidCastException"></exception>
-    public Task<IEnumerable<T>> QueryAsync<T>(QueryContentRequest requestData, CancellationToken cancel) where T : Content;
+    public Task<IContentCollection<T>> QueryAsync<T>(QueryContentRequest requestData, CancellationToken cancel) where T : Content;
 
     /// <summary>
     /// Gets the count of content items by a query with lifespan and system filters switched OFF.
