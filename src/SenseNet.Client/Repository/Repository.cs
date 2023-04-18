@@ -342,26 +342,6 @@ internal class Repository : IRepository
 
     /* ============================================================================ UPLOAD */
 
-// VERSION-1
-    public Task<Content> UploadAsync(string parentPath, string fileName, Stream stream, CancellationToken cancel, string contentType = null,
-        string propertyName = null, Action<int> progressCallback = null) => throw new NotImplementedException();
-
-    public Task<Content> UploadAsync(int parentId, string fileName, Stream stream, CancellationToken cancel, string contentType = null,
-        string propertyName = null, Action<int> progressCallback = null) => throw new NotImplementedException();
-
-    public Task<Content> UploadTextAsync(string parentPath, string fileName, string fileText, CancellationToken cancel,
-        string contentType = null, string propertyName = null) => throw new NotImplementedException();
-
-    public Task<Content> UploadTextAsync(int parentId, string fileName, string fileText, CancellationToken cancel,
-        string contentType = null, string propertyName = null) => throw new NotImplementedException();
-
-    public Task UploadBlobAsync(string parentPath, string contentName, long fileSize, Func<int, int, string, Task> blobCallback, CancellationToken cancel,
-        string contentType = null, string fileName = null, string propertyName = null) => throw new NotImplementedException();
-
-    public Task UploadBlobAsync(int parentId, string contentName, long fileSize, Func<int, int, string, Task> blobCallback, CancellationToken cancel,
-        string contentType = null, string fileName = null, string propertyName = null) => throw new NotImplementedException();
-
-// VERSION-2
     public Task<Content> UploadAsync(UploadRequest request, Stream stream, Action<int> progressCallback, CancellationToken cancel) => throw new NotImplementedException();
 
     public Task<Content> UploadTextAsync(UploadRequest request, string fileText, CancellationToken cancel) => throw new NotImplementedException();

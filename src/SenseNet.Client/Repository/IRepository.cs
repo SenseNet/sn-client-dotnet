@@ -293,99 +293,17 @@ public interface IRepository
 
     /* ============================================================================ UPLOAD */
 
-// VERSION-1
     /// <summary>
-    /// Uploads a file to the server into the provided container.
+    /// Uploads the given stream to the destination according to the <paramref name="request"/>.
+    /// If the stream is too big, it will be uploaded in several rounds (chunks).
     /// </summary>
-    /// <param name="parentPath">Parent path.</param>
-    /// <param name="fileName">Name of the file to upload.</param>
-    /// <param name="stream">File contents.</param>
+    /// <param name="request">Common request parameters that define the destination and control the return data.</param>
+    /// <param name="stream">The stream that will be uploaded.</param>
+    /// <param name="progressCallback">Optional callback for tracing upload progress if the file is too big.</param>
     /// <param name="cancel">The token to monitor for cancellation requests.</param>
-    /// <param name="contentType">Content type of the file.</param>
-    /// <param name="propertyName">Name of the field to upload to. Default is Binary.</param>
-    /// <param name="progressCallback">An optional callback method that is called after each chunk is uploaded to the server.</param>
     /// <returns>A Task that represents the asynchronous operation and wraps
     /// the uploaded file content returned at the end of the upload request.</returns>
-    Task<Content> UploadAsync(string parentPath, string fileName, Stream stream, CancellationToken cancel, string contentType = null, string propertyName = null, Action<int> progressCallback = null);
-    /// <summary>
-    /// Uploads a file to the server into the provided container.
-    /// </summary>
-    /// <param name="parentId">Parent id.</param>
-    /// <param name="fileName">Name of the file to upload.</param>
-    /// <param name="stream">File contents.</param>
-    /// <param name="cancel">The token to monitor for cancellation requests.</param>
-    /// <param name="contentType">Content type of the file. Default is determined by the container.</param>
-    /// <param name="propertyName">Name of the field to upload to. Default is Binary.</param>
-    /// <param name="progressCallback">An optional callback method that is called after each chunk is uploaded to the server.</param>
-    /// <returns>A Task that represents the asynchronous operation and wraps
-    /// the uploaded file content returned at the end of the upload request.</returns>
-    Task<Content> UploadAsync(int parentId, string fileName, Stream stream, CancellationToken cancel, string contentType = null, string propertyName = null, Action<int> progressCallback = null);
-
-    /// <summary>
-    /// Uploads a short text file to the server into the provided container.
-    /// The contents cannot be bigger than the configured chunk size.
-    /// </summary>
-    /// <param name="parentPath">Parent path.</param>
-    /// <param name="fileName">Name of the file to upload.</param>
-    /// <param name="fileText">File content.</param>
-    /// <param name="cancel">The token to monitor for cancellation requests.</param>
-    /// <param name="contentType">Content type of the file.</param>
-    /// <param name="propertyName">Name of the field to upload to. Default is Binary.</param>
-    /// <returns>A Task that represents the asynchronous operation and wraps
-    /// the uploaded file content returned at the end of the upload request.</returns>
-    Task<Content> UploadTextAsync(string parentPath, string fileName, string fileText, CancellationToken cancel, string contentType = null, string propertyName = null);
-    /// <summary>
-    /// Uploads a short text file to the server into the provided container.
-    /// The contents cannot be bigger than the configured chunk size.
-    /// </summary>
-    /// <param name="parentId">Parent id.</param>
-    /// <param name="fileName">Name of the file to upload.</param>
-    /// <param name="fileText">File content.</param>
-    /// <param name="cancel">The token to monitor for cancellation requests.</param>
-    /// <param name="contentType">Content type of the file.</param>
-    /// <param name="propertyName">Name of the field to upload to. Default is Binary.</param>
-    /// <returns>A Task that represents the asynchronous operation and wraps
-    /// the uploaded file content returned at the end of the upload request.</returns>
-    Task<Content> UploadTextAsync(int parentId, string fileName, string fileText, CancellationToken cancel, string contentType = null, string propertyName = null);
-
-    /// <summary>
-    /// Uploads a file or a custom binary property of a content in the provided container.
-    /// </summary>
-    /// <param name="parentPath">Parent path.</param>
-    /// <param name="contentName">Name of the content to create or update.</param>
-    /// <param name="fileSize">Full length of the binary data.</param>
-    /// <param name="blobCallback">An action that is called between the initial and the finalizer requests. 
-    /// Use this to actually save the binary through the blob storage component.
-    /// Parameters: contentId, versionId, token</param>
-    /// <param name="cancel">The token to monitor for cancellation requests.</param>
-    /// <param name="contentType">Content type of the new content. Default is determined by
-    /// the allowed child types in the container.</param>
-    /// <param name="fileName">Binary file name. Default is the content name.</param>
-    /// <param name="propertyName">Binary field name. Default is "Binary".</param>
-    /// <returns>A Task that represents the asynchronous operation.</returns>
-    Task UploadBlobAsync(string parentPath, string contentName, long fileSize,
-        Func<int, int, string, Task> blobCallback, CancellationToken cancel,
-        string contentType = null, string fileName = null, string propertyName = null);
-    /// <summary>
-    /// Uploads a file or a custom binary property of a content in the provided container.
-    /// </summary>
-    /// <param name="parentId">Parent id.</param>
-    /// <param name="contentName">Name of the content to create or update.</param>
-    /// <param name="fileSize">Full length of the binary data.</param>
-    /// <param name="blobCallback">An action that is called between the initial and the finalizer requests. 
-    /// Use this to actually save the binary through the blob storage component.
-    /// Parameters: contentId, versionId, token</param>
-    /// <param name="cancel">The token to monitor for cancellation requests.</param>
-    /// <param name="contentType">Content type of the new content. Default is determined by
-    /// the allowed child types in the container.</param>
-    /// <param name="fileName">Binary file name. Default is the content name.</param>
-    /// <param name="propertyName">Binary field name. Default is "Binary".</param>
-    /// <returns>A Task that represents the asynchronous operation.</returns>
-    Task UploadBlobAsync(int parentId, string contentName, long fileSize,
-        Func<int, int, string, Task> blobCallback, CancellationToken cancel,
-        string contentType = null, string fileName = null, string propertyName = null);
-
-// VERSION-2
+    Task<Content> UploadAsync(UploadRequest request, Stream stream, CancellationToken cancel);
     /// <summary>
     /// Uploads the given stream to the destination according to the <paramref name="request"/>.
     /// If the stream is too big, it will be uploaded in several rounds (chunks).
@@ -399,7 +317,7 @@ public interface IRepository
     Task<Content> UploadAsync(UploadRequest request, Stream stream, Action<int> progressCallback, CancellationToken cancel);
 
     /// <summary>
-    /// Uploads the given stream to the destination according to the <paramref name="request"/>.
+    /// Uploads the given textual data to the destination according to the <paramref name="request"/>.
     /// The contents cannot be bigger than the configured chunk size.
     /// This method is designed for upload relatively small test files e.g. settings.
     /// </summary>
@@ -409,7 +327,7 @@ public interface IRepository
     /// <returns>A Task that represents the asynchronous operation and wraps
     /// the uploaded file content returned at the end of the upload request.</returns>
     /// <returns></returns>
-    Task<Content> UploadTextAsync(UploadRequest request, string fileText, CancellationToken cancel);
+    Task<Content> UploadAsync(UploadRequest request, string fileText, CancellationToken cancel);
 
     /// <summary>
 /// This method wraps a custom uploading workflow that ensures the valid content on the server and
@@ -419,10 +337,10 @@ public interface IRepository
     /// <param name="fileSize">Full length of the binary data.</param>
     /// <param name="blobCallback">An action that is called between the initial and the finalizer requests. 
     /// Use this to actually save the binary through the blob storage component.
-    /// Parameters: contentId, versionId, token</param>
+    /// Parameters: contentId, versionId, token.</param>
     /// <param name="cancel">The token to monitor for cancellation requests.</param>
     /// <returns>A Task that represents the asynchronous operation.</returns>
-    Task UploadBlobAsync(UploadRequest request, long fileSize, Func<int, int, string, Task> blobCallback, CancellationToken cancel);
+    Task UploadAsync(UploadRequest request, long fileSize, Func<int, int, string, Task> blobCallback, CancellationToken cancel);
 
     /* ============================================================================ DOWNLOAD */
 
