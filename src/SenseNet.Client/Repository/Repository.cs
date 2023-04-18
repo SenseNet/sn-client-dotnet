@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -338,6 +339,39 @@ internal class Repository : IRepository
 
         throw new ClientException($"Invalid count response. Request: {oDataRequest.GetUri()}. Response: {response}");
     }
+
+    /* ============================================================================ UPLOAD */
+
+// VERSION-1
+    public Task<Content> UploadAsync(string parentPath, string fileName, Stream stream, CancellationToken cancel, string contentType = null,
+        string propertyName = null, Action<int> progressCallback = null) => throw new NotImplementedException();
+
+    public Task<Content> UploadAsync(int parentId, string fileName, Stream stream, CancellationToken cancel, string contentType = null,
+        string propertyName = null, Action<int> progressCallback = null) => throw new NotImplementedException();
+
+    public Task<Content> UploadTextAsync(string parentPath, string fileName, string fileText, CancellationToken cancel,
+        string contentType = null, string propertyName = null) => throw new NotImplementedException();
+
+    public Task<Content> UploadTextAsync(int parentId, string fileName, string fileText, CancellationToken cancel,
+        string contentType = null, string propertyName = null) => throw new NotImplementedException();
+
+    public Task UploadBlobAsync(string parentPath, string contentName, long fileSize, Func<int, int, string, Task> blobCallback, CancellationToken cancel,
+        string contentType = null, string fileName = null, string propertyName = null) => throw new NotImplementedException();
+
+    public Task UploadBlobAsync(int parentId, string contentName, long fileSize, Func<int, int, string, Task> blobCallback, CancellationToken cancel,
+        string contentType = null, string fileName = null, string propertyName = null) => throw new NotImplementedException();
+
+// VERSION-2
+    public Task<Content> UploadAsync(UploadRequest request, Stream stream, Action<int> progressCallback, CancellationToken cancel) => throw new NotImplementedException();
+
+    public Task<Content> UploadTextAsync(UploadRequest request, string fileText, CancellationToken cancel) => throw new NotImplementedException();
+
+    public Task UploadBlobAsync(UploadRequest request, long fileSize, Func<int, int, string, Task> blobCallback, CancellationToken cancel) => throw new NotImplementedException();
+
+    /* ============================================================================ DOWNLOAD */
+
+    public Task<string> GetBlobToken(int id, CancellationToken cancel, string version = null, string propertyName = null) => throw new NotImplementedException();
+    public Task<string> GetBlobToken(string path, CancellationToken cancel, string version = null, string propertyName = null) => throw new NotImplementedException();
 
     /* ============================================================================ DELETE */
 
