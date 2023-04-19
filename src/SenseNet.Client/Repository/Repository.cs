@@ -352,11 +352,11 @@ internal class Repository : IRepository
 
     /* ============================================================================ UPLOAD */
 
-    public Task<Content> UploadAsync(UploadRequest request, Stream stream, CancellationToken cancel)
+    public Task<UploadResult> UploadAsync(UploadRequest request, Stream stream, CancellationToken cancel)
     {
         return UploadAsync(request, stream, null, cancel);
     }
-    public async Task<Content> UploadAsync(UploadRequest request, Stream stream, Action<int> progressCallback,
+    public async Task<UploadResult> UploadAsync(UploadRequest request, Stream stream, Action<int> progressCallback,
         CancellationToken cancel)
     {
         var uploadData = new UploadData()
@@ -374,7 +374,7 @@ internal class Repository : IRepository
         return await UploadStreamAsync(oDataRequest, uploadData, stream, progressCallback, cancel)
             .ConfigureAwait(false);
     }
-    private async Task<Content> UploadStreamAsync(ODataRequest request, UploadData uploadData, Stream stream,
+    private async Task<UploadResult> UploadStreamAsync(ODataRequest request, UploadData uploadData, Stream stream,
         Action<int> progressCallback, CancellationToken cancel)
     {
         // force set values
@@ -384,7 +384,7 @@ internal class Repository : IRepository
 
         request.Parameters.Add("create", "1");
 
-        dynamic uploadedContent = null;
+        UploadResult result = null;
 
         // Get ChunkToken
         try
@@ -482,7 +482,7 @@ internal class Repository : IRepository
                     async (response, cancel) =>
                     {
                         var rs = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                        uploadedContent = JsonHelper.Deserialize(rs);
+                        result = JsonHelper.Deserialize<UploadResult>(rs);
                     }, cancel).ConfigureAwait(false);
 
             }, (i, exception) =>
@@ -505,17 +505,10 @@ internal class Repository : IRepository
             progressCallback?.Invoke(start);
         }
 
-        if (uploadedContent == null)
-            return null;
-
-        var content = CreateExistingContent((int)uploadedContent.Id);
-        content.Name = uploadedContent.Name;
-        content.Path = uploadedContent.Url;
-
-        return content;
+        return result;
     }
 
-    public async Task<Content> UploadAsync(UploadRequest request, string fileText, CancellationToken cancel)
+    public async Task<UploadResult> UploadAsync(UploadRequest request, string fileText, CancellationToken cancel)
     {
         var uploadData = new UploadData()
         {
@@ -532,7 +525,7 @@ internal class Repository : IRepository
         var oDataRequest = request.ToODataRequest(Server);
         return await UploadTextAsync(oDataRequest, uploadData, fileText, cancel).ConfigureAwait(false);
     }
-    private async Task<Content> UploadTextAsync(ODataRequest request, UploadData uploadData, string text, CancellationToken cancel)
+    private async Task<UploadResult> UploadTextAsync(ODataRequest request, UploadData uploadData, string text, CancellationToken cancel)
     {
         // force set values
         if (Encoding.UTF8.GetBytes(text).Length > ClientContext.Current.ChunkSizeInBytes)
@@ -544,7 +537,7 @@ internal class Repository : IRepository
             uploadData.FileLength = text.Length;
         uploadData.FileText = text;
 
-        dynamic uploadedContent = null;
+        UploadResult result = null;
 
         var model = JsonHelper.GetJsonPostModel(uploadData.ToDictionary());
         var httpContent = new StringContent(model);
@@ -558,21 +551,12 @@ internal class Repository : IRepository
                 if (response != null)
                 {
                     var rs = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                    uploadedContent = JsonHelper.Deserialize(rs);
+                    result = JsonHelper.Deserialize<UploadResult>(rs);
                 }
             }, cancel).ConfigureAwait(false);
 
-        if (uploadedContent == null)
-            return null;
-
-        var content = CreateExistingContent((int)uploadedContent.Id);
-        content.Name = uploadedContent.Name;
-        content.Path = uploadedContent.Url;
-
-        return content;
+        return result;
     }
-
-    public Task UploadAsync(UploadRequest request, long fileSize, Func<int, int, string, Task> blobCallback, CancellationToken cancel) => throw new NotImplementedException();
 
     /* ============================================================================ DOWNLOAD */
 

@@ -302,7 +302,7 @@ public interface IRepository
     /// <param name="cancel">The token to monitor for cancellation requests.</param>
     /// <returns>A Task that represents the asynchronous operation and wraps
     /// the uploaded file content returned at the end of the upload request.</returns>
-    Task<Content> UploadAsync(UploadRequest request, Stream stream, CancellationToken cancel);
+    Task<UploadResult> UploadAsync(UploadRequest request, Stream stream, CancellationToken cancel);
     /// <summary>
     /// Uploads the given stream to the destination according to the <paramref name="request"/>.
     /// If the stream is too big, it will be uploaded in several rounds (chunks).
@@ -313,7 +313,7 @@ public interface IRepository
     /// <param name="cancel">The token to monitor for cancellation requests.</param>
     /// <returns>A Task that represents the asynchronous operation and wraps
     /// the uploaded file content returned at the end of the upload request.</returns>
-    Task<Content> UploadAsync(UploadRequest request, Stream stream, Action<int> progressCallback, CancellationToken cancel);
+    Task<UploadResult> UploadAsync(UploadRequest request, Stream stream, Action<int> progressCallback, CancellationToken cancel);
 
     /// <summary>
     /// Uploads the given textual data to the destination according to the <paramref name="request"/>.
@@ -326,20 +326,7 @@ public interface IRepository
     /// <returns>A Task that represents the asynchronous operation and wraps
     /// the uploaded file content returned at the end of the upload request.</returns>
     /// <returns></returns>
-    Task<Content> UploadAsync(UploadRequest request, string fileText, CancellationToken cancel);
-
-    /// <summary>
-/// This method wraps a custom uploading workflow that ensures the valid content on the server and
-/// a calls an action that ....
-    /// </summary>
-    /// <param name="request">Common request parameters that define the destination.</param>
-    /// <param name="fileSize">Full length of the binary data.</param>
-    /// <param name="blobCallback">An action that is called between the initial and the finalizer requests. 
-    /// Use this to actually save the binary through the blob storage component.
-    /// Parameters: contentId, versionId, token.</param>
-    /// <param name="cancel">The token to monitor for cancellation requests.</param>
-    /// <returns>A Task that represents the asynchronous operation.</returns>
-    Task UploadAsync(UploadRequest request, long fileSize, Func<int, int, string, Task> blobCallback, CancellationToken cancel);
+    Task<UploadResult> UploadAsync(UploadRequest request, string fileText, CancellationToken cancel);
 
     /* ============================================================================ DOWNLOAD */
 

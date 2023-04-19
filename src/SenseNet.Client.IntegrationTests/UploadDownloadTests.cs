@@ -57,7 +57,7 @@ public class UploadDownloadTests : IntegrationTestBase
         var fileName = Guid.NewGuid() + ".txt";
 
         // ACTION
-        Content uploadedContent;
+        UploadResult uploadedContent;
         await using (var uploadStream = Tools.GenerateStreamFromString(_fileContent))
         {
             var request = new UploadRequest {ParentPath = uploadRootPath, ContentName = fileName };
@@ -78,7 +78,7 @@ public class UploadDownloadTests : IntegrationTestBase
         var fileName = Guid.NewGuid() + ".txt";
 
         // ACT
-        Content uploadedContent;
+        UploadResult uploadedContent;
         await using (var uploadStream = Tools.GenerateStreamFromString(_fileContent))
         {
             var request = new UploadRequest { ParentId = uploadRootId, ContentName = fileName };
