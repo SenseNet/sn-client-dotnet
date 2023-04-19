@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AngleSharp.Io;
+using System;
 
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client;
@@ -31,13 +32,22 @@ public class UploadRequest : RequestBase
     /// </summary>
     public string ContentName { get; set; }
     /// <summary>
+    /// Gets or sets the content type name of the uploaded content when the it does not exist on the server.
+    /// </summary>
+    public string ContentType { get; set; }
+    /// <summary>
     /// Gets or sets the name of the binary stream if it is different form ContentName.
     /// </summary>
     public string FileName { get; set; }
 
     protected override void AddProperties(ODataRequest oDataRequest)
     {
-        //UNDONE: AddProperties is not implemented.
-        throw new System.NotImplementedException();
+        oDataRequest.ActionName = "Upload";
+
+        if (ParentId == 0)
+            oDataRequest.Path = ParentPath;
+        else
+            oDataRequest.ContentId = ParentId;
+
     }
 }
