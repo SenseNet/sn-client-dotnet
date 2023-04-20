@@ -4,9 +4,7 @@ using System.Threading.Tasks;
 using System.Threading;
 using Newtonsoft.Json.Linq;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.IO;
-using System.Runtime.InteropServices.ComTypes;
 
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client;
@@ -298,7 +296,6 @@ public interface IRepository
     /// </summary>
     /// <param name="request">Common request parameters that define the destination and control the return data.</param>
     /// <param name="stream">The stream that will be uploaded.</param>
-    /// <param name="progressCallback">Optional callback for tracing upload progress if the file is too big.</param>
     /// <param name="cancel">The token to monitor for cancellation requests.</param>
     /// <returns>A Task that represents the asynchronous operation and wraps
     /// the uploaded file content returned at the end of the upload request.</returns>

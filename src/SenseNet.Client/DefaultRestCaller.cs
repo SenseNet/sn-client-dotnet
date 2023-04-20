@@ -28,12 +28,13 @@ public class DefaultRestCaller : IRestCaller
         string result = null;
         await ProcessWebResponseAsync(uri.ToString(), method, additionalHeaders,
             postData != null ? new StringContent(postData) : null,
-            async (response, cancel) =>
+            // ReSharper disable once UnusedParameter.Local
+            async (response, c) =>
             {
                 cancel.ThrowIfCancellationRequested();
                 if (response != null)
 #if NET6_0_OR_GREATER
-                    result = await response.Content.ReadAsStringAsync(cancel);
+                    result = await response.Content.ReadAsStringAsync(c);
 #else
                     result = await response.Content.ReadAsStringAsync();
 #endif
@@ -47,7 +48,7 @@ public class DefaultRestCaller : IRestCaller
     {
         return _retrier.RetryAsync(
             () => ProcessWebRequestResponseAsync(relativeUrl, method, additionalHeaders,
-                (handler, client, request) =>
+                (_, _, request) =>
                 {
                     if (postData != null)
                         request.Content = postData;

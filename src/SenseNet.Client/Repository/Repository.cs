@@ -10,13 +10,10 @@ using Newtonsoft.Json.Linq;
 using System.Net.Http;
 using Microsoft.Extensions.Options;
 using System.Text.RegularExpressions;
-using System.Net.Mime;
-using System.Runtime.InteropServices.ComTypes;
 using SenseNet.Diagnostics;
 using SenseNet.Tools;
 using System.Net.Http.Headers;
 using System.Net;
-using static System.Net.Mime.MediaTypeNames;
 using System.Text;
 
 // ReSharper disable once CheckNamespace
@@ -286,7 +283,6 @@ internal class Repository : IRepository
         var items = jsonResponse.d.results as JArray;
         var count = items?.Count ?? 0;
         var resultEnumerable = items?.Select(CreateContentFromResponse<T>).ToArray() ?? Array.Empty<T>();
-        var x = new List<T>(resultEnumerable);
         return new ContentCollection<T>(resultEnumerable, count,
             totalCount);
     }
@@ -402,11 +398,11 @@ internal class Repository : IRepository
                 var httpContent = new StringContent(uploadData.ToString());
                 httpContent.Headers.ContentType = new MediaTypeHeaderValue(JsonContentMimeType);
                 await ProcessWebResponseAsync(request.ToString(), HttpMethod.Post, request.AdditionalRequestHeaders, httpContent,
-                    async (response, cancel) =>
+                    async (response, _) =>
                     {
                         uploadData.ChunkToken = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                     }, cancel).ConfigureAwait(false);
-            }, (i, exception) =>
+            }, (_, exception) =>
             {
                 // choose the exceptions when we can retry the operation
                 return exception switch
@@ -479,13 +475,13 @@ internal class Repository : IRepository
                 // Process
                 await ProcessWebResponseAsync(request.ToString(), HttpMethod.Post, request.AdditionalRequestHeaders,
                     httpContent,
-                    async (response, cancel) =>
+                    async (response, _) =>
                     {
                         var rs = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                         result = JsonHelper.Deserialize<UploadResult>(rs);
                     }, cancel).ConfigureAwait(false);
 
-            }, (i, exception) =>
+            }, (_, exception) =>
             {
                 // choose the exceptions when we can retry the operation
                 return exception switch
@@ -546,7 +542,7 @@ internal class Repository : IRepository
         Server.Logger?.LogTrace($"Uploading text content to the {uploadData.PropertyName} field of {uploadData.FileName}");
 
         await ProcessWebResponseAsync(request.ToString(), HttpMethod.Post, request.AdditionalRequestHeaders, httpContent,
-            async (response, cancel) =>
+            async (response, _) =>
             {
                 if (response != null)
                 {
