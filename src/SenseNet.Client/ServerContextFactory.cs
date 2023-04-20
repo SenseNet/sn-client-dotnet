@@ -64,7 +64,12 @@ internal class ServerContextFactory : IServerContextFactory
 
             // set token only if provided, do not overwrite cached value if no token is present
             if (!string.IsNullOrEmpty(token))
+            {
                 clonedServer.Authentication.AccessToken = token;
+
+                // if a token is provided, do NOT use the configured api key to prevent a security issue
+                clonedServer.Authentication.ApiKey = null;
+            }
 
             return clonedServer;
         }

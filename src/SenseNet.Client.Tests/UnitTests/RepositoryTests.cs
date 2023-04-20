@@ -40,6 +40,49 @@ namespace SenseNet.Client.Tests.UnitTests
             Assert.AreEqual(ExampleUrl, repository.Server.Url);
         }
         [TestMethod]
+        public async Task Repository_Default_WithToken()
+        {
+            // ALIGN
+            var repositoryCollection = GetRepositoryCollection(services =>
+            {
+                services.ConfigureSenseNetRepository(opt => { opt.Url = ExampleUrl; });
+            });
+
+            // ACT
+            var repository1 = await repositoryCollection
+                .GetRepositoryAsync(new RepositoryRequest(), CancellationToken.None).ConfigureAwait(false);
+            var repository2 = await repositoryCollection
+                .GetRepositoryAsync(new RepositoryRequest
+                {
+                    AccessToken = "abc"
+                }, CancellationToken.None).ConfigureAwait(false);
+
+            // get the same repository instance again
+            var repository3 = await repositoryCollection
+                .GetRepositoryAsync(new RepositoryRequest
+                {
+                    AccessToken = "abc"
+                }, CancellationToken.None).ConfigureAwait(false);
+
+            // get a new repository instance with a different token
+            var repository4 = await repositoryCollection
+                .GetRepositoryAsync(new RepositoryRequest
+                {
+                    AccessToken = "def"
+                }, CancellationToken.None).ConfigureAwait(false);
+
+            // ASSERT
+            Assert.AreEqual(ExampleUrl, repository1.Server.Url);
+            Assert.AreEqual(ExampleUrl, repository2.Server.Url);
+            Assert.AreEqual(null, repository1.Server.Authentication.AccessToken);
+            Assert.AreEqual("abc", repository2.Server.Authentication.AccessToken);
+            Assert.AreEqual("def", repository4.Server.Authentication.AccessToken);
+
+            // the same repository instance should be returned for the same token
+            Assert.IsTrue(ReferenceEquals(repository2, repository3));
+            Assert.IsFalse(ReferenceEquals(repository3, repository4));
+        }
+        [TestMethod]
         public async Task Repository_Named()
         {
             // ALIGN
@@ -58,6 +101,63 @@ namespace SenseNet.Client.Tests.UnitTests
             Assert.IsNull(repo.Server.Url);
             Assert.AreEqual(ExampleUrl, repo1.Server.Url);
             Assert.AreEqual("https://url2", repo2.Server.Url);
+        }
+
+        [TestMethod]
+        public async Task Repository_Named_WithToken()
+        {
+            // ALIGN
+            var repositoryCollection = GetRepositoryCollection(services =>
+            {
+                services.ConfigureSenseNetRepository("repo1", opt => { opt.Url = ExampleUrl; });
+                services.ConfigureSenseNetRepository("repo2", opt => { opt.Url = "https://url2"; });
+            });
+
+            // ACT
+            var repository1 = await repositoryCollection
+                .GetRepositoryAsync(new RepositoryRequest { Name = "repo1" }, CancellationToken.None)
+                .ConfigureAwait(false);
+            var repository2 = await repositoryCollection
+                .GetRepositoryAsync(new RepositoryRequest { Name = "repo1", AccessToken = "abc" }, CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ASSERT
+            Assert.AreEqual(ExampleUrl, repository1.Server.Url);
+            Assert.AreEqual(ExampleUrl, repository2.Server.Url);
+            Assert.AreEqual(null, repository1.Server.Authentication.AccessToken);
+            Assert.AreEqual("abc", repository2.Server.Authentication.AccessToken);
+            Assert.IsFalse(ReferenceEquals(repository1, repository2));
+            
+            // ACT
+            var repository3 = await repositoryCollection
+                .GetRepositoryAsync(new RepositoryRequest
+                    {
+                        Name = "repo1",
+                        AccessToken = "abc"
+                    },
+                    CancellationToken.None).ConfigureAwait(false);
+
+            // same repository, different token: different instances
+            var repository4 = await repositoryCollection
+                .GetRepositoryAsync(new RepositoryRequest
+                {
+                    Name = "repo1",
+                    AccessToken = "def"
+                }, CancellationToken.None).ConfigureAwait(false);
+
+            // same repository, same token: same instance
+            var repository5 = await repositoryCollection
+                .GetRepositoryAsync(new RepositoryRequest
+                {
+                    Name = "repo1",
+                    AccessToken = "def"
+                }, CancellationToken.None).ConfigureAwait(false);
+
+            // ASSERT
+            Assert.AreEqual("abc", repository3.Server.Authentication.AccessToken);
+            Assert.AreEqual("def", repository4.Server.Authentication.AccessToken);
+            Assert.IsFalse(ReferenceEquals(repository3, repository4));
+            Assert.IsTrue(ReferenceEquals(repository4, repository5));
         }
 
         /* ====================================================================== CONTENT CREATION */

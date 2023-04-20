@@ -15,7 +15,7 @@ namespace SenseNet.Client.DemoMvc.Controllers
         public async Task<IActionResult> Index(int id = 0)
         {
             Content content;
-
+            
             var repository = await _repositoryCollection.GetRepositoryAsync(HttpContext.RequestAborted);
 
             if (id == 0)
@@ -34,8 +34,11 @@ namespace SenseNet.Client.DemoMvc.Controllers
                 Path = content.Path
             }, HttpContext.RequestAborted);
 
+            var user = await repository.Server.GetCurrentUserAsync().ConfigureAwait(false);
+
             return View(new SnContent
             {
+                CurrentUser = user["LoginName"]?.ToString() ?? string.Empty,
                 Content = content,
                 Children = children
             });

@@ -29,31 +29,44 @@ namespace SenseNet.Client
             return GetRepositoryAsync(ServerContextOptions.DefaultServerName, cancel);
         }
 
-        public async Task<IRepository> GetRepositoryAsync(string name, CancellationToken cancel)
+        public Task<IRepository> GetRepositoryAsync(string name, CancellationToken cancel)
         {
-            name ??= ServerContextOptions.DefaultServerName;
+            return GetRepositoryAsync(new RepositoryRequest { Name = name }, cancel);
+        }
 
-            if (_repositories.TryGetValue(name, out var repo))
+        public async Task<IRepository> GetRepositoryAsync(RepositoryRequest repositoryRequest, CancellationToken cancel)
+        {
+            var name = repositoryRequest.Name ?? ServerContextOptions.DefaultServerName;
+
+            string GetCacheKey()
+            {
+                //UNDONE: finalize cache key. Cache key must contain all property values to be unique.
+                return $"{name}-{repositoryRequest.AccessToken}";
+            }
+
+            var cacheKey = GetCacheKey();
+
+            if (_repositories.TryGetValue(cacheKey, out var repo))
                 return repo;
 
             await _asyncLock.WaitAsync(cancel);
 
             try
             {
-                if (_repositories.TryGetValue(name, out repo))
+                if (_repositories.TryGetValue(cacheKey, out repo))
                     return repo;
 
                 _logger.LogTrace($"Building server context for repository {name}");
 
                 // get the server context, create a repository instance and cache it
-                var server = await _serverFactory.GetServerAsync(name).ConfigureAwait(false);
+                var server = await _serverFactory.GetServerAsync(name, repositoryRequest.AccessToken).ConfigureAwait(false);
                 if (server == null)
                     _logger.LogWarning($"Server context could not be constructed for repository {name}");
 
                 repo = _services.GetRequiredService<IRepository>();
                 repo.Server = server;
 
-                _repositories[name] = repo;
+                _repositories[cacheKey] = repo;
 
                 _logger.LogTrace($"Connected to repository {name} ({server?.Url}).");
             }
