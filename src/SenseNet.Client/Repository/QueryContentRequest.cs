@@ -8,7 +8,7 @@ namespace SenseNet.Client
     /// <summary>
     /// Represents a request for querying the repository.
     /// </summary>
-    public class QueryContentRequest : RequestBase
+    public class QueryContentRequest : ContentRequest
     {
         private static class P
         {
@@ -104,6 +104,8 @@ namespace SenseNet.Client
 
         protected override void AddProperties(ODataRequest oDataRequest)
         {
+            base.AddProperties(oDataRequest);
+
             oDataRequest.Path ??= Path ?? "/Root";
             oDataRequest.IsCollectionRequest = true;
 

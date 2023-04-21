@@ -1,5 +1,6 @@
 ﻿using AngleSharp.Io;
 using System;
+using System.IO;
 
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client;
@@ -42,12 +43,14 @@ public class UploadRequest : RequestBase
 
     protected override void AddProperties(ODataRequest oDataRequest)
     {
-        oDataRequest.ActionName = "Upload";
+        if (ParentId == 0 && string.IsNullOrEmpty(ParentPath))
+            throw new InvalidOperationException("Invalid request properties: either ParentId or ParentPath must be provided.");
 
         if (ParentId == 0)
             oDataRequest.Path = ParentPath;
         else
             oDataRequest.ContentId = ParentId;
 
+        oDataRequest.ActionName = "Upload";
     }
 }
