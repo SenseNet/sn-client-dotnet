@@ -33,14 +33,14 @@ namespace SenseNet.Client
             return GetRepositoryAsync(new RepositoryArgs { Name = name }, cancel);
         }
 
-        public async Task<IRepository> GetRepositoryAsync(RepositoryArgs repositoryArgs, CancellationToken cancel)
+        public async Task<IRepository> GetRepositoryAsync(RepositoryArgs args, CancellationToken cancel)
         {
-            var name = repositoryArgs.Name ?? ServerContextOptions.DefaultServerName;
+            var name = args.Name ?? ServerContextOptions.DefaultServerName;
 
             int GetCacheKey()
             {
                 // Cache key must contain all property values to be unique.
-                return $"{name}-{repositoryArgs.AccessToken}".GetHashCode();
+                return $"{name}-{args.AccessToken}".GetHashCode();
             }
 
             var cacheKey = GetCacheKey();
@@ -58,7 +58,7 @@ namespace SenseNet.Client
                 _logger.LogTrace($"Building server context for repository {name}");
 
                 // get the server context, create a repository instance and cache it
-                var server = await _serverFactory.GetServerAsync(name, repositoryArgs.AccessToken).ConfigureAwait(false);
+                var server = await _serverFactory.GetServerAsync(name, args.AccessToken).ConfigureAwait(false);
                 if (server == null)
                     _logger.LogWarning($"Server context could not be constructed for repository {name}");
 

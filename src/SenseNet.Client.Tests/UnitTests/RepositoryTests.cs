@@ -79,8 +79,8 @@ namespace SenseNet.Client.Tests.UnitTests
             Assert.AreEqual("def", repository4.Server.Authentication.AccessToken);
 
             // the same repository instance should be returned for the same token
-            Assert.IsTrue(ReferenceEquals(repository2, repository3));
-            Assert.IsFalse(ReferenceEquals(repository3, repository4));
+            Assert.AreSame(repository2, repository3);
+            Assert.AreNotSame(repository3, repository4);
         }
         [TestMethod]
         public async Task Repository_Named()
@@ -126,7 +126,7 @@ namespace SenseNet.Client.Tests.UnitTests
             Assert.AreEqual(ExampleUrl, repository2.Server.Url);
             Assert.AreEqual(null, repository1.Server.Authentication.AccessToken);
             Assert.AreEqual("abc", repository2.Server.Authentication.AccessToken);
-            Assert.IsFalse(ReferenceEquals(repository1, repository2));
+            Assert.AreNotSame(repository1, repository2);
             
             // ACT
             var repository3 = await repositoryCollection
@@ -156,8 +156,8 @@ namespace SenseNet.Client.Tests.UnitTests
             // ASSERT
             Assert.AreEqual("abc", repository3.Server.Authentication.AccessToken);
             Assert.AreEqual("def", repository4.Server.Authentication.AccessToken);
-            Assert.IsFalse(ReferenceEquals(repository3, repository4));
-            Assert.IsTrue(ReferenceEquals(repository4, repository5));
+            Assert.AreNotSame(repository3, repository4);
+            Assert.AreSame(repository4, repository5);
         }
 
         /* ====================================================================== CONTENT CREATION */

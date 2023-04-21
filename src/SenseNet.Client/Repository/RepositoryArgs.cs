@@ -2,13 +2,12 @@
 namespace SenseNet.Client
 {
     /// <summary>
-    /// Defines parameters for a repository instance.
+    /// Defines arguments for constructing a repository instance. All properties are optional.
     /// </summary>
     public class RepositoryArgs
     {
         /// <summary>
-        /// Name of the repository. Use the same name as during registration or
-        /// leave it empty to load the default repository.
+        /// Name of a registered repository if you want to access a named repository.
         /// </summary>
         public string Name { get; set; }
         /// <summary>
