@@ -34,5 +34,18 @@ namespace SenseNet.Client
         /// <param name="cancel">The token to monitor for cancellation requests.</param>
         /// <returns>A task that wraps a configured repository instance.</returns>
         public Task<IRepository> GetRepositoryAsync(string name, CancellationToken cancel);
+
+        /// <summary>
+        /// Returns a repository defined by the provided arguments.
+        /// </summary>
+        /// <remarks>This method will return an authenticated repository instance
+        /// that can be pinned in the application. This method can be called
+        /// multiple times as it caches the repository and will return the
+        /// same object.</remarks>
+        /// <param name="args">Repository arguments. If you provide a user-specific token,
+        /// you will be able to access the repository in the name of that user.</param>
+        /// <param name="cancel">The token to monitor for cancellation requests.</param>
+        /// <returns>A task that wraps a configured repository instance.</returns>
+        public Task<IRepository> GetRepositoryAsync(RepositoryArgs args, CancellationToken cancel);
     }
 }
