@@ -1,9 +1,10 @@
-﻿namespace SenseNet.Client.IntegrationTests;
+﻿using SenseNet.Testing;
+
+namespace SenseNet.Client.IntegrationTests;
 
 [TestClass]
 public class UploadDownloadTests : IntegrationTestBase
 {
-    private static readonly string _fileContent = "Lorem ipsum dolor sit amet...";
     private readonly CancellationToken _cancel = new CancellationTokenSource(TimeSpan.FromMinutes(5)).Token;
 
     private async Task<Content> EnsureUploadFolder(IRepository repository)
@@ -51,6 +52,7 @@ public class UploadDownloadTests : IntegrationTestBase
     [TestMethod]
     public async Task IT_Upload_ByPath()
     {
+        var fileContent = "Lorem ipsum dolor sit amet...";
         var repository = await GetRepositoryCollection().GetRepositoryAsync("local", _cancel).ConfigureAwait(false);
         var uploadFolder = await EnsureUploadFolder(repository).ConfigureAwait(false);
         var uploadRootPath = uploadFolder.Path;
@@ -58,7 +60,7 @@ public class UploadDownloadTests : IntegrationTestBase
 
         // ACTION
         UploadResult uploadedContent;
-        await using (var uploadStream = Tools.GenerateStreamFromString(_fileContent))
+        await using (var uploadStream = Tools.GenerateStreamFromString(fileContent))
         {
             var request = new UploadRequest {ParentPath = uploadRootPath, ContentName = fileName };
             uploadedContent = await repository.UploadAsync(request, uploadStream, _cancel).ConfigureAwait(false);
@@ -67,11 +69,12 @@ public class UploadDownloadTests : IntegrationTestBase
         // ASSERT
         var downloadedFileContent = await DownloadAsString(repository, uploadedContent.Id, _cancel)
             .ConfigureAwait(false);
-        Assert.AreEqual(_fileContent, downloadedFileContent);
+        Assert.AreEqual(fileContent, downloadedFileContent);
     }
     [TestMethod]
     public async Task IT_Upload_ById()
     {
+        var fileContent = "Lorem ipsum dolor sit amet...";
         var repository = await GetRepositoryCollection().GetRepositoryAsync("local", _cancel).ConfigureAwait(false);
         var uploadFolder = await EnsureUploadFolder(repository).ConfigureAwait(false);
         var uploadRootId = uploadFolder.Id;
@@ -79,7 +82,7 @@ public class UploadDownloadTests : IntegrationTestBase
 
         // ACT
         UploadResult uploadedContent;
-        await using (var uploadStream = Tools.GenerateStreamFromString(_fileContent))
+        await using (var uploadStream = Tools.GenerateStreamFromString(fileContent))
         {
             var request = new UploadRequest { ParentId = uploadRootId, ContentName = fileName };
             uploadedContent = await repository.UploadAsync(request, uploadStream, _cancel).ConfigureAwait(false);
@@ -88,12 +91,47 @@ public class UploadDownloadTests : IntegrationTestBase
         // ASSERT
         var downloadedFileContent = await DownloadAsString(repository, uploadedContent.Id, _cancel)
             .ConfigureAwait(false);
-        Assert.AreEqual(_fileContent, downloadedFileContent);
+        Assert.AreEqual(fileContent, downloadedFileContent);
+    }
+
+    [TestMethod]
+    public async Task IT_Upload_ChunksAndProgress()
+    {
+        var fileContent = "111111111122222222223333333333444";
+        var repository = await GetRepositoryCollection().GetRepositoryAsync("local", _cancel).ConfigureAwait(false);
+        var uploadFolder = await EnsureUploadFolder(repository).ConfigureAwait(false);
+        var uploadRootPath = uploadFolder.Path;
+        var fileName = Guid.NewGuid() + ".txt";
+
+        UploadResult uploadedContent;
+        var progressValues = new List<int>();
+        using (new Swindler<int>(
+                   hack: 10,
+                   getter: () => ClientContext.Current.ChunkSizeInBytes,
+                   setter: value => ClientContext.Current.ChunkSizeInBytes = value))
+        {
+            // ACTION
+            await using (var uploadStream = Tools.GenerateStreamFromString(fileContent))
+            {
+                var request = new UploadRequest { ParentPath = uploadRootPath, ContentName = fileName };
+                uploadedContent = await repository.UploadAsync(request, uploadStream,
+                    progress => { progressValues.Add(progress); }, _cancel).ConfigureAwait(false);
+            }
+
+        }
+
+        // ASSERT
+        var downloadedFileContent = await DownloadAsString(repository, uploadedContent.Id, _cancel)
+            .ConfigureAwait(false);
+        Assert.AreEqual(fileContent, downloadedFileContent);
+        var actualProgress = string.Join(",", progressValues.Select(x => x.ToString()));
+        Assert.AreEqual("10,20,30,33", actualProgress);
     }
 
     [TestMethod]
     public async Task IT_Upload_Text_ByPath()
     {
+        var fileContent = "Lorem ipsum dolor sit amet...";
         var repository = await GetRepositoryCollection().GetRepositoryAsync("local", _cancel).ConfigureAwait(false);
         var uploadFolder = await EnsureUploadFolder(repository).ConfigureAwait(false);
         var uploadRootPath = uploadFolder.Path;
@@ -101,16 +139,17 @@ public class UploadDownloadTests : IntegrationTestBase
 
         // ACT
         var request = new UploadRequest { ParentPath = uploadRootPath, ContentName = fileName };
-        var uploadedContent = await repository.UploadAsync(request, _fileContent, _cancel).ConfigureAwait(false);
+        var uploadedContent = await repository.UploadAsync(request, fileContent, _cancel).ConfigureAwait(false);
 
         // ASSERT
         var downloadedFileContent = await DownloadAsString(repository, uploadedContent.Id, _cancel)
             .ConfigureAwait(false);
-        Assert.AreEqual(_fileContent, downloadedFileContent);
+        Assert.AreEqual(fileContent, downloadedFileContent);
     }
     [TestMethod]
     public async Task IT_Upload_Text_ById()
     {
+        var fileContent = "Lorem ipsum dolor sit amet...";
         var repository = await GetRepositoryCollection().GetRepositoryAsync("local", _cancel).ConfigureAwait(false);
         var uploadFolder = await EnsureUploadFolder(repository).ConfigureAwait(false);
         var uploadRootId = uploadFolder.Id;
@@ -118,11 +157,11 @@ public class UploadDownloadTests : IntegrationTestBase
 
         // ACTION
         var request = new UploadRequest { ParentId = uploadRootId, ContentName = fileName };
-        var uploadedContent = await repository.UploadAsync(request, _fileContent, _cancel).ConfigureAwait(false);
+        var uploadedContent = await repository.UploadAsync(request, fileContent, _cancel).ConfigureAwait(false);
 
         // ASSERT
         var downloadedFileContent = await DownloadAsString(repository, uploadedContent.Id, _cancel)
             .ConfigureAwait(false);
-        Assert.AreEqual(_fileContent, downloadedFileContent);
+        Assert.AreEqual(fileContent, downloadedFileContent);
     }
 }
