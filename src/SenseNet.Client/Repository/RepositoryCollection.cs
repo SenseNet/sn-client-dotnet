@@ -1,10 +1,9 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Threading;
+using Microsoft.Extensions.Caching.Memory;
 
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client
@@ -14,8 +13,8 @@ namespace SenseNet.Client
         private readonly ILogger<RepositoryCollection> _logger;
         private readonly IServiceProvider _services;
         private readonly IServerContextFactory _serverFactory;
-        private readonly IDictionary<string, IRepository> _repositories = new ConcurrentDictionary<string, IRepository>();
-        private readonly SemaphoreSlim _asyncLock = new SemaphoreSlim(1, 1);
+        private readonly MemoryCache _repositories = new(new MemoryCacheOptions { SizeLimit = 1024 });
+        private readonly SemaphoreSlim _asyncLock = new(1, 1);
 
         public RepositoryCollection(IServiceProvider services, IServerContextFactory serverFactory, ILogger<RepositoryCollection> logger)
         {
@@ -31,22 +30,22 @@ namespace SenseNet.Client
 
         public Task<IRepository> GetRepositoryAsync(string name, CancellationToken cancel)
         {
-            return GetRepositoryAsync(new RepositoryRequest { Name = name }, cancel);
+            return GetRepositoryAsync(new RepositoryArgs { Name = name }, cancel);
         }
 
-        public async Task<IRepository> GetRepositoryAsync(RepositoryRequest repositoryRequest, CancellationToken cancel)
+        public async Task<IRepository> GetRepositoryAsync(RepositoryArgs repositoryArgs, CancellationToken cancel)
         {
-            var name = repositoryRequest.Name ?? ServerContextOptions.DefaultServerName;
+            var name = repositoryArgs.Name ?? ServerContextOptions.DefaultServerName;
 
-            string GetCacheKey()
+            int GetCacheKey()
             {
-                //UNDONE: finalize cache key. Cache key must contain all property values to be unique.
-                return $"{name}-{repositoryRequest.AccessToken}";
+                // Cache key must contain all property values to be unique.
+                return $"{name}-{repositoryArgs.AccessToken}".GetHashCode();
             }
 
             var cacheKey = GetCacheKey();
 
-            if (_repositories.TryGetValue(cacheKey, out var repo))
+            if (_repositories.TryGetValue<IRepository>(cacheKey, out var repo))
                 return repo;
 
             await _asyncLock.WaitAsync(cancel);
@@ -59,14 +58,18 @@ namespace SenseNet.Client
                 _logger.LogTrace($"Building server context for repository {name}");
 
                 // get the server context, create a repository instance and cache it
-                var server = await _serverFactory.GetServerAsync(name, repositoryRequest.AccessToken).ConfigureAwait(false);
+                var server = await _serverFactory.GetServerAsync(name, repositoryArgs.AccessToken).ConfigureAwait(false);
                 if (server == null)
                     _logger.LogWarning($"Server context could not be constructed for repository {name}");
 
                 repo = _services.GetRequiredService<IRepository>();
                 repo.Server = server;
 
-                _repositories[cacheKey] = repo;
+                _repositories.Set(cacheKey, repo, new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpiration = new DateTimeOffset(DateTime.UtcNow.AddHours(1)),
+                    Size = 1
+                });
 
                 _logger.LogTrace($"Connected to repository {name} ({server?.Url}).");
             }

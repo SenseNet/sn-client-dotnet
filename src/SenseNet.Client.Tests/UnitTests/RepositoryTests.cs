@@ -50,23 +50,23 @@ namespace SenseNet.Client.Tests.UnitTests
 
             // ACT
             var repository1 = await repositoryCollection
-                .GetRepositoryAsync(new RepositoryRequest(), CancellationToken.None).ConfigureAwait(false);
+                .GetRepositoryAsync(new RepositoryArgs(), CancellationToken.None).ConfigureAwait(false);
             var repository2 = await repositoryCollection
-                .GetRepositoryAsync(new RepositoryRequest
+                .GetRepositoryAsync(new RepositoryArgs
                 {
                     AccessToken = "abc"
                 }, CancellationToken.None).ConfigureAwait(false);
 
             // get the same repository instance again
             var repository3 = await repositoryCollection
-                .GetRepositoryAsync(new RepositoryRequest
+                .GetRepositoryAsync(new RepositoryArgs
                 {
                     AccessToken = "abc"
                 }, CancellationToken.None).ConfigureAwait(false);
 
             // get a new repository instance with a different token
             var repository4 = await repositoryCollection
-                .GetRepositoryAsync(new RepositoryRequest
+                .GetRepositoryAsync(new RepositoryArgs
                 {
                     AccessToken = "def"
                 }, CancellationToken.None).ConfigureAwait(false);
@@ -115,10 +115,10 @@ namespace SenseNet.Client.Tests.UnitTests
 
             // ACT
             var repository1 = await repositoryCollection
-                .GetRepositoryAsync(new RepositoryRequest { Name = "repo1" }, CancellationToken.None)
+                .GetRepositoryAsync(new RepositoryArgs { Name = "repo1" }, CancellationToken.None)
                 .ConfigureAwait(false);
             var repository2 = await repositoryCollection
-                .GetRepositoryAsync(new RepositoryRequest { Name = "repo1", AccessToken = "abc" }, CancellationToken.None)
+                .GetRepositoryAsync(new RepositoryArgs { Name = "repo1", AccessToken = "abc" }, CancellationToken.None)
                 .ConfigureAwait(false);
 
             // ASSERT
@@ -130,7 +130,7 @@ namespace SenseNet.Client.Tests.UnitTests
             
             // ACT
             var repository3 = await repositoryCollection
-                .GetRepositoryAsync(new RepositoryRequest
+                .GetRepositoryAsync(new RepositoryArgs
                     {
                         Name = "repo1",
                         AccessToken = "abc"
@@ -139,7 +139,7 @@ namespace SenseNet.Client.Tests.UnitTests
 
             // same repository, different token: different instances
             var repository4 = await repositoryCollection
-                .GetRepositoryAsync(new RepositoryRequest
+                .GetRepositoryAsync(new RepositoryArgs
                 {
                     Name = "repo1",
                     AccessToken = "def"
@@ -147,7 +147,7 @@ namespace SenseNet.Client.Tests.UnitTests
 
             // same repository, same token: same instance
             var repository5 = await repositoryCollection
-                .GetRepositoryAsync(new RepositoryRequest
+                .GetRepositoryAsync(new RepositoryArgs
                 {
                     Name = "repo1",
                     AccessToken = "def"
