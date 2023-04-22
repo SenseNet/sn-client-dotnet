@@ -48,6 +48,7 @@ public class UploadDownloadTests : IntegrationTestBase
         return downloadedFileContent;
     }
 
+    /* =============================================================================== UPLOAD */
 
     [TestMethod]
     public async Task IT_Upload_ByPath()
@@ -164,4 +165,55 @@ public class UploadDownloadTests : IntegrationTestBase
             .ConfigureAwait(false);
         Assert.AreEqual(fileContent, downloadedFileContent);
     }
+
+    /* =============================================================================== DOWNLOAD */
+
+    [TestMethod]
+    public async Task IT_Download_LowLevel_ById()
+    {
+        var cancel = new CancellationTokenSource(TimeSpan.FromMinutes(10)).Token;
+        var repository = await GetRepositoryCollection().GetRepositoryAsync("local", cancel).ConfigureAwait(false);
+        var content = await repository.LoadContentAsync(
+                new LoadContentRequest
+                {
+                    Path = "/Root/System/Schema/ContentTypes/GenericContent/File",
+                    Select = new[] {"Id"}
+                }, cancel)
+            .ConfigureAwait(false);
+        var contentId = content.Id;
+
+        // ACT
+        string? text = null;
+        var request = new DownloadRequest { ContentId = contentId };
+        await repository.DownloadAsync(request, async stream =>
+        {
+            using var reader = new StreamReader(stream);
+            text = await reader.ReadToEndAsync().ConfigureAwait(false);
+        }, cancel).ConfigureAwait(false);
+
+        // ASSERT
+        Assert.IsNotNull(text);
+        Assert.IsTrue(text.Contains("<ContentType name=\"File\""));
+    }
+
+    [TestMethod]
+    public async Task IT_Download_LowLevel_ByPath()
+    {
+        var cancel = new CancellationTokenSource(TimeSpan.FromMinutes(10)).Token;
+        var repository = await GetRepositoryCollection().GetRepositoryAsync("local", cancel).ConfigureAwait(false);
+
+        // ACT
+        string? text = null;
+        var request = new DownloadRequest { Path = "/Root/System/Schema/ContentTypes/GenericContent/File" };
+        await repository.DownloadAsync(request, async stream =>
+        {
+            using var reader = new StreamReader(stream);
+            text = await reader.ReadToEndAsync().ConfigureAwait(false);
+        }, cancel).ConfigureAwait(false);
+
+        // ASSERT
+        Assert.IsNotNull(text);
+        Assert.IsTrue(text.Contains("<ContentType name=\"File\""));
+    }
+
 }

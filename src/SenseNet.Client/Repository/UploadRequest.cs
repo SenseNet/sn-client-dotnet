@@ -1,6 +1,4 @@
-﻿using AngleSharp.Io;
-using System;
-using System.IO;
+﻿using System;
 
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client;
@@ -12,7 +10,7 @@ namespace SenseNet.Client;
 /// One of the <see cref="ParentPath"/> and <see cref="ParentId"/> is required.
 /// If both missing, a <see cref="InvalidOperationException"/> will be thrown.
 /// </remarks>
-public class UploadRequest : RequestBase
+public class UploadRequest : ODataRequestBase
 {
     /// <summary>
     /// Gets or sets the Path of the content that will be the parent of the uploaded content.

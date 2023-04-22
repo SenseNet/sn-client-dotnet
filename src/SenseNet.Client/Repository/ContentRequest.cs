@@ -1,8 +1,8 @@
-﻿// ReSharper disable once CheckNamespace
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
+// ReSharper disable once CheckNamespace
 namespace SenseNet.Client;
 
 public enum ResponseFormat
@@ -10,7 +10,7 @@ public enum ResponseFormat
     Json, VerboseJson, TypeScript, Xml, Export, Table
 }
 
-public abstract class ContentRequest : RequestBase
+public abstract class ContentRequest : ODataRequestBase
 {
     private static class P
     {

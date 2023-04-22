@@ -634,6 +634,36 @@ internal class Repository : IRepository
         return _restCaller.GetResponseStringAsync(uri, method, postData, additionalHeaders, cancel);
     }
 
+    public async Task DownloadAsync(DownloadRequest request, Func<Stream, Task> responseProcessor, CancellationToken cancel)
+    {
+        var contentId = request.ContentId;
+        if (contentId == 0)
+        {
+            if (string.IsNullOrEmpty(request.Path))
+                throw new InvalidOperationException("Invalid request properties: either content id or path must be provided.");
+            var content = await LoadContentAsync(
+                    new LoadContentRequest {Path = request.Path, Select = new[] {"Id"}}, cancel)
+                    .ConfigureAwait(false);
+            if (content == null)
+                throw new InvalidOperationException("Content not found.");
+            contentId = content.Id;
+        }
+
+        var url = $"/binaryhandler.ashx?nodeid={contentId}&propertyname={request.PropertyName ?? "Binary"}";
+        if (!string.IsNullOrEmpty(request.Version))
+            url += "&version=" + request.Version;
+
+        await ProcessWebResponseAsync(url, HttpMethod.Get, request.AdditionalRequestHeaders, null,
+                async (response, _) =>
+                {
+                    if (response == null)
+                        return;
+                    await responseProcessor(await response.Content.ReadAsStreamAsync().ConfigureAwait(false));
+                }, cancel)
+            .ConfigureAwait(false);
+
+    }
+
     /* ============================================================================ LOW LEVEL API */
 
     public Task ProcessWebResponseAsync(string relativeUrl, HttpMethod method, Dictionary<string, IEnumerable<string>> additionalHeaders,
