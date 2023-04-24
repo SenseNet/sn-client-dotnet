@@ -634,7 +634,7 @@ internal class Repository : IRepository
         return _restCaller.GetResponseStringAsync(uri, method, postData, additionalHeaders, cancel);
     }
 
-    public async Task DownloadAsync(DownloadRequest request, Func<Stream, Task> responseProcessor, CancellationToken cancel)
+    public async Task DownloadAsync(DownloadRequest request, Func<Stream, StreamProperties, Task> responseProcessor, CancellationToken cancel)
     {
         var contentId = request.ContentId;
         if (contentId == 0)
@@ -658,7 +658,14 @@ internal class Repository : IRepository
                 {
                     if (response == null)
                         return;
-                    await responseProcessor(await response.Content.ReadAsStreamAsync().ConfigureAwait(false));
+                    var headers = response.Content.Headers;
+                    var properties = new StreamProperties
+                    {
+                        MediaType = headers.ContentType.MediaType,
+                        FileName = headers.ContentDisposition.FileName,
+                        ContentLength = headers.ContentLength,
+                    };
+                    await responseProcessor(await response.Content.ReadAsStreamAsync().ConfigureAwait(false), properties);
                 }, cancel)
             .ConfigureAwait(false);
 

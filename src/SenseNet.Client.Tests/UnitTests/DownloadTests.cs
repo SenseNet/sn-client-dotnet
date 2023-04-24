@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Net.Http.Headers;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NSubstitute;
 using System.Threading.Channels;
@@ -60,7 +61,11 @@ public class DownloadTests : TestBase
                 Arg.Any<HttpContent>(),
                 Arg.Do<Func<HttpResponseMessage, CancellationToken, Task>>(arg =>
                 {
-                    var msg = new HttpResponseMessage() { Content = new StringContent(fileContent) };
+                    var response = new StringContent(fileContent);
+                    response.Headers.ContentType = MediaTypeHeaderValue.Parse("text/plain");
+                    response.Headers.ContentDisposition = ContentDispositionHeaderValue.Parse("attachment; filename = numbers.txt");
+                    response.Headers.ContentLength = 33L;
+                    var msg = new HttpResponseMessage() { Content = response };
                     arg(msg, _cancel);
                 }), Arg.Any<CancellationToken>())
             .Returns(Task.CompletedTask);
@@ -74,14 +79,20 @@ public class DownloadTests : TestBase
 
         // ACT
         string? text = null;
-        await repository.DownloadAsync(request, async stream =>
+        StreamProperties? properties = null;
+        await repository.DownloadAsync(request, async (stream, props) =>
         {
+            properties = props;
             using var reader = new StreamReader(stream);
             text = await reader.ReadToEndAsync().ConfigureAwait(false);
         }, _cancel).ConfigureAwait(false);
 
         // ASSERT
         Assert.AreEqual(fileContent, text);
+        Assert.IsNotNull(properties);
+        Assert.AreEqual("text/plain", properties.MediaType);
+        Assert.AreEqual("numbers.txt", properties.FileName);
+        Assert.AreEqual(33L, properties.ContentLength);
         // Test restCaller calls
         var calls = restCaller.ReceivedCalls().ToArray();
         Assert.IsNotNull(calls);

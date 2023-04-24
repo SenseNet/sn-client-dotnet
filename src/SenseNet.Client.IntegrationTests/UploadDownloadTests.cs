@@ -184,9 +184,13 @@ public class UploadDownloadTests : IntegrationTestBase
 
         // ACT
         string? text = null;
+        StreamProperties properties = null;
+        long streamLength = 0L;
         var request = new DownloadRequest { ContentId = contentId };
-        await repository.DownloadAsync(request, async stream =>
+        await repository.DownloadAsync(request, async (stream, props) =>
         {
+            properties = props;
+            streamLength = stream.Length;
             using var reader = new StreamReader(stream);
             text = await reader.ReadToEndAsync().ConfigureAwait(false);
         }, cancel).ConfigureAwait(false);
@@ -194,6 +198,9 @@ public class UploadDownloadTests : IntegrationTestBase
         // ASSERT
         Assert.IsNotNull(text);
         Assert.IsTrue(text.Contains("<ContentType name=\"File\""));
+        Assert.AreEqual("", properties.MediaType);
+        Assert.AreEqual("", properties.FileName);
+        Assert.AreEqual(streamLength, properties.ContentLength);
     }
 
     [TestMethod]
@@ -204,9 +211,13 @@ public class UploadDownloadTests : IntegrationTestBase
 
         // ACT
         string? text = null;
+        StreamProperties properties = null;
+        long streamLength = 0L;
         var request = new DownloadRequest { Path = "/Root/System/Schema/ContentTypes/GenericContent/File" };
-        await repository.DownloadAsync(request, async stream =>
+        await repository.DownloadAsync(request, async (stream, props) =>
         {
+            properties = props;
+            streamLength = stream.Length;
             using var reader = new StreamReader(stream);
             text = await reader.ReadToEndAsync().ConfigureAwait(false);
         }, cancel).ConfigureAwait(false);
@@ -214,6 +225,9 @@ public class UploadDownloadTests : IntegrationTestBase
         // ASSERT
         Assert.IsNotNull(text);
         Assert.IsTrue(text.Contains("<ContentType name=\"File\""));
+        Assert.AreEqual(" ", properties.MediaType);
+        Assert.AreEqual("", properties.FileName);
+        Assert.AreEqual(streamLength, properties.ContentLength);
     }
 
 }
