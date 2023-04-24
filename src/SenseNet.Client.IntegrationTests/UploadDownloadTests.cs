@@ -1,4 +1,6 @@
-﻿using SenseNet.Testing;
+﻿using Microsoft.Extensions.Logging;
+using SenseNet.Extensions.DependencyInjection;
+using SenseNet.Testing;
 
 namespace SenseNet.Client.IntegrationTests;
 
@@ -34,7 +36,7 @@ public class UploadDownloadTests : IntegrationTestBase
             .ConfigureAwait(false);
     }
 
-    private async Task<string> DownloadAsString(IRepository repository, int contentId, CancellationToken cancel)
+    private async Task<string?> DownloadAsString(IRepository repository, int contentId, CancellationToken cancel)
     {
         string? downloadedFileContent = null;
         await GetStreamResponseAsync(repository, contentId, async (response, cancellationToken) =>
@@ -168,6 +170,52 @@ public class UploadDownloadTests : IntegrationTestBase
 
     /* =============================================================================== DOWNLOAD */
 
+    #region nested content classes
+
+    public class ContentType : Content
+    {
+        public ContentType(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }
+
+        public Binary? Binary { get; set; }
+    }
+
+    #endregion
+
+    [TestMethod]
+    public async Task IT_Download_HighLevel()
+    {
+        var cancel = new CancellationTokenSource(TimeSpan.FromMinutes(10)).Token;
+        var repository = await GetRepositoryCollection(services =>
+        {
+            services.RegisterGlobalContentType<ContentType>();
+        }).GetRepositoryAsync("local", cancel).ConfigureAwait(false);
+        var content = await repository.LoadContentAsync<ContentType>(
+                new LoadContentRequest {Path = "/Root/System/Schema/ContentTypes/GenericContent/File"}, cancel)
+            .ConfigureAwait(false);
+        if(content?.Binary == null)
+            Assert.Fail("Content or Binary not found.");
+        string? text = null;
+        StreamProperties? properties = null;
+        var streamLength = 0L;
+
+        // ACT
+        await content.Binary.DownloadAsync(async (stream, props) =>
+        {
+            properties = props;
+            streamLength = stream.Length;
+            using var reader = new StreamReader(stream);
+            text = await reader.ReadToEndAsync().ConfigureAwait(false);
+        }, cancel).ConfigureAwait(false);
+
+        // ASSERT
+        Assert.IsNotNull(text);
+        Assert.IsTrue(text.Contains("<ContentType name=\"File\""));
+        Assert.IsNotNull(properties);
+        Assert.AreEqual("text/xml", properties.MediaType);
+        Assert.AreEqual("File.ContentType", properties.FileName);
+        Assert.AreEqual(streamLength, properties.ContentLength);
+    }
+
     [TestMethod]
     public async Task IT_Download_LowLevel_ById()
     {
@@ -184,7 +232,7 @@ public class UploadDownloadTests : IntegrationTestBase
 
         // ACT
         string? text = null;
-        StreamProperties properties = null;
+        StreamProperties? properties = null;
         long streamLength = 0L;
         var request = new DownloadRequest { ContentId = contentId };
         await repository.DownloadAsync(request, async (stream, props) =>
@@ -198,6 +246,7 @@ public class UploadDownloadTests : IntegrationTestBase
         // ASSERT
         Assert.IsNotNull(text);
         Assert.IsTrue(text.Contains("<ContentType name=\"File\""));
+        Assert.IsNotNull(properties);
         Assert.AreEqual("text/xml", properties.MediaType);
         Assert.AreEqual("File.ContentType", properties.FileName);
         Assert.AreEqual(streamLength, properties.ContentLength);
@@ -211,7 +260,7 @@ public class UploadDownloadTests : IntegrationTestBase
 
         // ACT
         string? text = null;
-        StreamProperties properties = null;
+        StreamProperties? properties = null;
         long streamLength = 0L;
         var request = new DownloadRequest { Path = "/Root/System/Schema/ContentTypes/GenericContent/File" };
         await repository.DownloadAsync(request, async (stream, props) =>
@@ -225,6 +274,7 @@ public class UploadDownloadTests : IntegrationTestBase
         // ASSERT
         Assert.IsNotNull(text);
         Assert.IsTrue(text.Contains("<ContentType name=\"File\""));
+        Assert.IsNotNull(properties);
         Assert.AreEqual("text/xml", properties.MediaType);
         Assert.AreEqual("File.ContentType", properties.FileName);
         Assert.AreEqual(streamLength, properties.ContentLength);

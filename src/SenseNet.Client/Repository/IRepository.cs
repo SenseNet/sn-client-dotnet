@@ -405,6 +405,7 @@ public interface IRepository
     /* ============================================================================ LOW LEVEL API */
 
     Task DownloadAsync(DownloadRequest request, Func<Stream, StreamProperties, Task> responseProcessor, CancellationToken cancel);
+    Task DownloadAsync(string url, Func<Stream, StreamProperties, Task> responseProcessor, CancellationToken cancel);
 
     Task ProcessWebResponseAsync(string relativeUrl, HttpMethod method, Dictionary<string, IEnumerable<string>> additionalHeaders,
         HttpContent httpContent,

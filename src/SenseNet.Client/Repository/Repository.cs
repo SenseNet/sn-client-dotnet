@@ -668,7 +668,24 @@ internal class Repository : IRepository
                     await responseProcessor(await response.Content.ReadAsStreamAsync().ConfigureAwait(false), properties);
                 }, cancel)
             .ConfigureAwait(false);
+    }
 
+    public Task DownloadAsync(string url, Func<Stream, StreamProperties, Task> responseProcessor, CancellationToken cancel)
+    {
+        return ProcessWebResponseAsync(url, HttpMethod.Get, null, null,
+                async (response, _) =>
+                {
+                    if (response == null)
+                        return;
+                    var headers = response.Content.Headers;
+                    var properties = new StreamProperties
+                    {
+                        MediaType = headers.ContentType.MediaType,
+                        FileName = headers.ContentDisposition.FileName,
+                        ContentLength = headers.ContentLength,
+                    };
+                    await responseProcessor(await response.Content.ReadAsStreamAsync().ConfigureAwait(false), properties);
+                }, cancel);
     }
 
     /* ============================================================================ LOW LEVEL API */
