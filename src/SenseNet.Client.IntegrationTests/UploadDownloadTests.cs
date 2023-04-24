@@ -198,8 +198,8 @@ public class UploadDownloadTests : IntegrationTestBase
         // ASSERT
         Assert.IsNotNull(text);
         Assert.IsTrue(text.Contains("<ContentType name=\"File\""));
-        Assert.AreEqual("", properties.MediaType);
-        Assert.AreEqual("", properties.FileName);
+        Assert.AreEqual("text/xml", properties.MediaType);
+        Assert.AreEqual("File.ContentType", properties.FileName);
         Assert.AreEqual(streamLength, properties.ContentLength);
     }
 
@@ -225,8 +225,8 @@ public class UploadDownloadTests : IntegrationTestBase
         // ASSERT
         Assert.IsNotNull(text);
         Assert.IsTrue(text.Contains("<ContentType name=\"File\""));
-        Assert.AreEqual(" ", properties.MediaType);
-        Assert.AreEqual("", properties.FileName);
+        Assert.AreEqual("text/xml", properties.MediaType);
+        Assert.AreEqual("File.ContentType", properties.FileName);
         Assert.AreEqual(streamLength, properties.ContentLength);
     }
 
