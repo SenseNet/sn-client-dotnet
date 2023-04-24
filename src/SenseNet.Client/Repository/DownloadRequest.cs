@@ -5,6 +5,7 @@ public class DownloadRequest : RequestBase
 {
     public int ContentId { get; set; }
     public string Path { get; set; }
+    public string MediaSrc { get; set; }
     public string PropertyName { get; set; }
     public string Version { get; set; }
 }

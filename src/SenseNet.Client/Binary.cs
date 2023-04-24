@@ -42,8 +42,10 @@ public class Binary
     [JsonProperty(PropertyName = "media_etag")]
     public string MediaEtag { get; set; }
 
+    //UNDONE: doc
     public Task DownloadAsync(Func<Stream, StreamProperties, Task> responseProcessor, CancellationToken cancel)
     {
-        return this.OwnerContent.Repository.DownloadAsync(MediaSrc, responseProcessor, cancel);
+        return this.OwnerContent.Repository.DownloadAsync(new DownloadRequest {MediaSrc = this.MediaSrc},
+            responseProcessor, cancel);
     }
 }

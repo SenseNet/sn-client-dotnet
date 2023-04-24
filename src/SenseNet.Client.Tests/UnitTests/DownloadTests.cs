@@ -235,17 +235,17 @@ public class DownloadTests : TestBase
 
         var downloadingTasks = new[]
         {
-            repository.DownloadAsync(binaryUrl, async (stream, props) =>
+            repository.DownloadAsync(new DownloadRequest {MediaSrc = binaryUrl}, async (stream, props) =>
             {
                 using var reader = new StreamReader(stream);
                 text = await reader.ReadToEndAsync().ConfigureAwait(false);
             }, _cancel),
-            repository.DownloadAsync(signatureAUrl, async (stream, props) =>
+            repository.DownloadAsync(new DownloadRequest {MediaSrc = signatureAUrl}, async (stream, props) =>
             {
                 using var reader = new StreamReader(stream);
                 signatureA = await reader.ReadToEndAsync().ConfigureAwait(false);
             }, _cancel),
-            repository.DownloadAsync(signatureBUrl, async (stream, props) =>
+            repository.DownloadAsync(new DownloadRequest {MediaSrc = signatureBUrl}, async (stream, props) =>
             {
                 using var reader = new StreamReader(stream);
                 signatureB = await reader.ReadToEndAsync().ConfigureAwait(false);

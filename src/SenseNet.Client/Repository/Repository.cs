@@ -636,56 +636,46 @@ internal class Repository : IRepository
 
     public async Task DownloadAsync(DownloadRequest request, Func<Stream, StreamProperties, Task> responseProcessor, CancellationToken cancel)
     {
-        var contentId = request.ContentId;
-        if (contentId == 0)
+        var url = request.MediaSrc;
+        if (url == null)
         {
-            if (string.IsNullOrEmpty(request.Path))
-                throw new InvalidOperationException("Invalid request properties: either content id or path must be provided.");
-            var content = await LoadContentAsync(
-                    new LoadContentRequest {Path = request.Path, Select = new[] {"Id"}}, cancel)
+            var contentId = request.ContentId;
+            if (contentId == 0)
+            {
+                if (string.IsNullOrEmpty(request.Path))
+                    throw new InvalidOperationException("Invalid request properties: ContentId, Path, or MediaUrl must be specified.");
+                var content = await LoadContentAsync(
+                        new LoadContentRequest {Path = request.Path, Select = new[] {"Id"}}, cancel)
                     .ConfigureAwait(false);
-            if (content == null)
-                throw new InvalidOperationException("Content not found.");
-            contentId = content.Id;
+                if (content == null)
+                    throw new InvalidOperationException("Content not found.");
+                contentId = content.Id;
+            }
+
+            url = $"/binaryhandler.ashx?nodeid={contentId}&propertyname={request.PropertyName ?? "Binary"}";
+            if (!string.IsNullOrEmpty(request.Version))
+                url += "&version=" + request.Version;
         }
 
-        var url = $"/binaryhandler.ashx?nodeid={contentId}&propertyname={request.PropertyName ?? "Binary"}";
-        if (!string.IsNullOrEmpty(request.Version))
-            url += "&version=" + request.Version;
-
         await ProcessWebResponseAsync(url, HttpMethod.Get, request.AdditionalRequestHeaders, null,
-                async (response, _) =>
+                async (response, c) =>
                 {
                     if (response == null)
                         return;
                     var headers = response.Content.Headers;
                     var properties = new StreamProperties
                     {
-                        MediaType = headers.ContentType.MediaType,
-                        FileName = headers.ContentDisposition.FileName,
+                        MediaType = headers.ContentType?.MediaType,
+                        FileName = headers.ContentDisposition?.FileName,
                         ContentLength = headers.ContentLength,
                     };
+#if NET6_0_OR_GREATER
+                    await responseProcessor(await response.Content.ReadAsStreamAsync(c).ConfigureAwait(false), properties);
+#else
                     await responseProcessor(await response.Content.ReadAsStreamAsync().ConfigureAwait(false), properties);
+#endif
                 }, cancel)
             .ConfigureAwait(false);
-    }
-
-    public Task DownloadAsync(string url, Func<Stream, StreamProperties, Task> responseProcessor, CancellationToken cancel)
-    {
-        return ProcessWebResponseAsync(url, HttpMethod.Get, null, null,
-                async (response, _) =>
-                {
-                    if (response == null)
-                        return;
-                    var headers = response.Content.Headers;
-                    var properties = new StreamProperties
-                    {
-                        MediaType = headers.ContentType.MediaType,
-                        FileName = headers.ContentDisposition.FileName,
-                        ContentLength = headers.ContentLength,
-                    };
-                    await responseProcessor(await response.Content.ReadAsStreamAsync().ConfigureAwait(false), properties);
-                }, cancel);
     }
 
     /* ============================================================================ LOW LEVEL API */
