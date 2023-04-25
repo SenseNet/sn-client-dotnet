@@ -477,7 +477,7 @@ public partial class Content : DynamicObject
     /// <param name="server">Target server.</param>
     /// <param name="progressCallback">An optional callback method that is called after each chunk is uploaded to the server.</param>
     /// <returns>The uploaded file content returned at the end of the upload request.</returns>
-    [Obsolete("Use UploadAsync method of the IRepository.")]
+    [Obsolete("Use the UploadAsync method of IRepository.")]
     public static async Task<Content> UploadAsync(string parentPath, string fileName, Stream stream, string contentType = null, string propertyName = null, ServerContext server = null, Action<int> progressCallback = null)
     {
         var uploadData = new UploadData() 
@@ -505,7 +505,7 @@ public partial class Content : DynamicObject
     /// <param name="server">Target server.</param>
     /// <param name="progressCallback">An optional callback method that is called after each chunk is uploaded to the server.</param>
     /// <returns>The uploaded file content returned at the end of the upload request.</returns>
-    [Obsolete("Use UploadAsync method of the IRepository.")]
+    [Obsolete("Use the UploadAsync method of IRepository.")]
     public static async Task<Content> UploadAsync(int parentId, string fileName, Stream stream, string contentType = null, string propertyName = null, ServerContext server = null, Action<int> progressCallback = null)
     {
         var uploadData = new UploadData()

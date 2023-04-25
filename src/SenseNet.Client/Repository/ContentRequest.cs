@@ -6,7 +6,7 @@ using System.Linq;
 namespace SenseNet.Client;
 
 /// <summary>
-/// Defines the used standard OData and extension values for the "$format" query parameter.
+/// Defines the possible values for the "$format" OData query parameter.
 /// </summary>
 public enum ResponseFormat
 {
@@ -68,7 +68,7 @@ public abstract class ContentRequest : ODataRequestBase
     //============================================================================= Properties
 
     /// <summary>
-    /// Gets or sets the "version-request" parameter.
+    /// Gets or sets the "version" parameter.
     /// </summary>
     public string Version { get; set; }
 

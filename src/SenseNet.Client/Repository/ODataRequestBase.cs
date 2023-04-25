@@ -9,7 +9,7 @@ namespace SenseNet.Client;
 public abstract class ODataRequestBase : RequestBase
 {
     /// <summary>
-    /// Gets a container for any custom URL parameters.
+    /// Gets a container for custom URL parameters.
     /// </summary>
     public ODataRequestParameterCollection Parameters { get; }
 

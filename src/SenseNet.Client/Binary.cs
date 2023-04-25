@@ -7,10 +7,10 @@ using System.Threading;
 namespace SenseNet.Client;
 
 /// <summary>
-/// Represents a metadata object of a Binary type property.
+/// A metadata object representing a Binary field.
 /// </summary>
 /// <remarks>
-/// This is a deserialized media resource of the standard OData with additional back-reference of the owner Content.
+/// This is a deserialized media resource of the standard OData response with additional back-reference of the owner Content.
 /// Do not instantiate this object in your code and do not write any property.
 /// </remarks>
 public class Binary
@@ -22,28 +22,29 @@ public class Binary
     internal Content OwnerContent { get; set; }
 
     /// <summary>
-    /// Gets or sets the deserialized "edit_media" of the "__mediaresource" object from OData response.
+    /// Gets or sets the "edit_media" property of the "__mediaresource" object from the OData response.
     /// </summary>
     [JsonProperty(PropertyName = "edit_media")]
     public string EditMedia { get; set; }
     /// <summary>
-    /// Gets or sets the deserialized "media_src" of the "__mediaresource" object from OData response.
+    /// Gets or sets the "media_src" property of the "__mediaresource" object from the OData response.
     /// </summary>
     [JsonProperty(PropertyName = "media_src")]
     public string MediaSrc { get; set; }
     /// <summary>
-    /// Gets or sets the deserialized "content_type" of the "__mediaresource" object from OData response.
+    /// Gets or sets the "content_type" property of the "__mediaresource" object from the OData response.
     /// </summary>
     [JsonProperty(PropertyName = "content_type")]
     public string ContentType { get; set; }
     /// <summary>
-    /// Gets or sets the deserialized "media_etag" of the "__mediaresource" object from OData response.
+    /// Gets or sets the "media_etag" property of the "__mediaresource" object from the OData response.
     /// </summary>
     [JsonProperty(PropertyName = "media_etag")]
     public string MediaEtag { get; set; }
 
     /// <summary>
-    /// Provides access to the stream corresponding to the descriptor and its properties via the passed callback.
+    /// Downloads a binary stream that this object represents. The provided callback method
+    /// is called by the API with the stream and its properties.
     /// </summary>
     /// <remarks>
     /// An example for downloading a text file:

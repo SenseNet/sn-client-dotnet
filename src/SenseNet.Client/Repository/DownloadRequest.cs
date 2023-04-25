@@ -2,7 +2,7 @@
 namespace SenseNet.Client;
 
 /// <summary>
-/// Collects parameters for stream download operations.
+/// Defines parameters for a stream download operations.
 /// </summary>
 public class DownloadRequest : RequestBase
 {
@@ -13,16 +13,17 @@ public class DownloadRequest : RequestBase
     public string Path { get; set; }
     /// <summary>
     /// Gets or sets the Id of the Content that has the stream to download.
-    /// If the value is given (>0), the Path and MediaSrc properties are omitted.
+    /// If the value is set (greater than 0), the Path and MediaSrc properties are omitted.
     /// </summary>
     public int ContentId { get; set; }
     /// <summary>
     /// Gets or sets the raw url of the stream to download.
-    /// If the value is given (not null), the Path and ContentId properties are omitted.
+    /// If the value is set (not null), the Path and ContentId properties are omitted.
     /// </summary>
     public string MediaSrc { get; set; }
     /// <summary>
-    /// Gets or sets the property name of the content that represents the stream to download. If not provided, the default is 'Binary'.
+    /// Gets or sets the property name of the content that represents the stream to download.
+    /// If not provided, the default is 'Binary'.
     /// </summary>
     public string PropertyName { get; set; }
     /// <summary>
