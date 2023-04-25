@@ -5,11 +5,18 @@ using System.Linq;
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client;
 
+/// <summary>
+/// Defines the used standard OData and extension values for the "$format" query parameter.
+/// </summary>
 public enum ResponseFormat
 {
     Json, VerboseJson, TypeScript, Xml, Export, Table
 }
 
+/// <summary>
+/// Defines a base class for collecting parameters in derived classes that are used in simple or
+/// complex Content or collection requests.
+/// </summary>
 public abstract class ContentRequest : ODataRequestBase
 {
     private static class P

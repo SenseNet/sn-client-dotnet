@@ -3,6 +3,9 @@
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client;
 
+/// <summary>
+/// Defines a base class for collecting parameters in derived classes that are used in simple or complex OData requests.
+/// </summary>
 public abstract class ODataRequestBase : RequestBase
 {
     /// <summary>
@@ -20,6 +23,11 @@ public abstract class ODataRequestBase : RequestBase
     protected virtual bool AddWellKnownItem(KeyValuePair<string, string> item) => false;
     protected virtual bool RemoveWellKnownItem(KeyValuePair<string, string> item) => false;
 
+    /// <summary>
+    /// Converts this instance to an <see cref="ODataRequest"/>.
+    /// </summary>
+    /// <param name="server">The current <see cref="ServerContext"/> instance.</param>
+    /// <returns>The complete <see cref="ODataRequest"/>.</returns>
     public ODataRequest ToODataRequest(ServerContext server)
     {
         var oDataRequest = new ODataRequest(server);

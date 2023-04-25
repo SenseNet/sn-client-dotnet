@@ -42,7 +42,23 @@ public class Binary
     [JsonProperty(PropertyName = "media_etag")]
     public string MediaEtag { get; set; }
 
-    //UNDONE: doc
+    /// <summary>
+    /// Provides access to the stream corresponding to the descriptor and its properties via the passed callback.
+    /// </summary>
+    /// <remarks>
+    /// An example for downloading a text file:
+    /// <code>
+    /// string text;
+    /// await content.Binary.DownloadAsync(async (stream, properties) =>
+    /// {
+    ///     using var reader = new StreamReader(stream);
+    ///     text = await reader.ReadToEndAsync().ConfigureAwait(false);
+    /// }, cancellationToken);
+    /// </code>
+    /// </remarks>
+    /// <param name="responseProcessor">Callback for controlling the download.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A task that represents an asynchronous operation.</returns>
     public Task DownloadAsync(Func<Stream, StreamProperties, Task> responseProcessor, CancellationToken cancel)
     {
         return this.OwnerContent.Repository.DownloadAsync(new DownloadRequest {MediaSrc = this.MediaSrc},

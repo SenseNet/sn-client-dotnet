@@ -395,22 +395,116 @@ public interface IRepository
 
     /* ============================================================================ MIDDLE LEVEL API */
 
+    /// <summary>
+    /// Access any object from the server and tries to convert it according to the given type parameter.
+    /// </summary>
+    /// <remarks>
+    /// For example:
+    /// <code>
+    /// var request = new ODataRequest { ContentId = 142, ActionName = "Whatever" };
+    /// var customObject = await repository.GetResponseAsync&lt;CustomObject&gt;(request, HttpMethod.Get, default);
+    /// </code>
+    /// </remarks>
+    /// <typeparam name="T">Any class, struct or integral type.</typeparam>
+    /// <param name="requestData">The <see cref="ODataRequest"/> instance.</param>
+    /// <param name="method">The HTTP method.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A Task that represents the asynchronous operation and wraps the result object.</returns>
     Task<T> GetResponseAsync<T>(ODataRequest requestData, HttpMethod method, CancellationToken cancel);
+    /// <summary>
+    /// Access any object from the server and tries to deserialize it to a JSON object.
+    /// </summary>
+    /// <remarks>
+    /// For example:
+    /// <code>
+    /// var request = new ODataRequest {ContentId = 142, ActionName = "Whatever" };
+    /// var jsonResult = await repository.GetResponseJsonAsync(request, HttpMethod.Get, default);
+    /// var jObject = jsonResult as JObject;
+    /// var customObject = jObject.ToObject&lt;CustomObject&gt;();
+    /// </code>
+    /// </remarks>
+    /// <param name="requestData">The <see cref="ODataRequest"/> instance.</param>
+    /// <param name="method">The HTTP method.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A Task that represents the asynchronous operation and wraps the result object.</returns>
     Task<dynamic> GetResponseJsonAsync(ODataRequest requestData, HttpMethod method, CancellationToken cancel);
+    /// <summary>
+    /// Access any object from the server and returns the raw string response.
+    /// </summary>
+    /// <remarks>
+    /// For example:
+    /// <code>
+    /// var request = new ODataRequest {ContentId = 142, ActionName = "Whatever" };
+    /// var response = await repository.GetResponseStringAsync(request, HttpMethod.Get, default);
+    /// </code>
+    /// </remarks>
+    /// <param name="requestData">The <see cref="ODataRequest"/> instance.</param>
+    /// <param name="method">The HTTP method.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A Task that represents the asynchronous operation and wraps the string response.</returns>
     Task<string> GetResponseStringAsync(ODataRequest requestData, HttpMethod method, CancellationToken cancel);
 
+    /// <summary>
+    /// Access any object from the server and returns the raw string response.
+    /// </summary>
+    /// <param name="uri">The raw URI of the requested object.</param>
+    /// <param name="method">The HTTP method.</param>
+    /// <param name="postData">The request body if the HTTP method allows it.</param>
+    /// <param name="additionalHeaders">Key-value pairs for setting additional request headers.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A Task that represents the asynchronous operation and wraps the string response.</returns>
     Task<string> GetResponseStringAsync(Uri uri, HttpMethod method, string postData,
         Dictionary<string, IEnumerable<string>> additionalHeaders, CancellationToken cancel);
 
+    /// <summary>
+    /// Provides access to the stream corresponding to the <paramref name="request"/> and its properties via the passed callback.
+    /// </summary>
+    /// <remarks>
+    /// An example for downloading a text file:
+    /// <code>
+    /// string text;
+    /// var request = new DownloadRequest { ContentId = 142 };
+    /// await repository.DownloadAsync(request, async (stream, props) =>
+    /// {
+    ///     using var reader = new StreamReader(stream);
+    ///     text = await reader.ReadToEndAsync().ConfigureAwait(false);
+    /// }, cancel).ConfigureAwait(false);
+    /// </code>
+    /// </remarks>
+    /// <param name="request">The <see cref="DownloadRequest"/> instance.</param>
+    /// <param name="responseProcessor">Callback for controlling the download.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A Task that represents the asynchronous operation.</returns>
     Task DownloadAsync(DownloadRequest request, Func<Stream, StreamProperties, Task> responseProcessor, CancellationToken cancel);
 
     /* ============================================================================ LOW LEVEL API */
 
+    /// <summary>
+    /// Sends the specified HTTP request and passes the response to the <paramref name="responseProcessor"/> callback.
+    /// </summary>
+    /// <param name="relativeUrl">Relative URL. Should starts with '/'.</param>
+    /// <param name="method">The HTTP method.</param>
+    /// <param name="additionalHeaders">Key-value pairs for setting additional request headers. Default: null.</param>
+    /// <param name="httpContent">The request body or null.</param>
+    /// <param name="responseProcessor">Callback that can process the <see cref="HttpResponseMessage"/> in async way.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A task that represents an asynchronous operation.</returns>
     Task ProcessWebResponseAsync(string relativeUrl, HttpMethod method, Dictionary<string, IEnumerable<string>> additionalHeaders,
         HttpContent httpContent,
         Func<HttpResponseMessage, CancellationToken, Task> responseProcessor,
         CancellationToken cancel);
 
+    /// <summary>
+    /// Sends the specified HTTP request and passes the response to the <paramref name="responseProcessor"/> callback.
+    /// </summary>
+    /// <param name="relativeUrl">Relative URL. Should starts with '/'.</param>
+    /// <param name="method">The HTTP method.</param>
+    /// <param name="additionalHeaders">Key-value pairs for setting additional request headers. Default: null.</param>
+    /// <param name="requestProcessor">A callback for fine tuning the <see cref="HttpRequestMessage"/> before
+    /// sending the HTTP request</param>
+    /// <param name="responseProcessor">Callback that can process the <see cref="HttpResponseMessage"/> in async way.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A task that represents an asynchronous operation.</returns>
     Task ProcessWebRequestResponseAsync(string relativeUrl, HttpMethod method, Dictionary<string, IEnumerable<string>> additionalHeaders,
         Action<HttpClientHandler, HttpClient, HttpRequestMessage> requestProcessor,
         Func<HttpResponseMessage, CancellationToken, Task> responseProcessor,
