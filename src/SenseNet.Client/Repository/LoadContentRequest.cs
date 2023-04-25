@@ -6,7 +6,7 @@ namespace SenseNet.Client;
 /// <summary>
 /// Represents a request for loading a content from the repository.
 /// </summary>
-public class LoadContentRequest : RequestBase
+public class LoadContentRequest : ContentRequest
 {
     /// <summary>
     /// Content path that will be the base of the OData request if the Content id is not provided.
@@ -19,6 +19,8 @@ public class LoadContentRequest : RequestBase
 
     protected override void AddProperties(ODataRequest oDataRequest)
     {
+        base.AddProperties(oDataRequest);
+
         if (Path != default && ContentId != default)
             throw new InvalidOperationException("Invalid request properties: ContentId and Path cannot be specified at the same time.");
         oDataRequest.Path = this.Path;

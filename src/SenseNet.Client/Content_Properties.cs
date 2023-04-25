@@ -3,23 +3,15 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Dynamic;
+using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 
 namespace SenseNet.Client;
-
-public class Binary
-{
-    [JsonProperty(PropertyName = "edit_media")]
-    public string EditMedia { get; set; }
-    [JsonProperty(PropertyName = "media_src")]
-    public string MediaSrc { get; set; }
-    [JsonProperty(PropertyName = "content_type")]
-    public string ContentType { get; set; }
-    [JsonProperty(PropertyName = "media_etag")]
-    public string MediaEtag { get; set; }
-}
 
 public partial class Content
 {
@@ -96,7 +88,11 @@ public partial class Content
             if (propertyType == typeof(Binary))
             {
                 if (jsonValue is JObject jObject)
-                    property.SetMethod.Invoke(this, new object[] { jObject["__mediaresource"].ToObject<Binary>() });
+                {
+                    var binary = jObject["__mediaresource"].ToObject<Binary>();
+                    binary.OwnerContent = this;
+                    property.SetMethod.Invoke(this, new object[] { binary });
+                }
                 continue;
             }
             if (propertyType == typeof(string))

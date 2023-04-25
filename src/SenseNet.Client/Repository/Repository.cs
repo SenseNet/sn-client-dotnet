@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Threading;
@@ -9,12 +10,17 @@ using Newtonsoft.Json.Linq;
 using System.Net.Http;
 using Microsoft.Extensions.Options;
 using System.Text.RegularExpressions;
+using System.Net.Http.Headers;
+using System.Net;
+using System.Text;
 
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client;
 
 internal class Repository : IRepository
 {
+    private static readonly string JsonContentMimeType = "application/json";
+
     private readonly IRestCaller _restCaller;
     private readonly IServiceProvider _services;
     private readonly ILogger<Repository> _logger;
@@ -275,7 +281,6 @@ internal class Repository : IRepository
         var items = jsonResponse.d.results as JArray;
         var count = items?.Count ?? 0;
         var resultEnumerable = items?.Select(CreateContentFromResponse<T>).ToArray() ?? Array.Empty<T>();
-        var x = new List<T>(resultEnumerable);
         return new ContentCollection<T>(resultEnumerable, count,
             totalCount);
     }
@@ -338,6 +343,185 @@ internal class Repository : IRepository
 
         throw new ClientException($"Invalid count response. Request: {oDataRequest.GetUri()}. Response: {response}");
     }
+
+    /* ============================================================================ UPLOAD */
+
+    public Task<UploadResult> UploadAsync(UploadRequest request, Stream stream, CancellationToken cancel)
+    {
+        return UploadAsync(request, stream, null, cancel);
+    }
+    public async Task<UploadResult> UploadAsync(UploadRequest request, Stream stream, Action<int> progressCallback,
+        CancellationToken cancel)
+    {
+        var uploadData = new UploadData()
+        {
+            FileName = request.ContentName,
+            FileLength = stream.Length
+        };
+
+        if (!string.IsNullOrEmpty(request.ContentType))
+            uploadData.ContentType = request.ContentType;
+        if (!string.IsNullOrEmpty(request.PropertyName))
+            uploadData.PropertyName = request.PropertyName;
+
+        var oDataRequest = request.ToODataRequest(Server);
+        return await UploadStreamAsync(oDataRequest, uploadData, stream, progressCallback, cancel)
+            .ConfigureAwait(false);
+    }
+    private async Task<UploadResult> UploadStreamAsync(ODataRequest request, UploadData uploadData, Stream stream,
+        Action<int> progressCallback, CancellationToken cancel)
+    {
+        // force set values
+        uploadData.UseChunk = stream.Length > ClientContext.Current.ChunkSizeInBytes;
+        if (uploadData.FileLength == 0)
+            uploadData.FileLength = stream.Length;
+
+        request.Parameters.Add("create", "1");
+
+        UploadResult result = null;
+
+        // Get ChunkToken
+        try
+        {
+            _logger.LogTrace("###>REQ: {0}", request);
+            _logger.LogTrace($"Uploading initial data of {uploadData.FileName}.");
+
+            var httpContent = new StringContent(uploadData.ToString());
+            httpContent.Headers.ContentType = new MediaTypeHeaderValue(JsonContentMimeType);
+            await ProcessWebResponseAsync(request.ToString(), HttpMethod.Post, request.AdditionalRequestHeaders,
+                httpContent,
+                async (response, _) =>
+                {
+                    uploadData.ChunkToken = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                }, cancel).ConfigureAwait(false);
+
+        }
+        catch (WebException ex)
+        {
+            var ce = new ClientException("Error during binary upload.", ex)
+            {
+                Data =
+                    {
+                        ["SiteUrl"] = request.SiteUrl,
+                        ["Parent"] = request.ContentId != 0 ? request.ContentId.ToString() : request.Path,
+                        ["FileName"] = uploadData.FileName,
+                        ["ContentType"] = uploadData.ContentType
+                    }
+            };
+
+            throw ce;
+        }
+
+        // Reuse previous request data, but remove unnecessary parameters
+        request.Parameters.Remove("create");
+
+        // Send subsequent requests
+        var boundary = "---------------------------" + DateTime.UtcNow.Ticks.ToString("x");
+        var uploadFormData = uploadData.ToKeyValuePairs();
+        var contentDispositionHeaderValue = new ContentDispositionHeaderValue("attachment")
+        {
+            FileName = uploadData.FileName
+        };
+        var buffer = new byte[ClientContext.Current.ChunkSizeInBytes];
+        int bytesRead;
+        var start = 0;
+        var chunkCount = 0;
+
+        while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length, cancel)) != 0)
+        {
+            chunkCount++;
+
+            _logger.LogTrace($"Uploading chunk {chunkCount}: {bytesRead} bytes of {uploadData.FileName}.");
+
+            // Prepare the current chunk request
+            using var httpContent = new MultipartFormDataContent(boundary);
+            foreach (var item in uploadFormData)
+                httpContent.Add(new StringContent(item.Value), item.Key);
+            httpContent.Headers.ContentDisposition = contentDispositionHeaderValue;
+
+            if (uploadData.UseChunk)
+                httpContent.Headers.ContentRange =
+                    new ContentRangeHeaderValue(start, start + bytesRead - 1, stream.Length);
+
+            // Add the chunk as a stream into the request content
+            var postedStream = new MemoryStream(buffer, 0, bytesRead);
+            httpContent.Add(new StreamContent(postedStream), "files[]", uploadData.FileName);
+
+            // Process
+            await ProcessWebResponseAsync(request.ToString(), HttpMethod.Post, request.AdditionalRequestHeaders,
+                httpContent,
+                async (response, _) =>
+                {
+                    var rs = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    result = JsonHelper.Deserialize<UploadResult>(rs);
+                }, cancel).ConfigureAwait(false);
+
+            start += bytesRead;
+
+            // Notify the caller about every chunk that was uploaded successfully
+            progressCallback?.Invoke(start);
+        }
+
+        return result;
+    }
+
+    public async Task<UploadResult> UploadAsync(UploadRequest request, string fileText, CancellationToken cancel)
+    {
+        var uploadData = new UploadData()
+        {
+            FileName = request.ContentName,
+        };
+
+        if (!string.IsNullOrEmpty(request.ContentType))
+            uploadData.ContentType = request.ContentType;
+
+        if (!string.IsNullOrEmpty(request.PropertyName))
+            uploadData.PropertyName = request.PropertyName;
+
+        //---- return await RESTCaller.UploadTextAsync(fileText, uploadData, parentId, cancellationToken, server).ConfigureAwait(false);
+        var oDataRequest = request.ToODataRequest(Server);
+        return await UploadTextAsync(oDataRequest, uploadData, fileText, cancel).ConfigureAwait(false);
+    }
+    private async Task<UploadResult> UploadTextAsync(ODataRequest request, UploadData uploadData, string text, CancellationToken cancel)
+    {
+        // force set values
+        if (Encoding.UTF8.GetBytes(text).Length > ClientContext.Current.ChunkSizeInBytes)
+            throw new InvalidOperationException("Cannot upload a text bigger than the chunk size " +
+                                                $"({ClientContext.Current.ChunkSizeInBytes} bytes). " +
+                                                "This method uploads whole text files. Use the regular UploadAsync method " +
+                                                "for uploading big files in chunks.");
+        if (uploadData.FileLength == 0)
+            uploadData.FileLength = text.Length;
+        uploadData.FileText = text;
+
+        UploadResult result = null;
+
+        var model = JsonHelper.GetJsonPostModel(uploadData.ToDictionary());
+        var httpContent = new StringContent(model);
+        httpContent.Headers.ContentType = new MediaTypeHeaderValue(JsonContentMimeType);
+
+        Server.Logger?.LogTrace($"Uploading text content to the {uploadData.PropertyName} field of {uploadData.FileName}");
+
+        await ProcessWebResponseAsync(request.ToString(), HttpMethod.Post, request.AdditionalRequestHeaders, httpContent,
+            async (response, _) =>
+            {
+                if (response != null)
+                {
+                    var rs = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    result = JsonHelper.Deserialize<UploadResult>(rs);
+                }
+            }, cancel).ConfigureAwait(false);
+
+        return result;
+    }
+
+    /* ============================================================================ DOWNLOAD */
+
+    public Task<string> GetBlobToken(int id, CancellationToken cancel, string version = null,
+        string propertyName = null) => throw new NotImplementedException();
+
+    public Task<string> GetBlobToken(string path, CancellationToken cancel, string version = null,
+        string propertyName = null) => throw new NotImplementedException();
 
     /* ============================================================================ DELETE */
 
@@ -412,6 +596,50 @@ internal class Repository : IRepository
         Dictionary<string, IEnumerable<string>> additionalHeaders, CancellationToken cancel)
     {
         return _restCaller.GetResponseStringAsync(uri, method, postData, additionalHeaders, cancel);
+    }
+
+    public async Task DownloadAsync(DownloadRequest request, Func<Stream, StreamProperties, Task> responseProcessor, CancellationToken cancel)
+    {
+        var url = request.MediaSrc;
+        if (url == null)
+        {
+            var contentId = request.ContentId;
+            if (contentId == 0)
+            {
+                if (string.IsNullOrEmpty(request.Path))
+                    throw new InvalidOperationException("Invalid request properties: ContentId, Path, or MediaUrl must be specified.");
+                var content = await LoadContentAsync(
+                        new LoadContentRequest {Path = request.Path, Select = new[] {"Id"}}, cancel)
+                    .ConfigureAwait(false);
+                if (content == null)
+                    throw new InvalidOperationException("Content not found.");
+                contentId = content.Id;
+            }
+
+            url = $"/binaryhandler.ashx?nodeid={contentId}&propertyname={request.PropertyName ?? "Binary"}";
+            if (!string.IsNullOrEmpty(request.Version))
+                url += "&version=" + request.Version;
+        }
+
+        await ProcessWebResponseAsync(url, HttpMethod.Get, request.AdditionalRequestHeaders, null,
+                async (response, c) =>
+                {
+                    if (response == null)
+                        return;
+                    var headers = response.Content.Headers;
+                    var properties = new StreamProperties
+                    {
+                        MediaType = headers.ContentType?.MediaType,
+                        FileName = headers.ContentDisposition?.FileName,
+                        ContentLength = headers.ContentLength,
+                    };
+#if NET6_0_OR_GREATER
+                    await responseProcessor(await response.Content.ReadAsStreamAsync(c).ConfigureAwait(false), properties);
+#else
+                    await responseProcessor(await response.Content.ReadAsStreamAsync().ConfigureAwait(false), properties);
+#endif
+                }, cancel)
+            .ConfigureAwait(false);
     }
 
     /* ============================================================================ LOW LEVEL API */

@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.Threading;
 using Newtonsoft.Json.Linq;
 using System.Net.Http;
+using System.IO;
 
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client;
@@ -287,6 +288,68 @@ public interface IRepository
     /// <returns>Count of contents returned by the provided content query.</returns>
     public Task<int> QueryCountAsync(QueryContentRequest requestData, CancellationToken cancel);
 
+    /* ============================================================================ UPLOAD */
+
+    /// <summary>
+    /// Uploads the provided stream to the destination according to the <paramref name="request"/>.
+    /// If the stream is too big, it will be uploaded in several rounds (chunks).
+    /// </summary>
+    /// <param name="request">Common request parameters that define the destination and control the return data.</param>
+    /// <param name="stream">The stream that will be uploaded.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A Task that represents the asynchronous operation and wraps
+    /// the upload result returned at the end of the upload request.</returns>
+    Task<UploadResult> UploadAsync(UploadRequest request, Stream stream, CancellationToken cancel);
+    /// <summary>
+    /// Uploads the provided stream to the destination according to the <paramref name="request"/>.
+    /// If the stream is too big, it will be uploaded in several rounds (chunks).
+    /// </summary>
+    /// <param name="request">Common request parameters that define the destination and control the return data.</param>
+    /// <param name="stream">The stream that will be uploaded.</param>
+    /// <param name="progressCallback">Optional callback for tracing upload progress if the file is too big.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A Task that represents the asynchronous operation and wraps
+    /// the upload result returned at the end of the upload request.</returns>
+    Task<UploadResult> UploadAsync(UploadRequest request, Stream stream, Action<int> progressCallback, CancellationToken cancel);
+
+    /// <summary>
+    /// Uploads the provided text data to the destination according to the <paramref name="request"/>.
+    /// The contents cannot be bigger than the configured chunk size.
+    /// This method is designed for upload relatively small text files e.g. settings.
+    /// </summary>
+    /// <param name="request">Common request parameters that define the destination and control the return data.</param>
+    /// <param name="fileText">The text data that will be uploaded.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A Task that represents the asynchronous operation and wraps
+    /// the upload result returned at the end of the upload request.</returns>
+    /// <returns></returns>
+    Task<UploadResult> UploadAsync(UploadRequest request, string fileText, CancellationToken cancel);
+
+    /* ============================================================================ DOWNLOAD */
+
+    /// <summary>
+    /// Gets a blob storage token that identifies a binary in the storage.
+    /// </summary>
+    /// <param name="id">Content id.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <param name="version">Content version (e.g. V2.3D). If not provided, the highest version 
+    /// accessible to the current user will be served.</param>
+    /// <param name="propertyName">Binary field name. Default is Binary.</param>
+    /// <returns>A Task that represents the asynchronous operation and wraps
+    /// a token that can be used with the Blob storage API.</returns>
+    Task<string> GetBlobToken(int id, CancellationToken cancel, string version = null, string propertyName = null);
+    /// <summary>
+    /// Gets a blob storage token that identifies a binary in the storage.
+    /// </summary>
+    /// <param name="path">Content path.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <param name="version">Content version (e.g. V2.3D). If not provided, the highest version 
+    /// accessible to the current user will be served.</param>
+    /// <param name="propertyName">Binary field name. Default is Binary.</param>
+    /// <returns>A Task that represents the asynchronous operation and wraps
+    /// a token that can be used with the Blob storage API.</returns>
+    Task<string> GetBlobToken(string path, CancellationToken cancel, string version = null, string propertyName = null);
+
     /* ============================================================================ DELETE */
 
     /// <summary>
@@ -332,20 +395,118 @@ public interface IRepository
 
     /* ============================================================================ MIDDLE LEVEL API */
 
+    /// <summary>
+    /// Gets a response from the server and tries to convert it according to the given type parameter.
+    /// </summary>
+    /// <remarks>
+    /// For example:
+    /// <code>
+    /// var request = new ODataRequest { ContentId = 142, ActionName = "DoSomething" };
+    /// var customObject = await repository.GetResponseAsync&lt;CustomObject&gt;(request, HttpMethod.Get, default);
+    /// </code>
+    /// </remarks>
+    /// <typeparam name="T">A class, struct or integral type that represents
+    /// a well-known response (action result or property).</typeparam>
+    /// <param name="requestData">The <see cref="ODataRequest"/> instance.</param>
+    /// <param name="method">The HTTP method.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A Task that represents the asynchronous operation and wraps the result object.</returns>
     Task<T> GetResponseAsync<T>(ODataRequest requestData, HttpMethod method, CancellationToken cancel);
+    /// <summary>
+    /// Gets a response from the server and tries to deserialize it to a JSON object.
+    /// </summary>
+    /// <remarks>
+    /// For example:
+    /// <code>
+    /// var request = new ODataRequest {ContentId = 142, ActionName = "DoSomething" };
+    /// var jsonResult = await repository.GetResponseJsonAsync(request, HttpMethod.Get, default);
+    /// var jObject = jsonResult as JObject;
+    /// var customObject = jObject.ToObject&lt;CustomObject&gt;();
+    /// </code>
+    /// </remarks>
+    /// <param name="requestData">The <see cref="ODataRequest"/> instance.</param>
+    /// <param name="method">The HTTP method.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A Task that represents the asynchronous operation and wraps the result object.</returns>
     Task<dynamic> GetResponseJsonAsync(ODataRequest requestData, HttpMethod method, CancellationToken cancel);
+    /// <summary>
+    /// Gets a response from the server and returns the raw string response.
+    /// </summary>
+    /// <remarks>
+    /// For example:
+    /// <code>
+    /// var request = new ODataRequest {ContentId = 142, ActionName = "DoSomething" };
+    /// var response = await repository.GetResponseStringAsync(request, HttpMethod.Get, default);
+    /// </code>
+    /// </remarks>
+    /// <param name="requestData">The <see cref="ODataRequest"/> instance.</param>
+    /// <param name="method">The HTTP method.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A Task that represents the asynchronous operation and wraps the string response.</returns>
     Task<string> GetResponseStringAsync(ODataRequest requestData, HttpMethod method, CancellationToken cancel);
 
+    /// <summary>
+    /// Gets a response from the server and returns the raw string response.
+    /// </summary>
+    /// <param name="uri">The raw URI of the requested object.</param>
+    /// <param name="method">The HTTP method.</param>
+    /// <param name="postData">The request body if the HTTP method allows it.</param>
+    /// <param name="additionalHeaders">Key-value pairs for setting additional request headers.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A Task that represents the asynchronous operation and wraps the string response.</returns>
     Task<string> GetResponseStringAsync(Uri uri, HttpMethod method, string postData,
         Dictionary<string, IEnumerable<string>> additionalHeaders, CancellationToken cancel);
 
+    /// <summary>
+    /// Downloads a binary stream defined by the <paramref name="request"/>. The provided callback method
+    /// is called by the API with the stream and its properties.
+    /// </summary>
+    /// <remarks>
+    /// An example for downloading a text file:
+    /// <code>
+    /// string text;
+    /// var request = new DownloadRequest { ContentId = 142 };
+    /// await repository.DownloadAsync(request, async (stream, props) =>
+    /// {
+    ///     using var reader = new StreamReader(stream);
+    ///     text = await reader.ReadToEndAsync().ConfigureAwait(false);
+    /// }, cancel).ConfigureAwait(false);
+    /// </code>
+    /// </remarks>
+    /// <param name="request">The <see cref="DownloadRequest"/> instance.</param>
+    /// <param name="responseProcessor">Callback for controlling the download.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A Task that represents the asynchronous operation.</returns>
+    Task DownloadAsync(DownloadRequest request, Func<Stream, StreamProperties, Task> responseProcessor, CancellationToken cancel);
+
     /* ============================================================================ LOW LEVEL API */
 
+    /// <summary>
+    /// Sends the specified HTTP request and passes the response to the <paramref name="responseProcessor"/> callback.
+    /// </summary>
+    /// <param name="relativeUrl">Relative URL. Should starts with '/'.</param>
+    /// <param name="method">The HTTP method.</param>
+    /// <param name="additionalHeaders">Key-value pairs for setting additional request headers. Default: null.</param>
+    /// <param name="httpContent">The request body or null.</param>
+    /// <param name="responseProcessor">A callback that can process the <see cref="HttpResponseMessage"/> asynchronously.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A task that represents an asynchronous operation.</returns>
     Task ProcessWebResponseAsync(string relativeUrl, HttpMethod method, Dictionary<string, IEnumerable<string>> additionalHeaders,
         HttpContent httpContent,
         Func<HttpResponseMessage, CancellationToken, Task> responseProcessor,
         CancellationToken cancel);
 
+    /// <summary>
+    /// Sends the specified HTTP request and passes the response to the <paramref name="responseProcessor"/> callback.
+    /// </summary>
+    /// <param name="relativeUrl">Relative URL. Should starts with '/'.</param>
+    /// <param name="method">The HTTP method.</param>
+    /// <param name="additionalHeaders">Key-value pairs for setting additional request headers. Default: null.</param>
+    /// <param name="requestProcessor">A callback for fine tuning the <see cref="HttpRequestMessage"/> before
+    /// sending the HTTP request</param>
+    /// <param name="responseProcessor">A callback that can process the <see cref="HttpResponseMessage"/> asynchronously.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A task that represents an asynchronous operation.</returns>
     Task ProcessWebRequestResponseAsync(string relativeUrl, HttpMethod method, Dictionary<string, IEnumerable<string>> additionalHeaders,
         Action<HttpClientHandler, HttpClient, HttpRequestMessage> requestProcessor,
         Func<HttpResponseMessage, CancellationToken, Task> responseProcessor,

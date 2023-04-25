@@ -477,6 +477,7 @@ public partial class Content : DynamicObject
     /// <param name="server">Target server.</param>
     /// <param name="progressCallback">An optional callback method that is called after each chunk is uploaded to the server.</param>
     /// <returns>The uploaded file content returned at the end of the upload request.</returns>
+    [Obsolete("Use the UploadAsync method of IRepository.")]
     public static async Task<Content> UploadAsync(string parentPath, string fileName, Stream stream, string contentType = null, string propertyName = null, ServerContext server = null, Action<int> progressCallback = null)
     {
         var uploadData = new UploadData() 
@@ -504,6 +505,7 @@ public partial class Content : DynamicObject
     /// <param name="server">Target server.</param>
     /// <param name="progressCallback">An optional callback method that is called after each chunk is uploaded to the server.</param>
     /// <returns>The uploaded file content returned at the end of the upload request.</returns>
+    [Obsolete("Use the UploadAsync method of IRepository.")]
     public static async Task<Content> UploadAsync(int parentId, string fileName, Stream stream, string contentType = null, string propertyName = null, ServerContext server = null, Action<int> progressCallback = null)
     {
         var uploadData = new UploadData()
@@ -598,6 +600,7 @@ public partial class Content : DynamicObject
     /// <param name="fileName">Binary file name. Default is the content name.</param>
     /// <param name="propertyName">Binary field name. Default is "Binary".</param>
     /// <param name="server">Target server.</param>
+    [Obsolete("Do not use this method anymore.")]
     public static async Task UploadBlobAsync(string parentPath, string contentName, long fileSize,
         Func<int, int, string, Task> blobCallback, string contentType = null, string fileName = null, 
         string propertyName = null, ServerContext server = null)
@@ -638,6 +641,7 @@ public partial class Content : DynamicObject
     /// <param name="fileName">Binary file name. Default is the content name.</param>
     /// <param name="propertyName">Binary field name. Default is "Binary".</param>
     /// <param name="server">Target server.</param>
+    [Obsolete("Do not use this method anymore.")]
     public static async Task UploadBlobAsync(int parentId, string contentName, long fileSize,
         Func<int, int, string, Task> blobCallback, string contentType = null, string fileName = null,
         string propertyName = null, ServerContext server = null)
@@ -663,6 +667,7 @@ public partial class Content : DynamicObject
         await SaveAndFinalizeBlobInternalAsync(responseText, fileSize, blobCallback, fileName, propertyName, server)
             .ConfigureAwait(false);
     }
+    [Obsolete("Do not use this method anymore.")]
     private static async Task SaveAndFinalizeBlobInternalAsync(string initResponse, long fileSize,
         Func<int, int, string, Task> blobCallback, string fileName = null,
         string propertyName = null, ServerContext server = null)
@@ -698,6 +703,7 @@ public partial class Content : DynamicObject
     /// <param name="propertyName">Binary field name. Default is Binary.</param>
     /// <param name="server">Target server.</param>
     /// <returns>A token that can be used with the Blob storage API.</returns>
+    [Obsolete("Do not use this method anymore.")]
     public static async Task<string> GetBlobToken(int id, string version = null, string propertyName = null, ServerContext server = null)
     {
         var responseText = await RESTCaller.GetResponseStringAsync(id, "GetBinaryToken", HttpMethod.Post,
@@ -717,6 +723,7 @@ public partial class Content : DynamicObject
     /// <param name="propertyName">Binary field name. Default is Binary.</param>
     /// <param name="server">Target server.</param>
     /// <returns>A token that can be used with the Blob storage API.</returns>
+    [Obsolete("Do not use this method anymore.")]
     public static async Task<string> GetBlobToken(string path, string version = null, string propertyName = null, ServerContext server = null)
     {
         var responseText = await RESTCaller.GetResponseStringAsync(path, "GetBinaryToken", HttpMethod.Post,
