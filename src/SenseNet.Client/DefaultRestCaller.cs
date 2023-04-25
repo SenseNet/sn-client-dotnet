@@ -46,16 +46,13 @@ public class DefaultRestCaller : IRestCaller
     public Task ProcessWebResponseAsync(string relativeUrl, HttpMethod method, Dictionary<string, IEnumerable<string>> additionalHeaders,
         HttpContent postData, Func<HttpResponseMessage, CancellationToken, Task> responseProcessor, CancellationToken cancel)
     {
-        return _retrier.RetryAsync(
-            () => ProcessWebRequestResponseAsync(relativeUrl, method, additionalHeaders,
-                (_, _, request) =>
-                {
-                    if (postData != null)
-                        request.Content = postData;
-                },
-                responseProcessor, cancel),
-            shouldRetryOnError: (ex, _) => ex.ShouldRetry(),
-            cancel: cancel);
+        return ProcessWebRequestResponseAsync(relativeUrl, method, additionalHeaders,
+            (_, _, request) =>
+            {
+                if (postData != null)
+                    request.Content = postData;
+            },
+            responseProcessor, cancel);
     }
 
     public Task ProcessWebRequestResponseAsync(string relativeUrl, HttpMethod method, Dictionary<string, IEnumerable<string>> additionalHeaders,

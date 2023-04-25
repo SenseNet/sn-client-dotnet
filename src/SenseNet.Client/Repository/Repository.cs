@@ -10,8 +10,6 @@ using Newtonsoft.Json.Linq;
 using System.Net.Http;
 using Microsoft.Extensions.Options;
 using System.Text.RegularExpressions;
-using SenseNet.Diagnostics;
-using SenseNet.Tools;
 using System.Net.Http.Headers;
 using System.Net;
 using System.Text;
@@ -385,36 +383,18 @@ internal class Repository : IRepository
         // Get ChunkToken
         try
         {
-            SnTrace.Category(ClientContext.TraceCategory).Write("###>REQ: {0}", request);
+            _logger.LogTrace("###>REQ: {0}", request);
+            _logger.LogTrace($"Uploading initial data of {uploadData.FileName}.");
 
-            var retryCount = 0;
-
-            await Retrier.RetryAsync(10, 1000, async () =>
-            {
-                retryCount++;
-                var retryText = retryCount > 1 ? $" (retry {retryCount})" : string.Empty;
-                Server.Logger?.LogTrace($"Uploading initial data of {uploadData.FileName}{retryText}.");
-
-                var httpContent = new StringContent(uploadData.ToString());
-                httpContent.Headers.ContentType = new MediaTypeHeaderValue(JsonContentMimeType);
-                await ProcessWebResponseAsync(request.ToString(), HttpMethod.Post, request.AdditionalRequestHeaders, httpContent,
-                    async (response, _) =>
-                    {
-                        uploadData.ChunkToken = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                    }, cancel).ConfigureAwait(false);
-            }, (_, exception) =>
-            {
-                // choose the exceptions when we can retry the operation
-                return exception switch
+            var httpContent = new StringContent(uploadData.ToString());
+            httpContent.Headers.ContentType = new MediaTypeHeaderValue(JsonContentMimeType);
+            await ProcessWebResponseAsync(request.ToString(), HttpMethod.Post, request.AdditionalRequestHeaders,
+                httpContent,
+                async (response, _) =>
                 {
-                    null => true,
-                    ClientException cex when
-                        (int)cex.StatusCode == 429 ||
-                        cex.ErrorData?.ExceptionType == "NodeIsOutOfDateException"
-                        => false,
-                    _ => throw exception
-                };
-            });
+                    uploadData.ChunkToken = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                }, cancel).ConfigureAwait(false);
+
         }
         catch (WebException ex)
         {
@@ -450,50 +430,31 @@ internal class Repository : IRepository
         while ((bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length, cancel)) != 0)
         {
             chunkCount++;
-            var retryCount = 0;
 
-            await Retrier.RetryAsync(10, 1000, async () =>
-            {
-                retryCount++;
-                var retryText = retryCount > 1 ? $" (retry {retryCount})" : string.Empty;
-                Server.Logger?.LogTrace($"Uploading chunk {chunkCount}{retryText}: {bytesRead} bytes of {uploadData.FileName}.");
+            _logger.LogTrace($"Uploading chunk {chunkCount}: {bytesRead} bytes of {uploadData.FileName}.");
 
-                // Prepare the current chunk request
-                using var httpContent = new MultipartFormDataContent(boundary);
-                foreach (var item in uploadFormData)
-                    httpContent.Add(new StringContent(item.Value), item.Key);
-                httpContent.Headers.ContentDisposition = contentDispositionHeaderValue;
+            // Prepare the current chunk request
+            using var httpContent = new MultipartFormDataContent(boundary);
+            foreach (var item in uploadFormData)
+                httpContent.Add(new StringContent(item.Value), item.Key);
+            httpContent.Headers.ContentDisposition = contentDispositionHeaderValue;
 
-                if (uploadData.UseChunk)
-                    httpContent.Headers.ContentRange =
-                        new ContentRangeHeaderValue(start, start + bytesRead - 1, stream.Length);
+            if (uploadData.UseChunk)
+                httpContent.Headers.ContentRange =
+                    new ContentRangeHeaderValue(start, start + bytesRead - 1, stream.Length);
 
-                // Add the chunk as a stream into the request content
-                var postedStream = new MemoryStream(buffer, 0, bytesRead);
-                httpContent.Add(new StreamContent(postedStream), "files[]", uploadData.FileName);
+            // Add the chunk as a stream into the request content
+            var postedStream = new MemoryStream(buffer, 0, bytesRead);
+            httpContent.Add(new StreamContent(postedStream), "files[]", uploadData.FileName);
 
-                // Process
-                await ProcessWebResponseAsync(request.ToString(), HttpMethod.Post, request.AdditionalRequestHeaders,
-                    httpContent,
-                    async (response, _) =>
-                    {
-                        var rs = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                        result = JsonHelper.Deserialize<UploadResult>(rs);
-                    }, cancel).ConfigureAwait(false);
-
-            }, (_, exception) =>
-            {
-                // choose the exceptions when we can retry the operation
-                return exception switch
+            // Process
+            await ProcessWebResponseAsync(request.ToString(), HttpMethod.Post, request.AdditionalRequestHeaders,
+                httpContent,
+                async (response, _) =>
                 {
-                    null => true,
-                    ClientException cex when
-                        (int)cex.StatusCode == 429 ||
-                        cex.ErrorData?.ExceptionType == "NodeIsOutOfDateException"
-                        => false,
-                    _ => throw exception
-                };
-            }, cancel);
+                    var rs = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    result = JsonHelper.Deserialize<UploadResult>(rs);
+                }, cancel).ConfigureAwait(false);
 
             start += bytesRead;
 
@@ -556,8 +517,11 @@ internal class Repository : IRepository
 
     /* ============================================================================ DOWNLOAD */
 
-    public Task<string> GetBlobToken(int id, CancellationToken cancel, string version = null, string propertyName = null) => throw new NotImplementedException();
-    public Task<string> GetBlobToken(string path, CancellationToken cancel, string version = null, string propertyName = null) => throw new NotImplementedException();
+    public Task<string> GetBlobToken(int id, CancellationToken cancel, string version = null,
+        string propertyName = null) => throw new NotImplementedException();
+
+    public Task<string> GetBlobToken(string path, CancellationToken cancel, string version = null,
+        string propertyName = null) => throw new NotImplementedException();
 
     /* ============================================================================ DELETE */
 
