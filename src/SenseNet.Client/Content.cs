@@ -536,6 +536,7 @@ public partial class Content : DynamicObject
     /// <param name="propertyName">Name of the field to upload to. Default is Binary.</param>
     /// <param name="server">Target server.</param>
     /// <returns>The uploaded file content returned at the end of the upload request.</returns>
+    [Obsolete("Use the UploadTextAsync method of IRepository.")]
     public static async Task<Content> UploadTextAsync(string parentPath, string fileName, string fileText,
         CancellationToken cancellationToken,
         string contentType = null, string propertyName = null, ServerContext server = null)
@@ -567,6 +568,7 @@ public partial class Content : DynamicObject
     /// <param name="propertyName">Name of the field to upload to. Default is Binary.</param>
     /// <param name="server">Target server.</param>
     /// <returns>The uploaded file content returned at the end of the upload request.</returns>
+    [Obsolete("Use the UploadTextAsync method of IRepository.")]
     public static async Task<Content> UploadTextAsync(int parentId, string fileName, string fileText,
         CancellationToken cancellationToken,
         string contentType = null, string propertyName = null, ServerContext server = null)
