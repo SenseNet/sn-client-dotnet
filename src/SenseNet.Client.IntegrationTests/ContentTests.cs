@@ -183,7 +183,6 @@ public class ContentTests : IntegrationTestBase
         Assert.AreEqual(1, contents.Length);
         Assert.AreEqual($"{rootPath}/Folder-1", contents[0].Path);
     }
-
     private async Task CreateStructureForDepthTests(IRepository repository, string rootName, CancellationToken cancel)
     {
         var path = "/Root/Content/" + rootName;
@@ -201,6 +200,94 @@ public class ContentTests : IntegrationTestBase
                 var file = repository.CreateContent(folder.Path, "File", "File-" + j);
                 await file.SaveAsync().ConfigureAwait(false);
             }
+        }
+    }
+
+    /* ================================================================================================== ACTIONS */
+
+    public class File : Content
+    {
+        public File(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }
+
+        //UNDONE: Use enum VersioningMode
+        //public enum VersioningType{Inherited, None, MajorOnly, MajorAndMinor}
+        //public VersioningType VersioningMode { get; set; }
+        public string[] VersioningMode { get; set; }
+        public string Version { get; set; }
+        public Binary Binary { get; set; }
+    }
+
+    [TestMethod]
+    public async Task IT_Content_InstanceActions()
+    {
+        var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
+        var repository =
+            await GetRepositoryCollection(
+                    services => { services.RegisterGlobalContentType<File>(); })
+                .GetRepositoryAsync("local", cancel).ConfigureAwait(false);
+        var rootPath = "/Root/Content";
+        var fileName = "MyFile";
+        var filePath = $"{rootPath}/{fileName}";
+
+        try
+        {
+            var loadFileRequest = new LoadContentRequest
+            {
+                Path = filePath,
+                Select = new[] {"Id", "Path", "Name", "Type", "Version", "VersioningMode", "Binary"}
+            };
+
+            // Creation
+            var file = repository.CreateContent<File>(rootPath, null, fileName);
+            file.VersioningMode = new[] {"3"}; // MajorAndMinor
+            await file.SaveAsync(cancel).ConfigureAwait(false);
+            file = await repository.LoadContentAsync<File>(loadFileRequest, cancel).ConfigureAwait(false);
+            Assert.AreEqual("V0.1.D", file.Version);
+
+            // CheckOut-1
+            await file.CheckOutAsync(cancel).ConfigureAwait(false);
+            file = await repository.LoadContentAsync<File>(loadFileRequest, cancel).ConfigureAwait(false);
+            Assert.AreEqual("V0.2.L", file.Version);
+
+            // Upload-1
+            UploadResult uploadedResult;
+            await using (var uploadStream = Tools.GenerateStreamFromString("File text 1"))
+            {
+                var request = new UploadRequest {ParentPath = rootPath, ContentName = fileName};
+                uploadedResult = await repository.UploadAsync(request, uploadStream, cancel).ConfigureAwait(false);
+            }
+            Assert.AreEqual(file.Id, uploadedResult.Id);
+            file = await repository.LoadContentAsync<File>(loadFileRequest, cancel).ConfigureAwait(false);
+            Assert.AreEqual("V0.2.L", file.Version);
+
+            // CheckIn-1
+            await file.CheckInAsync(cancel).ConfigureAwait(false);
+            file = await repository.LoadContentAsync<File>(loadFileRequest, cancel).ConfigureAwait(false);
+            Assert.AreEqual("V0.2.D", file.Version);
+
+            // CheckOut-2
+            await file.CheckOutAsync(cancel).ConfigureAwait(false);
+            file = await repository.LoadContentAsync<File>(file.Id, cancel).ConfigureAwait(false);
+            Assert.AreEqual("V0.3.L", file.Version);
+
+            // Upload-2
+            await using (var uploadStream = Tools.GenerateStreamFromString("File text 2"))
+            {
+                var request = new UploadRequest { ParentPath = rootPath, ContentName = fileName };
+                uploadedResult = await repository.UploadAsync(request, uploadStream, cancel).ConfigureAwait(false);
+            }
+            Assert.AreEqual(file.Id, uploadedResult.Id);
+            file = await repository.LoadContentAsync<File>(loadFileRequest, cancel).ConfigureAwait(false);
+            Assert.AreEqual("V0.3.L", file.Version);
+
+            // UndoCheckOut
+            await file.UndoCheckOutAsync(cancel).ConfigureAwait(false);
+            file = await repository.LoadContentAsync<File>(file.Id, cancel).ConfigureAwait(false);
+            Assert.AreEqual("V0.2.D", file.Version);
+        }
+        finally
+        {
+            await repository.DeleteContentAsync(filePath, true, cancel);
         }
     }
 

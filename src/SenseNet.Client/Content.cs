@@ -918,104 +918,142 @@ public partial class Content : DynamicObject
     /// Deletes the content.
     /// </summary>
     /// <param name="permanent">Delete the content permanently or into the Trash.</param>
-    public async Task DeleteAsync(bool permanent = true)
+    [Obsolete("Use overload DeleteAsync(bool, CancellationToken).")]
+    public Task DeleteAsync(bool permanent = true)
     {
-        var requestData = new ODataRequest(Server)
-        {
-            ContentId = this.Id,
-            Path = this.Path,
-            ActionName = "Delete"
-        };
+        return DeleteAsync(permanent, CancellationToken.None);
+    }
+    /// <summary>
+    /// Deletes the content.
+    /// </summary>
+    /// <param name="permanent">Delete the content permanently or into the Trash.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A task that represents an asynchronous operation.</returns>
+    public Task DeleteAsync(bool permanent, CancellationToken cancel)
+    {
+        var postData = JsonHelper.GetJsonPostModel(new {permanent});
+        return ExecuteSimpleAction("Delete", postData, false, cancel);
+    }
 
-        await RESTCaller.GetResponseStringAsync(requestData.GetUri(), Server, HttpMethod.Post, JsonHelper.GetJsonPostModel(new
-            {
-                permanent
-            }))
-            .ConfigureAwait(false);
+    /// <summary>
+    /// Moves the content to the target location.
+    /// </summary>
+    /// <param name="targetPath">Target path.</param>
+    [Obsolete("Use overload MoveToAsync(string, CancellationToken).")]
+    public Task MoveToAsync(string targetPath)
+    {
+        return MoveToAsync(targetPath, CancellationToken.None);
     }
     /// <summary>
     /// Moves the content to the target location.
     /// </summary>
     /// <param name="targetPath">Target path.</param>
-    public async Task MoveToAsync(string targetPath)
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A task that represents an asynchronous operation.</returns>
+    public Task MoveToAsync(string targetPath, CancellationToken cancel)
     {
-        var requestData = new ODataRequest(Server)
-        {
-            ContentId = this.Id,
-            Path = this.Path,
-            ActionName = "MoveTo"
-        };
+        //UNDONE: Not tested
+        var postData = JsonHelper.GetJsonPostModel(new { targetPath });
+        return ExecuteSimpleAction("MoveTo", postData, false, cancel);
+    }
 
-        await RESTCaller.GetResponseStringAsync(requestData.GetUri(), Server, HttpMethod.Post, JsonHelper.GetJsonPostModel(new 
-            {
-                targetPath 
-            }))
-            .ConfigureAwait(false);
+    /// <summary>
+    /// Creates a copy of the content to the target location.
+    /// </summary>
+    /// <param name="targetPath">Target path.</param>
+    [Obsolete("Use overload CopyToAsync(string, CancellationToken).")]
+    public Task CopyToAsync(string targetPath)
+    {
+        return CopyToAsync(targetPath, CancellationToken.None);
     }
     /// <summary>
     /// Creates a copy of the content to the target location.
     /// </summary>
     /// <param name="targetPath">Target path.</param>
-    public async Task CopyToAsync(string targetPath)
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A task that represents an asynchronous operation.</returns>
+    public Task CopyToAsync(string targetPath, CancellationToken cancel)
     {
-        var requestData = new ODataRequest(Server)
-        {
-            ContentId = this.Id,
-            Path = this.Path,
-            ActionName = "CopyTo"
-        };
-
-        await RESTCaller.GetResponseStringAsync(requestData.GetUri(), Server, HttpMethod.Post, JsonHelper.GetJsonPostModel(new
-            {
-                targetPath
-            }))
-            .ConfigureAwait(false);
+        //UNDONE: Not tested
+        var postData = JsonHelper.GetJsonPostModel(new { targetPath });
+        return ExecuteSimpleAction("CopyTo", postData, false, cancel);
     }
 
     /// <summary>
     /// Locks the content for the current user.
     /// </summary>
-    public async Task CheckOutAsync()
+    [Obsolete("Use overload CheckOutAsync(CancellationToken).")]
+    public Task CheckOutAsync()
     {
-        var requestData = new ODataRequest(Server)
-        {
-            ContentId = this.Id,
-            Path = this.Path,
-            ActionName = "CheckOut",
-            Select = new[] {"Id"}
-        };
+        return CheckOutAsync(CancellationToken.None);
+    }
+    /// <summary>
+    /// Locks the content for the current user.
+    /// </summary>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A task that represents an asynchronous operation.</returns>
+    public Task CheckOutAsync(CancellationToken cancel)
+    {
+        return ExecuteSimpleAction("CheckOut", null, true, cancel);
+    }
 
-        await RESTCaller.GetResponseStringAsync(requestData.GetUri(), Server, HttpMethod.Post).ConfigureAwait(false);
+    /// <summary>
+    /// Check in the content.
+    /// </summary>
+    [Obsolete("Use overload CheckInAsync(CancellationToken).")]
+    public Task CheckInAsync()
+    {
+        return CheckInAsync(CancellationToken.None);
     }
     /// <summary>
     /// Check in the content.
     /// </summary>
-    public async Task CheckInAsync()
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A task that represents an asynchronous operation.</returns>
+    public Task CheckInAsync(CancellationToken cancel)
     {
-        var requestData = new ODataRequest(Server)
-        {
-            ContentId = this.Id,
-            Path = this.Path,
-            ActionName = "CheckIn",
-            Select = new[] { "Id" }
-        };
+        return ExecuteSimpleAction("CheckIn", null, true, cancel);
+    }
 
-        await RESTCaller.GetResponseStringAsync(requestData.GetUri(), Server, HttpMethod.Post).ConfigureAwait(false);
+    /// <summary>
+    /// Undo all modifications on the content since the last checkout operation.
+    /// </summary>
+    [Obsolete("Use overload UndoCheckOutAsync(CancellationToken).")]
+    public Task UndoCheckOutAsync()
+    {
+        return UndoCheckOutAsync(CancellationToken.None);
     }
     /// <summary>
     /// Undo all modifications on the content since the last checkout operation.
     /// </summary>
-    public async Task UndoCheckOutAsync()
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A task that represents an asynchronous operation.</returns>
+    public Task UndoCheckOutAsync(CancellationToken cancel)
+    {
+        return ExecuteSimpleAction("UndoCheckOut", null, true, cancel);
+    }
+
+    private async Task ExecuteSimpleAction(string actionName, string postData, bool selectById, CancellationToken cancel)
     {
         var requestData = new ODataRequest(Server)
         {
             ContentId = this.Id,
             Path = this.Path,
-            ActionName = "UndoCheckOut",
-            Select = new [] { "Id" }
+            ActionName = actionName
         };
+        if(selectById)
+            requestData.Select = new[] { "Id" };
 
-        await RESTCaller.GetResponseStringAsync(requestData.GetUri(), Server, HttpMethod.Post).ConfigureAwait(false);
+        if (_restCaller == null)
+        {
+            await RESTCaller.GetResponseStringAsync(requestData.GetUri(), Server, HttpMethod.Post, postData)
+                .ConfigureAwait(false);
+        }
+        else
+        {
+            requestData.PostData = postData;
+            await Repository.GetResponseStringAsync(requestData, HttpMethod.Post, cancel).ConfigureAwait(false);
+        }
     }
 
     //----------------------------------------------------------------------------- Security
