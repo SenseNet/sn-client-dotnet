@@ -931,8 +931,7 @@ public partial class Content : DynamicObject
     /// <returns>A task that represents an asynchronous operation.</returns>
     public Task DeleteAsync(bool permanent, CancellationToken cancel)
     {
-        var postData = JsonHelper.GetJsonPostModel(new {permanent});
-        return ExecuteSimpleAction("Delete", postData, false, cancel);
+        return ExecuteSimpleAction("Delete", new { permanent }, cancel);
     }
 
     /// <summary>
@@ -953,8 +952,7 @@ public partial class Content : DynamicObject
     public Task MoveToAsync(string targetPath, CancellationToken cancel)
     {
         //UNDONE: Not tested
-        var postData = JsonHelper.GetJsonPostModel(new { targetPath });
-        return ExecuteSimpleAction("MoveTo", postData, false, cancel);
+        return ExecuteSimpleAction("MoveTo", new { targetPath }, cancel);
     }
 
     /// <summary>
@@ -975,8 +973,7 @@ public partial class Content : DynamicObject
     public Task CopyToAsync(string targetPath, CancellationToken cancel)
     {
         //UNDONE: Not tested
-        var postData = JsonHelper.GetJsonPostModel(new { targetPath });
-        return ExecuteSimpleAction("CopyTo", postData, false, cancel);
+        return ExecuteSimpleAction("CopyTo", new { targetPath }, cancel);
     }
 
     /// <summary>
@@ -994,7 +991,7 @@ public partial class Content : DynamicObject
     /// <returns>A task that represents an asynchronous operation.</returns>
     public Task CheckOutAsync(CancellationToken cancel)
     {
-        return ExecuteSimpleAction("CheckOut", null, true, cancel);
+        return ExecuteSimpleAction("CheckOut", null, cancel);
     }
 
     /// <summary>
@@ -1012,7 +1009,7 @@ public partial class Content : DynamicObject
     /// <returns>A task that represents an asynchronous operation.</returns>
     public Task CheckInAsync(CancellationToken cancel)
     {
-        return ExecuteSimpleAction("CheckIn", null, true, cancel);
+        return ExecuteSimpleAction("CheckIn", null, cancel);
     }
 
     /// <summary>
@@ -1030,10 +1027,76 @@ public partial class Content : DynamicObject
     /// <returns>A task that represents an asynchronous operation.</returns>
     public Task UndoCheckOutAsync(CancellationToken cancel)
     {
-        return ExecuteSimpleAction("UndoCheckOut", null, true, cancel);
+        return ExecuteSimpleAction("UndoCheckOut", null, cancel);
     }
 
-    private async Task ExecuteSimpleAction(string actionName, string postData, bool selectById, CancellationToken cancel)
+    /// <summary>
+    /// Publishes the requested content. The version number is changed to the next major version
+    /// according to the content's versioning and approving mode.
+    /// </summary>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A task that represents an asynchronous operation.</returns>
+    public Task PublishAsync(CancellationToken cancel)
+    {
+        return ExecuteSimpleAction("Publish", null, cancel);
+    }
+
+    /// <summary>
+    /// Approves the requested content. The content's version number will be the next major version according to
+    /// the content's versioning and approving mode.
+    /// </summary>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A task that represents an asynchronous operation.</returns>
+    public Task ApproveAsync(CancellationToken cancel)
+    {
+        return ExecuteSimpleAction("Approve", null, cancel);
+    }
+
+    /// <summary>
+    /// Rejects the modifications of the requested content and persists
+    /// the <paramref name="rejectReason"/> if there is.
+    /// </summary>
+    /// <param name="rejectReason">A short description of the reason for rejection.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A task that represents an asynchronous operation.</returns>
+    public Task RejectAsync(string rejectReason, CancellationToken cancel)
+    {
+        object postData = null;
+        if(rejectReason != null)
+            postData = new { rejectReason };
+        return ExecuteSimpleAction("Reject", postData, cancel);
+    }
+
+    /// <summary>
+    /// Drops the last draft version of the requested content if there is. This operation is allowed only
+    /// for users who have <c>ForceCheckIn</c> permission on this content. 
+    /// </summary>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A task that represents an asynchronous operation.</returns>
+    public Task ForceUndoCheckOutAsync(CancellationToken cancel)
+    {
+        return ExecuteSimpleAction("ForceUndoCheckOut", null, cancel);
+    }
+
+    /// <summary>
+    /// Restores an old existing version as the last version according to the content's versioning mode.
+    /// The old version is identified by the <paramref name="version"/> parameter that can be in
+    /// one of the following forms:
+    /// - [major].[minor] e.g. "1.2"
+    /// - V[major].[minor] e.g. "V1.2"
+    /// - [major].[minor].[status] e.g. "1.2.D"
+    /// - V[major].[minor].[status] e.g. "V1.2.D"
+    /// <para>Note that [status] is not required but an incorrect value causes an exception.</para>
+    /// </summary>
+    /// <param name="version">The old version number.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A task that represents an asynchronous operation.</returns>
+    public Task RestoreVersionAsync(string version, CancellationToken cancel)
+    {
+        return ExecuteSimpleAction("RestoreVersion", new { version }, cancel);
+    }
+
+    private async Task ExecuteSimpleAction(string actionName, object postData, CancellationToken cancel)
     {
         var requestData = new ODataRequest(Server)
         {
@@ -1041,12 +1104,13 @@ public partial class Content : DynamicObject
             Path = this.Path,
             ActionName = actionName
         };
-        if(selectById)
-            requestData.Select = new[] { "Id" };
 
         if (_restCaller == null)
         {
-            await RESTCaller.GetResponseStringAsync(requestData.GetUri(), Server, HttpMethod.Post, postData)
+            string requestBody = null;
+            if (postData != null)
+                requestBody = JsonHelper.GetJsonPostModel(postData);
+            await RESTCaller.GetResponseStringAsync(requestData.GetUri(), Server, HttpMethod.Post, requestBody)
                 .ConfigureAwait(false);
         }
         else

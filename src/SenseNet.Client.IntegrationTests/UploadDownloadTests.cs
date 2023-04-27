@@ -182,9 +182,10 @@ public class UploadDownloadTests : IntegrationTestBase
     {
         public File(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }
 
-        //UNDONE: Use enum VersioningMode
-        //public enum VersioningType{Inherited, None, MajorOnly, MajorAndMinor}
-        //public VersioningType VersioningMode { get; set; }
+        /*TODO: Use enum VersioningMode
+        public enum VersioningType{Inherited, None, MajorOnly, MajorAndMinor}
+        public VersioningType VersioningMode { get; set; }
+        */
         public string[] VersioningMode { get; set; }
         public string Version { get; set; }
         public Binary Binary { get; set; }
