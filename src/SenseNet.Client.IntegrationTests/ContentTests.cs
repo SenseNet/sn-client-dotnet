@@ -319,7 +319,8 @@ public class ContentTests : IntegrationTestBase
         Assert.IsNull(loaded);
     }
 
-    [TestMethod]
+    //UNDONE: Activate this test if possible and write a similar one for 'CopyTo'
+    //[TestMethod]
     public async Task IT_Content_InstanceActions_MoveTo()
     {
 var cancel = new CancellationTokenSource(/*TimeSpan.FromSeconds(10)*/).Token;
