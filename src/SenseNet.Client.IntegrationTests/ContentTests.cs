@@ -1,8 +1,10 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using System.Net.WebSockets;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SenseNet.Extensions.DependencyInjection;
 using System.Threading.Channels;
+using IdentityModel.Client;
 
 namespace SenseNet.Client.IntegrationTests;
 
@@ -183,7 +185,6 @@ public class ContentTests : IntegrationTestBase
         Assert.AreEqual(1, contents.Length);
         Assert.AreEqual($"{rootPath}/Folder-1", contents[0].Path);
     }
-
     private async Task CreateStructureForDepthTests(IRepository repository, string rootName, CancellationToken cancel)
     {
         var path = "/Root/Content/" + rootName;
@@ -202,6 +203,218 @@ public class ContentTests : IntegrationTestBase
                 await file.SaveAsync().ConfigureAwait(false);
             }
         }
+    }
+
+    /* ================================================================================================== ACTIONS */
+
+    public class File : Content
+    {
+        public File(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }
+
+        /*TODO: Use enum VersioningType, ApprovingType
+        public enum VersioningType{Inherited, None, MajorOnly, MajorAndMinor}
+        public enum ApprovingType{Inherited, False, True}
+        public VersioningType VersioningMode { get; set; }
+        public ApprovingType ApprovingMode { get; set; }
+        */
+        public string[] VersioningMode { get; set; }
+        public string[] ApprovingMode { get; set; }
+        public string Version { get; set; }
+        public Binary Binary { get; set; }
+    }
+
+    [TestMethod]
+    public async Task IT_Content_InstanceActions_Collab()
+    {
+        var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
+        var repository =
+            await GetRepositoryCollection(
+                    services => { services.RegisterGlobalContentType<File>(); })
+                .GetRepositoryAsync("local", cancel).ConfigureAwait(false);
+        var rootPath = "/Root/Content";
+        var fileName = "MyFile";
+        var filePath = $"{rootPath}/{fileName}";
+
+        await repository.DeleteContentAsync(filePath, true, cancel).ConfigureAwait(false);
+
+        try
+        {
+            var loadFileRequest = new LoadContentRequest
+            {
+                Path = filePath,
+                Select = new[] {"Id", "Path", "Name", "Type", "Version", "VersioningMode", "ApprovingMode", "Binary"}
+            };
+
+            var file = repository.CreateContent<File>(rootPath, null, fileName);
+            file.VersioningMode = new[] { "3" }; // MajorAndMinor
+            file.ApprovingMode = new[] { "2" }; // True
+            await file.SaveAsync(cancel).ConfigureAwait(false);
+            await AssertFileVersion(repository, loadFileRequest, "V0.1.D", cancel);
+
+            await file.CheckOutAsync(cancel).ConfigureAwait(false);
+            await AssertFileVersion(repository, loadFileRequest, "V0.2.L", cancel);
+
+            await file.CheckInAsync(cancel).ConfigureAwait(false);
+            await AssertFileVersion(repository, loadFileRequest, "V0.2.D", cancel);
+
+            await file.CheckOutAsync(cancel).ConfigureAwait(false);
+            await AssertFileVersion(repository, loadFileRequest, "V0.3.L", cancel);
+
+            await file.UndoCheckOutAsync(cancel).ConfigureAwait(false);
+            await AssertFileVersion(repository, loadFileRequest, "V0.2.D", cancel);
+
+            await file.PublishAsync(cancel).ConfigureAwait(false);
+            await AssertFileVersion(repository, loadFileRequest, "V0.2.P", cancel);
+
+            await file.RejectAsync("Rejected because this is a test.", cancel).ConfigureAwait(false);
+            await AssertFileVersion(repository, loadFileRequest, "V0.2.R", cancel);
+
+            await file.PublishAsync(cancel).ConfigureAwait(false);
+            await AssertFileVersion(repository, loadFileRequest, "V0.3.P", cancel);
+
+            await file.ApproveAsync(cancel).ConfigureAwait(false);
+            await AssertFileVersion(repository, loadFileRequest, "V1.0.A", cancel);
+
+            await file.CheckOutAsync(cancel).ConfigureAwait(false);
+            await AssertFileVersion(repository, loadFileRequest, "V1.1.L", cancel);
+
+            await file.CheckInAsync(cancel).ConfigureAwait(false);
+            await AssertFileVersion(repository, loadFileRequest, "V1.1.D", cancel);
+
+            await file.RestoreVersionAsync("V0.2", cancel).ConfigureAwait(false);
+            await AssertFileVersion(repository, loadFileRequest, "V1.2.D", cancel);
+        }
+        finally
+        {
+            await repository.DeleteContentAsync(filePath, true, cancel);
+        }
+    }
+    private async Task AssertFileVersion(IRepository repository, LoadContentRequest request, string expectedVersion, CancellationToken cancel)
+    {
+        var file = await repository.LoadContentAsync<File>(request, cancel).ConfigureAwait(false);
+        Assert.AreEqual(expectedVersion, file.Version);
+    }
+
+    [TestMethod]
+    public async Task IT_Content_InstanceActions_Delete()
+    {
+        var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
+        var repository =
+            await GetRepositoryCollection(
+                    services => { services.RegisterGlobalContentType<File>(); })
+                .GetRepositoryAsync("local", cancel).ConfigureAwait(false);
+
+        var file = repository.CreateContent<File>("/Root/Content", null, Guid.NewGuid().ToString());
+        file.VersioningMode = new[] { "0" }; // Inherited
+        file.ApprovingMode = new[] { "0" }; // Inherited
+        await file.SaveAsync(cancel).ConfigureAwait(false);
+        var fileId = file.Id;
+        var loaded = await repository.LoadContentAsync(fileId, cancel).ConfigureAwait(false);
+        Assert.IsNotNull(loaded);
+
+        // ACT
+        await file.DeleteAsync(true, cancel).ConfigureAwait(false);
+
+        // ASSERT
+        loaded = await repository.LoadContentAsync(fileId, cancel).ConfigureAwait(false);
+        Assert.IsNull(loaded);
+    }
+
+    [TestMethod]
+    public async Task IT_Content_InstanceActions_MoveTo()
+    {
+        var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
+        var repository =
+            await GetRepositoryCollection(
+                    services => { services.RegisterGlobalContentType<File>(); })
+                .GetRepositoryAsync("local", cancel).ConfigureAwait(false);
+
+        var moveTest = await repository.LoadContentAsync("Root/Content/MoveTest", cancel).ConfigureAwait(false);
+        if (moveTest == null)
+        {
+            moveTest = repository.CreateContent("Root/Content", "Folder", "MoveTest");
+            await moveTest.SaveAsync(cancel).ConfigureAwait(false);
+        }
+        var source = await repository.LoadContentAsync("Root/Content/MoveTest/Source", cancel).ConfigureAwait(false);
+        if(source == null)
+        {
+            source = repository.CreateContent(moveTest.Path, "Folder", "Source");
+            await source.SaveAsync(cancel).ConfigureAwait(false);
+        }
+        var target = await repository.LoadContentAsync("Root/Content/MoveTest/Target", cancel).ConfigureAwait(false);
+        if (target == null)
+        {
+            target = repository.CreateContent(moveTest.Path, "Folder", "Target");
+            await target.SaveAsync(cancel).ConfigureAwait(false);
+        }
+
+        var file = repository.CreateContent<File>(source.Path, null, Guid.NewGuid().ToString());
+        file.VersioningMode = new[] { "0" }; // Inherited
+        file.ApprovingMode = new[] { "0" }; // Inherited
+        await file.SaveAsync(cancel).ConfigureAwait(false);
+        var fileId = file.Id;
+        var fileText = Guid.NewGuid().ToString();
+        await repository.UploadAsync(new UploadRequest {ParentPath = source.Path, ContentName = file.Name}, fileText, cancel)
+            .ConfigureAwait(false);
+
+        // ACT
+        await file.MoveToAsync("/Root/Content/MoveTest/Target", cancel).ConfigureAwait(false);
+
+        // ASSERT
+        var hits = await repository.QueryAsync<File>(
+                new QueryContentRequest {ContentQuery = $"Name:'{file.Name}'"}, cancel)
+            .ConfigureAwait(false);
+        Assert.AreEqual(1, hits.Count);
+        Assert.AreEqual(target.Path, hits.First().ParentPath);
+    }
+    [TestMethod]
+    public async Task IT_Content_InstanceActions_CopyTo()
+    {
+        var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
+        var repository =
+            await GetRepositoryCollection(
+                    services => { services.RegisterGlobalContentType<File>(); })
+                .GetRepositoryAsync("local", cancel).ConfigureAwait(false);
+
+        var copyTest = await repository.LoadContentAsync("Root/Content/CopyTest", cancel).ConfigureAwait(false);
+        if (copyTest == null)
+        {
+            copyTest = repository.CreateContent("Root/Content", "Folder", "CopyTest");
+            await copyTest.SaveAsync(cancel).ConfigureAwait(false);
+        }
+        var source = await repository.LoadContentAsync("Root/Content/CopyTest/Source", cancel).ConfigureAwait(false);
+        if (source == null)
+        {
+            source = repository.CreateContent(copyTest.Path, "Folder", "Source");
+            await source.SaveAsync(cancel).ConfigureAwait(false);
+        }
+        var target = await repository.LoadContentAsync("Root/Content/CopyTest/Target", cancel).ConfigureAwait(false);
+        if (target == null)
+        {
+            target = repository.CreateContent(copyTest.Path, "Folder", "Target");
+            await target.SaveAsync(cancel).ConfigureAwait(false);
+        }
+
+        var file = repository.CreateContent<File>(source.Path, null, Guid.NewGuid().ToString());
+        file.VersioningMode = new[] { "0" }; // Inherited
+        file.ApprovingMode = new[] { "0" }; // Inherited
+        await file.SaveAsync(cancel).ConfigureAwait(false);
+        var fileId = file.Id;
+        var fileText = Guid.NewGuid().ToString();
+        await repository.UploadAsync(new UploadRequest { ParentPath = source.Path, ContentName = file.Name }, fileText, cancel)
+            .ConfigureAwait(false);
+
+        // ACT
+        await file.CopyToAsync("/Root/Content/CopyTest/Target", cancel).ConfigureAwait(false);
+
+        // ASSERT
+        var hits = await repository.QueryAsync<File>(
+                new QueryContentRequest { ContentQuery = $"Name:'{file.Name}'" }, cancel)
+            .ConfigureAwait(false);
+        Assert.AreEqual(2, hits.Count);
+        var paths = hits.Select(x => x.ParentPath).OrderBy(x => x).ToArray();
+        Assert.AreEqual(source.Path, paths[0]);
+        Assert.AreEqual(target.Path, paths[1]);
     }
 
     /* ================================================================================================== UPDATE */

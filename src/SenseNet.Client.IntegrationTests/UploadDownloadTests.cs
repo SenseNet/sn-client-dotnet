@@ -178,6 +178,18 @@ public class UploadDownloadTests : IntegrationTestBase
 
         public Binary? Binary { get; set; }
     }
+    public class File : Content
+    {
+        public File(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }
+
+        /*TODO: Use enum VersioningMode
+        public enum VersioningType{Inherited, None, MajorOnly, MajorAndMinor}
+        public VersioningType VersioningMode { get; set; }
+        */
+        public string[] VersioningMode { get; set; }
+        public string Version { get; set; }
+        public Binary Binary { get; set; }
+    }
 
     #endregion
 
@@ -280,4 +292,95 @@ public class UploadDownloadTests : IntegrationTestBase
         Assert.AreEqual(streamLength, properties.ContentLength);
     }
 
+
+    [TestMethod]
+    public async Task IT_Download_OlderVersions()
+    {
+        var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
+        var repository =
+            await GetRepositoryCollection(
+                    services => { services.RegisterGlobalContentType<File>(); })
+                .GetRepositoryAsync("local", cancel).ConfigureAwait(false);
+        var rootPath = "/Root/Content";
+        var fileName = "MyFile";
+        var filePath = $"{rootPath}/{fileName}";
+
+        try
+        {
+            UploadResult uploadedResult;
+            var loadFileRequest = new LoadContentRequest
+            {
+                Path = filePath,
+                Select = new[] { "Id", "Path", "Name", "Type", "Version", "VersioningMode", "Binary" }
+            };
+            var uploadRequest = new UploadRequest { ParentPath = rootPath, ContentName = fileName };
+
+            // Prepare file versions
+            var file = repository.CreateContent<File>(rootPath, null, fileName);
+            file.VersioningMode = new[] { "3" }; // MajorAndMinor
+            await file.SaveAsync(cancel).ConfigureAwait(false);
+
+            await file.CheckOutAsync(cancel).ConfigureAwait(false); // V0.2.L
+
+            await using (var uploadStream = Tools.GenerateStreamFromString("File text 1"))
+                uploadedResult = await repository.UploadAsync(uploadRequest, uploadStream, cancel).ConfigureAwait(false);
+
+            await file.CheckInAsync(cancel).ConfigureAwait(false); //V0.2.D
+
+            await file.CheckOutAsync(cancel).ConfigureAwait(false); // V0.3.L
+
+            await using (var uploadStream = Tools.GenerateStreamFromString("File text 2"))
+                uploadedResult = await repository.UploadAsync(uploadRequest, uploadStream, cancel).ConfigureAwait(false);
+
+            await repository.GetResponseStringAsync(
+                new ODataRequest(repository.Server) { ContentId = file.Id, ActionName = "Publish" }, // V1.0.A
+                HttpMethod.Post, cancel).ConfigureAwait(false);
+
+            Assert.AreEqual(file.Id, uploadedResult.Id);
+            file = await repository.LoadContentAsync<File>(loadFileRequest, cancel).ConfigureAwait(false);
+            Assert.AreEqual("V1.0.A", file.Version);
+
+            await file.CheckOutAsync(cancel).ConfigureAwait(false); // V1.1.L
+
+            await using (var uploadStream = Tools.GenerateStreamFromString("File text 3"))
+                uploadedResult = await repository.UploadAsync(uploadRequest, uploadStream, cancel).ConfigureAwait(false);
+
+            await file.CheckInAsync(cancel).ConfigureAwait(false); //V1.1.D
+
+            // ACT: Download versions
+            string? lastDraftText = null; // V1.1
+            string? lastMajorText = null; // V1.0
+            string? file_V0_2Text = null; // V0.2
+            await repository.DownloadAsync(
+                request: new DownloadRequest { ContentId = file.Id },
+                responseProcessor: async (stream, _) =>
+                {
+                    using var reader = new StreamReader(stream);
+                    lastDraftText = await reader.ReadToEndAsync();
+                }, cancel).ConfigureAwait(false);
+            await repository.DownloadAsync(
+                request: new DownloadRequest { ContentId = file.Id, Version = "LastMajor" },
+                responseProcessor: async (stream, _) =>
+                {
+                    using var reader = new StreamReader(stream);
+                    lastMajorText = await reader.ReadToEndAsync();
+                }, cancel).ConfigureAwait(false);
+            await repository.DownloadAsync(
+                request: new DownloadRequest { ContentId = file.Id, Version = "V0.2" },
+                responseProcessor: async (stream, _) =>
+                {
+                    using var reader = new StreamReader(stream);
+                    file_V0_2Text = await reader.ReadToEndAsync();
+                }, cancel).ConfigureAwait(false);
+
+            // ASSERT
+            Assert.AreEqual("File text 3", lastDraftText);
+            Assert.AreEqual("File text 2", lastMajorText);
+            Assert.AreEqual("File text 1", file_V0_2Text);
+        }
+        finally
+        {
+            await repository.DeleteContentAsync(filePath, true, cancel);
+        }
+    }
 }
