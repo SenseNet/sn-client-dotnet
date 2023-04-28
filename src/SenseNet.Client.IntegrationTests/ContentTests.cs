@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SenseNet.Extensions.DependencyInjection;
 using System.Threading.Channels;
+using IdentityModel.Client;
 
 namespace SenseNet.Client.IntegrationTests;
 
@@ -319,11 +320,10 @@ public class ContentTests : IntegrationTestBase
         Assert.IsNull(loaded);
     }
 
-    //UNDONE: Activate this test if possible and write a similar one for 'CopyTo'
-    //[TestMethod]
+    [TestMethod]
     public async Task IT_Content_InstanceActions_MoveTo()
     {
-var cancel = new CancellationTokenSource(/*TimeSpan.FromSeconds(10)*/).Token;
+        var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
         var repository =
             await GetRepositoryCollection(
                     services => { services.RegisterGlobalContentType<File>(); })
@@ -366,6 +366,55 @@ var cancel = new CancellationTokenSource(/*TimeSpan.FromSeconds(10)*/).Token;
             .ConfigureAwait(false);
         Assert.AreEqual(1, hits.Count);
         Assert.AreEqual(target.Path, hits.First().ParentPath);
+    }
+    [TestMethod]
+    public async Task IT_Content_InstanceActions_CopyTo()
+    {
+        var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
+        var repository =
+            await GetRepositoryCollection(
+                    services => { services.RegisterGlobalContentType<File>(); })
+                .GetRepositoryAsync("local", cancel).ConfigureAwait(false);
+
+        var copyTest = await repository.LoadContentAsync("Root/Content/CopyTest", cancel).ConfigureAwait(false);
+        if (copyTest == null)
+        {
+            copyTest = repository.CreateContent("Root/Content", "Folder", "CopyTest");
+            await copyTest.SaveAsync(cancel).ConfigureAwait(false);
+        }
+        var source = await repository.LoadContentAsync("Root/Content/CopyTest/Source", cancel).ConfigureAwait(false);
+        if (source == null)
+        {
+            source = repository.CreateContent(copyTest.Path, "Folder", "Source");
+            await source.SaveAsync(cancel).ConfigureAwait(false);
+        }
+        var target = await repository.LoadContentAsync("Root/Content/CopyTest/Target", cancel).ConfigureAwait(false);
+        if (target == null)
+        {
+            target = repository.CreateContent(copyTest.Path, "Folder", "Target");
+            await target.SaveAsync(cancel).ConfigureAwait(false);
+        }
+
+        var file = repository.CreateContent<File>(source.Path, null, Guid.NewGuid().ToString());
+        file.VersioningMode = new[] { "0" }; // Inherited
+        file.ApprovingMode = new[] { "0" }; // Inherited
+        await file.SaveAsync(cancel).ConfigureAwait(false);
+        var fileId = file.Id;
+        var fileText = Guid.NewGuid().ToString();
+        await repository.UploadAsync(new UploadRequest { ParentPath = source.Path, ContentName = file.Name }, fileText, cancel)
+            .ConfigureAwait(false);
+
+        // ACT
+        await file.CopyToAsync("/Root/Content/CopyTest/Target", cancel).ConfigureAwait(false);
+
+        // ASSERT
+        var hits = await repository.QueryAsync<File>(
+                new QueryContentRequest { ContentQuery = $"Name:'{file.Name}'" }, cancel)
+            .ConfigureAwait(false);
+        Assert.AreEqual(2, hits.Count);
+        var paths = hits.Select(x => x.ParentPath).OrderBy(x => x).ToArray();
+        Assert.AreEqual(source.Path, paths[0]);
+        Assert.AreEqual(target.Path, paths[1]);
     }
 
     /* ================================================================================================== UPDATE */

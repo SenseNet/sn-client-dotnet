@@ -951,8 +951,22 @@ public partial class Content : DynamicObject
     /// <returns>A task that represents an asynchronous operation.</returns>
     public Task MoveToAsync(string targetPath, CancellationToken cancel)
     {
-        //UNDONE: Not tested
-        return ExecuteSimpleAction("MoveTo", new { targetPath }, cancel);
+        if (Id == 0 && Path == null)
+            throw new InvalidOperationException("Cannot execute 'MoveTo' action of a Content if neither Id and Path provided.");
+        if (targetPath == null)
+            throw new ArgumentNullException(nameof(targetPath));
+
+        return ExecuteSimpleAction(
+            request: new ODataRequest(Server)
+            {
+                Path = "/Root",
+                ActionName = "MoveBatch"
+            },
+            postData: new
+            {
+                paths = new object[] {Id == 0 ? Path : Id},
+                targetPath
+            }, cancel);
     }
 
     /// <summary>
@@ -972,8 +986,22 @@ public partial class Content : DynamicObject
     /// <returns>A task that represents an asynchronous operation.</returns>
     public Task CopyToAsync(string targetPath, CancellationToken cancel)
     {
-        //UNDONE: Not tested
-        return ExecuteSimpleAction("CopyTo", new { targetPath }, cancel);
+        if (Id == 0 && Path == null)
+            throw new InvalidOperationException("Cannot execute 'CopyTo' action of a Content if neither Id and Path provided.");
+        if (targetPath == null)
+            throw new ArgumentNullException(nameof(targetPath));
+
+        return ExecuteSimpleAction(
+            request: new ODataRequest(Server)
+            {
+                Path = "/Root",
+                ActionName = "CopyBatch"
+            },
+            postData: new
+            {
+                paths = new object[] { Id == 0 ? Path : Id },
+                targetPath
+            }, cancel);
     }
 
     /// <summary>
@@ -1093,30 +1121,38 @@ public partial class Content : DynamicObject
     /// <returns>A task that represents an asynchronous operation.</returns>
     public Task RestoreVersionAsync(string version, CancellationToken cancel)
     {
+        if (version == null)
+            throw new ArgumentNullException(nameof(version));
         return ExecuteSimpleAction("RestoreVersion", new { version }, cancel);
     }
 
-    private async Task ExecuteSimpleAction(string actionName, object postData, CancellationToken cancel)
+    private Task ExecuteSimpleAction(string actionName, object postData, CancellationToken cancel)
     {
+        if (Id == 0 && Path == null)
+            throw new InvalidOperationException($"Cannot execute '{actionName}' action of a Content if neither Id and Path provided.");
+
         var requestData = new ODataRequest(Server)
         {
             ContentId = this.Id,
             Path = this.Path,
             ActionName = actionName
         };
-
+        return ExecuteSimpleAction(requestData, postData, cancel);
+    }
+    private async Task ExecuteSimpleAction(ODataRequest request, object postData, CancellationToken cancel)
+    {
         if (_restCaller == null)
         {
             string requestBody = null;
             if (postData != null)
                 requestBody = JsonHelper.GetJsonPostModel(postData);
-            await RESTCaller.GetResponseStringAsync(requestData.GetUri(), Server, HttpMethod.Post, requestBody)
+            await RESTCaller.GetResponseStringAsync(request.GetUri(), Server, HttpMethod.Post, requestBody)
                 .ConfigureAwait(false);
         }
         else
         {
-            requestData.PostData = postData;
-            await Repository.GetResponseStringAsync(requestData, HttpMethod.Post, cancel).ConfigureAwait(false);
+            request.PostData = postData;
+            await Repository.GetResponseStringAsync(request, HttpMethod.Post, cancel).ConfigureAwait(false);
         }
     }
 
