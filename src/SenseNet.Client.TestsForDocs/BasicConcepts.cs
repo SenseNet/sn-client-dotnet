@@ -133,35 +133,35 @@ namespace SenseNet.Client.TestsForDocs
         [Description("$inlinecount query option")]
         public async Task Docs_BasicConcepts_ChildrenInlineCount()
         {
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-
-            //UNDONE:- Feature request: should returns a collection with property: TotalCount
-            //var result3 = await Content.LoadCollectionAsync(new ODataRequest
-            //{
-            //    Path = "/Root/IMS/BuiltIn/Portal",
-            //    Top = 3,
-            //    Skip = 4,
-            //    InlineCount = InlineCountOptions.AllPages // Default, AllPages, None
-            //});
-
-            // ACTION for doc
-            var result = await RESTCaller.GetResponseJsonAsync(new ODataRequest
+            var tasks = new Task[10];
+            for (var i = 0; i < tasks.Length; i++)
+                tasks[i] = EnsureContentAsync($"/Root/Content/IT/Document_Library{i}", "DocumentLibrary");
+            await Task.WhenAll(tasks).ConfigureAwait(false);
+            try
             {
-                IsCollectionRequest = true,
-                Path = "/Root/Content/IT",
-                Top = 3,
-                Skip = 4,
-                Parameters = { { "$inlinecount", "allpages" } }
-            });
+                // ACTION for doc
+                /*<doc>*/
+                var result = await repository.LoadCollectionAsync(new LoadCollectionRequest
+                {
+                    Path = "/Root/Content/IT",
+                    Top = 3,
+                    Skip = 4,
+                    InlineCount = InlineCountOptions.AllPages
+                }, cancel);
+                Console.WriteLine($"TotalCount: {result.TotalCount}, Count: {result.Count}");
+                /*</doc>*/
 
-            // ASSERT
-            // { "d": { "__count": 1, "results": [] }}
-
-            var array = ((JToken)result).SelectTokens("$.d.results.*").ToArray();
-            var inlineCount = ((JToken)result).SelectToken("$.d.__count").Value<int>();
-
-            Assert.AreNotEqual(0, inlineCount);
-            Assert.AreNotEqual(array.Length, inlineCount);
+                // ASSERT
+                Assert.AreEqual(3, result.Count);
+                Assert.AreEqual(11, result.TotalCount);
+            }
+            finally
+            {
+                var paths = new string[tasks.Length];
+                for (var i = 0; i < tasks.Length; i++)
+                    paths[i] = $"/Root/Content/IT/Document_Library{i}";
+                await repository.DeleteContentAsync(paths, true, cancel).ConfigureAwait(false);
+            }
         }
 
         /* ====================================================================================== Select and expand */

@@ -6,14 +6,24 @@ using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SenseNet.Client.TestsForDocs.Infrastructure;
+using SenseNet.Extensions.DependencyInjection;
 
 namespace SenseNet.Client.TestsForDocs
 {
     [TestClass]
     public class ContentManagement : ClientIntegrationTestBase
     {
+        private class MyContent : Content { public MyContent(IRestCaller rc, ILogger<Content> l) : base(rc, l) { } }
+        // ReSharper disable once InconsistentNaming
+        private CancellationToken cancel => new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
+        // ReSharper disable once InconsistentNaming
+        IRepository repository =>
+            GetRepositoryCollection(services => { services.RegisterGlobalContentType<MyContent>(); })
+                .GetRepositoryAsync("local", cancel).GetAwaiter().GetResult();
+
         /* ====================================================================================== Create */
 
         [TestMethod]
@@ -365,6 +375,7 @@ namespace SenseNet.Client.TestsForDocs
 
         /* ====================================================================================== Upload */
 
+        /// <tab category="content-management" article="upload" example="uploadFile" />
         [TestMethod]
         [Description("Upload a file")]
         public async Task Docs_ContentManagement_Upload_File()
@@ -373,16 +384,35 @@ namespace SenseNet.Client.TestsForDocs
             await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
 
             //UNDONE:- the test is not implemented well because the doc-action contains local filesystem path.
-            /*
             // ACTION for doc
+            /*<doc>*/
             // Both requests are performed in the background
-            using (var fileStream = new FileStream(@"D:\Examples\MyFile.txt", FileMode.Open))
-                await Content.UploadAsync("/Root/Content/IT/Document_Library", "MyFile.txt", fileStream, "File");
-            */
+            await using var fileStream = new FileStream(@"D:\Examples\MyFile.txt", FileMode.Open);
+            await repository.UploadAsync(
+                request: new UploadRequest
+                {
+                    ParentPath = "/Root/Content/IT/Document_Library",
+                    ContentName = "MyFile.txt",
+                    ContentType = "File"
+                },
+                fileStream,
+                cancel);
+            /*</doc>*/
 
             // ASSERT
-            Assert.Inconclusive();
+            string? downloadedText = null;
+            await repository.DownloadAsync(
+                request: new DownloadRequest {Path = "/Root/Content/IT/Document_Library/MyFile.txt"},
+                responseProcessor: async (stream, properties) =>
+                {
+                    using var reader = new StreamReader(stream);
+                    downloadedText = await reader.ReadToEndAsync();
+                },
+                cancel);
+            Assert.IsNotNull(downloadedText);
         }
+
+        /// <tab category="content-management" article="upload" example="uploadRawText" />
         [TestMethod]
         [Description("Create a file with raw text")]
         public async Task Docs_ContentManagement_Upload_RawText()
@@ -391,39 +421,102 @@ namespace SenseNet.Client.TestsForDocs
             await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
 
             // ACTION for doc
+            /*<doc>*/
             var fileText = " *** file text data ***";
-            await Content.UploadTextAsync("/Root/Content/IT/Document_Library", "MyFile.txt",
-                fileText, CancellationToken.None, "File");
+            await repository.UploadAsync(request: new UploadRequest
+                {
+                    ParentPath = "/Root/Content/IT/Document_Library",
+                    ContentName = "MyFile.txt",
+                    ContentType = "File"
+                },
+                fileText,
+                cancel);
+            /*</doc>*/
 
             // ASSERT
-            Assert.Inconclusive();
+            string? downloadedText = null;
+            await repository.DownloadAsync(
+                request: new DownloadRequest { Path = "/Root/Content/IT/Document_Library/MyFile.txt" },
+                responseProcessor: async (stream, properties) =>
+                {
+                    using var reader = new StreamReader(stream);
+                    downloadedText = await reader.ReadToEndAsync();
+                },
+                cancel);
+            Assert.AreEqual(fileText, downloadedText);
         }
+
+        /// <tab category="content-management" article="upload" example="updateCTD" />
         [TestMethod]
         [Description("Update a CTD")]
         public async Task Docs_ContentManagement_Upload_UpdateCtd()
         {
-            //UNDONE:- the test is not implemented well because the doc-action updates a working CTD. Modification of an unused CTD will be better.
-            /*
-            // ACTION for doc
-            // Both requests are performed in the background
+            var description = "Description " + Guid.NewGuid();
+            var ctd = $@"<?xml version=""1.0"" encoding=""utf-8""?>
+<ContentType name=""MyContentType"" parentType=""GenericContent"" handler=""SenseNet.ContentRepository.GenericContent"" xmlns=""http://schemas.sensenet.com/SenseNet/ContentRepository/ContentTypeDefinition"">
+  <DisplayName>MyContentType</DisplayName>
+  <Description>{description}</Description>
+  <Fields></Fields>
+</ContentType>
+";
+            /*<doc>*/
             await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(ctd));
-            await Content.UploadAsync("/Root/System/Schema/ContentTypes/GenericContent", "MyContentType", stream, "ContentType");
-            */
+            await repository.UploadAsync(
+                request: new UploadRequest
+                {
+                    ParentPath = "/Root/System/Schema/ContentTypes/GenericContent",
+                    ContentName = "MyContentType",
+                    ContentType = "ContentType"
+                },
+                stream,
+                cancel);
+            /*</doc>*/
 
             // ASSERT
-            Assert.Inconclusive();
+            string? downloadedText = null;
+            await repository.DownloadAsync(
+                request: new DownloadRequest { Path = "/Root/System/Schema/ContentTypes/GenericContent/MyContentType" },
+                responseProcessor: async (stream, properties) =>
+                {
+                    using var reader = new StreamReader(stream);
+                    downloadedText = await reader.ReadToEndAsync();
+                },
+                cancel);
+            Assert.IsNotNull(downloadedText);
+            Assert.IsTrue(downloadedText.Contains($"<Description>{description}</Description>"));
         }
+
+        /// <tab category="content-management" article="upload" example="updateSettings" />
         [TestMethod]
         [Description("Update a Settings file")]
         public async Task Docs_ContentManagement_Upload_UpdateSettings()
         {
-            // ACTION for doc
-            await Content.UploadTextAsync("/Root/System/Settings", "MyCustom.settings",
-                "{Key:'Value'}", CancellationToken.None, "Settings");
+            /*<doc>*/
+            await repository.UploadAsync(
+                request: new UploadRequest
+                {
+                    ParentPath = "/Root/System/Settings",
+                    ContentName = "MyCustom.settings",
+                    ContentType = "Settings"
+                },
+                fileText: "{Key:'Value'}",
+                cancel);
+            /*</doc>*/
 
             // ASSERT
-            Assert.Inconclusive();
+            string? downloadedText = null;
+            await repository.DownloadAsync(
+                request: new DownloadRequest { Path = "/Root/System/Settings/MyCustom.settings" },
+                responseProcessor: async (stream, properties) =>
+                {
+                    using var reader = new StreamReader(stream);
+                    downloadedText = await reader.ReadToEndAsync();
+                },
+                cancel);
+            Assert.AreEqual("{Key:'Value'}", downloadedText);
         }
+
+        /// <tab category="content-management" article="upload" example="uploadFileNoChunks" />
         [TestMethod]
         [Description("Upload whole files instead of chunks")]
         public async Task Docs_ContentManagement_Upload_WholeFile()
@@ -434,6 +527,8 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive("The Client.Net does not implements this feature.");
         }
+
+        /// <tab category="content-management" article="upload" example="uploadStructure" />
         [TestMethod]
         [Description("Upload a structure")]
         public async Task Docs_ContentManagement_Upload_Structure()
@@ -444,6 +539,8 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive("The Client.Net does not implements this feature.");
         }
+
+        /// <tab category="content-management" article="upload" example="uploadResume" />
         [TestMethod]
         [Description("Interrupted uploads")]
         public async Task Docs_ContentManagement_Upload_Interrupted()
