@@ -321,8 +321,6 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Force undo changes")]
         public async Task Docs_Collaboration_Versioning_ForceUndo()
         {
-//Assert.Inconclusive();
-//UNDONE:---- ERROR: The server returned an error (HttpStatus: InternalServerError): Currently this action is not allowed on this content.
             // ALIGN
             // ReSharper disable once InconsistentNaming
             await using var Console = new StringWriter();
