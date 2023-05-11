@@ -26,15 +26,17 @@ namespace SenseNet.Client.TestsForDocs
 
         /* ====================================================================================== Create */
 
+        /// <tab category="content-management" article="create" example="create" />
         [TestMethod]
-        [Description("")]
         public async Task Docs_ContentManagement_Create_Folder()
         {
             try
             {
                 // ACTION for doc
-                var content = Content.CreateNew("/Root/Content/IT", "Folder", "My new folder");
-                await content.SaveAsync();
+                /*<doc>*/
+                var content = repository.CreateContent("/Root/Content/IT", "Folder", "My new folder");
+                await content.SaveAsync(cancel);
+                /*</doc>*/
 
                 // ASSERT
                 Assert.IsNotNull(content);
@@ -43,11 +45,13 @@ namespace SenseNet.Client.TestsForDocs
             }
             finally
             {
-                var c = await Content.LoadAsync("/Root/Content/IT/My new folder");
+                var c = await repository.LoadContentAsync("/Root/Content/IT/My new folder", cancel);
                 if (c != null)
-                    await c.DeleteAsync(true);
+                    await c.DeleteAsync(true, cancel);
             }
         }
+
+        /// <tab category="content-management" article="create" example="createWs" />
         [TestMethod]
         [Description("Create a workspace")]
         public async Task Docs_ContentManagement_Create_Workspace()
@@ -55,8 +59,10 @@ namespace SenseNet.Client.TestsForDocs
             try
             {
                 // ACTION for doc
-                var content = Content.CreateNew("/Root/Content", "Workspace", "My workspace");
-                await content.SaveAsync();
+                /*<doc>*/
+                var content = repository.CreateContent("/Root/Content", "Workspace", "My workspace");
+                await content.SaveAsync(cancel);
+                /*</doc>*/
 
                 // ASSERT
                 Assert.IsNotNull(content);
@@ -65,11 +71,13 @@ namespace SenseNet.Client.TestsForDocs
             }
             finally
             {
-                var c = await Content.LoadAsync("/Root/Content/My workspace");
+                var c = await repository.LoadContentAsync("/Root/Content/My workspace", cancel);
                 if (c != null)
-                    await c.DeleteAsync(true);
+                    await c.DeleteAsync(true, cancel);
             }
         }
+
+        /// <tab category="content-management" article="create" example="createDocLib" />
         [TestMethod]
         [Description("Create a document library")]
         public async Task Docs_ContentManagement_Create_DocumentLibrary()
@@ -77,8 +85,10 @@ namespace SenseNet.Client.TestsForDocs
             try
             {
                 // ACTION for doc
-                var content = Content.CreateNew("/Root/Content/IT", "DocumentLibrary", "My Doclib");
-                await content.SaveAsync();
+                /*<doc>*/
+                var content = repository.CreateContent("/Root/Content/IT", "DocumentLibrary", "My Doclib");
+                await content.SaveAsync(cancel);
+                /*</doc>*/
 
                 // ASSERT
                 Assert.IsNotNull(content);
@@ -87,12 +97,13 @@ namespace SenseNet.Client.TestsForDocs
             }
             finally
             {
-                var c = await Content.LoadAsync("/Root/Content/IT/My Doclib");
+                var c = await repository.LoadContentAsync("/Root/Content/IT/My Doclib", cancel);
                 if (c != null)
-                    await c.DeleteAsync(true);
+                    await c.DeleteAsync(true, cancel);
             }
         }
 
+        /// <tab category="content-management" article="create" example="createUser" />
         [TestMethod]
         [Description("Create a user")]
         public async Task Docs_ContentManagement_Create_User()
@@ -100,10 +111,12 @@ namespace SenseNet.Client.TestsForDocs
             try
             {
                 // ACTION for doc
-                var content = Content.CreateNew("/Root/IMS/Public", "User", "alba");
+                /*<doc>*/
+                var content = repository.CreateContent("/Root/IMS/Public", "User", "alba");
                 content["LoginName"] = "alba";
                 content["Enable"] = true;
-                await content.SaveAsync();
+                await content.SaveAsync(cancel);
+                /*</doc>*/
 
                 // ASSERT
                 Assert.IsNotNull(content);
@@ -112,12 +125,13 @@ namespace SenseNet.Client.TestsForDocs
             }
             finally
             {
-                var c = await Content.LoadAsync("/Root/IMS/Public/alba");
+                var c = await repository.LoadContentAsync("/Root/IMS/Public/alba", cancel);
                 if (c != null)
-                    await c.DeleteAsync(true);
+                    await c.DeleteAsync(true, cancel);
             }
         }
 
+        /// <tab category="content-management" article="create" example="createByTemplate" />
         [TestMethod]
         [Description("Creating a content by template")]
         public async Task Docs_ContentManagement_Create_ByTemplate()
@@ -126,11 +140,13 @@ namespace SenseNet.Client.TestsForDocs
             try
             {
                 // ACTION for doc
-                var content = Content.CreateNew("/Root/Content/IT", "EventList", "My Calendar",
+                /*<doc>*/
+                var content = repository.CreateContentByTemplate("/Root/Content/IT", "EventList", "My Calendar",
                     "/Root/ContentTemplates/DemoWorkspace/Demo_Workspace/Calendar");
                 content["DisplayName"] = "Calendar";
                 content["Index"] = 2;
-                await content.SaveAsync();
+                await content.SaveAsync(cancel);
+                /*</doc>*/
 
                 // ASSERT
                 Assert.IsNotNull(content);
@@ -139,9 +155,9 @@ namespace SenseNet.Client.TestsForDocs
             }
             finally
             {
-                var c = await Content.LoadAsync("/Root/Content/IT/My Calendar");
+                var c = await repository.LoadContentAsync("/Root/Content/IT/My Calendar", cancel);
                 if (c != null)
-                    await c.DeleteAsync(true);
+                    await c.DeleteAsync(true, cancel);
             }
         }
 
