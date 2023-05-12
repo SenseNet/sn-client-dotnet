@@ -163,24 +163,29 @@ namespace SenseNet.Client.TestsForDocs
 
         /* ====================================================================================== Update */
 
+        /// <tab category="content-management" article="update" example="updatePatch" />
         [TestMethod]
         [Description("Modifying a field of an entity")]
         public async Task Docs_ContentManagement_Update_OneField()
         {
             // ALIGN
-            var c = await Content.LoadAsync("/Root/Content/IT");
+            var c = await repository.LoadContentAsync("/Root/Content/IT", cancel);
             c["Index"] = 0;
-            await c.SaveAsync();
+            await c.SaveAsync(cancel);
 
             // ACTION for doc
-            var content = await Content.LoadAsync("/Root/Content/IT");
+            /*<doc>*/
+            var content = await repository.LoadContentAsync("/Root/Content/IT", cancel);
             content["Index"] = 142;
-            await content.SaveAsync();
+            await content.SaveAsync(cancel);
+            /*</doc>*/
 
             // ASSERT
-            dynamic loaded = await Content.LoadAsync("/Root/Content/IT");
+            dynamic loaded = await repository.LoadContentAsync("/Root/Content/IT", cancel);
             Assert.AreEqual(142, (int)loaded.Index);
         }
+
+        /// <tab category="content-management" article="update" example="updateMultipleFields" />
         [TestMethod]
         [Description("Modifying multiple fields at once")]
         public async Task Docs_ContentManagement_Update_MultipleFields()
@@ -188,45 +193,49 @@ namespace SenseNet.Client.TestsForDocs
             try
             {
                 // ALIGN
-                var c = await Content.LoadAsync("/Root/Content/IT");
+                var c = await repository.LoadContentAsync("/Root/Content/IT", cancel);
                 if (c == null)
                 {
-                    c = await Content.LoadAsync("/Root/Content/NewName");
+                    c = await repository.LoadContentAsync("/Root/Content/NewName", cancel);
                     if (c != null)
                     {
                         c["Name"] = "IT";
                         c["Index"] = 0;
-                        await c.SaveAsync();
+                        await c.SaveAsync(cancel);
                     }
                 }
                 else
                 {
                     c["Index"] = 0;
-                    await c.SaveAsync();
+                    await c.SaveAsync(cancel);
                 }
 
                 // ACTION for doc
-                var content = await Content.LoadAsync("/Root/Content/IT");
+                /*<doc>*/
+                var content = await repository.LoadContentAsync("/Root/Content/IT", cancel);
                 content["Name"] = "NewName";
                 content["Index"] = 142;
-                await content.SaveAsync();
+                await content.SaveAsync(cancel);
+                /*</doc>*/
 
                 // ASSERT
-                Assert.IsNull(await Content.LoadAsync("/Root/Content/IT"));
-                dynamic loaded = await Content.LoadAsync("/Root/Content/NewName");
+                Assert.IsNull(await repository.LoadContentAsync("/Root/Content/IT", cancel));
+                dynamic loaded = await repository.LoadContentAsync("/Root/Content/NewName", cancel);
                 Assert.AreEqual(142, (int)loaded.Index);
             }
             finally
             {
-                var content = await Content.LoadAsync("/Root/Content/NewName");
+                var content = await repository.LoadContentAsync("/Root/Content/NewName", cancel);
                 if (content != null)
                 {
                     content["Name"] = "IT";
-                    content["Index"] = 142;
-                    await content.SaveAsync();
+                    content["Index"] = 0;
+                    await content.SaveAsync(cancel);
                 }
             }
         }
+
+        /// <tab category="content-management" article="update" example="updateDate" />
         [TestMethod]
         [Description("Update the value of a date field")]
         public async Task Docs_ContentManagement_Update_DateField()
@@ -234,28 +243,32 @@ namespace SenseNet.Client.TestsForDocs
             try
             {
                 // ALIGN
-                var c = Content.CreateNew("/Root/Content/IT", "EventList", "Calendar");
-                await c.SaveAsync();
-                c = Content.CreateNew("/Root/Content/IT/Calendar", "CalendarEvent", "Release");
+                var c = repository.CreateContent("/Root/Content/IT", "EventList", "Calendar");
+                await c.SaveAsync(cancel);
+                c = repository.CreateContent("/Root/Content/IT/Calendar", "CalendarEvent", "Release");
                 c["StartDate"] = new DateTime(2000, 1, 1, 0, 0, 0);
-                await c.SaveAsync();
+                await c.SaveAsync(cancel);
 
                 // ACTION for doc
-                var content = await Content.LoadAsync("/Root/Content/IT/Calendar/Release");
+                /*<doc>*/
+                var content = await repository.LoadContentAsync("/Root/Content/IT/Calendar/Release", cancel);
                 content["StartDate"] = new DateTime(2020, 3, 4, 9, 30, 0);
-                await content.SaveAsync();
+                await content.SaveAsync(cancel);
+                /*</doc>*/
 
                 // ASSERT
-                dynamic loaded = await Content.LoadAsync("/Root/Content/IT/Calendar/Release");
+                dynamic loaded = await repository.LoadContentAsync("/Root/Content/IT/Calendar/Release", cancel);
                 Assert.AreEqual(new DateTime(2020, 3, 4, 9, 30, 0), (DateTime)loaded.StartDate);
             }
             finally
             {
-                var c  = await Content.LoadAsync("/Root/Content/IT/Calendar");
+                var c  = await repository.LoadContentAsync("/Root/Content/IT/Calendar", cancel);
                 if (c != null)
-                    await c.DeleteAsync(true);
+                    await c.DeleteAsync(true, cancel);
             }
         }
+
+        /// <tab category="content-management" article="update" example="updateChoice" />
         [TestMethod]
         [Description("Update a choice field")]
         public async Task Docs_ContentManagement_Update_ChoiceField()
@@ -263,19 +276,21 @@ namespace SenseNet.Client.TestsForDocs
             try
             {
                 // ALIGN
-                var c = Content.CreateNew("/Root/Content/IT", "EventList", "Calendar");
-                await c.SaveAsync();
-                c = Content.CreateNew("/Root/Content/IT/Calendar", "CalendarEvent", "Release");
+                var c = repository.CreateContent("/Root/Content/IT", "EventList", "Calendar");
+                await c.SaveAsync(cancel);
+                c = repository.CreateContent("/Root/Content/IT/Calendar", "CalendarEvent", "Release");
                 c["StartDate"] = new DateTime(2000, 1, 1, 0, 0, 0);
-                await c.SaveAsync();
+                await c.SaveAsync(cancel);
 
                 // ACTION for doc
-                var content = await Content.LoadAsync("/Root/Content/IT/Calendar/Release");
+                /*<doc>*/
+                var content = await repository.LoadContentAsync("/Root/Content/IT/Calendar/Release", cancel);
                 content["EventType"] = new[] { "Demo", "Meeting" };
-                await content.SaveAsync();
+                await content.SaveAsync(cancel);
+                /*</doc>*/
 
                 // ASSERT
-                content = await Content.LoadAsync("/Root/Content/IT/Calendar/Release");
+                content = await repository.LoadContentAsync("/Root/Content/IT/Calendar/Release", cancel);
                 var  eventTypeValues = ((IEnumerable<object>) content["EventType"]).Select(x => x.ToString()).ToArray();
                 Assert.AreEqual(2, eventTypeValues.Length);
                 Assert.IsTrue(eventTypeValues.Contains("Demo"));
@@ -283,11 +298,13 @@ namespace SenseNet.Client.TestsForDocs
             }
             finally
             {
-                var c = await Content.LoadAsync("/Root/Content/IT/Calendar");
+                var c = await repository.LoadContentAsync("/Root/Content/IT/Calendar", cancel);
                 if (c != null)
-                    await c.DeleteAsync(true);
+                    await c.DeleteAsync(true, cancel);
             }
         }
+
+        /// <tab category="content-management" article="update" example="updateReference" />
         [TestMethod]
         [Description("Update the value of a reference field 1")]
         public async Task Docs_ContentManagement_Update_SingleReference()
@@ -295,51 +312,67 @@ namespace SenseNet.Client.TestsForDocs
             try
             {
                 // ACTION for doc
-                var content = await Content.LoadAsync("/Root/Content/IT");
-                content["Manager"] = 12345;
-                await content.SaveAsync();
+                /*<doc>*/
+                var content = await repository.LoadContentAsync("/Root/Content/IT", cancel);
+                content["Manager"] = 12345;/*</doc>*/
+                content["Manager"] = 1;
+                /*<doc>*/
+                await content.SaveAsync(cancel);
+                /*</doc>*/
 
                 // ASSERT
-                //UNDONE:-- BUG: SaveAsync need to throw an exception.
-                Assert.Inconclusive();
+                dynamic loaded = await repository.LoadContentAsync(new LoadContentRequest
+                {
+                    Path = "/Root/Content/IT",
+                    Expand = new []{"Manager"}
+                }, cancel);
+                Assert.AreEqual("1", loaded.Manager.Id.ToString());
             }
             finally
             {
             }
         }
+
+        /// <tab category="content-management" article="update" example="updateReferenceMultiple" />
         [TestMethod]
         [Description("Update the value of a reference field 2")]
         public async Task Docs_ContentManagement_Update_MultiReference()
         {
+            //UNDONE:new:-- BUG: SaveAsync need to throw an exception. Complete test when modifying CTD works.
+            Assert.Inconclusive();
             try
             {
                 // ACTION for doc
-                var content = await Content.LoadAsync("/Root/Content/IT");
+                /*<doc>*/
+                var content = await repository.LoadContentAsync("/Root/Content/IT", cancel);
                 content["Customers"] = new[] { "/Root/Customer1", "/Root/Customer2" };
-                await content.SaveAsync();
+                await content.SaveAsync(cancel);
+                /*</doc>*/
 
                 // ASSERT
-                //UNDONE:-- BUG: SaveAsync need to throw an exception.
-                Assert.Inconclusive();
             }
             finally
             {
             }
         }
+
+        /// <tab category="content-management" article="update" example="updatePut" />
         [TestMethod]
         [Description("Setting (resetting) all fields of an entity")]
         public void Docs_ContentManagement_Update_ResetAllAndSetOneField()
         {
-            //UNDONE: Do not use this API. Choose any other solution for this problem.
+            //UNDONE:new:-- Do not use this API. Choose any other solution for this problem.
+            Assert.Inconclusive();
             /*
             // ACTION for doc
             var postData = new Dictionary<string, object>
                 { {"Manager", "/Root/IMS/Public/businesscat"} };
             await RESTCaller.PutContentAsync("/Root/Content/IT", postData);
             */
+            /*<doc>*/
+            /*</doc>*/
 
             // ASSERT
-            Assert.Inconclusive();
         }
 
         /* ====================================================================================== Delete */
