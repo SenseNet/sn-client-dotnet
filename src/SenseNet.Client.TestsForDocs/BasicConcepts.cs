@@ -320,11 +320,12 @@ namespace SenseNet.Client.TestsForDocs
             await EnsureContentAsync("/Root/Content/IT/Document_Library/Munich", "Folder");
 
             var date = DateTime.Today.AddDays(-1);
-            var children = await Content.LoadCollectionAsync("/Root/Content/IT/Document_Library");
+            var children = await repository.LoadCollectionAsync(
+                new LoadCollectionRequest {Path = "/Root/Content/IT/Document_Library"}, cancel);
             foreach (Content child in children)
             {
                 child["CreationDate"] = date;
-                await child.SaveAsync();
+                await child.SaveAsync(cancel);
                 date = date.AddHours(1);
             }
 
@@ -352,11 +353,12 @@ namespace SenseNet.Client.TestsForDocs
             await EnsureContentAsync("/Root/Content/IT/Document_Library/Munich", "Folder");
 
             var date = DateTime.Today.AddDays(-1);
-            var children = await Content.LoadCollectionAsync("/Root/Content/IT/Document_Library");
+            var children = await repository.LoadCollectionAsync(
+                new LoadCollectionRequest {Path = "/Root/Content/IT/Document_Library"}, cancel);
             foreach (Content child in children)
             {
                 child["ModificationDate"] = date;
-                await child.SaveAsync();
+                await child.SaveAsync(cancel);
                 date = date.AddHours(1);
             }
 

@@ -41,14 +41,14 @@ namespace SenseNet.Client.TestsForDocs
                 /*</doc>*/
 
                 // ASSERT
-                var loaded = await Content.LoadAsync("/Root/Content/IT");
+                var loaded = await repository.LoadContentAsync("/Root/Content/IT", cancel);
                 Assert.AreEqual(3, ((JArray)loaded["InheritableVersioningMode"]).Single().Value<int>());
             }
             finally
             {
-                var content = await Content.LoadAsync("/Root/Content/IT");
+                var content = await repository.LoadContentAsync("/Root/Content/IT", cancel);
                 content["InheritableVersioningMode"] = new[] { 0 };
-                await content.SaveAsync();
+                await content.SaveAsync(cancel);
             }
         }
 
@@ -585,10 +585,10 @@ namespace SenseNet.Client.TestsForDocs
             try
             {
                 // ACTION for doc
-                var content = await Content.LoadAsync("/Root/Content/IT");
+                var content = await repository.LoadContentAsync("/Root/Content/IT", cancel);
                 content["InheritableApprovingMode"] = new[] { 2 };
                 content["InheritableVersioningMode"] = new[] { 3 };
-                await content.SaveAsync();
+                await content.SaveAsync(cancel);
 
                 // ASSERT
                 var message = Console.GetStringBuilder().ToString();
@@ -596,10 +596,10 @@ namespace SenseNet.Client.TestsForDocs
             }
             finally
             {
-                var content = await Content.LoadAsync("/Root/Content/IT");
+                var content = await repository.LoadContentAsync("/Root/Content/IT", cancel);
                 content["InheritableApprovingMode"] = new[] { 0 };
                 content["InheritableVersioningMode"] = new[] { 0 };
-                await content.SaveAsync();
+                await content.SaveAsync(cancel);
             }
         }
         [TestMethod]
@@ -631,9 +631,9 @@ namespace SenseNet.Client.TestsForDocs
             }
             finally
             {
-                var c = await Content.LoadAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx");
+                var c = await repository.LoadContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", cancel);
                 if (c != null)
-                    await c.DeleteAsync(true);
+                    await c.DeleteAsync(true, cancel);
             }
         }
         [TestMethod]
@@ -662,9 +662,9 @@ namespace SenseNet.Client.TestsForDocs
             }
             finally
             {
-                var c = await Content.LoadAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx");
+                var c = await repository.LoadContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", cancel);
                 if (c != null)
-                    await c.DeleteAsync(true);
+                    await c.DeleteAsync(true, cancel);
             }
         }
 
