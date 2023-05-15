@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -616,14 +617,19 @@ namespace SenseNet.Client.TestsForDocs
         [Description("$metadata 1")]
         public async Task Docs_BasicConcepts_GlobalMetadata()
         {
-            var url = ClientContext.Current.Server.Url;
-
             var response =
                 // ACTION for doc
-                await RESTCaller.GetResponseStringAsync(
-                    new Uri(url + "/OData.svc/$metadata"));
+                /*<doc>*/
+                await repository.GetResponseStringAsync(
+                    new Uri(repository.Server.Url + "/OData.svc/$metadata"),
+                    HttpMethod.Get,
+                    postData: null,
+                    additionalHeaders: null,
+                    cancel);
+                /*</doc>*/
 
             // ASSERT
+            Assert.IsTrue(response.Contains("<edmx:Edmx"));
             Assert.Inconclusive();
         }
 
@@ -635,14 +641,19 @@ namespace SenseNet.Client.TestsForDocs
             // ALIGN
             await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
 
-            var url = ClientContext.Current.Server.Url;
-
             var response =
                 // ACTION for doc
-                await RESTCaller.GetResponseStringAsync(
-                    new Uri(url + "/OData.svc/Root/Content/IT/Document_Library/$metadata"));
+                /*<doc>*/
+                await repository.GetResponseStringAsync(
+                    new Uri(repository.Server.Url + "/OData.svc/Root/Content/IT/Document_Library/$metadata"),
+                    HttpMethod.Get,
+                    postData: null,
+                    additionalHeaders: null,
+                    cancel);
+                /*</doc>*/
 
             // ASSERT
+            Assert.IsTrue(response.Contains("<edmx:Edmx"));
             Assert.Inconclusive();
         }
 
@@ -705,28 +716,24 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Scenario")]
         public async Task Docs_BasicConcepts_Scenario()
         {
-            //UNDONE:- Feature request: scenario filter of Actions
-            //dynamic content8 = await Content.LoadAsync(new ODataRequest
-            //{
-            //    Path = "/Root/IMS",
-            //    Expand = new[] { "Actions" },
-            //    Select = new[] { "Name", "Actions" },
-            //    Scenario = "UserMenu",
-            //});
-
             // ACTION for doc
-            dynamic content = await RESTCaller.GetContentAsync(new ODataRequest
+            /*<doc>*/
+            dynamic content = await repository.LoadContentAsync(new LoadContentRequest
             {
                 Path = "/Root/Content/IT",
                 Expand = new[] { "Actions" },
                 Select = new[] { "Actions" },
                 Parameters = { { "scenario", "ContextMenu" } }
-            });
-            //foreach(var item in content.Actions)
-            //    Console.WriteLine(item.Name);
+            }, cancel);
+
+            var actionNames = new List<string>();
+            foreach (var item in content.Actions)
+                actionNames.Add(item.Name.ToString());
+            /*</doc>*/
 
             // ASSERT
-            Assert.Inconclusive();
+            Assert.IsTrue(actionNames.Count > 1);
+            Assert.IsTrue(actionNames.Contains("Browse"));
         }
 
         /* ====================================================================================== Schema */
