@@ -9,156 +9,297 @@ namespace SenseNet.Client.TestsForDocs
     [TestClass]
     public class Querying : ClientIntegrationTestBase
     {
+        private CancellationToken cancel => new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
+        IRepository repository => GetRepositoryCollection().GetRepositoryAsync("local", cancel)
+            .GetAwaiter().GetResult();
+
+        /* ====================================================================================== General */
+
+        /// <tab category="querying" article="query" example="wildcard-search-single" />
         [TestMethod]
         [Description("Wildcard search 1")]
-        public async Task Docs_Querying_Wildcard_QuertionMark()
+        public async Task Docs_Querying_Wildcard_QuestionMark()
         {
+            await EnsureContentAsync("/Root/Content/truck", "Folder");
+            await EnsureContentAsync("/Root/Content/trunk", "Folder");
+
             // ACTION for doc
-            var result = await Content.QueryAsync("query=tru?k");
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "tru?k"}, cancel);
 
             // foreach (dynamic content in result)
             //    Console.WriteLine($"{content.Id} {content.Name}");
+            /*</doc>*/
 
             // ASSERT
-            Assert.Inconclusive();
+            var actual = string.Join(", ", result.Select(c => c.Name).OrderBy(n => n).Distinct());
+            Assert.AreEqual("truck, trunk", actual);
         }
+
+        /// <tab category="querying" article="query" example="wildcard-search-multiple" />
         [TestMethod]
         [Description("Wildcard search 2")]
         public async Task Docs_Querying_Wildcard_Asterisk()
         {
             // ACTION for doc
-            var result = await Content.QueryAsync("query=app*");
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "app*" }, cancel);
 
             // foreach (dynamic content in result)
             //    Console.WriteLine($"{content.Id} {content.Name}");
+            /*</doc>*/
+            // Real test:
+            result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "adm*" }, cancel);
 
             // ASSERT
-            Assert.Inconclusive();
+            Assert.IsTrue(result.Count > 2);
+            var names = result.Select(c => c.Name).OrderBy(n => n).Distinct().ToArray();
+            Assert.IsTrue(names.Contains("Admin"));
+            Assert.IsTrue(names.Contains("Admin.png"));
+            Assert.IsTrue(names.Contains("Administrators"));
         }
 
+        /// <tab category="querying" article="query" example="fuzzy-search" />
         [TestMethod]
         [Description("Fuzzy search")]
         public async Task Docs_Querying_FuzzySearch()
         {
-            // ACTION for doc
-            var result = await Content.QueryAsync("Description:abbreviate~0.8");
+            try
+            {
+                await EnsureContentAsync("/Root/Content/truck", "Folder");
+                await EnsureContentAsync("/Root/Content/trunk", "Folder");
 
-            // foreach (dynamic content in result)
-            //    Console.WriteLine($"{content.Id} {content.Name}");
+                // ACTION for doc
+                /*<doc>*/
+                var result = await repository.QueryAsync(
+                    new QueryContentRequest {ContentQuery = "Description:abbreviate~0.8"}, cancel);
 
-            // ASSERT
-            Assert.Inconclusive();
+                // foreach (dynamic content in result)
+                //    Console.WriteLine($"{content.Id} {content.Name}");
+                /*</doc>*/
+                // Real test:
+                result = await repository.QueryAsync(
+                    new QueryContentRequest {ContentQuery = "Name:truck~0.5"}, cancel);
+
+                // ASSERT
+                Assert.IsTrue(result.Count > 1);
+                var actual = string.Join(", ", result.Select(c => c.Name).OrderBy(n => n).Distinct());
+                Assert.AreEqual("truck, trunk", actual);
+            }
+            finally
+            {
+                await repository.DeleteContentAsync(
+                    new[] {"/Root/Content/truck", "/Root/Content/trunk"},
+                    true, cancel).ConfigureAwait(false);
+            }
         }
+
+        /// <tab category="querying" article="query" example="proximity-search" />
         [TestMethod]
         [Description("Proximity search")]
         public async Task Docs_Querying_ProximitySearch()
         {
-            // ACTION for doc
-            var result = await Content.QueryAsync("Description:'Lorem amet'~3");
+Assert.Inconclusive();
+            try
+            {
+                var folder = await EnsureContentAsync("/Root/Content/folder1", "Folder");
+                folder["DisplayName"] = "-- Lorem ipsum dolor sit amet --";
+                folder["Description"] = "-- Lorem ipsum dolor sit amet --";
+                await folder.SaveAsync(cancel);
 
-            // foreach (dynamic content in result)
-            //    Console.WriteLine($"{content.Id} {content.Name}");
+                // ACTION for doc
+                /*<doc>*/
+                var result = await repository.QueryAsync(
+                    new QueryContentRequest { ContentQuery = "Description:'Lorem amet'~3" }, cancel);
 
-            // ASSERT
-            Assert.Inconclusive();
+                // foreach (dynamic content in result)
+                //    Console.WriteLine($"{content.Id} {content.Name}");
+                /*</doc>*/
+
+                // ASSERT
+                Assert.AreEqual("Folder1", result.First().Name);
+            }
+            finally
+            {
+                var c = await repository
+                    .LoadContentAsync("/Root/Content/folder1", cancel);
+                if (c != null)
+                    await c.DeleteAsync(true, cancel);
+            }
         }
+
+        /// <tab category="querying" article="query" example="special-characters-escaping" />
         [TestMethod]
         [Description("Escaping special characters 1")]
         public async Task Docs_Querying_Escaping1()
         {
             // ACTION for doc
-            var result = await Content.QueryAsync(@"Name:\(apps\) .AUTOFILTERS:OFF");
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = @"Name:\(apps\) .AUTOFILTERS:OFF" }, cancel);
 
             // foreach (dynamic content in result)
             //    Console.WriteLine($"{content.Id} {content.Name}");
+            /*</doc>*/
 
             // ASSERT
-            Assert.Inconclusive();
+            var names = result.Select(c => c.Name).Distinct().ToArray();
+            Assert.AreEqual("(apps)", names.Single());
         }
+
+        /// <tab category="querying" article="query" example="special-character-apostrophe" />
         [TestMethod]
         [Description("Escaping special characters 2")]
         public async Task Docs_Querying_Escaping2()
         {
-            // ACTION for doc
-            var result = await Content.QueryAsync("InFolder:\"/Root/Content/IT/(1+1):2\"");
+            try
+            {
+                // This name is not possible: (1+1):2. The forbidden characters are replaced.
+                var content = await EnsureContentAsync("/Root/Content/(1-1)-2", "Folder");
+                content["DisplayName"] = "(1+1):2";
+                await content.SaveAsync(cancel);
 
-            // foreach (dynamic content in result)
-            //    Console.WriteLine($"{content.Id} {content.Name}");
+                // ACTION for doc
+                //var result = await Content.QueryAsync("InFolder:\"/Root/Content/IT/(1+1):2\"");
+                /*<doc>*/
+                var result1 = await repository.QueryAsync(
+                    new QueryContentRequest {ContentQuery = "InFolder:'/Root/Content/IT/(1+1):2'"}, cancel);
+                // or
+                var result2 = await repository.QueryAsync(
+                    new QueryContentRequest {ContentQuery = "InFolder:\"/Root/Content/IT/(1+1):2\""}, cancel);
+                /*</doc>*/
+                // Real test:
+                result1 = await repository.QueryAsync(
+                    new QueryContentRequest {ContentQuery = "DisplayName:'(1+1):2'" }, cancel);
+                result2 = await repository.QueryAsync(
+                    new QueryContentRequest {ContentQuery = "DisplayName:\"(1+1):2\"" }, cancel);
 
-            // ASSERT
-            Assert.Inconclusive();
+                // ASSERT
+                var names1 = result1.Select(c => c["DisplayName"].ToString()).Distinct().ToArray();
+                Assert.AreEqual("(1+1):2", names1.Single());
+                var names2 = result1.Select(c => c["DisplayName"].ToString()).Distinct().ToArray();
+                Assert.AreEqual("(1+1):2", names2.Single());
+            }
+            finally
+            {
+                await repository.DeleteContentAsync(
+                    new[] { "/Root/Content/(1-1)-2" },
+                    true, cancel).ConfigureAwait(false);
+            }
         }
+
+        /// <tab category="querying" article="query" example="quick-query" />
         [TestMethod]
         [Description("Quick queries")]
         public async Task Docs_Querying_QuickQuery()
         {
             // ACTION for doc
-            var result = await Content.QueryAsync("Id:<42 .QUICK");
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "Id:<42 .QUICK" }, cancel);
 
             // foreach (dynamic content in result)
             //    Console.WriteLine($"{content.Id} {content.Name}");
+            /*</doc>*/
 
             // ASSERT
-            Assert.Inconclusive();
+            var names = result.Select(c => c.Name).Distinct().ToArray();
+            Assert.IsTrue(10 < result.Count);
         }
 
         /* ====================================================================================== Query by Id or Path */
 
+        /// <tab category="querying" article="query-by-id-path" example="byId" />
         [TestMethod]
         [Description("Query a content by its Id")]
         public async Task Docs_Querying_Id()
         {
             // ACTION for doc
-            var result = await Content.QueryAsync("Id:1607");
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "Id:1607" }, cancel);
 
             // foreach (dynamic content in result)
-            //     Console.WriteLine(content.Name);
+            //    Console.WriteLine($"{content.Id} {content.Name}");
+            /*</doc>*/
+            // Real test
+            result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "Id:6" }, cancel);
 
             // ASSERT
-            Assert.Inconclusive();
+            var content = result.Single();
+            Assert.AreEqual(6, content.Id);
+            Assert.AreEqual("Visitor", content.Name);
         }
+
+        /// <tab category="querying" article="query-by-id-path" example="byMultipleIds" />
         [TestMethod]
         [Description("Query multiple content by their Ids")]
         public async Task Docs_Querying_MoreId()
         {
             // ACTION for doc
-            var result = await Content.QueryAsync("Id:(1607 1640 1645)");
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "Id:(1607 1640 1645)" }, cancel);
 
             // foreach (dynamic content in result)
-            //    Console.WriteLine(content.Name);
+            //    Console.WriteLine($"{content.Id} {content.Name}");
+            /*</doc>*/
+            // Real test
+            result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "Id:(1 2 3)" }, cancel);
 
             // ASSERT
-            Assert.Inconclusive();
+            var actual = string.Join(", ", result.Select(c => c.Id.ToString()).OrderBy(x => x));
+            Assert.AreEqual("1, 2, 3", actual);
         }
+
+        /// <tab category="querying" article="query-by-id-path" example="inFolder" />
         [TestMethod]
         [Description("Search in a folder")]
         public async Task Docs_Querying_InFolder()
         {
             // ACTION for doc
-            var result = await Content.QueryAsync("InFolder:'/Root/Content/IT/Document_Library/Calgary'");
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "InFolder:'/Root/Content/IT/Document_Library/Calgary'" }, cancel);
 
             // foreach (dynamic content in result)
-            //    Console.WriteLine(content.Name);
+            //    Console.WriteLine($"{content.Id} {content.Name}");
+            /*</doc>*/
 
             // ASSERT
-            Assert.Inconclusive();
+            var names = result.Select(c => c.Name).Distinct().ToArray();
+            Assert.IsTrue(names.Contains("BusinessPlan.docx"));
         }
+
+        /// <tab category="querying" article="query-by-id-path" example="inTree" />
         [TestMethod]
         [Description("Search in a branch of the content tree")]
-        public async Task Docs_Querying_Intree()
+        public async Task Docs_Querying_InTree()
         {
             // ACTION for doc
-            var result = await Content.QueryAsync("InTree:'/Root/Content/IT/Document_Library'");
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "InTree:'/Root/Content/IT/Document_Library'" }, cancel);
 
             // foreach (dynamic content in result)
-            //    Console.WriteLine(content.Name);
+            //    Console.WriteLine($"{content.Id} {content.Name}");
+            /*</doc>*/
 
             // ASSERT
-            Assert.Inconclusive();
+            var names = result.Select(c => c.Name).Distinct().ToArray();
+            Assert.IsTrue(names.Contains("Document_Library"));
+            Assert.IsTrue(names.Contains("BusinessPlan.docx"));
+
         }
 
         /* ====================================================================================== Query by a field */
 
+        /// 
         [TestMethod]
         [Description("Query by a text field 1")]
         public async Task Docs_Querying_Name()
@@ -172,6 +313,8 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// 
         [TestMethod]
         [Description("Query by a text field 2")]
         public async Task Docs_Querying_Description_Wildcard()
@@ -185,6 +328,8 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// 
         [TestMethod]
         [Description("Query by a number field")]
         public async Task Docs_Querying_NumberField()
@@ -199,6 +344,8 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// 
         [TestMethod]
         [Description("Query by a boolean field")]
         public async Task Docs_Querying_BooleanField()
@@ -212,6 +359,8 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// 
         [TestMethod]
         [Description("Query by choice field (localized value)")]
         public async Task Docs_Querying_ChoiceField_LocalizedValue()
@@ -222,6 +371,8 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// 
         [TestMethod]
         [Description("Query by choice field (value)")]
         public async Task Docs_Querying_ChoiceField_Value()
@@ -235,6 +386,7 @@ namespace SenseNet.Client.TestsForDocs
 
         /* ====================================================================================== Fulltext Search */
 
+        /// 
         [TestMethod]
         [Description("Fulltext search")]
         public async Task Docs_Querying_FullTextSearch()
@@ -251,6 +403,7 @@ namespace SenseNet.Client.TestsForDocs
 
         /* ====================================================================================== Query by date */
 
+        /// 
         [TestMethod]
         [Description("Query by an exact date")]
         public async Task Docs_Querying_Date_Day()
@@ -261,6 +414,8 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// 
         [TestMethod]
         [Description("")]
         public async Task Docs_Querying_Date_Second()
@@ -271,6 +426,8 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// 
         [TestMethod]
         [Description("Query before or after a specific date")]
         public async Task Docs_Querying_Date_LessThan()
@@ -284,6 +441,8 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// 
         [TestMethod]
         [Description("")]
         public async Task Docs_Querying_Date_GreaterThan()
@@ -297,6 +456,8 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// 
         [TestMethod]
         [Description("Query by a date range")]
         public async Task Docs_Querying_Date_Range_Inclusive()
@@ -310,6 +471,8 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// 
         [TestMethod]
         [Description("")]
         public async Task Docs_Querying_Date_Range_Exclusive()
@@ -323,6 +486,8 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// 
         [TestMethod]
         [Description("")]
         public async Task Docs_Querying_Date_Range_Mixed()
@@ -336,6 +501,8 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// 
         [TestMethod]
         [Description("Querying with dynamic template parameters 1")]
         public async Task Docs_Querying_Date_Template_Yesterday()
@@ -346,6 +513,8 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// 
         [TestMethod]
         [Description("Querying with dynamic template parameters 2")]
         public async Task Docs_Querying_Date_Template_NextMonth()
@@ -356,6 +525,8 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// 
         [TestMethod]
         [Description("Querying with dynamic template parameters 3")]
         public async Task Docs_Querying_Date_Template_PreviousYear()
@@ -366,6 +537,8 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// 
         [TestMethod]
         [Description("Query by lifespan validity")]
         public async Task Docs_Querying_Date_LifespanOn()
@@ -382,6 +555,7 @@ namespace SenseNet.Client.TestsForDocs
 
         /* ====================================================================================== Query by related content */
 
+        /// 
         [TestMethod]
         [Description("Query by related content")]
         public async Task Docs_Querying_NestedQuery()
@@ -398,6 +572,7 @@ namespace SenseNet.Client.TestsForDocs
 
         /* ====================================================================================== Query by related content */
 
+        /// 
         [TestMethod]
         [Description("Query by a type")]
         public async Task Docs_Querying_Type()
@@ -411,6 +586,8 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// 
         [TestMethod]
         [Description("Query by a type and its subtypes")]
         public async Task Docs_Querying_TypeIs()
@@ -428,6 +605,7 @@ namespace SenseNet.Client.TestsForDocs
 
         /* ====================================================================================== Ordering */
 
+        /// 
         [TestMethod]
         [Description("Order by a field - lowest to highest")]
         public async Task Docs_Querying_OrderBy_Ascending()
@@ -441,6 +619,8 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// 
         [TestMethod]
         [Description("Order by a field - highest to lowest")]
         public async Task Docs_Querying_OrderBy_Descending()
@@ -454,6 +634,8 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// 
         [TestMethod]
         [Description("Order by multiple fields")]
         public async Task Docs_Querying_OrderBy_MultipleField()
@@ -467,6 +649,8 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// 
         [TestMethod]
         [Description("Order by multiple fields in different directions")]
         public async Task Docs_Querying_OrderBy_DifferendDirections()
@@ -480,6 +664,8 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// 
         [TestMethod]
         [Description("Order by date")]
         public async Task Docs_Querying_OrderBy_Date()
@@ -496,6 +682,7 @@ namespace SenseNet.Client.TestsForDocs
 
         /* ====================================================================================== Paging */
 
+        /// 
         [TestMethod]
         [Description("Limit result count")]
         public async Task Docs_Querying_Top()
@@ -509,6 +696,8 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// 
         [TestMethod]
         [Description("Jump to page")]
         public async Task Docs_Querying_TopSkip()
@@ -525,6 +714,7 @@ namespace SenseNet.Client.TestsForDocs
 
         /* ====================================================================================== Multiple predicates */
 
+        /// 
         [TestMethod]
         [Description("Operators 1")]
         public async Task Docs_Querying_Operators_Or()
@@ -538,6 +728,8 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// 
         [TestMethod]
         [Description("Operators 2")]
         public async Task Docs_Querying_Operators_And()
@@ -570,6 +762,8 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.IsTrue(result.Count() > 0);
         }
+
+        /// 
         [TestMethod]
         [Description("Operators 3")]
         public async Task Docs_Querying_Operators_Must()
@@ -584,6 +778,8 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// 
         [TestMethod]
         [Description("Operators 4")]
         public async Task Docs_Querying_Operators_Not()
@@ -597,6 +793,8 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// 
         [TestMethod]
         [Description("Operators 5")]
         public async Task Docs_Querying_Operators_MustNot()
@@ -610,6 +808,8 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// 
         [TestMethod]
         [Description("Grouping")]
         public async Task Docs_Querying_Operators_Grouping()
@@ -626,6 +826,7 @@ namespace SenseNet.Client.TestsForDocs
 
         /* ====================================================================================== Query system content */
 
+        /// 
         [TestMethod]
         [Description("")]
         public async Task Docs_Querying_AutofiltersOff()
@@ -642,6 +843,7 @@ namespace SenseNet.Client.TestsForDocs
 
         /* ====================================================================================== Template parameters */
 
+        /// 
         [TestMethod]
         [Description("Using template parameters 1")]
         public async Task Docs_Querying_Template_CurrentUser()
@@ -655,6 +857,8 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// 
         [TestMethod]
         [Description("Using template parameters 2")]
         public async Task Docs_Querying_Template_Today()
@@ -668,6 +872,8 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// 
         [TestMethod]
         [Description("Templates with properties 1")]
         public async Task Docs_Querying_Template_NextWeekCurrentUser()
@@ -681,6 +887,8 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// 
         [TestMethod]
         [Description("Templates with properties 2")]
         public async Task Docs_Querying_Template_PropertyChain()
@@ -697,6 +905,8 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// 
         [TestMethod]
         [Description("Template expressions 1")]
         public async Task Docs_Querying_Template_MinusDays()
@@ -717,6 +927,8 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.IsTrue(result.Count() > 0);
         }
+
+        /// 
         [TestMethod]
         [Description("Template expressions 2")]
         public async Task Docs_Querying_Template_AddDays()
