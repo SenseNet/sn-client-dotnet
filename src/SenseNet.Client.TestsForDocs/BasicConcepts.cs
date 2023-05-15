@@ -741,6 +741,7 @@ namespace SenseNet.Client.TestsForDocs
             string schema = await repository.GetResponseStringAsync(
                 new ODataRequest {Path = "/Root", ActionName = "GetSchema"}, HttpMethod.Get, cancel);
             /*</doc>*/
+
             // ASSERT
             var replaced = schema.Substring(0, 50)
                 .Replace(" ", "")
@@ -755,27 +756,6 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Change the schema")]
         public async Task Docs_BasicConcepts_GetCtd()
         {
-            /*
-            // WARNING This code cannot run if the #1064 does not exist.
-            // ACTION for doc
-            string ctd = null;
-            await RESTCaller.GetStreamResponseAsync(1064, async message =>
-            {
-                ctd = await message.Content.ReadAsStringAsync();
-            }, CancellationToken.None);
-            */
-
-            //// IMPROVED TEST
-            //var content = await Content.LoadAsync("/Root/System/Schema/ContentTypes/GenericContent/File").ConfigureAwait(false);
-            //var fileId = content.Id;
-
-            //// ACTION
-            //string ctd = null;
-            //await RESTCaller.GetStreamResponseAsync(fileId, async message =>
-            //{
-            //    ctd = await message.Content.ReadAsStringAsync().ConfigureAwait(false);
-            //}, CancellationToken.None).ConfigureAwait(false);
-
             // ACTION for doc
             /*<doc>*/
             var workspaceContentType = await repository.LoadContentAsync(
@@ -790,10 +770,12 @@ namespace SenseNet.Client.TestsForDocs
                 responseProcessor: async (message, cancellation) =>
                 {
                     ctd = await message.Content.ReadAsStringAsync(cancellation);
-                }, cancel);
+                },
+                cancel);
             /*</doc>*/
 
             // ASSERT
+            Assert.IsNotNull(ctd);
             Assert.IsTrue(ctd.StartsWith("<?xml") || ctd.StartsWith("<ContentType"));
             Assert.IsTrue(ctd.Trim().EndsWith("</ContentType>"));
         }
