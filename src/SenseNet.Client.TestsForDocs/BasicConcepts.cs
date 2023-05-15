@@ -70,9 +70,13 @@ namespace SenseNet.Client.TestsForDocs
         {
             var response =
                 // ACTION for doc
-                //UNDONE:- Feature request: Content.GetPropertyAsync: await Content.GetPropertyAsync("/Root/IMS", "DisplayName");
-                await RESTCaller.GetResponseStringAsync("/Root/Content/IT", "DisplayName");
-
+                /*<doc>*/
+                await repository.GetResponseStringAsync(new ODataRequest
+                {
+                    Path = "/Root/Content/IT",
+                    PropertyName = "DisplayName"
+                }, HttpMethod.Get, cancel);
+                /*</doc>*/
             // ASSERT
             Assert.AreEqual("{\"d\":{\"DisplayName\":\"IT\"}}", response.RemoveWhitespaces());
         }
@@ -82,12 +86,16 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Addressing a property value")]
         public async Task Docs_BasicConcepts_GetSinglePropertyValue()
         {
-            var url = ClientContext.Current.Server.Url;
-
             var response =
                 // ACTION for doc
-                //UNDONE:- Feature request: Content.GetPropertyValueAsync: await Content.GetPropertyValueAsync("/Root/IMS", "DisplayName");
-                await RESTCaller.GetResponseStringAsync(new Uri(url + "/OData.svc/Root/Content/('IT')/DisplayName/$value"));
+                /*<doc>*/
+                await repository.GetResponseStringAsync(
+                    new Uri(repository.Server.Url + "/OData.svc/Root/Content/('IT')/DisplayName/$value"),
+                    HttpMethod.Get,
+                    postData: null,
+                    additionalHeaders: null,
+                    cancel);
+                /*</doc>*/
 
             // ASSERT
             Assert.AreEqual("IT", response.RemoveWhitespaces());
@@ -723,19 +731,26 @@ namespace SenseNet.Client.TestsForDocs
 
         /* ====================================================================================== Schema */
 
-        /// 
+        /// <tab category="basic-concepts" article="schema" example="getSchema" />
         [TestMethod]
         [Description("Get schema")]
         public async Task Docs_BasicConcepts_GetSchema()
         {
             // ACTION for doc
-            string schema = await RESTCaller.GetResponseStringAsync("/Root", "GetSchema");
-
+            /*<doc>*/
+            string schema = await repository.GetResponseStringAsync(
+                new ODataRequest {Path = "/Root", ActionName = "GetSchema"}, HttpMethod.Get, cancel);
+            /*</doc>*/
             // ASSERT
-            Assert.Inconclusive();
+            var replaced = schema.Substring(0, 50)
+                .Replace(" ", "")
+                .Replace("\t", "")
+                .Replace("\r", "")
+                .Replace("\n", "");
+            Assert.IsTrue(replaced.StartsWith("[{\"ContentTypeName\":"));
         }
 
-        /// 
+        /// <tab category="basic-concepts" article="schema" example="getBinary" />
         [TestMethod]
         [Description("Change the schema")]
         public async Task Docs_BasicConcepts_GetCtd()
@@ -750,16 +765,33 @@ namespace SenseNet.Client.TestsForDocs
             }, CancellationToken.None);
             */
 
-            // IMPROVED TEST
-            var content = await Content.LoadAsync("/Root/System/Schema/ContentTypes/GenericContent/File").ConfigureAwait(false);
-            var fileId = content.Id;
+            //// IMPROVED TEST
+            //var content = await Content.LoadAsync("/Root/System/Schema/ContentTypes/GenericContent/File").ConfigureAwait(false);
+            //var fileId = content.Id;
 
-            // ACTION
-            string ctd = null;
-            await RESTCaller.GetStreamResponseAsync(fileId, async message =>
-            {
-                ctd = await message.Content.ReadAsStringAsync().ConfigureAwait(false);
-            }, CancellationToken.None).ConfigureAwait(false);
+            //// ACTION
+            //string ctd = null;
+            //await RESTCaller.GetStreamResponseAsync(fileId, async message =>
+            //{
+            //    ctd = await message.Content.ReadAsStringAsync().ConfigureAwait(false);
+            //}, CancellationToken.None).ConfigureAwait(false);
+
+            // ACTION for doc
+            /*<doc>*/
+            var workspaceContentType = await repository.LoadContentAsync(
+                "Root/System/Schema/ContentTypes/GenericContent/Folder/Workspace", cancel);
+
+            string? ctd = null;
+            await repository.ProcessWebResponseAsync(
+                relativeUrl: $"/binaryhandler.ashx?nodeid={workspaceContentType.Id}&propertyname=Binary",
+                HttpMethod.Get,
+                additionalHeaders: null,
+                httpContent: null,
+                responseProcessor: async (message, cancellation) =>
+                {
+                    ctd = await message.Content.ReadAsStringAsync(cancellation);
+                }, cancel);
+            /*</doc>*/
 
             // ASSERT
             Assert.IsTrue(ctd.StartsWith("<?xml") || ctd.StartsWith("<ContentType"));
