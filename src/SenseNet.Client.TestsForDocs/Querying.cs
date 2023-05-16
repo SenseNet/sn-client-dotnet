@@ -174,16 +174,11 @@ Assert.Inconclusive();
                 //var result = await Content.QueryAsync("InFolder:\"/Root/Content/IT/(1+1):2\"");
                 /*<doc>*/
                 var result1 = await repository.QueryAsync(
-                    new QueryContentRequest {ContentQuery = "InFolder:'/Root/Content/IT/(1+1):2'"}, cancel);
+                    new QueryContentRequest { ContentQuery = "DisplayName:'(1+1):2'" }, cancel);
                 // or
                 var result2 = await repository.QueryAsync(
-                    new QueryContentRequest {ContentQuery = "InFolder:\"/Root/Content/IT/(1+1):2\""}, cancel);
+                    new QueryContentRequest { ContentQuery = "DisplayName:\"(1+1):2\"" }, cancel);
                 /*</doc>*/
-                // Real test:
-                result1 = await repository.QueryAsync(
-                    new QueryContentRequest {ContentQuery = "DisplayName:'(1+1):2'" }, cancel);
-                result2 = await repository.QueryAsync(
-                    new QueryContentRequest {ContentQuery = "DisplayName:\"(1+1):2\"" }, cancel);
 
                 // ASSERT
                 var names1 = result1.Select(c => c["DisplayName"].ToString()).Distinct().ToArray();
