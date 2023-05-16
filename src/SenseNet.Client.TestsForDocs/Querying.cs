@@ -1,8 +1,7 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SenseNet.Client.TestsForDocs.Infrastructure;
+// ReSharper disable RedundantAssignment
+// ReSharper disable InconsistentNaming
 
 namespace SenseNet.Client.TestsForDocs
 {
@@ -10,7 +9,7 @@ namespace SenseNet.Client.TestsForDocs
     public class Querying : ClientIntegrationTestBase
     {
         private CancellationToken cancel => new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
-        IRepository repository => GetRepositoryCollection().GetRepositoryAsync("local", cancel)
+        private IRepository repository => GetRepositoryCollection().GetRepositoryAsync("local", cancel)
             .GetAwaiter().GetResult();
 
         /* ====================================================================================== General */
@@ -20,21 +19,30 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Wildcard search 1")]
         public async Task Docs_Querying_Wildcard_QuestionMark()
         {
-            await EnsureContentAsync("/Root/Content/truck", "Folder");
-            await EnsureContentAsync("/Root/Content/trunk", "Folder");
+            try
+            {
+                await EnsureContentAsync("/Root/Content/truck", "Folder");
+                await EnsureContentAsync("/Root/Content/trunk", "Folder");
 
-            // ACTION for doc
-            /*<doc>*/
-            var result = await repository.QueryAsync(
-                new QueryContentRequest { ContentQuery = "tru?k"}, cancel);
+                // ACTION for doc
+                /*<doc>*/
+                var result = await repository.QueryAsync(
+                    new QueryContentRequest {ContentQuery = "tru?k"}, cancel);
 
-            // foreach (dynamic content in result)
-            //    Console.WriteLine($"{content.Id} {content.Name}");
-            /*</doc>*/
+                // foreach (dynamic content in result)
+                //    Console.WriteLine($"{content.Id} {content.Name}");
+                /*</doc>*/
 
-            // ASSERT
-            var actual = string.Join(", ", result.Select(c => c.Name).OrderBy(n => n).Distinct());
-            Assert.AreEqual("truck, trunk", actual);
+                // ASSERT
+                var actual = string.Join(", ", result.Select(c => c.Name).OrderBy(n => n).Distinct());
+                Assert.AreEqual("truck, trunk", actual);
+            }
+            finally
+            {
+                await repository.DeleteContentAsync(
+                    new[] {"/Root/Content/truck", "/Root/Content/trunk"},
+                    true, cancel).ConfigureAwait(false);
+            }
         }
 
         /// <tab category="querying" article="query" example="wildcard-search-multiple" />
@@ -180,7 +188,7 @@ Assert.Inconclusive();
                 // ASSERT
                 var names1 = result1.Select(c => c["DisplayName"].ToString()).Distinct().ToArray();
                 Assert.AreEqual("(1+1):2", names1.Single());
-                var names2 = result1.Select(c => c["DisplayName"].ToString()).Distinct().ToArray();
+                var names2 = result2.Select(c => c["DisplayName"].ToString()).Distinct().ToArray();
                 Assert.AreEqual("(1+1):2", names2.Single());
             }
             finally
@@ -207,7 +215,7 @@ Assert.Inconclusive();
 
             // ASSERT
             var names = result.Select(c => c.Name).Distinct().ToArray();
-            Assert.IsTrue(10 < result.Count);
+            Assert.IsTrue(10 < names.Length);
         }
 
         /* ====================================================================================== Query by Id or Path */
@@ -294,94 +302,172 @@ Assert.Inconclusive();
             var names = result.Select(c => c.Name).Distinct().ToArray();
             Assert.IsTrue(names.Contains("Document_Library"));
             Assert.IsTrue(names.Contains("BusinessPlan.docx"));
-
         }
 
         /* ====================================================================================== Query by a field */
 
-        /// 
+        /// <tab category="querying" article="query-by-field" example="byShortText" />
         [TestMethod]
         [Description("Query by a text field 1")]
         public async Task Docs_Querying_Name()
         {
             // ACTION for doc
-            var result1 = await Content.QueryAsync("Name:BusinessPlan.docx");
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "Name:BusinessPlan.docx" }, cancel);
 
-            // foreach (dynamic content in result1)
-            //    Console.WriteLine(content.Name);
+            // foreach (dynamic content in result)
+            //    Console.WriteLine($"{content.Id} {content.Name}");
+            /*</doc>*/
 
             // ASSERT
-            Assert.Inconclusive();
+            var name = result.Select(c => c.Name).Distinct().Single();
+            Assert.AreEqual("BusinessPlan.docx", name);
         }
 
-        /// 
+        /// <tab category="querying" article="query-by-field" example="byLongText" />
         [TestMethod]
         [Description("Query by a text field 2")]
         public async Task Docs_Querying_Description_Wildcard()
         {
-            // ACTION for doc
-            var result2 = await Content.QueryAsync("Description:*company*");
+            try
+            {
+                var folder = await EnsureContentAsync("/Root/Content/Folder1", "Folder");
+                folder["Description"] = "My company works here.";
+                await folder.SaveAsync(cancel);
 
-            //foreach (dynamic content in result2)
-            //    Console.WriteLine(content.Name);
+                // ACTION for doc
+                /*<doc>*/
+                var result = await repository.QueryAsync(
+                    new QueryContentRequest {ContentQuery = "Description:*company*"}, cancel);
 
-            // ASSERT
-            Assert.Inconclusive();
+                // foreach (dynamic content in result)
+                //    Console.WriteLine($"{content.Id} {content.Name}");
+                /*</doc>*/
+
+                // ASSERT
+                var name = result.Select(c => c.Name).Distinct().Single();
+                Assert.AreEqual("Folder1", name);
+            }
+            finally
+            {
+                await repository.DeleteContentAsync(
+                    new[] { "/Root/Content/Folder1" },
+                    true, cancel).ConfigureAwait(false);
+            }
         }
 
-        /// 
+        /// <tab category="querying" article="query-by-field" example="byNumber" />
         [TestMethod]
         [Description("Query by a number field")]
         public async Task Docs_Querying_NumberField()
         {
             // ACTION for doc
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "TaskCompletion:<50" }, cancel);
 
-            var result = await Content.QueryAsync("TaskCompletion:<50");
-
-            //foreach (dynamic content in result)
+            // foreach (dynamic content in result)
             //    Console.WriteLine($"{content.Id} {content.Name}");
+            /*</doc>*/
+            // Real test
+            result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "Id:<50" }, cancel);
 
             // ASSERT
-            Assert.Inconclusive();
+            var names = result.Select(c => c.Name).Distinct().ToArray();
+            Assert.IsTrue(10 < names.Length);
         }
 
-        /// 
+        /// <tab category="querying" article="query-by-field" example="byBoolean" />
         [TestMethod]
         [Description("Query by a boolean field")]
         public async Task Docs_Querying_BooleanField()
         {
             // ACTION for doc
-            var result = await Content.QueryAsync("IsCritical:true");
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "IsCritical:true" }, cancel);
 
-            //foreach (dynamic content in result)
+            // foreach (dynamic content in result)
             //    Console.WriteLine($"{content.Id} {content.Name}");
+            /*</doc>*/
+            // Real test
+            result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "IsActive:true" }, cancel);
 
             // ASSERT
-            Assert.Inconclusive();
+            var names = result.Select(c => c.Name).Distinct().ToArray();
+            Assert.IsTrue(2 < names.Length);
+            Assert.IsTrue(names.Contains("Content"));
+            Assert.IsTrue(names.Contains("IT"));
+            Assert.IsTrue(names.Contains("Trash"));
         }
 
-        /// 
+        /// <tab category="querying" article="query-by-field" example="byChoiceLocalized" />
         [TestMethod]
         [Description("Query by choice field (localized value)")]
         public async Task Docs_Querying_ChoiceField_LocalizedValue()
         {
-            //UNDONE: Not documented and not implemented
-            // ACTION for doc
+            try
+            {
+                await EnsureContentAsync("/Root/Content/Memos1", "MemoList");
+                var memo = await EnsureContentAsync("/Root/Content/Memos1/Memo1", "Memo");
+                memo["MemoType"] = "iaudit";
+                await memo.SaveAsync(cancel);
 
-            // ASSERT
-            Assert.Inconclusive();
+                // ACTION for doc
+                /*<doc>*/
+                var result = await repository.QueryAsync(
+                    new QueryContentRequest { ContentQuery = "MemoType:'Internal audit'" }, cancel);
+
+                // foreach (dynamic content in result)
+                //    Console.WriteLine($"{content.Id} {content.Name}");
+                /*</doc>*/
+
+                // ASSERT
+                var names = result.Select(c => c.Name).Distinct().ToArray();
+                Assert.IsTrue(names.Contains("Memo1"));
+            }
+            finally
+            {
+                await repository.DeleteContentAsync(
+                    new[] { "/Root/Content/Memos1" },
+                    true, cancel).ConfigureAwait(false);
+            }
         }
 
-        /// 
+        /// <tab category="querying" article="query-by-field" example="byChoice" />
         [TestMethod]
         [Description("Query by choice field (value)")]
         public async Task Docs_Querying_ChoiceField_Value()
         {
-            //UNDONE: Not documented and not implemented
-            // ACTION for doc
+            try
+            {
+                await EnsureContentAsync("/Root/Content/Memos1", "MemoList");
+                var memo = await EnsureContentAsync("/Root/Content/Memos1/Memo1", "Memo");
+                memo["MemoType"] = "iaudit";
+                await memo.SaveAsync(cancel);
 
-            // ASSERT
-            Assert.Inconclusive();
+                // ACTION for doc
+                /*<doc>*/
+                var result = await repository.QueryAsync(
+                    new QueryContentRequest { ContentQuery = "MemoType:$iaudit" }, cancel);
+
+                // foreach (dynamic content in result)
+                //    Console.WriteLine($"{content.Id} {content.Name}");
+                /*</doc>*/
+
+                // ASSERT
+                var names = result.Select(c => c.Name).Distinct().ToArray();
+                Assert.IsTrue(names.Contains("Memo1"));
+            }
+            finally
+            {
+                await repository.DeleteContentAsync(
+                    new[] { "/Root/Content/Memos1" },
+                    true, cancel).ConfigureAwait(false);
+            }
         }
 
         /* ====================================================================================== Fulltext Search */
