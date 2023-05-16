@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Newtonsoft.Json.Linq;
 using SenseNet.Client.TestsForDocs.Infrastructure;
 // ReSharper disable RedundantAssignment
 // ReSharper disable InconsistentNaming
@@ -467,171 +468,401 @@ Assert.Inconclusive();
 
         /* ====================================================================================== Fulltext Search */
 
-        /// 
+        /// <tab category="querying" article="query" example="fullText" />
         [TestMethod]
         [Description("Fulltext search")]
         public async Task Docs_Querying_FullTextSearch()
         {
-            // ACTION for doc
-            var result = await Content.QueryAsync("Lorem");
+            try
+            {
+                var folder = await EnsureContentAsync("/Root/Content/Folder1", "Folder");
+                folder["DisplayName"] = "-- Lorem ipsum dolor sit amet --";
+                folder["Description"] = "-- Lorem ipsum dolor sit amet --";
+                await folder.SaveAsync(cancel);
 
-            // foreach (dynamic content in result)
-            //     Console.WriteLine($"{content.Id} {content.Name}");
+                // ACTION for doc
+                /*<doc>*/
+                var result = await repository.QueryAsync(
+                    new QueryContentRequest { ContentQuery = "Lorem" }, cancel);
 
-            // ASSERT
-            Assert.Inconclusive();
+                // foreach (dynamic content in result)
+                //    Console.WriteLine($"{content.Id} {content.Name}");
+                /*</doc>*/
+
+                // ASSERT
+                var names = result.Select(c => c.Name).Distinct().ToArray();
+                Assert.IsTrue(names.Contains("Folder1"));
+            }
+            finally
+            {
+                await repository.DeleteContentAsync(
+                    new[] { "/Root/Content/Folder1" },
+                    true, cancel).ConfigureAwait(false);
+            }
         }
 
         /* ====================================================================================== Query by date */
 
-        /// 
+        /// <tab category="querying" article="query-by-date" example="byExactDate" />
         [TestMethod]
         [Description("Query by an exact date")]
         public async Task Docs_Querying_Date_Day()
         {
-            //UNDONE: Not documented and not implemented. REST:/OData.svc/Root/Content?query=CreationDate%3A'2019-02-15' ("Query by an exact date": don't work)
-            // ACTION for doc
+            try
+            {
+                var folder = await EnsureContentAsync("/Root/Content/Folder1", "Folder");
+                folder["CreationDate"] = new DateTime(2019, 2, 15, 0, 0, 0, DateTimeKind.Utc);
+                await folder.SaveAsync(cancel);
 
-            // ASSERT
-            Assert.Inconclusive();
+                // ACTION for doc
+                /*<doc>*/
+                var result = await repository.QueryAsync(
+                    new QueryContentRequest { ContentQuery = "CreationDate:'2019-02-15'" }, cancel);
+
+                // foreach (dynamic content in result)
+                //    Console.WriteLine($"{content.Id} {content.Name}");
+                /*</doc>*/
+
+                // ASSERT
+                var names = result.Select(c => c.Name).Distinct().ToArray();
+                Assert.IsTrue(names.Contains("Folder1"));
+            }
+            finally
+            {
+                await repository.DeleteContentAsync(
+                    new[] { "/Root/Content/Folder1" },
+                    true, cancel).ConfigureAwait(false);
+            }
         }
 
-        /// 
+        /// <tab category="querying" article="query-by-date" example="byExactDateTime" />
         [TestMethod]
         [Description("")]
         public async Task Docs_Querying_Date_Second()
         {
-            //UNDONE: Not documented and not implemented. REST:/OData.svc/Root/Content?query=StartDate%3A'2019-02-15 09%3A30%3A00'
-            // ACTION for doc
+            try
+            {
+                var folder = await EnsureContentAsync("/Root/Content/Folder1", "Folder");
+                folder["CreationDate"] = new DateTime(2019, 2, 15, 9, 30, 0, DateTimeKind.Utc);
+                await folder.SaveAsync(cancel);
 
-            // ASSERT
-            Assert.Inconclusive();
+                // ACTION for doc
+                /*<doc>*/
+                var result = await repository.QueryAsync(
+                    new QueryContentRequest { ContentQuery = "StartDate:'2019-02-15 09:30:00'" }, cancel);
+
+                // foreach (dynamic content in result)
+                //    Console.WriteLine($"{content.Id} {content.Name}");
+                /*</doc>*/
+                // Real query
+                result = await repository.QueryAsync(
+                    new QueryContentRequest { ContentQuery = "CreationDate:'2019-02-15 09:30:00'" }, cancel);
+
+                // ASSERT
+                var names = result.Select(c => c.Name).Distinct().ToArray();
+                Assert.IsTrue(names.Contains("Folder1"));
+            }
+            finally
+            {
+                await repository.DeleteContentAsync(
+                    new[] { "/Root/Content/Folder1" },
+                    true, cancel).ConfigureAwait(false);
+            }
         }
 
-        /// 
+        /// <tab category="querying" article="query-by-date" example="byDateBefore" />
         [TestMethod]
         [Description("Query before or after a specific date")]
         public async Task Docs_Querying_Date_LessThan()
         {
             // ACTION for doc
-            var result = await Content.QueryAsync("CreationDate:<'2019-01-10'");
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "CreationDate:<'2019-01-10'" }, cancel);
 
             // foreach (dynamic content in result)
-            //     Console.WriteLine($"{content.Id} {content.Name}");
+            //    Console.WriteLine($"{content.Id} {content.Name}");
+            /*</doc>*/
 
             // ASSERT
-            Assert.Inconclusive();
+            var names = result.Select(c => c.Name).Distinct().ToArray();
+            Assert.IsTrue(names.Length > 0);
         }
 
-        /// 
+        /// <tab category="querying" article="query-by-date" example="byDateAfter" />
         [TestMethod]
         [Description("")]
         public async Task Docs_Querying_Date_GreaterThan()
         {
             // ACTION for doc
-            var result = await Content.QueryAsync("ModificationDate:>'2019-01-10'");
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "ModificationDate:>'2019-01-10'" }, cancel);
 
             // foreach (dynamic content in result)
-            //     Console.WriteLine($"{content.Id} {content.Name}");
+            //    Console.WriteLine($"{content.Id} {content.Name}");
+            /*</doc>*/
 
             // ASSERT
-            Assert.Inconclusive();
+            var names = result.Select(c => c.Name).Distinct().ToArray();
+            Assert.IsTrue(names.Length > 0);
         }
 
-        /// 
-        [TestMethod]
-        [Description("Query by a date range")]
-        public async Task Docs_Querying_Date_Range_Inclusive()
-        {
-            // ACTION for doc
-            var result = await Content.QueryAsync("CreationDate:{'2010-08-30' TO '2010-10-30'}");
-
-            // foreach (dynamic content in result)
-            //     Console.WriteLine($"{content.Id} {content.Name}");
-
-            // ASSERT
-            Assert.Inconclusive();
-        }
-
-        /// 
+        /// <tab category="querying" article="query-by-date" example="byExclusiveRange" />
         [TestMethod]
         [Description("")]
         public async Task Docs_Querying_Date_Range_Exclusive()
         {
             // ACTION for doc
-            var result = await Content.QueryAsync("CreationDate:['2010-08-30' TO '2010-10-30']");
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "CreationDate:['2010-08-30' TO '2010-10-30']" }, cancel);
 
             // foreach (dynamic content in result)
-            //     Console.WriteLine($"{content.Id} {content.Name}");
+            //    Console.WriteLine($"{content.Id} {content.Name}");
+            /*</doc>*/
+
+            // Real test
+            var startCollection = await repository.QueryAsync(
+                new QueryContentRequest
+                {
+                    ContentQuery = "InTree:/Root",
+                    OrderBy = new[] { "CreationDate" },
+                    Top = 1
+                }, cancel);
+            var endCollection = await repository.QueryAsync(
+                new QueryContentRequest
+                {
+                    ContentQuery = "InTree:/Root",
+                    OrderBy = new[] { "CreationDate desc" },
+                    Top = 1
+                }, cancel);
+            var startDate = ((JValue)startCollection.Single()["CreationDate"]).Value<DateTime>();
+            var endDate = ((JValue) endCollection.Single()["CreationDate"]).Value<DateTime>();
+            var start = $"'{startDate.Year}-{startDate.Month}-{startDate.Day}'";
+            var end = $"'{endDate.Year}-{endDate.Month}-{endDate.Day}'";
+            result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = $"CreationDate:[{start} TO {end}]" }, cancel);
 
             // ASSERT
-            Assert.Inconclusive();
+            var names = result.Select(c => c.Name).Distinct().ToArray();
+            Assert.IsTrue(names.Length > 0);
         }
 
-        /// 
+        /// <tab category="querying" article="query-by-date" example="byInclusiveRange" />
+        [TestMethod]
+        [Description("Query by a date range")]
+        public async Task Docs_Querying_Date_Range_Inclusive()
+        {
+            // ACTION for doc
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "CreationDate:{'2010-08-30' TO '2010-10-30'}" }, cancel);
+
+            // foreach (dynamic content in result)
+            //    Console.WriteLine($"{content.Id} {content.Name}");
+            /*</doc>*/
+
+            // Real test
+            var startCollection = await repository.QueryAsync(
+                new QueryContentRequest
+                {
+                    ContentQuery = "InTree:/Root",
+                    OrderBy = new[] { "CreationDate" },
+                    Top = 1
+                }, cancel);
+            var endCollection = await repository.QueryAsync(
+                new QueryContentRequest
+                {
+                    ContentQuery = "InTree:/Root",
+                    OrderBy = new[] { "CreationDate desc" },
+                    Top = 1
+                }, cancel);
+            var startDate = ((JValue)startCollection.Single()["CreationDate"]).Value<DateTime>();
+            var endDate = ((JValue)endCollection.Single()["CreationDate"]).Value<DateTime>();
+            var start = $"'{startDate.Year}-{startDate.Month}-{startDate.Day}'";
+            var end = $"'{endDate.Year}-{endDate.Month}-{endDate.Day}'";
+            result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = $"CreationDate:{{{start} TO {end}}}" }, cancel);
+
+            // ASSERT
+            var names = result.Select(c => c.Name).Distinct().ToArray();
+            Assert.IsTrue(names.Length > 0);
+        }
+
+        /// <tab category="querying" article="query-by-date" example="byMixedRange" />
         [TestMethod]
         [Description("")]
         public async Task Docs_Querying_Date_Range_Mixed()
         {
             // ACTION for doc
-            var result = await Content.QueryAsync("CreationDate:['2010-08-30' TO '2010-10-30'}");
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "CreationDate:['2010-08-30' TO '2010-10-30'}" }, cancel);
 
             // foreach (dynamic content in result)
-            //     Console.WriteLine($"{content.Id} {content.Name}");
+            //    Console.WriteLine($"{content.Id} {content.Name}");
+            /*</doc>*/
+
+            // Real test
+            var startCollection = await repository.QueryAsync(
+                new QueryContentRequest
+                {
+                    ContentQuery = "InTree:/Root",
+                    OrderBy = new[] { "CreationDate" },
+                    Top = 1
+                }, cancel);
+            var endCollection = await repository.QueryAsync(
+                new QueryContentRequest
+                {
+                    ContentQuery = "InTree:/Root",
+                    OrderBy = new[] { "CreationDate desc" },
+                    Top = 1
+                }, cancel);
+            var startDate = ((JValue)startCollection.Single()["CreationDate"]).Value<DateTime>();
+            var endDate = ((JValue)endCollection.Single()["CreationDate"]).Value<DateTime>();
+            var start = $"'{startDate.Year}-{startDate.Month}-{startDate.Day}'";
+            var end = $"'{endDate.Year}-{endDate.Month}-{endDate.Day}'";
+            result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = $"CreationDate:[{start} TO {end}}}" }, cancel);
 
             // ASSERT
-            Assert.Inconclusive();
+            var names = result.Select(c => c.Name).Distinct().ToArray();
+            Assert.IsTrue(names.Length > 0);
         }
 
-        /// 
+        /// <tab category="querying" article="query-by-date" example="byYesterday" />
         [TestMethod]
         [Description("Querying with dynamic template parameters 1")]
         public async Task Docs_Querying_Date_Template_Yesterday()
         {
-            //UNDONE: Not documented and not implemented. REST:/OData.svc/Root/Content?query=ModificationDate%3A@Yesterday@
-            // ACTION for doc
+            try
+            {
+                var folder = await EnsureContentAsync("/Root/Content/Folder1", "Folder");
+                var date = DateTime.UtcNow.AddDays(-1.0);
+                folder["ModificationDate"] = new DateTime(date.Year, date.Month, date.Day, 0, 0, 0, DateTimeKind.Utc);
+                await folder.SaveAsync(cancel);
 
-            // ASSERT
-            Assert.Inconclusive();
+                // ACTION for doc
+                /*<doc>*/
+                var result = await repository.QueryAsync(
+                    new QueryContentRequest { ContentQuery = "ModificationDate:@@Yesterday@@" }, cancel);
+
+                // foreach (dynamic content in result)
+                //    Console.WriteLine($"{content.Id} {content.Name}");
+                /*</doc>*/
+
+                // ASSERT
+                var names = result.Select(c => c.Name).Distinct().ToArray();
+                Assert.IsTrue(names.Length > 0);
+            }
+            finally
+            {
+                await repository.DeleteContentAsync(
+                    new[] { "/Root/Content/Folder1" },
+                    true, cancel).ConfigureAwait(false);
+            }
         }
 
-        /// 
+        /// <tab category="querying" article="query-by-date" example="byNextMonth" />
         [TestMethod]
         [Description("Querying with dynamic template parameters 2")]
         public async Task Docs_Querying_Date_Template_NextMonth()
         {
-            //UNDONE: Not documented and not implemented. REST:/OData.svc/Root/Content?query=StartDate%3A>@NextMonth@
-            // ACTION for doc
+            try
+            {
+                await EnsureContentAsync("/Root/Content/Events1", "EventList");
+                var @event = await EnsureContentAsync("/Root/Content/Events1/Event1", "CalendarEvent");
+                var date = DateTime.UtcNow.AddMonths(1);
+                @event["StartDate"] = new DateTime(date.Year, date.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+                @event["EndDate"] = new DateTime(date.Year, date.Month, 22, 0, 0, 0, DateTimeKind.Utc);
+                await @event.SaveAsync(cancel);
 
-            // ASSERT
-            Assert.Inconclusive();
+                // ACTION for doc
+                /*<doc>*/
+                var result = await repository.QueryAsync(
+                    new QueryContentRequest { ContentQuery = "StartDate:@@NextMonth@@" }, cancel);
+
+                // foreach (dynamic content in result)
+                //    Console.WriteLine($"{content.Id} {content.Name}");
+                /*</doc>*/
+
+                var names = result.Select(c => c.Name).Distinct().ToArray();
+                Assert.IsTrue(names.Length > 0);
+            }
+            finally
+            {
+                await repository.DeleteContentAsync(
+                    new[] { "/Root/Content/Events1" },
+                    true, cancel).ConfigureAwait(false);
+            }
         }
 
-        /// 
+        /// <tab category="querying" article="query-by-date" example="byPreviousYear" />
         [TestMethod]
         [Description("Querying with dynamic template parameters 3")]
         public async Task Docs_Querying_Date_Template_PreviousYear()
         {
-            //UNDONE: Not documented and not implemented. REST:/OData.svc/Root/Content?query=CreationDate%3A@PreviousYear@
-            // ACTION for doc
+            try
+            {
+                var folder = await EnsureContentAsync("/Root/Content/Folder1", "Folder");
+                var date = DateTime.UtcNow.AddYears(-1);
+                folder["CreationDate"] = new DateTime(date.Year, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+                await folder.SaveAsync(cancel);
 
-            // ASSERT
-            Assert.Inconclusive();
+                // ACTION for doc
+                /*<doc>*/
+                var result = await repository.QueryAsync(
+                    new QueryContentRequest { ContentQuery = "CreationDate:@@PreviousYear@@" }, cancel);
+
+                // foreach (dynamic content in result)
+                //    Console.WriteLine($"{content.Id} {content.Name}");
+                /*</doc>*/
+
+                // ASSERT
+                var names = result.Select(c => c.Name).Distinct().ToArray();
+                Assert.IsTrue(names.Length > 0);
+            }
+            finally
+            {
+                await repository.DeleteContentAsync(
+                    new[] { "/Root/Content/Folder1" },
+                    true, cancel).ConfigureAwait(false);
+            }
         }
 
-        /// 
+        /// <tab category="querying" article="query-by-date" example="byLifespan" />
         [TestMethod]
         [Description("Query by lifespan validity")]
         public async Task Docs_Querying_Date_LifespanOn()
         {
-            // ACTION for doc
-            var result = await Content.QueryAsync("TypeIs:Article .LIFESPAN:ON");
+            try
+            {
+                await EnsureContentAsync("/Root/Content/Folder1", "Folder");
 
-            // foreach (dynamic content in result)
-            //     Console.WriteLine($"{content.Id} {content.Name}");
+                // ACTION for doc
+                /*<doc>*/
+                var result = await repository.QueryAsync(
+                    new QueryContentRequest {ContentQuery = "TypeIs:Article .LIFESPAN:ON"}, cancel);
 
-            // ASSERT
-            Assert.Inconclusive();
+                // foreach (dynamic content in result)
+                //    Console.WriteLine($"{content.Id} {content.Name}");
+                /*</doc>*/
+
+                // Real test
+                result = await repository.QueryAsync(
+                    new QueryContentRequest { ContentQuery = "TypeIs:Folder .LIFESPAN:ON" }, cancel);
+
+                // ASSERT
+                var names = result.Select(c => c.Name).Distinct().ToArray();
+                Assert.IsTrue(names.Length > 0);
+            }
+            finally
+            {
+                await repository.DeleteContentAsync(
+                    new[] {"/Root/Content/Folder1"},
+                    true, cancel).ConfigureAwait(false);
+            }
         }
 
         /* ====================================================================================== Query by related content */
