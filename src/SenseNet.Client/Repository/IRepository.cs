@@ -393,6 +393,11 @@ public interface IRepository
     /// <returns>A task that represents an asynchronous operation.</returns>
     public Task DeleteContentAsync(object[] idsOrPaths, bool permanent, CancellationToken cancel);
 
+    /* ============================================================================ AUTHENTICATION */
+
+    public Task<Content> GetCurrentUserAsync(CancellationToken cancel);
+    public Task<Content> GetCurrentUserAsync(string[] select, string[] expand, CancellationToken cancel);
+
     /* ============================================================================ MIDDLE LEVEL API */
 
     /// <summary>

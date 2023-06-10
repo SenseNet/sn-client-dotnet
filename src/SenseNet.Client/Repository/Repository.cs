@@ -13,6 +13,7 @@ using System.Text.RegularExpressions;
 using System.Net.Http.Headers;
 using System.Net;
 using System.Text;
+using System.IdentityModel.Tokens.Jwt;
 
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client;
@@ -563,6 +564,67 @@ internal class Repository : IRepository
         _logger?.LogTrace(idsOrPaths.Length == 1
             ? $"Content {idsOrPaths[0]} was deleted."
             : $"{idsOrPaths.Length} contents were deleted.");
+    }
+
+    /* ============================================================================ AUTHENTICATION */
+
+    public Task<Content> GetCurrentUserAsync(CancellationToken cancel)
+    {
+        return GetCurrentUserAsync(null, null, cancel);
+    }
+    public async Task<Content> GetCurrentUserAsync(string[] select, string[] expand, CancellationToken cancel)
+    {
+        var accessToken = Server?.Authentication?.AccessToken;
+
+        if (!string.IsNullOrEmpty(accessToken))
+        {
+            // The token contains the user id in the SUB claim.
+            try
+            {
+                var handler = new JwtSecurityTokenHandler();
+                var jwtSecurityToken = handler.ReadJwtToken(accessToken);
+
+                if (int.TryParse(jwtSecurityToken.Subject, out var contentId))
+                {
+                    // Userid found: simply load the user. This will make this method work
+                    // even with older portals where the action below does not exist yet.
+                    return await LoadContentAsync(new LoadContentRequest
+                    {
+                        ContentId = contentId,
+                        Select = select,
+                        Expand = expand
+                    }, cancel).ConfigureAwait(false);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogTrace(ex, "Error during JWT access token conversion.");
+            }
+        }
+        
+        // if there is a chance that the user is authenticated (token or key is present)
+        if (!string.IsNullOrEmpty(accessToken) || !string.IsNullOrEmpty(Server?.Authentication?.ApiKey))
+        {
+            // we could not extract the user from the token: use the new action as a fallback
+            var request = new ODataRequest(Server)
+            {
+                Path = "/Root",
+                ActionName = "GetCurrentUser",
+                Select = select,
+                Expand = expand
+            };
+
+            var response = await GetResponseJsonAsync(request, HttpMethod.Get, cancel).ConfigureAwait(false);
+            return CreateContentFromJson(response);
+        }
+
+        // no token: load Visitor
+        return await LoadContentAsync(new LoadContentRequest
+        {
+            Path = Constants.User.VisitorPath,
+            Select = select,
+            Expand = expand
+        }, cancel).ConfigureAwait(false);
     }
 
     /* ============================================================================ MIDDLE LEVEL API */
