@@ -1956,6 +1956,202 @@ namespace SenseNet.Client.Tests.UnitTests
             Assert.AreEqual("Item1, Item2, Item3, Item4", typeNames);
         }
 
+        /* ============================================================================ AUTHENTICATION */
+
+        [TestMethod]
+        public async Task Repository_Auth_GetCurrentUser_ValidUser_ValidToken()
+        {
+            // ALIGN
+            var restCaller = CreateRestCallerFor(@"{ ""d"": { 
+""Name"": ""Admin"", ""Id"": 1, ""Type"": ""User"" }}");
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton(restCaller);
+            });
+            var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // this is a test token containing the admin id (1) as a SUB
+            repository.Server.Authentication.AccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwibm" +
+                                                           "FtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.ZU43TYZENiuL" +
+                                                           "dKJPpd-hnkFhRkpLPurixsKr-8m-kBc";
+
+            // ACT
+            var content = await repository.GetCurrentUserAsync(CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ASSERT
+            var requestedUri = (Uri)restCaller.ReceivedCalls().ToArray()[1].GetArguments().First()!;
+            Assert.IsNotNull(requestedUri);
+            Assert.AreEqual("/OData.svc/content(1)?metadata=no", requestedUri.PathAndQuery);
+
+            Assert.IsNotNull(content);
+            Assert.AreEqual("Admin", content.Name);
+        }
+        [TestMethod]
+        public async Task Repository_Auth_GetCurrentUser_ValidUser_ValidToken_WithParameters()
+        {
+            // ALIGN
+            var restCaller = CreateRestCallerFor(@"{ ""d"": { 
+""Name"": ""Admin"", ""Id"": 1, ""Type"": ""User"" }}");
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton(restCaller);
+            });
+            var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // this is a test token containing the admin id (1) as a SUB
+            repository.Server.Authentication.AccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwibm" +
+                                                           "FtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.ZU43TYZENiuL" +
+                                                           "dKJPpd-hnkFhRkpLPurixsKr-8m-kBc";
+
+            // ACT
+            // define select and expand parameters
+            var content = await repository.GetCurrentUserAsync(
+                new []{"Id", "Name", "Type", "Manager/Name"}, 
+                new []{"Manager"},
+                CancellationToken.None).ConfigureAwait(false);
+
+            // ASSERT
+            var requestedUri = (Uri)restCaller.ReceivedCalls().ToArray()[1].GetArguments().First()!;
+            Assert.IsNotNull(requestedUri);
+            Assert.AreEqual("/OData.svc/content(1)?metadata=no&$expand=Manager&$select=Id,Name,Type,Manager/Name",
+                requestedUri.PathAndQuery);
+
+            Assert.IsNotNull(content);
+            Assert.AreEqual("Admin", content.Name);
+        }
+        [TestMethod]
+        public async Task Repository_Auth_GetCurrentUser_ValidUser_ExpiredToken()
+        {
+            // ALIGN
+            var restCaller = Substitute.For<IRestCaller>();
+
+            // first call: expired token, inaccessible user id
+            restCaller
+                .GetResponseStringAsync(Arg.Is<Uri>(uri => uri.PathAndQuery.Contains("/OData.svc/content(123456)")),
+                    Arg.Any<HttpMethod>(), Arg.Any<string>(), 
+                    Arg.Any<Dictionary<string, IEnumerable<string>>>(),
+                    Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(string.Empty));
+
+            // second call: GetCurrentUser action, returns the Visitor user
+            restCaller.GetResponseStringAsync(Arg.Is<Uri>(uri => uri.PathAndQuery.Contains("/OData.svc/('Root')/GetCurrentUser")),
+                    Arg.Any<HttpMethod>(), Arg.Any<string>(),
+                    Arg.Any<Dictionary<string, IEnumerable<string>>>(),
+                    Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(@"{ ""Name"": ""Visitor"", ""Id"": 6, ""Type"": ""User"" }"));
+            
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton(restCaller);
+            });
+            var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // this is a test token containing 123456 (INACCESSIBLE user) as a SUB
+            repository.Server.Authentication.AccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMj" +
+                                                           "M0NTYiLCJuYW1lIjoiSm9obiBEb2UiLCJpYXQiOjE1MTYyMzkwM" +
+                                                           "jJ9.MkiS50WhvOFwrwxQzd5Kp3VzkQUZhvex3kQv-CLeS3M";
+
+            // ACT
+            var content = await repository.GetCurrentUserAsync(CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ASSERT
+            var requestedUri1 = (Uri)restCaller.ReceivedCalls().ToArray()[1].GetArguments().First()!;
+            Assert.AreEqual("/OData.svc/content(123456)?metadata=no", requestedUri1.PathAndQuery);
+
+            var requestedUri2 = (Uri)restCaller.ReceivedCalls().ToArray()[2].GetArguments().First()!;
+            Assert.AreEqual("/OData.svc/('Root')/GetCurrentUser?metadata=no", requestedUri2.PathAndQuery);
+
+            Assert.IsNotNull(content);
+            Assert.AreEqual("Visitor", content.Name);
+        }
+        [TestMethod]
+        public async Task Repository_Auth_GetCurrentUser_ValidUser_UnknownToken()
+        {
+            // ALIGN
+            var restCaller = CreateRestCallerFor(@"{""Name"": ""Admin"", ""Id"": 1, ""Type"": ""User"" }");
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton(restCaller);
+            });
+            var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // edge case: this is a not parseable token that is still accepted by the server
+            repository.Server.Authentication.AccessToken = "not parseable token";
+
+            // ACT
+            var content = await repository.GetCurrentUserAsync(CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ASSERT
+            var requestedUri = (Uri)restCaller.ReceivedCalls().ToArray()[1].GetArguments().First()!;
+            Assert.IsNotNull(requestedUri);
+            Assert.AreEqual("/OData.svc/('Root')/GetCurrentUser?metadata=no", requestedUri.PathAndQuery);
+
+            Assert.IsNotNull(content);
+            Assert.AreEqual("Admin", content.Name);
+        }
+        [TestMethod]
+        public async Task Repository_Auth_GetCurrentUser_ValidUser_ApiKey()
+        {
+            // ALIGN
+            var restCaller = CreateRestCallerFor(@"{""Name"": ""Admin"", ""Id"": 1, ""Type"": ""User"" }");
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton(restCaller);
+            });
+            var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // we provide an api key instead of an access token
+            repository.Server.Authentication.ApiKey = "valid api key";
+
+            // ACT
+            var content = await repository.GetCurrentUserAsync(CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ASSERT
+            var requestedUri = (Uri)restCaller.ReceivedCalls().ToArray()[1].GetArguments().First()!;
+            Assert.IsNotNull(requestedUri);
+            Assert.AreEqual("/OData.svc/('Root')/GetCurrentUser?metadata=no", requestedUri.PathAndQuery);
+
+            Assert.IsNotNull(content);
+            Assert.AreEqual("Admin", content.Name);
+        }
+        [TestMethod]
+        public async Task Repository_Auth_GetCurrentUser_Visitor_NoToken()
+        {
+            // ALIGN
+            var restCaller = CreateRestCallerFor(@"{ ""d"": {
+""Name"": ""Visitor"", ""Id"": 6, ""Type"": ""User"" }}");
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton(restCaller);
+            });
+            var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // no token
+            repository.Server.Authentication.AccessToken = null;
+
+            // ACT
+            var content = await repository.GetCurrentUserAsync(CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ASSERT
+            var requestedUri = (Uri)restCaller.ReceivedCalls().ToArray()[1].GetArguments().First()!;
+            Assert.IsNotNull(requestedUri);
+            Assert.AreEqual("/OData.svc/Root/IMS/BuiltIn/Portal('Visitor')?metadata=no", requestedUri.PathAndQuery);
+
+            Assert.IsNotNull(content);
+            Assert.AreEqual("Visitor", content.Name);
+        }
+
         /* ====================================================================== CUSTOM REQUESTS */
 
         private class CustomNestedObject
