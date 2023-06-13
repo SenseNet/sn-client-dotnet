@@ -588,12 +588,17 @@ internal class Repository : IRepository
                 {
                     // Userid found: simply load the user. This will make this method work
                     // even with older portals where the action below does not exist yet.
-                    return await LoadContentAsync(new LoadContentRequest
+                    var user = await LoadContentAsync(new LoadContentRequest
                     {
                         ContentId = contentId,
                         Select = select,
                         Expand = expand
                     }, cancel).ConfigureAwait(false);
+                    
+                    if (user != null)
+                        return user;
+
+                    // the user is not found, we will load the visitor later
                 }
             }
             catch (Exception ex)
