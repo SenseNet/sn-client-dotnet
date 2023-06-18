@@ -91,7 +91,7 @@ namespace SenseNet.Client.TestsForDocs
                 /*</doc>*/
                 // Real test:
                 result = await repository.QueryAsync(
-                    new QueryContentRequest {ContentQuery = "Name:truck~0.5"}, cancel);
+                    new QueryContentRequest {ContentQuery = "Name:truck~0.799"}, cancel);
 
                 // ASSERT
                 Assert.IsTrue(result.Count > 1);
@@ -172,7 +172,6 @@ Assert.Inconclusive();
                 await content.SaveAsync(cancel);
 
                 // ACTION for doc
-                //var result = await Content.QueryAsync("InFolder:\"/Root/Content/IT/(1+1):2\"");
                 /*<doc>*/
                 var result1 = await repository.QueryAsync(
                     new QueryContentRequest { ContentQuery = "DisplayName:'(1+1):2'" }, cancel);
@@ -867,215 +866,299 @@ Assert.Inconclusive();
 
         /* ====================================================================================== Query by related content */
 
-        /// 
+        /// <tab category="querying" article="query-by-references" example="byManager" />
         [TestMethod]
         [Description("Query by related content")]
         public async Task Docs_Querying_NestedQuery()
         {
             // ACTION for doc
-            var result = await Content.QueryAsync("Manager:{{Name:'businesscat'}}");
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "Manager:{{Name:'businesscat'}}" }, cancel);
 
             // foreach (dynamic content in result)
-            //     Console.WriteLine($"{content.Id} {content.Name}");
+            //    Console.WriteLine($"{content.Id} {content.Name}");
+            /*</doc>*/
+
+            // Real test
+            result = await repository.QueryAsync(
+                new QueryContentRequest {ContentQuery = "ModifiedBy:{{Name:'admin'}}"}, cancel);
 
             // ASSERT
-            Assert.Inconclusive();
+            var names = result.Select(c => c.Name).Distinct().ToArray();
+            Assert.IsTrue(names.Length > 0);
         }
 
-        /* ====================================================================================== Query by related content */
+        /* ====================================================================================== Query by type */
 
-        /// 
+        /// <tab category="querying" article="query-by-type" example="byExactType" />
         [TestMethod]
         [Description("Query by a type")]
         public async Task Docs_Querying_Type()
         {
             // ACTION for doc
-            var result = await Content.QueryAsync("Type:DocumentLibrary");
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "Type:DocumentLibrary" }, cancel);
 
             // foreach (dynamic content in result)
-            //     Console.WriteLine($"{content.Id} {content.Name}");
+            //    Console.WriteLine($"{content.Id} {content.Name}");
+            /*</doc>*/
 
             // ASSERT
-            Assert.Inconclusive();
+            var names = result.Select(c => c.Name).Distinct().ToArray();
+            Assert.IsTrue(names.Length > 0);
         }
 
-        /// 
+        /// <tab category="basic-concepts" article="query-by-type" example="byTypeFamily" />
         [TestMethod]
         [Description("Query by a type and its subtypes")]
         public async Task Docs_Querying_TypeIs()
         {
             // ACTION for doc
-
-            var result = await Content.QueryAsync("TypeIs:Folder");
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "TypeIs:Folder" }, cancel);
 
             // foreach (dynamic content in result)
-            //     Console.WriteLine($"{content.Id} {content.Name}");
+            //    Console.WriteLine($"{content.Id} {content.Name}");
+            /*</doc>*/
 
             // ASSERT
-            Assert.Inconclusive();
+            var names = result.Select(c => c.Name).Distinct().ToArray();
+            Assert.IsTrue(names.Length > 0);
         }
 
         /* ====================================================================================== Ordering */
 
-        /// 
+        /// <tab category="querying" article="query-ordering" example="lowestToHighest" />
         [TestMethod]
         [Description("Order by a field - lowest to highest")]
         public async Task Docs_Querying_OrderBy_Ascending()
         {
             // ACTION for doc
-            var result = await Content.QueryAsync("Type:Folder .SORT:Name");
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "Type:Folder .SORT:Name" }, cancel);
 
             // foreach (dynamic content in result)
-            //     Console.WriteLine($"{content.Id} {content.Name}");
+            //    Console.WriteLine($"{content.Id} {content.Name}");
+            /*</doc>*/
 
             // ASSERT
-            Assert.Inconclusive();
+            Assert.IsTrue(result.Count() > 2);
+            var names = result.Select(c => c.Name).Distinct().ToArray();
+            for (var i = 1; i < names.Length; i++)
+                Assert.IsTrue(String.Compare(names[i - 1], names[i], StringComparison.Ordinal) <= 0);
         }
 
-        /// 
+        /// <tab category="querying" article="query-ordering" example="highestToLowest" />
         [TestMethod]
         [Description("Order by a field - highest to lowest")]
         public async Task Docs_Querying_OrderBy_Descending()
         {
             // ACTION for doc
-            var result = await Content.QueryAsync("Folder .REVERSESORT:Name");
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "Type:Folder .REVERSESORT:Name" }, cancel);
 
             // foreach (dynamic content in result)
-            //     Console.WriteLine($"{content.Id} {content.Name}");
+            //    Console.WriteLine($"{content.Id} {content.Name}");
+            /*</doc>*/
 
             // ASSERT
-            Assert.Inconclusive();
+            Assert.IsTrue(result.Count() > 2);
+            var names = result.Select(c => c.Name).Distinct().ToArray();
+            for (var i = 1; i < names.Length; i++)
+                Assert.IsTrue(String.Compare(names[i - 1], names[i], StringComparison.Ordinal) >= 0);
         }
 
-        /// 
+        /// <tab category="querying" article="query-ordering" example="byMultipleFields" />
         [TestMethod]
         [Description("Order by multiple fields")]
         public async Task Docs_Querying_OrderBy_MultipleField()
         {
             // ACTION for doc
-            var result = await Content.QueryAsync("Type:Folder .SORT:Name .SORT:Index");
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "Type:Folder .SORT:Name .SORT:Index" }, cancel);
 
             // foreach (dynamic content in result)
-            //     Console.WriteLine($"{content.Id} {content.Name}");
+            //    Console.WriteLine($"{content.Id} {content.Name}");
+            /*</doc>*/
 
             // ASSERT
-            Assert.Inconclusive();
+            var names = result.Select(c => c.Name).Distinct().ToArray();
+            Assert.IsTrue(names.Length > 2);
         }
 
-        /// 
+        /// <tab category="querying" article="query-ordering" example="multipleFieldsAndDirections" />
         [TestMethod]
         [Description("Order by multiple fields in different directions")]
         public async Task Docs_Querying_OrderBy_DifferendDirections()
         {
             // ACTION for doc
-            var result = await Content.QueryAsync("Type:Folder .SORT:Name .REVERSESORT:Index");
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "Type:Folder .SORT:Name .REVERSESORT:Index" }, cancel);
 
             // foreach (dynamic content in result)
-            //     Console.WriteLine($"{content.Id} {content.Name}");
+            //    Console.WriteLine($"{content.Id} {content.Name}");
+            /*</doc>*/
 
             // ASSERT
-            Assert.Inconclusive();
+            var names = result.Select(c => c.Name).Distinct().ToArray();
+            Assert.IsTrue(names.Length > 2);
         }
 
-        /// 
+        /// <tab category="querying" article="query-ordering" example="byDate" />
         [TestMethod]
         [Description("Order by date")]
         public async Task Docs_Querying_OrderBy_Date()
         {
             // ACTION for doc
-            var result = await Content.QueryAsync("TypeIs:File .SORT:ModificationDate");
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "TypeIs:File .SORT:ModificationDate" }, cancel);
 
             // foreach (dynamic content in result)
-            //     Console.WriteLine($"{content.Id} {content.Name}");
+            //    Console.WriteLine($"{content.Id} {content.Name}");
+            /*</doc>*/
 
             // ASSERT
-            Assert.Inconclusive();
+            var names = result.Select(c => c.Name).Distinct().ToArray();
+            Assert.IsTrue(names.Length > 2);
         }
 
         /* ====================================================================================== Paging */
 
-        /// 
+        /// <tab category="querying" article="query-paging" example="top" />
         [TestMethod]
         [Description("Limit result count")]
         public async Task Docs_Querying_Top()
         {
             // ACTION for doc
-            var result = await Content.QueryAsync("Type:Folder .TOP:10");
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "TypeIs:Folder .TOP:10" }, cancel);
 
             // foreach (dynamic content in result)
-            //     Console.WriteLine($"{content.Id} {content.Name}");
+            //    Console.WriteLine($"{content.Id} {content.Name}");
+            /*</doc>*/
 
             // ASSERT
-            Assert.Inconclusive();
+            var names = result.Select(c => c.Name).Distinct().ToArray();
+            Assert.IsTrue(names.Length > 2);
         }
 
-        /// 
+        /// <tab category="querying" article="query-paging" example="skip-and-top" />
         [TestMethod]
         [Description("Jump to page")]
         public async Task Docs_Querying_TopSkip()
         {
             // ACTION for doc
-            var result = await Content.QueryAsync("Type:Folder .SKIP:3 .TOP:3");
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "TypeIs:Folder .SKIP:3 .TOP:3" }, cancel);
 
             // foreach (dynamic content in result)
-            //     Console.WriteLine($"{content.Id} {content.Name}");
+            //    Console.WriteLine($"{content.Id} {content.Name}");
+            /*</doc>*/
 
             // ASSERT
-            Assert.Inconclusive();
+            var names = result.Select(c => c.Name).Distinct().ToArray();
+            Assert.IsTrue(names.Length > 2);
         }
 
         /* ====================================================================================== Multiple predicates */
 
-        /// 
+        /// <tab category="querying" article="query-multiple-predicates" example="or" />
         [TestMethod]
         [Description("Operators 1")]
         public async Task Docs_Querying_Operators_Or()
         {
-            // ACTION for doc
-            var result = await Content.QueryAsync("apple OR melon");
+            try
+            {
+                var folder1 = await EnsureContentAsync("/Root/Content/Folder1", "Folder");
+                folder1["Description"] = "cherry apple banana";
+                await folder1.SaveAsync(cancel);
+                var folder2 = await EnsureContentAsync("/Root/Content/Folder2", "Folder");
+                folder2["Description"] = "cherry melon walnut";
+                await folder2.SaveAsync(cancel);
+                var folder3 = await EnsureContentAsync("/Root/Content/Folder3", "Folder");
+                folder3["Description"] = "cherry pear banana";
+                await folder3.SaveAsync(cancel);
 
-            // foreach (dynamic content in result)
-            //     Console.WriteLine($"{content.Id} {content.Name}");
+                // ACTION for doc
+                /*<doc>*/
+                var result = await repository.QueryAsync(
+                    new QueryContentRequest { ContentQuery = "melon OR apple" }, cancel);
 
-            // ASSERT
-            Assert.Inconclusive();
+                // foreach (dynamic content in result)
+                //    Console.WriteLine($"{content.Id} {content.Name}");
+                /*</doc>*/
+
+                // ASSERT
+                var actual = string.Join(", ", result.Select(c => c.Name).OrderBy(x => x).Distinct());
+                Assert.AreEqual("Folder1, Folder2", actual);
+            }
+            finally
+            {
+                await repository.DeleteContentAsync(
+                    new[] { "/Root/Content/Folder1", "/Root/Content/Folder2", "/Root/Content/Folder3" },
+                    true, cancel).ConfigureAwait(false);
+            }
         }
 
-        /// 
+        /// <tab category="querying" article="query-multiple-predicates" example="and" />
         [TestMethod]
         [Description("Operators 2")]
         public async Task Docs_Querying_Operators_And()
         {
-            // ALIGN
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Chicago", "Folder");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Munich", "Folder", c =>
+            // In memory index does not implement well any stemmer.
+            // See 'private List<string> GetValues(SnTerm field)' in InMemoryIndex.cs
+            // Use this query for in memory index tests:
+            //var result = await repository.QueryAsync(
+            //    new QueryContentRequest { ContentQuery = "Description:*document* AND Description:*library*" }, cancel);
+            try
             {
-                c["Description"] = "Document library of IT";
-            });
+                var folder1 = await EnsureContentAsync("/Root/Content/Folder1", "Folder");
+                folder1["Description"] = "cherry apple banana";
+                await folder1.SaveAsync(cancel);
+                var folder2 = await EnsureContentAsync("/Root/Content/Folder2", "Folder");
+                folder2["Description"] = "cherry melon walnut";
+                await folder2.SaveAsync(cancel);
+                var folder3 = await EnsureContentAsync("/Root/Content/Folder3", "Folder");
+                folder3["Description"] = "cherry pear banana";
+                await folder3.SaveAsync(cancel);
 
-            /*
-            // WARNING This code cannot run if the Ingredients field does not exist.
-            // ACTION for doc
-            var result = await Content.QueryAsync("Ingredients:apple AND Ingredients:melon");
+                // ACTION for doc
+                /*<doc>*/
+                var result = await repository.QueryAsync(
+                    new QueryContentRequest { ContentQuery = "+EventType:Demo AND +EventType:Meeting" }, cancel);
 
-            // foreach (dynamic content in result)
-            //     Console.WriteLine($"{content.Id} {content.Name}");
-            */
+                // foreach (dynamic content in result)
+                //    Console.WriteLine($"{content.Id} {content.Name}");
+                /*</doc>*/
 
-            // IMPROVED TEST
-            // ACTION
-            var c = await Content.LoadAsync("/Root/Content/IT/Document_Library");
-            var x = c["Description"];
+                // Real test
+                result = await repository.QueryAsync(
+                    new QueryContentRequest { ContentQuery = "Description:'cherry' AND Description:'banana'" }, cancel);
 
-            // In memory index does not implement well any stemmer. See 'private List<string> GetValues(SnTerm field)' in InMemoryIndex.cs
-            var result = await Content.QueryAsync("Description:*document* AND Description:*library*");
-            // ASSERT
-            Assert.IsTrue(result.Count() > 0);
+                // ASSERT
+                var actual = string.Join(", ", result.Select(c => c.Name).OrderBy(x => x).Distinct());
+                Assert.AreEqual("Folder1, Folder3", actual);
+            }
+            finally
+            {
+                await repository.DeleteContentAsync(
+                    new[] { "/Root/Content/Folder1", "/Root/Content/Folder2", "/Root/Content/Folder3" },
+                    true, cancel).ConfigureAwait(false);
+            }
+
         }
 
-        /// 
+        /// <tab category="querying" article="query-multiple-predicates" example="plus" />
         [TestMethod]
         [Description("Operators 3")]
         public async Task Docs_Querying_Operators_Must()
@@ -1091,7 +1174,7 @@ Assert.Inconclusive();
             Assert.Inconclusive();
         }
 
-        /// 
+        /// <tab category="querying" article="query-multiple-predicates" example="not" />
         [TestMethod]
         [Description("Operators 4")]
         public async Task Docs_Querying_Operators_Not()
@@ -1106,7 +1189,7 @@ Assert.Inconclusive();
             Assert.Inconclusive();
         }
 
-        /// 
+        /// <tab category="querying" article="query-multiple-predicates" example="minus" />
         [TestMethod]
         [Description("Operators 5")]
         public async Task Docs_Querying_Operators_MustNot()
@@ -1121,7 +1204,7 @@ Assert.Inconclusive();
             Assert.Inconclusive();
         }
 
-        /// 
+        /// <tab category="querying" article="query-multiple-predicates" example="grouping" />
         [TestMethod]
         [Description("Grouping")]
         public async Task Docs_Querying_Operators_Grouping()
