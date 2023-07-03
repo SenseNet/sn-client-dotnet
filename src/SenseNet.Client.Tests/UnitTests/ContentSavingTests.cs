@@ -862,6 +862,93 @@ public class ContentSavingTests : TestBase
                         "\"References_WellKnownArray\":null," +
                         "\"References_WellKnownList\":[400006,\"/Root/Refs2/ReferredContent-7\"]}", JsonHelper.Serialize(data));
     }
+    [TestMethod]
+    public async Task Content_T_StronglyTyped_References_Update_NullToNull()
+    {
+        var restCaller = CreateRestCallerFor(@"{
+  ""d"": {
+    ""Id"": 899612,
+    ""Reference_Content"": null,
+    ""References_ContentArray"": [{ ""Id"": 100002 },{ ""Id"": 100003 }],
+    ""References_ContentEnumerable"": [{ ""Id"": 100004 },{ ""Id"": 100005 }],
+    ""References_ContentList"": [{ ""Id"": 100006 },{ ""Id"": 100007 }],
+    ""Reference_WellKnown"": [{ ""Id"": 200001 }],
+    ""References_WellKnownArray"": [{ ""Id"": 200002 },{ ""Id"": 200003 }],
+    ""References_WellKnownEnumerable"": [{ ""Id"": 200004 },{ ""Id"": 200005 }],
+    ""References_WellKnownList"": [{ ""Id"": 200006 },{ ""Id"": 200007 }],
+  }
+}
+");
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.RegisterGlobalContentType<ReferredContent>();
+            services.RegisterGlobalContentType<TestContent_References>();
+            services.AddSingleton(restCaller);
+        });
+        var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+            .ConfigureAwait(false);
+
+        var contents = new Content[7];
+        for (int i = 0; i < contents.Length; i++)
+        {
+            contents[i] = new Content(null, null)
+            {
+                Id = i % 2 == 0 ? 300001 + i : 0,
+                Name = $"Content-{i + 1}",
+                Path = $"/Root/Refs2/Content-{i + 1}",
+                ParentId = 100000,
+                ParentPath = "/Root/Refs2",
+                Repository = repository,
+                Server = repository.Server
+            };
+        }
+        var referredContents = new ReferredContent[7];
+        for (int i = 0; i < contents.Length; i++)
+        {
+            referredContents[i] = new ReferredContent(null, null)
+            {
+                Id = i % 2 == 1 ? 400001 + i : 0,
+                Name = $"ReferredContent-{i + 1}",
+                Path = $"/Root/Refs2/ReferredContent-{i + 1}",
+                ParentId = 100000,
+                ParentPath = "/Root/Refs2",
+                Repository = repository,
+                Server = repository.Server
+            };
+        }
+        var request = new LoadContentRequest { ContentId = 999543, Select = new[] { "Id", "Name", "Path", "Type", "Index" } };
+        dynamic content = await repository.LoadContentAsync<TestContent_References>(request, CancellationToken.None);
+
+        // ACT
+        content.Reference_Content = null;
+        content.References_ContentEnumerable = new[] { contents[3], null };
+        content.References_WellKnownArray = new ReferredContent?[] { null, null };
+        content.References_WellKnownList = new List<ReferredContent> { referredContents[5], referredContents[6] };
+        await content.SaveAsync().ConfigureAwait(false);
+
+        // ASSERT
+        var calls = restCaller.ReceivedCalls().ToArray();
+        Assert.IsNotNull(calls);
+        Assert.AreEqual(3, calls.Length);
+        Assert.AreEqual("GetResponseStringAsync", calls[2].GetMethodInfo().Name);
+        var arguments = calls[2].GetArguments();
+        Assert.IsTrue(arguments[0].ToString().Contains("content(899612)"));
+        Assert.AreEqual(HttpMethod.Patch, arguments[1]);
+        var json = (string)arguments[2]!;
+        json = json.Substring("models=[".Length).TrimEnd(']');
+        JObject data = JsonHelper.Deserialize(json);
+        var fields = data.ToObject<Dictionary<string, object>>();
+
+        var names = string.Join(", ", fields.Keys.OrderBy(x => x));
+        Assert.AreEqual("Name, Reference_Content, References_ContentEnumerable, References_WellKnownArray, References_WellKnownList", names);
+        Assert.IsNotNull(data);
+        Assert.AreEqual("{\"Name\":null," +
+                        "\"Reference_Content\":null," +
+                        "\"References_ContentEnumerable\":[\"/Root/Refs2/Content-4\"]," +
+                        "\"References_WellKnownArray\":null," +
+                        "\"References_WellKnownList\":[400006,\"/Root/Refs2/ReferredContent-7\"]}", JsonHelper.Serialize(data));
+    }
 
     [TestMethod]
     public async Task Content_T_StronglyTyped_References_Error_Content()
