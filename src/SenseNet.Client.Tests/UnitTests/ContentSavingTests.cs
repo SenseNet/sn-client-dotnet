@@ -941,12 +941,10 @@ public class ContentSavingTests : TestBase
         var fields = data.ToObject<Dictionary<string, object>>();
 
         var names = string.Join(", ", fields.Keys.OrderBy(x => x));
-        Assert.AreEqual("Name, Reference_Content, References_ContentEnumerable, References_WellKnownArray, References_WellKnownList", names);
+        Assert.AreEqual("Name, References_ContentEnumerable, References_WellKnownList", names);
         Assert.IsNotNull(data);
         Assert.AreEqual("{\"Name\":null," +
-                        "\"Reference_Content\":null," +
                         "\"References_ContentEnumerable\":[\"/Root/Refs2/Content-4\"]," +
-                        "\"References_WellKnownArray\":null," +
                         "\"References_WellKnownList\":[400006,\"/Root/Refs2/ReferredContent-7\"]}", JsonHelper.Serialize(data));
     }
 

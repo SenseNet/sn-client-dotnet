@@ -364,6 +364,7 @@ public partial class Content
     {
         var result = new List<object>();
 
+        // The source cannot be null
         foreach (var content in source)
         {
             var item = ConvertReferenceToRequestValue(content, propertyName, throwOnError);
@@ -449,6 +450,8 @@ public partial class Content
         JToken originalValue, Type itemType)
     {
         var originalReferredContents = (IEnumerable<Content>) GetMultiReferenceArray(originalValue, itemType);
+        if (originalReferredContents == null)
+            return propertyValue != null;
         var originalRequest = ConvertReferencesToRequestValue(originalReferredContents, propertyName, false);
         if (originalRequest == null || propertyValue == null)
             return true;
