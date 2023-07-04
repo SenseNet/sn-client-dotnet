@@ -8,6 +8,9 @@ namespace SenseNet.Client.Tests.UnitTests;
 
 public abstract class TestBase
 {
+    protected readonly string LocalServer = "local";
+    protected readonly string FakeServer = "fake";
+
     protected IRestCaller CreateRestCallerFor(string returnValueOfGetResponseStringAsync)
     {
         var restCaller = Substitute.For<IRestCaller>();
@@ -37,10 +40,19 @@ public abstract class TestBase
             .AddSenseNetClient()
             //.AddSingleton<ITokenProvider, TestTokenProvider>()
             //.AddSingleton<ITokenStore, TokenStore>()
-            .ConfigureSenseNetRepository("local", repositoryOptions =>
+            .ConfigureSenseNetRepository(LocalServer, repositoryOptions =>
             {
                 // set test url and authentication in user secret
                 config.GetSection("sensenet:repository").Bind(repositoryOptions);
+            })
+            .ConfigureSenseNetRepository(FakeServer, repositoryOptions =>
+            {
+                // url to nothing
+                repositoryOptions.Url = "https://urlfor.unittests";
+                // Avoid the 4 second authentication request
+                repositoryOptions.Authentication.ApiKey = null;
+                repositoryOptions.Authentication.ClientId = null;
+                repositoryOptions.Authentication.ClientSecret = null;
             });
 
         addServices?.Invoke(services);
