@@ -37,7 +37,7 @@ public class ContentSavingTests : TestBase
         {
             services.AddSingleton(restCaller);
         });
-        var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
             .ConfigureAwait(false);
 
         // ACT
@@ -84,7 +84,7 @@ public class ContentSavingTests : TestBase
             services.RegisterGlobalContentType<TestContent_A>();
             services.AddSingleton(restCaller);
         });
-        var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
             .ConfigureAwait(false);
 
         // ACT
@@ -131,7 +131,7 @@ public class ContentSavingTests : TestBase
             services.RegisterGlobalContentType<TestContent_A>();
             services.AddSingleton(restCaller);
         });
-        var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
             .ConfigureAwait(false);
 
         // ACT
@@ -233,7 +233,7 @@ public class ContentSavingTests : TestBase
         {
             services.AddSingleton(restCaller);
         });
-        var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
             .ConfigureAwait(false);
 
         // ACT-1: Load
@@ -341,7 +341,7 @@ public class ContentSavingTests : TestBase
             services.RegisterGlobalContentType<T>();
             services.AddSingleton(restCaller);
         });
-        var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
             .ConfigureAwait(false);
 
         // ACT-1: Load
@@ -467,7 +467,7 @@ public class ContentSavingTests : TestBase
             services.RegisterGlobalContentType<TestContent_CustomProperties>();
             services.AddSingleton(restCaller);
         });
-        var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
             .ConfigureAwait(false);
 
         // ACT-1 Load
@@ -532,7 +532,7 @@ public class ContentSavingTests : TestBase
             services.RegisterGlobalContentType<TestContent_CustomProperties>();
             services.AddSingleton(restCaller);
         });
-        var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
             .ConfigureAwait(false);
 
         // ACT-1 Load
@@ -613,7 +613,7 @@ public class ContentSavingTests : TestBase
             services.RegisterGlobalContentType<TestContent_References>();
             services.AddSingleton(restCaller);
         });
-        var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
             .ConfigureAwait(false);
 
         var contents = new Content[7];
@@ -712,7 +712,7 @@ public class ContentSavingTests : TestBase
             services.RegisterGlobalContentType<TestContent_References>();
             services.AddSingleton(restCaller);
         });
-        var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
             .ConfigureAwait(false);
 
         var contents = new Content[7];
@@ -799,7 +799,7 @@ public class ContentSavingTests : TestBase
             services.RegisterGlobalContentType<TestContent_References>();
             services.AddSingleton(restCaller);
         });
-        var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
             .ConfigureAwait(false);
 
         var contents = new Content[7];
@@ -869,13 +869,13 @@ public class ContentSavingTests : TestBase
   ""d"": {
     ""Id"": 899612,
     ""Reference_Content"": null,
-    ""References_ContentArray"": [{ ""Id"": 100002 },{ ""Id"": 100003 }],
-    ""References_ContentEnumerable"": [{ ""Id"": 100004 },{ ""Id"": 100005 }],
-    ""References_ContentList"": [{ ""Id"": 100006 },{ ""Id"": 100007 }],
-    ""Reference_WellKnown"": [{ ""Id"": 200001 }],
-    ""References_WellKnownArray"": [{ ""Id"": 200002 },{ ""Id"": 200003 }],
-    ""References_WellKnownEnumerable"": [{ ""Id"": 200004 },{ ""Id"": 200005 }],
-    ""References_WellKnownList"": [{ ""Id"": 200006 },{ ""Id"": 200007 }],
+    ""References_ContentArray"": null,
+    ""References_ContentEnumerable"": null,
+    ""References_ContentList"": null,
+    ""Reference_WellKnown"": null,
+    ""References_WellKnownArray"": null,
+    ""References_WellKnownEnumerable"": null,
+    ""References_WellKnownList"": null,
   }
 }
 ");
@@ -886,7 +886,7 @@ public class ContentSavingTests : TestBase
             services.RegisterGlobalContentType<TestContent_References>();
             services.AddSingleton(restCaller);
         });
-        var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
             .ConfigureAwait(false);
 
         var contents = new Content[7];
@@ -1046,7 +1046,7 @@ public class ContentSavingTests : TestBase
             services.RegisterGlobalContentType<TestContent_References>();
             services.AddSingleton(restCaller);
         });
-        var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
             .ConfigureAwait(false);
 
         var request = new LoadContentRequest { ContentId = 999999 };

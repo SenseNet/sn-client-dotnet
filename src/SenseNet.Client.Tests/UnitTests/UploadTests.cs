@@ -37,7 +37,7 @@ public class UploadTests : TestBase
         {
             services.AddSingleton(restCaller);
         });
-        var repository = await repositories.GetRepositoryAsync("local", _cancel)
+        var repository = await repositories.GetRepositoryAsync(FakeServer, _cancel)
             .ConfigureAwait(false);
 
         var fileContent = "111111111122222222223333333333444";
@@ -124,7 +124,7 @@ public class UploadTests : TestBase
         {
             services.AddSingleton(restCaller);
         });
-        var repository = await repositories.GetRepositoryAsync("local", _cancel)
+        var repository = await repositories.GetRepositoryAsync(FakeServer, _cancel)
             .ConfigureAwait(false);
 
         var fileContent = "111111111122222222223333333333444";
@@ -218,7 +218,7 @@ public class UploadTests : TestBase
         {
             services.AddSingleton(restCaller);
         });
-        var repository = await repositories.GetRepositoryAsync("local", _cancel)
+        var repository = await repositories.GetRepositoryAsync(FakeServer, _cancel)
             .ConfigureAwait(false);
         var fileText = "File text file text";
 

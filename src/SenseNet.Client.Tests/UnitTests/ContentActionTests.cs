@@ -257,7 +257,7 @@ public class ContentActionTests : TestBase
         {
             services.AddSingleton(restCaller);
         });
-        var repository = await repositories.GetRepositoryAsync("local", CancellationToken.None)
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
             .ConfigureAwait(false);
 
         var content = repository.CreateExistingContent(42);
@@ -283,7 +283,7 @@ public class ContentActionTests : TestBase
     {
         var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
         var repository = await GetRepositoryCollection()
-            .GetRepositoryAsync("local", CancellationToken.None).ConfigureAwait(false);
+            .GetRepositoryAsync(FakeServer, CancellationToken.None).ConfigureAwait(false);
 
         var content = repository.CreateExistingContent(42);
         content.Path = "/Root/Content/MyContent";
