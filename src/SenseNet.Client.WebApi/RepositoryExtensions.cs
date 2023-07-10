@@ -14,7 +14,7 @@ namespace SenseNet.Extensions.DependencyInjection
         /// - the <b>Admin</b> repository will use the configured Admin user<br/>
         /// - the <b>User</b> repository will try to authenticate using the current user's token available in HttpContext<br/>
         /// <br/>
-        /// To make advantage of these repositories, use the <see cref="IRepositoryService"/> service
+        /// To make advantage of these repositories, use the <see cref="IUserRepositoryCollection"/> service
         /// in your classes.
         /// </summary>
         /// <param name="services"></param>
@@ -37,7 +37,7 @@ namespace SenseNet.Extensions.DependencyInjection
                     registerContentTypes);
 
             // this can be singleton, because it requires only singleton services like IHttpContextAccessor
-            services.AddSingleton<IRepositoryService, RepositoryService>();
+            services.AddSingleton<IUserRepositoryCollection, UserRepositoryCollection>();
 
             return services;
         }

@@ -1,6 +1,9 @@
 ﻿namespace SenseNet.Client.WebApi
 {
-    public interface IRepositoryService
+    /// <summary>
+    /// Defines methods for accessing repositories for dedicated users.
+    /// </summary>
+    public interface IUserRepositoryCollection
     {
         /// <summary>
         /// Returns the repository that is configured to use the current user's token available in HttpContext.

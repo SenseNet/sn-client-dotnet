@@ -3,14 +3,14 @@ using Microsoft.Extensions.Logging;
 
 namespace SenseNet.Client.WebApi
 {
-    public class RepositoryService : IRepositoryService
+    public class UserRepositoryCollection : IUserRepositoryCollection
     {
         private readonly IRepositoryCollection _repositoryCollection;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly ILogger<RepositoryService> _logger;
+        private readonly ILogger<UserRepositoryCollection> _logger;
 
-        public RepositoryService(IRepositoryCollection repositoryCollection, IHttpContextAccessor httpContextAccessor,
-            ILogger<RepositoryService> logger)
+        public UserRepositoryCollection(IRepositoryCollection repositoryCollection, IHttpContextAccessor httpContextAccessor,
+            ILogger<UserRepositoryCollection> logger)
         {
             _repositoryCollection = repositoryCollection;
             _httpContextAccessor = httpContextAccessor;
