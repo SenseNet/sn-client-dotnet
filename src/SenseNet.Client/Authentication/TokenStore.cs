@@ -29,8 +29,10 @@ namespace SenseNet.Client.Authentication
     internal class TokenStore : ITokenStore
     {
         private readonly ILogger<TokenStore> _logger;
-        private readonly MemoryCache _cache = new MemoryCache(new MemoryCacheOptions());
+        private readonly MemoryCache _cache = new(new MemoryCacheOptions());
         private readonly ITokenProvider _tokenProvider;
+
+        private const int DefaultCacheDurationInMinutes = 30;
 
         public TokenStore(ITokenProvider tokenProvider, ILogger<TokenStore> logger)
         {
@@ -42,12 +44,12 @@ namespace SenseNet.Client.Authentication
             CancellationToken cancel = default)
         {
             // look for the token in the cache
-            var tokenCacheKey = "TK:" + server.Url;
+            var tokenCacheKey = $"TK-{server.Url}-{clientId}".GetHashCode();
             if (_cache.TryGetValue(tokenCacheKey, out string accessToken))
                 return accessToken;
 
             // look for auth info in the cache
-            var authInfoCacheKey = "AI:" + server.Url;
+            var authInfoCacheKey = $"AI-{server.Url}-{clientId}".GetHashCode();
             if (!_cache.TryGetValue(authInfoCacheKey, out AuthorityInfo authInfo))
             {
                 _logger?.LogTrace($"Getting authority info from {server.Url}.");
@@ -59,7 +61,7 @@ namespace SenseNet.Client.Authentication
                     authInfo.ClientId = clientId;
 
                 if (!string.IsNullOrEmpty(authInfo.Authority))
-                    _cache.Set(authInfoCacheKey, authInfo, TimeSpan.FromMinutes(30));
+                    _cache.Set(authInfoCacheKey, authInfo, TimeSpan.FromMinutes(DefaultCacheDurationInMinutes));
                 else
                     _logger?.LogTrace($"Authority info is empty for server {server.Url}");
             }
@@ -74,24 +76,28 @@ namespace SenseNet.Client.Authentication
 
             accessToken = tokenInfo?.AccessToken;
 
-            //TODO: determine access token cache expiration based on the token expiration
-            if (!string.IsNullOrEmpty(accessToken))
+            if (string.IsNullOrEmpty(accessToken)) 
+                return accessToken;
+
+            // Maximize token expiration to the received token expiration (if given) or a fixed short time.
+            var tokenExpiration = tokenInfo.ExpiresIn > 0
+                ? TimeSpan.FromSeconds(Math.Min(tokenInfo.ExpiresIn, DefaultCacheDurationInMinutes * 60))
+                : TimeSpan.FromMinutes(DefaultCacheDurationInMinutes);
+
+            _cache.Set(tokenCacheKey, accessToken, tokenExpiration);
+
+            try
             {
-                _cache.Set(tokenCacheKey, accessToken, TimeSpan.FromMinutes(10));
+                // parse token and log user
+                var handler = new JwtSecurityTokenHandler();
+                var token = handler.ReadJwtToken(accessToken);
+                var sub = token.Claims.FirstOrDefault(c => c.Type == "client_sub")?.Value ?? "unknown";
 
-                try
-                {
-                    // parse token and log user
-                    var handler = new JwtSecurityTokenHandler();
-                    var token = handler.ReadJwtToken(accessToken);
-                    var sub = token.Claims.FirstOrDefault(c => c.Type == "client_sub")?.Value ?? "unknown";
-
-                    _logger?.LogTrace($"Token acquired for user {sub}.");
-                }
-                catch (Exception ex)
-                {
-                    _logger?.LogWarning(ex, $"Could not read access token: {ex.Message}");
-                }
+                _logger?.LogTrace($"Token acquired for user {sub}. Expires in {tokenExpiration}.");
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, $"Could not read access token: {ex.Message}");
             }
 
             return accessToken;

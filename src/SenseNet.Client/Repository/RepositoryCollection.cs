@@ -16,6 +16,8 @@ namespace SenseNet.Client
         private readonly MemoryCache _repositories = new(new MemoryCacheOptions { SizeLimit = 1024 });
         private readonly SemaphoreSlim _asyncLock = new(1, 1);
 
+        private const int DefaultCacheDurationInMinutes = 30;
+
         public RepositoryCollection(IServiceProvider services, IServerContextFactory serverFactory, ILogger<RepositoryCollection> logger)
         {
             _services = services;
@@ -67,7 +69,7 @@ namespace SenseNet.Client
 
                 _repositories.Set(cacheKey, repo, new MemoryCacheEntryOptions
                 {
-                    AbsoluteExpiration = new DateTimeOffset(DateTime.UtcNow.AddHours(1)),
+                    AbsoluteExpiration = new DateTimeOffset(DateTime.UtcNow.AddMinutes(DefaultCacheDurationInMinutes)),
                     Size = 1
                 });
 
