@@ -21,6 +21,13 @@ namespace SenseNet.Client.Tests.UnitTests
     [TestClass]
     public class RepositoryTests : TestBase
     {
+        #region Test classes
+        public class File : Content
+        {
+            public File(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }
+        }
+        #endregion
+
         private const string ExampleUrl = "https://example.com";
 
         [TestMethod]
@@ -1083,6 +1090,26 @@ namespace SenseNet.Client.Tests.UnitTests
             var services = (IServiceProvider)repositoryAcc.GetField("_services");
             Assert.IsNotNull(services.GetService<MyContent>());
             Assert.IsNotNull(services.GetService<DifferentNamespace.MyContent>());
+        }
+
+        [TestMethod]
+        public async Task Repository_T_RegisterGlobalContentType_OverrideExisting()
+        {
+            // ACTION
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.RegisterGlobalContentType(typeof(DownloadTests.File));
+
+                // override the registration above
+                services.RegisterGlobalContentType(typeof(File));
+            });
+
+            // ASSERT
+            var repository = await repositories.GetRepositoryAsync(CancellationToken.None)
+                .ConfigureAwait(false);
+            repository.GlobalContentTypes.ContentTypes.TryGetValue("File", out var contentType);
+            Assert.IsNotNull(contentType);
+            Assert.AreEqual(typeof(File), contentType);
         }
 
         /* =================================================================== CREATE REGISTERED CONTENT */
