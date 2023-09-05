@@ -45,6 +45,9 @@ public static class RepositoryExtensions
             .AddTransient<IRestCaller, DefaultRestCaller>()
             .AddTransient<IRepository, Repository>()
             .AddTransient<Content, Content>()
+            .RegisterGlobalContentType<User>()
+            .RegisterGlobalContentType<Image>()
+            .RegisterGlobalContentType<File>()
             .AddSenseNetRetrier()
             .AddLogging()
             .Configure<ServerContextOptions>(_ => { });
@@ -108,7 +111,7 @@ public static class RepositoryExtensions
         services.AddTransient(contentType, contentType);
         services.Configure<RegisteredContentTypes>(contentTypes =>
         {
-            contentTypes.ContentTypes.Add(contentTypeName ?? contentType.Name, contentType);
+            contentTypes.Add(contentType, contentTypeName);
         });
         return services;
     }
@@ -124,7 +127,7 @@ public static class RepositoryExtensions
         services.AddTransient<T, T>();
         services.Configure<RegisteredContentTypes>(contentTypes =>
         {
-            contentTypes.ContentTypes.Add(contentTypeName ?? typeof(T).Name, typeof(T));
+            contentTypes.Add<T>(contentTypeName);
         });
         return services;
     }
