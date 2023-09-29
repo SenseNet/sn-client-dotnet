@@ -45,6 +45,9 @@ public static class RepositoryExtensions
             .AddTransient<IRestCaller, DefaultRestCaller>()
             .AddTransient<IRepository, Repository>()
             .AddTransient<Content, Content>()
+            .RegisterGlobalContentType<File>()
+            .RegisterGlobalContentType<Image>()
+            .RegisterGlobalContentType<User>()
             .AddSenseNetRetrier()
             .AddLogging()
             .Configure<ServerContextOptions>(_ => { });

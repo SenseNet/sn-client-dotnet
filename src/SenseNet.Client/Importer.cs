@@ -155,7 +155,7 @@ namespace SenseNet.Client
             if (string.IsNullOrEmpty(_sourcePath))
                 throw new InvalidOperationException("Empty source path.");
 
-            var isFile = File.Exists(_sourcePath);
+            var isFile = System.IO.File.Exists(_sourcePath);
             var isDirectory = Directory.Exists(_sourcePath);
 
             if (!isFile && !isDirectory)
@@ -232,7 +232,7 @@ namespace SenseNet.Client
                 var parent = await Content.LoadAsync(targetPath).ConfigureAwait(false);
                 Content file;
 
-                using (var fileStream = File.OpenRead(sourcePath))
+                using (var fileStream = System.IO.File.OpenRead(sourcePath))
                 {
                     // TODO: implement multiple target servers
                     file = await Content.UploadAsync(parent.Id, name, fileStream, _options.FileTypeName).ConfigureAwait(false);
