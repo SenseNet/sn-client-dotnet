@@ -989,6 +989,61 @@ namespace SenseNet.Client.Tests.UnitTests
         }
 
         [TestMethod]
+        public async Task Repository_T_RegisterGlobalContentType_BuiltIn_User()
+        {
+            // ALIGN
+            var restCaller = CreateRestCallerFor(@"
+{ 
+    ""d"": { 
+        ""Id"": 1,
+        ""Path"": ""/Root/IMS/BuiltIn/Admin"",
+        ""Name"": ""Admin"", 
+        ""Type"": ""User"",
+        ""LoginName"": ""admin"",
+        ""Email"": ""admin@example.com"",
+        ""BirthDate"": ""2000-02-03T00:00:00Z"",
+        ""Avatar"": {
+            ""Url"": ""/Root/Content/images/avatar.png""
+        },
+        ""ImageRef"": {
+	        ""Id"": 123,
+            ""Path"": ""/Root/Content/images/avatar.png"",
+	        ""Type"": ""Image"",
+	        ""Name"": ""avatar.png"",
+	        ""DateTaken"": ""2010-10-01T00:00:00Z"",
+	        ""Width"": 456,
+	        ""Height"": 789
+        }
+    }
+}");
+
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton(restCaller);
+            });
+
+            var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACT
+            var user = await repository.LoadContentAsync<User>("/testcontentpath", CancellationToken.None);
+
+            // ASSERT
+            Assert.IsNotNull(user);
+            Assert.AreEqual(typeof(User), user.GetType());
+            Assert.AreEqual("Admin", user.Name);
+            Assert.AreEqual("admin", user.LoginName);
+            Assert.AreEqual("admin@example.com", user.Email);
+            Assert.AreEqual(new DateTime(2000, 02, 03, 0, 0, 0, DateTimeKind.Utc), user.BirthDate);
+
+            Assert.AreEqual(typeof(Image), user.ImageRef.GetType());
+            Assert.AreEqual(123, user.ImageRef.Id);
+            Assert.AreEqual(456, user.ImageRef.Width);
+            Assert.AreEqual(789, user.ImageRef.Height);
+            Assert.AreEqual("/Root/Content/images/avatar.png", user.Avatar.Url);
+        }
+
+        [TestMethod]
         public async Task Repository_T_RegisterContentTypes()
         {
             // ALIGN
@@ -1014,7 +1069,7 @@ namespace SenseNet.Client.Tests.UnitTests
             var repositoryAcc = new ObjectAccessor(repository);
             var services = (IServiceProvider)repositoryAcc.GetField("_services");
             Assert.AreEqual(ExampleUrl, repository.Server.Url);
-            Assert.AreEqual(0, repository.GlobalContentTypes.ContentTypes.Count);
+            Assert.AreEqual(3, repository.GlobalContentTypes.ContentTypes.Count);
             var contentTypeRegistrations = repository.Server.RegisteredContentTypes.ContentTypes
                 .OrderBy(x => x.Value.Name)
                 .ToArray();
@@ -1067,7 +1122,7 @@ namespace SenseNet.Client.Tests.UnitTests
             // ASSERT
             // check repo1
             Assert.AreEqual(ExampleUrl, repository1.Server.Url);
-            Assert.AreEqual(0, repository1.GlobalContentTypes.ContentTypes.Count);
+            Assert.AreEqual(3, repository1.GlobalContentTypes.ContentTypes.Count);
             var contentTypeRegistrations1 = repository1.Server.RegisteredContentTypes.ContentTypes
                 .OrderBy(x => x.Value.Name)
                 .ToArray();
@@ -1077,7 +1132,7 @@ namespace SenseNet.Client.Tests.UnitTests
 
             // check repo2
             Assert.AreEqual(exampleUrl2, repository2.Server.Url);
-            Assert.AreEqual(0, repository2.GlobalContentTypes.ContentTypes.Count);
+            Assert.AreEqual(3, repository2.GlobalContentTypes.ContentTypes.Count);
             var contentTypeRegistrations2 = repository2.Server.RegisteredContentTypes.ContentTypes
                 .OrderBy(x => x.Value.Name)
                 .ToArray();
