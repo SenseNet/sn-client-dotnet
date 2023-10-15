@@ -4,7 +4,7 @@
 		<TargetFrameworks>netstandard2.0;net6.0</TargetFrameworks>
 		<RootNamespace>SenseNet.Client</RootNamespace>
 		<PackageId>SenseNet.Client</PackageId>
-		<Version>3.0.3.2</Version>
+		<Version>3.0.4</Version>
 		<Company>Sense/Net Inc.</Company>
 		<Description>A .Net client for sensenet that makes it easy to use the REST API of the Content Repository.</Description>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -39,7 +39,7 @@
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
-		<PackageReference Include="SenseNet.Tools" Version="3.2.11" />
+		<PackageReference Include="SenseNet.Tools" Version="3.2.12" />
 		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.15.1" />
 	</ItemGroup>
 
