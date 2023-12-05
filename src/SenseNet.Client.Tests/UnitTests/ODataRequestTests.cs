@@ -1162,4 +1162,80 @@ public class ODataRequestTests
     }
 
     #endregion
+
+    [TestMethod]
+    public void ActionRequest_Id()
+    {
+        var request = new OperationRequest
+        {
+            ContentId = 42,
+            OperationName = "Operation1",
+        };
+        Assert.AreEqual($"{_baseUri}/OData.svc/content(42)/Operation1?metadata=no",
+            request.ToODataRequest(null).ToString());
+    }
+    [TestMethod]
+    public void ActionRequest_IdAndPathAndParameters()
+    {
+        var request = new OperationRequest
+        {
+            ContentId = 42,
+            Path = "/Root/Content",
+            OperationName = "Operation1",
+        };
+        request.Parameters.Add("param1", "value1");
+        request.Parameters.Add("param2", "value2");
+        Assert.AreEqual($"{_baseUri}/OData.svc/content(42)/Operation1?metadata=no&param1=value1&param2=value2",
+            request.ToODataRequest(null).ToString());
+    }
+    [TestMethod]
+    public void ActionRequest_Path()
+    {
+        var request = new OperationRequest
+        {
+            Path = "/Root/Content",
+            OperationName = "Operation1",
+        };
+        Assert.AreEqual($"{_baseUri}/OData.svc/Root('Content')/Operation1?metadata=no",
+            request.ToODataRequest(null).ToString());
+    }
+    [TestMethod]
+    public void ActionRequest_NoContent()
+    {
+        Exception? exception = null;
+        try
+        {
+            var request = new OperationRequest { OperationName = "Operation1" };
+            var _ = request.ToODataRequest(null).ToString();
+            Assert.Fail("The expected exception was not thrown.");
+        }
+        catch (InvalidOperationException ex)
+        {
+            exception = ex;
+        }
+
+        Assert.AreEqual(
+            "Invalid request properties: Path must be provided.",
+            exception.Message);
+    }
+    [TestMethod]
+    public void ActionRequest_NoOperation()
+    {
+        Exception? exception = null;
+        try
+        {
+            var request = new OperationRequest { Path = "/Root/Content" };
+            var _ = request.ToODataRequest(null).ToString();
+            Assert.Fail("The expected exception was not thrown.");
+        }
+        catch (InvalidOperationException ex)
+        {
+            exception = ex;
+        }
+
+        Assert.AreEqual(
+            "Invalid request properties: OperationName must be provided.",
+            exception.Message);
+    }
+
 }
