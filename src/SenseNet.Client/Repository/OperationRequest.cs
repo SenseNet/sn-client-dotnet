@@ -7,6 +7,7 @@ public class OperationRequest : LoadCollectionRequest
 {
     public int ContentId { get; set; }
     public string OperationName { get; set; }
+    public object PostData { get; set; }
 
     protected override void AddProperties(ODataRequest oDataRequest)
     {
@@ -21,8 +22,10 @@ public class OperationRequest : LoadCollectionRequest
 
         oDataRequest.ContentId = ContentId;
         oDataRequest.ActionName = OperationName;
+        oDataRequest.PostData = PostData;
 
         // Set back the "false" value because operation can be called on a single content.
         oDataRequest.IsCollectionRequest = false;
+
     }
 }

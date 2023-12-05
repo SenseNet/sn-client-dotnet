@@ -1200,6 +1200,18 @@ public class ODataRequestTests
             request.ToODataRequest(null).ToString());
     }
     [TestMethod]
+    public void ActionRequest_PostData()
+    {
+        var request = new OperationRequest
+        {
+            Path = "/Root/Content",
+            OperationName = "Operation1",
+            PostData = new {A = "x", B = -13, C = true}
+        };
+        var oDataRequest = request.ToODataRequest(null);
+        Assert.AreSame(request.PostData, oDataRequest.PostData);
+    }
+    [TestMethod]
     public void ActionRequest_NoContent()
     {
         Exception? exception = null;
