@@ -37,8 +37,9 @@ namespace SenseNet.Client
         /// <returns>The deserialized object from the JSON string.</returns>
         public static T Deserialize<T>(string json)
         {
-            if (IsErrorResponse(json, out var exception))
-                throw exception;
+            if(typeof(T) != typeof(ErrorResponse))
+                if (IsErrorResponse(json, out var exception))
+                    throw exception;
             return JsonConvert.DeserializeObject<T>(json, JsonHelper.JsonSerializerSettings);
         }
         /// <summary>
