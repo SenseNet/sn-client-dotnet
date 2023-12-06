@@ -142,7 +142,7 @@ namespace SenseNet.Client
         /// <summary>
         /// Human readable error message.
         /// </summary>
-        [JsonProperty(PropertyName = "value", Order = 1)]
+        [JsonProperty(PropertyName = "value", Order = 2)]
         public string Value { get; internal set; }
     }
     /// <summary>
