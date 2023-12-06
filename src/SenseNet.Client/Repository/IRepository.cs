@@ -516,4 +516,11 @@ public interface IRepository
         Action<HttpClientHandler, HttpClient, HttpRequestMessage> requestProcessor,
         Func<HttpResponseMessage, CancellationToken, Task> responseProcessor,
         CancellationToken cancel);
+
+    Task ProcessOperationResponseAsync(OperationRequest request, HttpMethod method,
+        Action<string> responseProcessor, CancellationToken cancel);
+
+    Task<T> CallFunctionAsync<T>(OperationRequest request, CancellationToken cancel);
+    Task ExecuteActionAsync(OperationRequest request, CancellationToken cancel);
+    Task<T> ExecuteActionAsync<T>(OperationRequest request, CancellationToken cancel);
 }

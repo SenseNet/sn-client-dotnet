@@ -14,6 +14,7 @@ using System.Net.Http.Headers;
 using System.Net;
 using System.Text;
 using System.IdentityModel.Tokens.Jwt;
+using Newtonsoft.Json;
 
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client;
@@ -724,6 +725,56 @@ internal class Repository : IRepository
     {
         return _restCaller.ProcessWebRequestResponseAsync(relativeUrl, method, additionalHeaders,
             requestProcessor, responseProcessor, cancel);
+    }
+
+    public async Task ProcessOperationResponseAsync(OperationRequest request, HttpMethod method,
+        Action<string> responseProcessor, CancellationToken cancel)
+    {
+        var uri = request.ToODataRequest(Server).GetUri();
+        string responseAsString = null;
+        await _restCaller.ProcessWebRequestResponseAsync(uri.ToString(), method, 
+            additionalHeaders: request.AdditionalRequestHeaders,
+            requestProcessor: (handler, client, httpRequest) =>
+            {
+                if (request.PostData == null)
+                    return;
+                var json = JsonConvert.SerializeObject(request.PostData);
+                httpRequest.Content = new StringContent(json);
+            },
+            responseProcessor: async (response, cancellation) =>
+            {
+                responseAsString = await response.Content.ReadAsStringAsync();
+            },
+            cancel);
+
+        responseProcessor(responseAsString);
+    }
+
+    public async Task<T> CallFunctionAsync<T>(OperationRequest request, CancellationToken cancel)
+    {
+        var result = default(T);
+        await ProcessOperationResponseAsync(request, HttpMethod.Get, response =>
+        {
+            if (!string.IsNullOrEmpty(response))
+                result = JsonConvert.DeserializeObject<T>(response);
+        }, cancel);
+        return result;
+    }
+
+    public async Task ExecuteActionAsync(OperationRequest request, CancellationToken cancel)
+    {
+        await ExecuteActionAsync<object>(request, cancel);
+    }
+
+    public async Task<T> ExecuteActionAsync<T>(OperationRequest request, CancellationToken cancel)
+    {
+        var result = default(T);
+        await ProcessOperationResponseAsync(request, HttpMethod.Post, response =>
+        {
+            if (!string.IsNullOrEmpty(response))
+                result = JsonConvert.DeserializeObject<T>(response);
+        }, cancel);
+        return result;
     }
 
     /* ============================================================================ TOOLS */
