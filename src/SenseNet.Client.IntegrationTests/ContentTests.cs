@@ -600,8 +600,6 @@ public class ContentTests : IntegrationTestBase
 
     /* ================================================================================================== OPERATIONS */
 
-
-
     [TestMethod]
     public async Task IT_Op_CallFunction()
     {
@@ -640,7 +638,6 @@ public class ContentTests : IntegrationTestBase
         // ASSERT
         Assert.IsFalse(await repository.IsContentExistsAsync(content.Path, cancel));
     }
-
     [TestMethod]
     public async Task IT_Op_ProcessOperationResponse()
     {

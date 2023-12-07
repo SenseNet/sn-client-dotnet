@@ -710,46 +710,6 @@ internal class Repository : IRepository
             .ConfigureAwait(false);
     }
 
-    /* ============================================================================ LOW LEVEL API */
-
-    public Task ProcessWebResponseAsync(string relativeUrl, HttpMethod method, Dictionary<string, IEnumerable<string>> additionalHeaders,
-        HttpContent httpContent, Func<HttpResponseMessage, CancellationToken, Task> responseProcessor, CancellationToken cancel)
-    {
-        return _restCaller.ProcessWebResponseAsync(relativeUrl, method, additionalHeaders,
-            httpContent, responseProcessor, cancel);
-    }
-
-    public Task ProcessWebRequestResponseAsync(string relativeUrl, HttpMethod method, Dictionary<string, IEnumerable<string>> additionalHeaders,
-        Action<HttpClientHandler, HttpClient, HttpRequestMessage> requestProcessor,
-        Func<HttpResponseMessage, CancellationToken, Task> responseProcessor, CancellationToken cancel)
-    {
-        return _restCaller.ProcessWebRequestResponseAsync(relativeUrl, method, additionalHeaders,
-            requestProcessor, responseProcessor, cancel);
-    }
-
-    public async Task ProcessOperationResponseAsync(OperationRequest request, HttpMethod method,
-        Action<string> responseProcessor, CancellationToken cancel)
-    {
-        var uri = request.ToODataRequest(Server).GetUri();
-        string responseAsString = null;
-        await _restCaller.ProcessWebRequestResponseAsync(uri.ToString(), method, 
-            additionalHeaders: request.AdditionalRequestHeaders,
-            requestProcessor: (handler, client, httpRequest) =>
-            {
-                if (request.PostData == null)
-                    return;
-                var json = JsonConvert.SerializeObject(request.PostData);
-                httpRequest.Content = new StringContent(json);
-            },
-            responseProcessor: async (response, cancellation) =>
-            {
-                responseAsString = await response.Content.ReadAsStringAsync();
-            },
-            cancel);
-
-        responseProcessor(responseAsString);
-    }
-
     public async Task<T> CallFunctionAsync<T>(OperationRequest request, CancellationToken cancel)
     {
         var result = default(T);
@@ -775,6 +735,46 @@ internal class Repository : IRepository
                 result = JsonConvert.DeserializeObject<T>(response);
         }, cancel);
         return result;
+    }
+
+    /* ============================================================================ LOW LEVEL API */
+
+    public async Task ProcessOperationResponseAsync(OperationRequest request, HttpMethod method,
+        Action<string> responseProcessor, CancellationToken cancel)
+    {
+        var uri = request.ToODataRequest(Server).GetUri();
+        string responseAsString = null;
+        await _restCaller.ProcessWebRequestResponseAsync(uri.ToString(), method,
+            additionalHeaders: request.AdditionalRequestHeaders,
+            requestProcessor: (handler, client, httpRequest) =>
+            {
+                if (request.PostData == null)
+                    return;
+                var json = JsonConvert.SerializeObject(request.PostData);
+                httpRequest.Content = new StringContent(json);
+            },
+            responseProcessor: async (response, cancellation) =>
+            {
+                responseAsString = await response.Content.ReadAsStringAsync();
+            },
+            cancel);
+
+        responseProcessor(responseAsString);
+    }
+
+    public Task ProcessWebResponseAsync(string relativeUrl, HttpMethod method, Dictionary<string, IEnumerable<string>> additionalHeaders,
+        HttpContent httpContent, Func<HttpResponseMessage, CancellationToken, Task> responseProcessor, CancellationToken cancel)
+    {
+        return _restCaller.ProcessWebResponseAsync(relativeUrl, method, additionalHeaders,
+            httpContent, responseProcessor, cancel);
+    }
+
+    public Task ProcessWebRequestResponseAsync(string relativeUrl, HttpMethod method, Dictionary<string, IEnumerable<string>> additionalHeaders,
+        Action<HttpClientHandler, HttpClient, HttpRequestMessage> requestProcessor,
+        Func<HttpResponseMessage, CancellationToken, Task> responseProcessor, CancellationToken cancel)
+    {
+        return _restCaller.ProcessWebRequestResponseAsync(relativeUrl, method, additionalHeaders,
+            requestProcessor, responseProcessor, cancel);
     }
 
     /* ============================================================================ TOOLS */

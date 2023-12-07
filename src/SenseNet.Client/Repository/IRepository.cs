@@ -484,7 +484,61 @@ public interface IRepository
     /// <returns>A Task that represents the asynchronous operation.</returns>
     Task DownloadAsync(DownloadRequest request, Func<Stream, StreamProperties, Task> responseProcessor, CancellationToken cancel);
 
+    /// <summary>
+    /// Calls a server function by the provided <paramref name="request"/>
+    /// and returns the response converted to the desired object.
+    /// </summary>
+    /// <typeparam name="T">Can be any existing class or struct.</typeparam>
+    /// <param name="request">The <see cref="OperationRequest"/> instance.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A Task that represents the asynchronous operation and wraps the response object.</returns>
+    /// <exception cref="ClientException">Thrown if the <paramref name="request"/> is invalid
+    /// or not the requested operation is not an OData function.
+    /// Also thrown if the server returns an error object.</exception>
+    Task<T> CallFunctionAsync<T>(OperationRequest request, CancellationToken cancel);
+    /// <summary>
+    /// Executes a server action by the provided <paramref name="request"/>.
+    /// </summary>
+    /// <param name="request">The <see cref="OperationRequest"/> instance.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A task that represents an asynchronous operation.</returns>
+    /// <exception cref="ClientException">Thrown if the <paramref name="request"/> is invalid
+    /// or not the requested operation is not an OData action.
+    /// Also thrown if the server returns an error object.</exception>
+    Task ExecuteActionAsync(OperationRequest request, CancellationToken cancel);
+    /// <summary>
+    /// Executes a server action by the provided <paramref name="request"/>.
+    /// and returns the response converted to the desired object.
+    /// </summary>
+    /// <typeparam name="T">Can be any existing class or struct.</typeparam>
+    /// <param name="request">The <see cref="OperationRequest"/> instance.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A Task that represents the asynchronous operation and wraps the response object.</returns>
+    /// <exception cref="ClientException">Thrown if the <paramref name="request"/> is invalid
+    /// or not the requested operation is not an OData action.
+    /// Also thrown if the server returns an error object.</exception>
+    Task<T> ExecuteActionAsync<T>(OperationRequest request, CancellationToken cancel);
+
     /* ============================================================================ LOW LEVEL API */
+
+    /// <summary>
+    /// Executes a server operation by the provided <paramref name="request"/>.
+    /// </summary>
+    /// The operation can be an OData action (POST) or function (GET).
+    /// See type of operations and parameters on the documentation pages: https://docs.sensenet.com
+    /// The response can be processed with the <paramref name="responseProcessor"/> callback.
+    /// The callback is called with a string parameter containing the raw response.
+    /// <remarks>
+    /// </remarks>
+    /// <param name="request">The <see cref="OperationRequest"/> instance.</param>
+    /// <param name="method">The HTTP method. Can be GET or POST.</param>
+    /// <param name="responseProcessor">Callback for processing the response.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A task that represents an asynchronous operation.</returns>
+    /// <exception cref="ClientException">Thrown if the <paramref name="request"/> or <paramref name="method"/>
+    /// is invalid or not matched. Also thrown if the server returns an error object.</exception>
+    Task ProcessOperationResponseAsync(OperationRequest request, HttpMethod method,
+        Action<string> responseProcessor, CancellationToken cancel);
 
     /// <summary>
     /// Sends the specified HTTP request and passes the response to the <paramref name="responseProcessor"/> callback.
@@ -516,11 +570,4 @@ public interface IRepository
         Action<HttpClientHandler, HttpClient, HttpRequestMessage> requestProcessor,
         Func<HttpResponseMessage, CancellationToken, Task> responseProcessor,
         CancellationToken cancel);
-
-    Task ProcessOperationResponseAsync(OperationRequest request, HttpMethod method,
-        Action<string> responseProcessor, CancellationToken cancel);
-
-    Task<T> CallFunctionAsync<T>(OperationRequest request, CancellationToken cancel);
-    Task ExecuteActionAsync(OperationRequest request, CancellationToken cancel);
-    Task<T> ExecuteActionAsync<T>(OperationRequest request, CancellationToken cancel);
 }
