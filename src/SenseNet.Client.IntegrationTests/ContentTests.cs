@@ -1,10 +1,7 @@
-﻿using System.Net.WebSockets;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using SenseNet.Extensions.DependencyInjection;
-using System.Threading.Channels;
-using IdentityModel.Client;
+using Newtonsoft.Json;
+using SenseNet.Client.Security;
 
 namespace SenseNet.Client.IntegrationTests;
 
@@ -600,4 +597,103 @@ public class ContentTests : IntegrationTestBase
         await repository.DeleteContentAsync(contentId, true, cancel).ConfigureAwait(false);
         Assert.IsFalse(await repository.IsContentExistsAsync(path, cancel).ConfigureAwait(false));
     }
+
+    /* ================================================================================================== OPERATIONS */
+
+    [TestMethod]
+    public async Task IT_Op_CallFunction()
+    {
+        var repository = await GetRepositoryCollection()
+            .GetRepositoryAsync("local", CancellationToken.None).ConfigureAwait(false);
+
+        // ACT
+        var request = new OperationRequest() {ContentId = 2, OperationName = "GetPermissions"};
+        var getPermissionsResponse = await repository.InvokeFunctionAsync<GetPermissionsResponse>(request, CancellationToken.None);
+
+        // ASSERT
+        Assert.AreEqual(2, getPermissionsResponse.Id);
+        Assert.AreEqual("/Root", getPermissionsResponse.Path);
+        Assert.AreEqual(true, getPermissionsResponse.Inherits);
+        Assert.IsNotNull(getPermissionsResponse.Entries);
+        Assert.IsTrue(getPermissionsResponse.Entries.Length > 2);
+        Assert.AreEqual("allow", getPermissionsResponse.Entries[0].Permissions.See.Value);
+    }
+    [TestMethod]
+    public async Task IT_Op_ExecuteAction()
+    {
+        var repository = await GetRepositoryCollection()
+            .GetRepositoryAsync("local", CancellationToken.None).ConfigureAwait(false);
+        var cancel = new CancellationTokenSource().Token;
+
+        var content = repository.CreateContent("/Root/Content", "SystemFolder", Guid.NewGuid().ToString());
+        await content.SaveAsync(cancel);
+        Assert.AreNotEqual(0, content.Id);
+        Assert.IsTrue(await repository.IsContentExistsAsync(content.Path, cancel));
+
+        // ACT
+        var postData = new {permanent = true};
+        var request = new OperationRequest() { ContentId = content.Id, OperationName = "Delete", PostData = postData};
+        await repository.InvokeActionAsync(request, CancellationToken.None);
+
+        // ASSERT
+        Assert.IsFalse(await repository.IsContentExistsAsync(content.Path, cancel));
+    }
+    [TestMethod]
+    public async Task IT_Op_ProcessOperationResponse()
+    {
+        var repository = await GetRepositoryCollection()
+            .GetRepositoryAsync("local", CancellationToken.None).ConfigureAwait(false);
+
+        var request = new OperationRequest
+        {
+            ContentId = 2,
+            OperationName = "GetPermissions"
+        };
+
+        // ACT
+        string? response = null;
+        await repository.ProcessOperationResponseAsync(request, HttpMethod.Get,
+            (r) => { response = r; }, CancellationToken.None);
+
+        // ASSERT
+        var getPermissionsResponse = JsonConvert.DeserializeObject<GetPermissionsResponse>(response);
+        Assert.AreEqual(2, getPermissionsResponse.Id);
+        Assert.AreEqual("/Root", getPermissionsResponse.Path);
+        Assert.AreEqual(true, getPermissionsResponse.Inherits);
+        Assert.IsNotNull(getPermissionsResponse.Entries);
+        Assert.IsTrue(getPermissionsResponse.Entries.Length > 2);
+        Assert.AreEqual("allow", getPermissionsResponse.Entries[0].Permissions.See.Value);
+    }
+    [TestMethod]
+    public async Task IT_Op_ProcessOperationResponse_Error()
+    {
+        var repository = await GetRepositoryCollection()
+            .GetRepositoryAsync("local", CancellationToken.None).ConfigureAwait(false);
+
+        var request = new OperationRequest()
+        {
+            ContentId = 2,
+            OperationName = "TestOperation"
+        };
+
+        // ACT
+        var isResponseProcessorCalled = false;
+        Exception? exception = null;
+        try
+        {
+            await repository.ProcessOperationResponseAsync(request, HttpMethod.Get,
+                (r) => { isResponseProcessorCalled = true; }, CancellationToken.None);
+            Assert.Fail("ClientException was not thrown.");
+        }
+        catch (ClientException e)
+        {
+            exception = e;
+        }
+
+        // ASSERT
+        Assert.IsFalse(isResponseProcessorCalled);
+        Assert.IsTrue(exception.Message.Contains("Operation not found"));
+        Assert.IsTrue(exception.Message.Contains("TestOperation"));
+    }
+
 }

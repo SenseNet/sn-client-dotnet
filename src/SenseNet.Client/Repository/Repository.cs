@@ -14,6 +14,7 @@ using System.Net.Http.Headers;
 using System.Net;
 using System.Text;
 using System.IdentityModel.Tokens.Jwt;
+using Newtonsoft.Json;
 
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client;
@@ -356,7 +357,7 @@ internal class Repository : IRepository
     {
         var uploadData = new UploadData()
         {
-            FileName = request.ContentName,
+            FileName = request.FileName ?? request.ContentName,
             FileLength = stream.Length
         };
 
@@ -470,7 +471,7 @@ internal class Repository : IRepository
     {
         var uploadData = new UploadData()
         {
-            FileName = request.ContentName,
+            FileName = request.FileName ?? request.ContentName,
         };
 
         if (!string.IsNullOrEmpty(request.ContentType))
@@ -709,7 +710,57 @@ internal class Repository : IRepository
             .ConfigureAwait(false);
     }
 
+    public async Task<T> InvokeFunctionAsync<T>(OperationRequest request, CancellationToken cancel)
+    {
+        var result = default(T);
+        await ProcessOperationResponseAsync(request, HttpMethod.Get, response =>
+        {
+            if (!string.IsNullOrEmpty(response))
+                result = JsonConvert.DeserializeObject<T>(response);
+        }, cancel);
+        return result;
+    }
+
+    public async Task InvokeActionAsync(OperationRequest request, CancellationToken cancel)
+    {
+        await InvokeActionAsync<object>(request, cancel);
+    }
+
+    public async Task<T> InvokeActionAsync<T>(OperationRequest request, CancellationToken cancel)
+    {
+        var result = default(T);
+        await ProcessOperationResponseAsync(request, HttpMethod.Post, response =>
+        {
+            if (!string.IsNullOrEmpty(response))
+                result = JsonConvert.DeserializeObject<T>(response);
+        }, cancel);
+        return result;
+    }
+
     /* ============================================================================ LOW LEVEL API */
+
+    public async Task ProcessOperationResponseAsync(OperationRequest request, HttpMethod method,
+        Action<string> responseProcessor, CancellationToken cancel)
+    {
+        var uri = request.ToODataRequest(Server).GetUri();
+        string responseAsString = null;
+        await _restCaller.ProcessWebRequestResponseAsync(uri.ToString(), method,
+            additionalHeaders: request.AdditionalRequestHeaders,
+            requestProcessor: (handler, client, httpRequest) =>
+            {
+                if (request.PostData == null)
+                    return;
+                var json = JsonConvert.SerializeObject(request.PostData);
+                httpRequest.Content = new StringContent(json);
+            },
+            responseProcessor: async (response, cancellation) =>
+            {
+                responseAsString = await response.Content.ReadAsStringAsync();
+            },
+            cancel);
+
+        responseProcessor(responseAsString);
+    }
 
     public Task ProcessWebResponseAsync(string relativeUrl, HttpMethod method, Dictionary<string, IEnumerable<string>> additionalHeaders,
         HttpContent httpContent, Func<HttpResponseMessage, CancellationToken, Task> responseProcessor, CancellationToken cancel)
