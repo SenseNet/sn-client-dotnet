@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>Library</OutputType>
+		<TargetFramework>net6.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<RootNamespace>SenseNet.Client.WebApi</RootNamespace>
+		<PackageId>SenseNet.Client.WebApi</PackageId>
+		<Version>0.0.1</Version>
+		<Company>Sense/Net Inc.</Company>
+		<Description>A .Net library for Asp.Net applications that want to connect to the sensenet repository REST API.</Description>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<PackageProjectUrl>https://github.com/SenseNet/sn-client-dotnet</PackageProjectUrl>
+		<PackageLicenseUrl>https://github.com/SenseNet/sn-client-dotnet/blob/master/LICENSE</PackageLicenseUrl>
+		<RepositoryUrl>https://github.com/SenseNet/sn-client-dotnet.git</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageReleaseNotes>See release notes on GitHub.</PackageReleaseNotes>
+		<PackageTags>sensenet client aspnet</PackageTags>
+		<PackageIconUrl>https://raw.githubusercontent.com/SenseNet/sn-resources/master/images/sn-icon/sensenet-icon-64.png</PackageIconUrl>
+		<Authors>kavics,tusmester</Authors>
+		<Copyright>Copyright © Sense/Net Inc.</Copyright>
+		<DebugType>portable</DebugType>
+		<LangVersion>latest</LangVersion>
+		<PublishRepositoryUrl>true</PublishRepositoryUrl>
+		<IncludeSymbols>true</IncludeSymbols>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\SenseNet.Client\SenseNet.Client.csproj" />
+	</ItemGroup>
+
+</Project>

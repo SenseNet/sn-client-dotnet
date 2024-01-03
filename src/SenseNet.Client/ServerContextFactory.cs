@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SenseNet.Client.Authentication;
@@ -44,7 +46,9 @@ internal class ServerContextFactory : IServerContextFactory
     private readonly ServerContextOptions _serverContextOptions;
     private readonly RepositoryOptions _repositoryOptions;
     private readonly SemaphoreSlim _asyncLock = new(1, 1);
-    private readonly IDictionary<string, ServerContext> _servers = new Dictionary<string, ServerContext>();
+    private readonly MemoryCache _servers = new(new MemoryCacheOptions());
+
+    private const int DefaultCacheDurationInMinutes = 30;
 
     public ServerContextFactory(ITokenStore tokenStore, IOptions<ServerContextOptions> serverContextOptions,
         IOptions<RepositoryOptions> repositoryOptions, ILogger<ServerContextFactory> logger)
@@ -63,20 +67,20 @@ internal class ServerContextFactory : IServerContextFactory
             var clonedServer = original.Clone();
 
             // set token only if provided, do not overwrite cached value if no token is present
-            if (!string.IsNullOrEmpty(token))
-            {
-                clonedServer.Authentication.AccessToken = token;
+            if (string.IsNullOrEmpty(token)) 
+                return clonedServer;
 
-                // if a token is provided, do NOT use the configured api key to prevent a security issue
-                clonedServer.Authentication.ApiKey = null;
-            }
+            clonedServer.Authentication.AccessToken = token;
+
+            // if a token is provided, do NOT use the configured api key to prevent a security issue
+            clonedServer.Authentication.ApiKey = null;
 
             return clonedServer;
         }
 
         name ??= ServerContextOptions.DefaultServerName;
 
-        if (_servers.TryGetValue(name, out var server))
+        if (_servers.TryGetValue(name, out ServerContext server))
             return CloneWithToken(server);
 
         await _asyncLock.WaitAsync();
@@ -86,11 +90,14 @@ internal class ServerContextFactory : IServerContextFactory
             if (_servers.TryGetValue(name, out server))
                 return CloneWithToken(server);
 
+            _logger.LogTrace("Constructing a new server instance " +
+                             $"for {(string.IsNullOrWhiteSpace(name) ? "the default server" : name)}");
+
             // cache the authenticated server
             server = await GetAuthenticatedServerAsync(name).ConfigureAwait(false);
 
             if (server != null)
-                _servers[name] = server;
+                _servers.Set(name, server, TimeSpan.FromMinutes(DefaultCacheDurationInMinutes));
         }
         finally
         {

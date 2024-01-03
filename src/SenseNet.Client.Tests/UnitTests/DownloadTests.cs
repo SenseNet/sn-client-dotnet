@@ -77,7 +77,7 @@ public class DownloadTests : TestBase
         {
             services.AddSingleton(restCaller);
         });
-        var repository = await repositories.GetRepositoryAsync("local", _cancel)
+        var repository = await repositories.GetRepositoryAsync(FakeServer, _cancel)
             .ConfigureAwait(false);
 
         // ACT
@@ -220,7 +220,7 @@ public class DownloadTests : TestBase
         {
             services.AddSingleton(restCaller);
         });
-        var repository = await repositories.GetRepositoryAsync("local", _cancel)
+        var repository = await repositories.GetRepositoryAsync(FakeServer, _cancel)
             .ConfigureAwait(false);
 
         string? text = null;
@@ -348,7 +348,7 @@ public class DownloadTests : TestBase
             services.RegisterGlobalContentType<File>();
             services.RegisterGlobalContentType<Contract>();
         });
-        var repository = await repositories.GetRepositoryAsync("local", _cancel)
+        var repository = await repositories.GetRepositoryAsync(FakeServer, _cancel)
             .ConfigureAwait(false);
 
         string? text = null;
