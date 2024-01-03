@@ -357,7 +357,7 @@ internal class Repository : IRepository
     {
         var uploadData = new UploadData()
         {
-            FileName = request.ContentName,
+            FileName = request.FileName ?? request.ContentName,
             FileLength = stream.Length
         };
 
@@ -471,7 +471,7 @@ internal class Repository : IRepository
     {
         var uploadData = new UploadData()
         {
-            FileName = request.ContentName,
+            FileName = request.FileName ?? request.ContentName,
         };
 
         if (!string.IsNullOrEmpty(request.ContentType))
