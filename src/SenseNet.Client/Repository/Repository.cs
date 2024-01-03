@@ -710,7 +710,7 @@ internal class Repository : IRepository
             .ConfigureAwait(false);
     }
 
-    public async Task<T> CallFunctionAsync<T>(OperationRequest request, CancellationToken cancel)
+    public async Task<T> InvokeFunctionAsync<T>(OperationRequest request, CancellationToken cancel)
     {
         var result = default(T);
         await ProcessOperationResponseAsync(request, HttpMethod.Get, response =>
@@ -721,12 +721,12 @@ internal class Repository : IRepository
         return result;
     }
 
-    public async Task ExecuteActionAsync(OperationRequest request, CancellationToken cancel)
+    public async Task InvokeActionAsync(OperationRequest request, CancellationToken cancel)
     {
-        await ExecuteActionAsync<object>(request, cancel);
+        await InvokeActionAsync<object>(request, cancel);
     }
 
-    public async Task<T> ExecuteActionAsync<T>(OperationRequest request, CancellationToken cancel)
+    public async Task<T> InvokeActionAsync<T>(OperationRequest request, CancellationToken cancel)
     {
         var result = default(T);
         await ProcessOperationResponseAsync(request, HttpMethod.Post, response =>

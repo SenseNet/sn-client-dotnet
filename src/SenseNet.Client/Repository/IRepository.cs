@@ -495,7 +495,7 @@ public interface IRepository
     /// <exception cref="ClientException">Thrown if the <paramref name="request"/> is invalid
     /// or not the requested operation is not an OData function.
     /// Also thrown if the server returns an error object.</exception>
-    Task<T> CallFunctionAsync<T>(OperationRequest request, CancellationToken cancel);
+    Task<T> InvokeFunctionAsync<T>(OperationRequest request, CancellationToken cancel);
     /// <summary>
     /// Executes a server action by the provided <paramref name="request"/>.
     /// </summary>
@@ -505,7 +505,7 @@ public interface IRepository
     /// <exception cref="ClientException">Thrown if the <paramref name="request"/> is invalid
     /// or not the requested operation is not an OData action.
     /// Also thrown if the server returns an error object.</exception>
-    Task ExecuteActionAsync(OperationRequest request, CancellationToken cancel);
+    Task InvokeActionAsync(OperationRequest request, CancellationToken cancel);
     /// <summary>
     /// Executes a server action by the provided <paramref name="request"/>.
     /// and returns the response converted to the desired object.
@@ -517,7 +517,7 @@ public interface IRepository
     /// <exception cref="ClientException">Thrown if the <paramref name="request"/> is invalid
     /// or not the requested operation is not an OData action.
     /// Also thrown if the server returns an error object.</exception>
-    Task<T> ExecuteActionAsync<T>(OperationRequest request, CancellationToken cancel);
+    Task<T> InvokeActionAsync<T>(OperationRequest request, CancellationToken cancel);
 
     /* ============================================================================ LOW LEVEL API */
 

@@ -608,7 +608,7 @@ public class ContentTests : IntegrationTestBase
 
         // ACT
         var request = new OperationRequest() {ContentId = 2, OperationName = "GetPermissions"};
-        var getPermissionsResponse = await repository.CallFunctionAsync<GetPermissionsResponse>(request, CancellationToken.None);
+        var getPermissionsResponse = await repository.InvokeFunctionAsync<GetPermissionsResponse>(request, CancellationToken.None);
 
         // ASSERT
         Assert.AreEqual(2, getPermissionsResponse.Id);
@@ -633,7 +633,7 @@ public class ContentTests : IntegrationTestBase
         // ACT
         var postData = new {permanent = true};
         var request = new OperationRequest() { ContentId = content.Id, OperationName = "Delete", PostData = postData};
-        await repository.ExecuteActionAsync(request, CancellationToken.None);
+        await repository.InvokeActionAsync(request, CancellationToken.None);
 
         // ASSERT
         Assert.IsFalse(await repository.IsContentExistsAsync(content.Path, cancel));
