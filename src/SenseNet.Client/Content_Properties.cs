@@ -281,7 +281,7 @@ public partial class Content
     {
         var originalFields = (JObject)_responseContent;
 
-        foreach (var property in this.GetType().GetProperties())
+        foreach (var property in this.GetType().GetProperties().Where(p=>!IsIgnored(p)))
         {
             if (_skippedProperties.Contains(property.Name))
                 continue;
@@ -307,6 +307,17 @@ public partial class Content
 
             postData[property.Name] = propertyValue;
         }
+    }
+
+    private readonly Type[] _ignoreAttributeTypes = {
+        typeof(JsonIgnoreAttribute), typeof(System.Text.Json.Serialization.JsonIgnoreAttribute)
+    };
+
+    private bool IsIgnored(PropertyInfo property)
+    {
+        return property.GetCustomAttributes()
+            .Select(a => a.GetType())
+            .Any(t => _ignoreAttributeTypes.Contains(t));
     }
 
     private object ConvertFromReferredContents(string propertyName, Type propertyType, object propertyValue)
