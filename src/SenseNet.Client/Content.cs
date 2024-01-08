@@ -9,9 +9,20 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using SenseNet.Client.Security;
 
 namespace SenseNet.Client;
+
+//UNDONE: Move to new "enum" file.
+//UNDONE: Add doc
+public enum VersioningMode
+{
+    Inherited = 0,
+    None = 1,
+    MajorOnly = 2,
+    MajorAndMinor = 3
+}
 
 /// <summary>
 /// Central class for all content-related client operations. It contains predefined content 
@@ -58,6 +69,11 @@ public partial class Content : DynamicObject
     /// Content name.
     /// </summary>
     public string Name { get; set; }
+
+    //UNDONE: Add doc
+    public VersioningMode? VersioningMode { get; set; }
+    //UNDONE: Add doc
+    public VersioningMode? InheritableVersioningMode { get; set; }
 
     public string[] FieldNames { get; private set; } = Array.Empty<string>();
 
@@ -841,8 +857,8 @@ public partial class Content : DynamicObject
             }
         }
 
-        if (this.GetType() != typeof(Content))
-        {
+        //if (this.GetType() != typeof(Content))
+        //{
             try
             {
                 ManagePostData(postData);
@@ -852,7 +868,7 @@ public partial class Content : DynamicObject
                 throw new ApplicationException(
                     $"Cannot save the content. Id: {Id}, Path: '{Path}'. See inner exception for details.", ex);
             }
-        }
+        //}
 
         dynamic responseContent;
         if (_restCaller == null)

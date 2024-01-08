@@ -61,4 +61,10 @@ public abstract class TestBase
         return provider.GetRequiredService<IRepositoryCollection>();
     }
 
+    protected string RemoveWhitespaces(string value)
+    {
+        return value.Replace(" ", "").Replace("\t", "")
+            .Replace("\r", "").Replace("\n", "");
+    }
+
 }

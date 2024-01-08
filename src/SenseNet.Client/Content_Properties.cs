@@ -10,6 +10,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using Org.BouncyCastle.Bcpg;
 
 namespace SenseNet.Client;
 
@@ -190,14 +191,48 @@ public partial class Content
 
     protected virtual bool TryConvertToProperty(string propertyName, JToken jsonValue, out object propertyValue)
     {
-        propertyValue = null;
-        return false;
+        switch (propertyName)
+        {
+            case nameof(VersioningMode):
+            case nameof(InheritableVersioningMode):
+            {
+                if (StringArrayToInt(jsonValue, out var converted))
+                    propertyValue = (VersioningMode)converted;
+                else
+                    propertyValue = null;
+                return true;
+            }
+            default:
+                propertyValue = null;
+                return false;
+        }
     }
+    private bool StringArrayToInt(JToken jsonValue, out int converted)
+    {
+        var stringValue = ((jsonValue as JArray)?.FirstOrDefault() as JValue)?.Value<string>();
+        return int.TryParse(stringValue, out converted);
+    }
+
     protected virtual bool TryConvertFromProperty(string propertyName, out object convertedValue)
     {
-        convertedValue = null;
-        return false;
+        switch (propertyName)
+        {
+            case nameof(VersioningMode):
+                convertedValue = VersioningModeToStringArray(this.VersioningMode);
+                return true;
+            case nameof(InheritableVersioningMode):
+                convertedValue = VersioningModeToStringArray(this.InheritableVersioningMode);
+                return true;
+            default:
+                convertedValue = null;
+                return false;
+        }
     }
+    private string[] VersioningModeToStringArray(VersioningMode? propertyValue)
+    {
+        return propertyValue == null ? null : new[] {((int) propertyValue).ToString()};
+    }
+
 
     private Array GetMultiReferenceArray(object jsonValue, Type itemType)
     {
@@ -303,6 +338,16 @@ public partial class Content
                     if (currentRawValue == originalRawValue)
                         continue;
                 }
+                else
+                {
+                    if (propertyValue == null)
+                        continue;
+                }
+            }
+            else
+            {
+                if (propertyValue == null)
+                    continue;
             }
 
             postData[property.Name] = propertyValue;
