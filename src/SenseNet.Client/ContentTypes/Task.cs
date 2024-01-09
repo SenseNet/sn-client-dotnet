@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using System.Linq;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 
 // ReSharper disable once CheckNamespace
@@ -12,7 +14,7 @@ public class SnTask : ListItem
     public SnTask(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }
 
     public TaskPriority? Priority { get; set; }
-    public TaskState? State { get; set; }
+    public TaskState? Status { get; set; }
 
     protected override bool TryConvertFromProperty(string propertyName, out object convertedValue)
     {
@@ -21,10 +23,21 @@ public class SnTask : ListItem
             case nameof(Priority):
                 convertedValue = EnumValueToStringArray((int?)Priority);
                 return true;
+            case nameof(Status):
+                convertedValue = EnumNameToStringArray(Status?.ToString());
+                return true;
             default:
                 return base.TryConvertFromProperty(propertyName, out convertedValue);
         }
     }
+
+    private string[] EnumNameToStringArray(string enumName)
+    {
+        if (string.IsNullOrEmpty(enumName))
+            return null;
+        return new[] {enumName};
+    }
+
     protected override bool TryConvertToProperty(string propertyName, JToken jsonValue, out object propertyValue)
     {
         switch (propertyName)
@@ -37,8 +50,43 @@ public class SnTask : ListItem
                     propertyValue = null;
                 return true;
             }
+            case nameof(Status):
+            {
+                if (StringArrayToEnum<TaskState>(jsonValue, out var converted))
+                    propertyValue = (TaskState)converted;
+                else
+                    propertyValue = null;
+                return true;
+            }
             default:
                 return base.TryConvertToProperty(propertyName, jsonValue, out propertyValue);
         }
     }
+
+    private bool StringArrayToEnum<TEnum>(JToken jsonValue, out object propertyValue) where TEnum : struct
+    {
+        var arrayValue = jsonValue as JArray;
+        if (arrayValue != null && arrayValue.Count == 0)
+        {
+            propertyValue = null;
+            return true;
+        }
+
+        TEnum parsed = default(TEnum);
+        var stringValue = (arrayValue?.FirstOrDefault() as JValue)?.Value<string>();
+        if (Enum.TryParse(stringValue, true, out parsed))
+        {
+            propertyValue = parsed;
+            return true;
+        }
+        propertyValue = null;
+        return false;
+
+    }
+    protected bool StringArrayToInt(JToken jsonValue, out int converted)
+    {
+        var stringValue = ((jsonValue as JArray)?.FirstOrDefault() as JValue)?.Value<string>();
+        return int.TryParse(stringValue, out converted);
+    }
+
 }
