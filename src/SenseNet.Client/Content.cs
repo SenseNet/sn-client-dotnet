@@ -14,7 +14,6 @@ using SenseNet.Client.Security;
 
 namespace SenseNet.Client;
 
-//UNDONE: Add doc
 public enum VersioningMode
 {
     Inherited = 0,
@@ -22,7 +21,6 @@ public enum VersioningMode
     MajorOnly = 2,
     MajorAndMinor = 3
 }
-//UNDONE: Add doc
 public enum ApprovingEnabled
 {
     Inherited = 0,
@@ -76,13 +74,9 @@ public partial class Content : DynamicObject
     /// </summary>
     public string Name { get; set; }
 
-    //UNDONE: Add doc
     public VersioningMode? VersioningMode { get; set; }
-    //UNDONE: Add doc
     public VersioningMode? InheritableVersioningMode { get; set; }
-    //UNDONE: Add doc
     public ApprovingEnabled? ApprovingMode { get; set; }
-    //UNDONE: Add doc
     public ApprovingEnabled? InheritableApprovingMode { get; set; }
 
     public string[] FieldNames { get; private set; } = Array.Empty<string>();

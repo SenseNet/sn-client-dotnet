@@ -6,9 +6,7 @@ using Newtonsoft.Json.Linq;
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client;
 
-//UNDONE: Add doc
 public enum Gender { NotDefined, Female, Male }
-//UNDONE: Add doc
 public enum MaritalStatus { NotDefined, Single, Married }
 
 /// <summary>

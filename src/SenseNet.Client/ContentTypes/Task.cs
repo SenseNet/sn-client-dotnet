@@ -72,7 +72,7 @@ public class SnTask : ListItem
             return true;
         }
 
-        TEnum parsed = default(TEnum);
+        TEnum parsed;
         var stringValue = (arrayValue?.FirstOrDefault() as JValue)?.Value<string>();
         if (Enum.TryParse(stringValue, true, out parsed))
         {
@@ -83,10 +83,4 @@ public class SnTask : ListItem
         return false;
 
     }
-    protected bool StringArrayToInt(JToken jsonValue, out int converted)
-    {
-        var stringValue = ((jsonValue as JArray)?.FirstOrDefault() as JValue)?.Value<string>();
-        return int.TryParse(stringValue, out converted);
-    }
-
 }
