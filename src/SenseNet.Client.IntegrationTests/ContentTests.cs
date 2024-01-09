@@ -208,11 +208,6 @@ public class ContentTests : IntegrationTestBase
     {
         public File(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }
 
-        /*TODO: Use enum VersioningType, ApprovingType
-        public enum ApprovingType{Inherited, False, True}
-        public ApprovingType ApprovingMode { get; set; }
-        */
-        public string[] ApprovingMode { get; set; }
         public string Version { get; set; }
         public Binary Binary { get; set; }
     }
@@ -241,7 +236,7 @@ public class ContentTests : IntegrationTestBase
 
             var file = repository.CreateContent<File>(rootPath, null, fileName);
             file.VersioningMode = VersioningMode.MajorAndMinor;
-            file.ApprovingMode = new[] { "2" }; // True
+            file.ApprovingMode = ApprovingEnabled.Yes;
             await file.SaveAsync(cancel).ConfigureAwait(false);
             await AssertFileVersion(repository, loadFileRequest, "V0.1.D", cancel);
 
@@ -300,7 +295,7 @@ public class ContentTests : IntegrationTestBase
 
         var file = repository.CreateContent<File>("/Root/Content", null, Guid.NewGuid().ToString());
         file.VersioningMode = VersioningMode.Inherited;
-        file.ApprovingMode = new[] { "0" }; // Inherited
+        file.ApprovingMode = ApprovingEnabled.Inherited;
         await file.SaveAsync(cancel).ConfigureAwait(false);
         var fileId = file.Id;
         var loaded = await repository.LoadContentAsync(fileId, cancel).ConfigureAwait(false);
@@ -344,7 +339,7 @@ public class ContentTests : IntegrationTestBase
 
         var file = repository.CreateContent<File>(source.Path, null, Guid.NewGuid().ToString());
         file.VersioningMode = VersioningMode.Inherited;
-        file.ApprovingMode = new[] { "0" }; // Inherited
+        file.ApprovingMode = ApprovingEnabled.Inherited;
         await file.SaveAsync(cancel).ConfigureAwait(false);
         var fileId = file.Id;
         var fileText = Guid.NewGuid().ToString();
@@ -391,7 +386,7 @@ public class ContentTests : IntegrationTestBase
 
         var file = repository.CreateContent<File>(source.Path, null, Guid.NewGuid().ToString());
         file.VersioningMode = VersioningMode.Inherited;
-        file.ApprovingMode = new[] { "0" }; // Inherited
+        file.ApprovingMode = ApprovingEnabled.Inherited;
         await file.SaveAsync(cancel).ConfigureAwait(false);
         var fileId = file.Id;
         var fileText = Guid.NewGuid().ToString();
