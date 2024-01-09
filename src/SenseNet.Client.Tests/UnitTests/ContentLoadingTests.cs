@@ -50,8 +50,6 @@ public class ContentLoadingTests : TestBase
         public DateTime? ValidTill { get; set; }
         public Content[] AllowedChildTypes { get; set; }
         public Content[] EffectiveAllowedChildTypes { get; set; }
-        //public string VersioningMode { get; set; }
-        //public string InheritableVersioningMode { get; set; }
         public Content CreatedBy { get; set; }
         public Content VersionCreatedBy { get; set; }
         public DateTime? CreationDate { get; set; }
@@ -60,8 +58,6 @@ public class ContentLoadingTests : TestBase
         public Content VersionModifiedBy { get; set; }
         public DateTime? ModificationDate { get; set; }
         public DateTime? VersionModificationDate { get; set; }
-        public string ApprovingMode { get; set; }
-        public string InheritableApprovingMode { get; set; }
         public bool? Locked { get; set; }
         public Content CheckedOutTo { get; set; }
         public bool? TrashDisabled { get; set; }
@@ -321,8 +317,8 @@ public class ContentLoadingTests : TestBase
         Assert.AreEqual(null, content.VersionModifiedBy); // Reference
         Assert.AreEqual(DateTime.Parse("2023-03-08T13:58:24.2076017Z").ToUniversalTime(), content.ModificationDate); // DateTime
         Assert.AreEqual(DateTime.Parse("2023-03-08T13:58:24.2076369Z").ToUniversalTime(), content.VersionModificationDate); // DateTime
-        Assert.AreEqual("0", content.ApprovingMode); // ApprovingMode
-        Assert.AreEqual("0", content.InheritableApprovingMode); // InheritableApprovingMode
+        Assert.AreEqual(ApprovingEnabled.Inherited, content.ApprovingMode); // ApprovingMode
+        Assert.AreEqual(ApprovingEnabled.Inherited, content.InheritableApprovingMode); // InheritableApprovingMode
         Assert.AreEqual(false, content.Locked); // Boolean
         Assert.AreEqual(null, content.CheckedOutTo); // Reference
         Assert.AreEqual(false, content.TrashDisabled); // Boolean

@@ -202,12 +202,21 @@ public partial class Content
                     propertyValue = null;
                 return true;
             }
+            case nameof(ApprovingMode):
+            case nameof(InheritableApprovingMode):
+            {
+                if (StringArrayToInt(jsonValue, out var converted))
+                    propertyValue = (ApprovingEnabled)converted;
+                else
+                    propertyValue = null;
+                return true;
+            }
             default:
                 propertyValue = null;
                 return false;
         }
     }
-    private bool StringArrayToInt(JToken jsonValue, out int converted)
+    protected bool StringArrayToInt(JToken jsonValue, out int converted)
     {
         var stringValue = ((jsonValue as JArray)?.FirstOrDefault() as JValue)?.Value<string>();
         return int.TryParse(stringValue, out converted);
@@ -218,21 +227,26 @@ public partial class Content
         switch (propertyName)
         {
             case nameof(VersioningMode):
-                convertedValue = VersioningModeToStringArray(this.VersioningMode);
+                convertedValue = EnumValueToStringArray((int?)VersioningMode);
                 return true;
             case nameof(InheritableVersioningMode):
-                convertedValue = VersioningModeToStringArray(this.InheritableVersioningMode);
+                convertedValue = EnumValueToStringArray((int?)InheritableVersioningMode);
+                return true;
+            case nameof(ApprovingMode):
+                convertedValue = EnumValueToStringArray((int?)ApprovingMode);
+                return true;
+            case nameof(InheritableApprovingMode):
+                convertedValue = EnumValueToStringArray((int?)InheritableApprovingMode);
                 return true;
             default:
                 convertedValue = null;
                 return false;
         }
     }
-    private string[] VersioningModeToStringArray(VersioningMode? propertyValue)
+    protected string[] EnumValueToStringArray(int? propertyValue)
     {
-        return propertyValue == null ? null : new[] {((int) propertyValue).ToString()};
+        return propertyValue == null ? null : new[] { propertyValue.ToString() };
     }
-
 
     private Array GetMultiReferenceArray(object jsonValue, Type itemType)
     {
