@@ -296,6 +296,144 @@ public class ContentGeneralPropertiesTests : TestBase
         Assert.AreEqual("[\"2\"]", RemoveWhitespaces(data.InheritableApprovingMode.ToString()));
     }
 
+    /* ====================================================================== FOLDER */
+
+    [TestMethod]
+    public async Task GeneralProps_T_Load_PreviewEnabled_Null()
+    {
+        // ALIGN
+        var restCaller = CreateRestCallerFor(@"{
+  ""d"": {
+    ""Id"": 999543,
+  }
+}");
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<Folder>();
+        });
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+            .ConfigureAwait(false);
+
+        // ACT
+        var request = new LoadContentRequest { Path = "/Root/Content" };
+        var content = await repository.LoadContentAsync<Folder>(request, CancellationToken.None);
+
+        // ASSERT
+        Assert.IsNull(content.PreviewEnabled);
+    }
+    [TestMethod]
+    public async Task GeneralProps_T_Load_PreviewEnabled_NotNull()
+    {
+        // ALIGN
+        var restCaller = CreateRestCallerFor(@"{
+  ""d"": {
+    ""Id"": 999543,
+    ""PreviewEnabled"": [ ""2"" ],
+  }
+}");
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<Folder>();
+        });
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+            .ConfigureAwait(false);
+
+        // ACT
+        var request = new LoadContentRequest { Path = "/Root/Content" };
+        var content = await repository.LoadContentAsync<Folder>(request, CancellationToken.None);
+
+        // ASSERT
+        Assert.IsNotNull(content.PreviewEnabled);
+        Assert.AreEqual(PreviewEnabled.Yes, content.PreviewEnabled);
+    }
+    [TestMethod]
+    public async Task GeneralProps_T_Save_PreviewEnabled_Null()
+    {
+        // ALIGN
+        var restCaller = CreateRestCallerFor(@"{
+  ""d"": {
+    ""Id"": 999543,
+    ""Name"": ""Content1"",
+    ""PreviewEnabled"": [ ""2"" ],
+  }
+}");
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<Folder>();
+        });
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+            .ConfigureAwait(false);
+        var request = new LoadContentRequest { Path = "/Root/Content" };
+        var content = await repository.LoadContentAsync<Folder>(request, CancellationToken.None);
+
+        // ACT
+        content.PreviewEnabled = null;
+        await content.SaveAsync(_cancel);
+
+        // ASSERT
+        var calls = restCaller.ReceivedCalls().ToArray();
+        Assert.IsNotNull(calls);
+        Assert.AreEqual(3, calls.Length);
+        Assert.AreEqual("GetResponseStringAsync", calls[2].GetMethodInfo().Name);
+        var arguments = calls[2].GetArguments();
+        var json = (string)arguments[2]!;
+        json = json.Substring("models=[".Length).TrimEnd(']');
+        dynamic data = JsonHelper.Deserialize(json);
+        var dict = data.ToObject<Dictionary<string, object>>();
+        var keys = string.Join(", ", dict.Keys);
+        Assert.AreEqual("Name, PreviewEnabled", keys);
+        Assert.AreEqual("Content1", data.Name.ToString());
+    }
+    [TestMethod]
+    public async Task GeneralProps_T_Save_PreviewEnabled_NotNull()
+    {
+        // ALIGN
+        var restCaller = CreateRestCallerFor(@"{
+  ""d"": {
+    ""Id"": 999543,
+    ""Name"": ""Content1"",
+    ""PreviewEnabled"": [ ""0"" ],
+  }
+}");
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<Folder>();
+        });
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+            .ConfigureAwait(false);
+        var request = new LoadContentRequest { Path = "/Root/Content" };
+        var content = await repository.LoadContentAsync<Folder>(request, CancellationToken.None);
+
+        // ACT
+        content.PreviewEnabled = PreviewEnabled.Yes;
+        await content.SaveAsync(_cancel);
+
+        // ASSERT
+        var calls = restCaller.ReceivedCalls().ToArray();
+        Assert.IsNotNull(calls);
+        Assert.AreEqual(3, calls.Length);
+        Assert.AreEqual("GetResponseStringAsync", calls[2].GetMethodInfo().Name);
+        var arguments = calls[2].GetArguments();
+        var json = (string)arguments[2]!;
+        json = json.Substring("models=[".Length).TrimEnd(']');
+        dynamic data = JsonHelper.Deserialize(json);
+        var dict = data.ToObject<Dictionary<string, object>>();
+        var keys = string.Join(", ", dict.Keys);
+        Assert.AreEqual("Name, PreviewEnabled", keys);
+        Assert.AreEqual("Content1", data.Name.ToString());
+        Assert.AreEqual("[\"2\"]", RemoveWhitespaces(data.PreviewEnabled.ToString()));
+    }
+
+    /* ====================================================================== USER */
+
     [TestMethod]
     public async Task GeneralProps_T_Gender_NullToNull()
     {
