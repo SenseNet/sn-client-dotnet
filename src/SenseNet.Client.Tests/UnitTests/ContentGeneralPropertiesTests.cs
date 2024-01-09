@@ -618,4 +618,120 @@ public class ContentGeneralPropertiesTests : TestBase
             Assert.AreEqual(expectedValueInSaveRequest, RemoveWhitespaces(data.MaritalStatus.ToString()));
         }
     }
+
+    /* ====================================================================== TASK */
+
+    [TestMethod]
+    public async Task GeneralProps_T_Load_SnTask()
+    {
+        // ALIGN
+        var restCaller = CreateRestCallerFor(@"{
+  ""d"": {
+    ""Id"": 999543,
+    ""Type"": ""Task"",
+
+  }
+}");
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<SnTask>();
+        });
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+            .ConfigureAwait(false);
+
+        // ACT
+        var request = new LoadContentRequest { Path = "/Root/Content" };
+        var content = await repository.LoadContentAsync<SnTask>(request, CancellationToken.None);
+
+        // ASSERT
+        Assert.IsNull(content.VersioningMode);
+        Assert.IsNull(content.InheritableVersioningMode);
+    }
+    [TestMethod]
+    public async Task GeneralProps_T_Save_TaskPriority_Null()
+    {
+        // ALIGN
+        var restCaller = CreateRestCallerFor(@"{
+  ""d"": {
+    ""Id"": 999543,
+    ""Type"": ""Task"",
+    ""Name"": ""Content1"",
+    ""Priority"": [ ""1"" ]
+  }
+}");
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<SnTask>();
+        });
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+            .ConfigureAwait(false);
+        var request = new LoadContentRequest { Path = "/Root/Content" };
+        var content = await repository.LoadContentAsync<SnTask>(request, CancellationToken.None);
+        Assert.AreEqual(TaskPriority.Urgent, content.Priority);
+
+        // ACT
+        content.Priority = null;
+        await content.SaveAsync(_cancel);
+
+        // ASSERT
+        var calls = restCaller.ReceivedCalls().ToArray();
+        Assert.IsNotNull(calls);
+        Assert.AreEqual(3, calls.Length);
+        Assert.AreEqual("GetResponseStringAsync", calls[2].GetMethodInfo().Name);
+        var arguments = calls[2].GetArguments();
+        var json = (string)arguments[2]!;
+        json = json.Substring("models=[".Length).TrimEnd(']');
+        dynamic data = JsonHelper.Deserialize(json);
+        var dict = data.ToObject<Dictionary<string, object>>();
+        var keys = string.Join(", ", dict.Keys);
+        Assert.AreEqual("Name, Priority", keys);
+    }
+    [TestMethod]
+    public async Task GeneralProps_T_Save_TaskPriority_NotNull()
+    {
+        // ALIGN
+        var restCaller = CreateRestCallerFor(@"{
+  ""d"": {
+    ""Id"": 999543,
+    ""Type"": ""Task"",
+    ""Name"": ""Content1"",
+    ""Priority"": [ ""2"" ]
+  }
+}");
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<SnTask>();
+        });
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+            .ConfigureAwait(false);
+        var request = new LoadContentRequest { Path = "/Root/Content" };
+        var content = await repository.LoadContentAsync<SnTask>(request, CancellationToken.None);
+        Assert.AreEqual(TaskPriority.Normal, content.Priority);
+
+        // ACT
+        content.Priority = TaskPriority.NotUrgent;
+        await content.SaveAsync(_cancel);
+
+        // ASSERT
+        var calls = restCaller.ReceivedCalls().ToArray();
+        Assert.IsNotNull(calls);
+        Assert.AreEqual(3, calls.Length);
+        Assert.AreEqual("GetResponseStringAsync", calls[2].GetMethodInfo().Name);
+        var arguments = calls[2].GetArguments();
+        var json = (string)arguments[2]!;
+        json = json.Substring("models=[".Length).TrimEnd(']');
+        dynamic data = JsonHelper.Deserialize(json);
+        var dict = data.ToObject<Dictionary<string, object>>();
+        var keys = string.Join(", ", dict.Keys);
+        Assert.AreEqual("Name, Priority", keys);
+        Assert.AreEqual("Content1", data.Name.ToString());
+        Assert.AreEqual("[\"3\"]", RemoveWhitespaces(data.Priority.ToString()));
+    }
+
 }
