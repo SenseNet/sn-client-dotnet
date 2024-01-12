@@ -74,6 +74,11 @@ public partial class Content : DynamicObject
     /// </summary>
     public string Name { get; set; }
 
+    public DateTime? CreationDate { get; set; }
+    public DateTime? ModificationDate { get; set; }
+    public DateTime? VersionCreationDate { get; set; }
+    public DateTime? VersionModificationDate { get; set; }
+
     public VersioningMode? VersioningMode { get; set; }
     public VersioningMode? InheritableVersioningMode { get; set; }
     public ApprovingEnabled? ApprovingMode { get; set; }
