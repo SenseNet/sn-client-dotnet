@@ -30,14 +30,6 @@ public class SnTask : ListItem
                 return base.TryConvertFromProperty(propertyName, out convertedValue);
         }
     }
-
-    private string[] EnumNameToStringArray(string enumName)
-    {
-        if (string.IsNullOrEmpty(enumName))
-            return null;
-        return new[] {enumName};
-    }
-
     protected override bool TryConvertToProperty(string propertyName, JToken jsonValue, out object propertyValue)
     {
         switch (propertyName)
@@ -61,26 +53,5 @@ public class SnTask : ListItem
             default:
                 return base.TryConvertToProperty(propertyName, jsonValue, out propertyValue);
         }
-    }
-
-    private bool StringArrayToEnum<TEnum>(JToken jsonValue, out object propertyValue) where TEnum : struct
-    {
-        var arrayValue = jsonValue as JArray;
-        if (arrayValue != null && arrayValue.Count == 0)
-        {
-            propertyValue = null;
-            return true;
-        }
-
-        TEnum parsed;
-        var stringValue = (arrayValue?.FirstOrDefault() as JValue)?.Value<string>();
-        if (Enum.TryParse(stringValue, true, out parsed))
-        {
-            propertyValue = parsed;
-            return true;
-        }
-        propertyValue = null;
-        return false;
-
     }
 }
