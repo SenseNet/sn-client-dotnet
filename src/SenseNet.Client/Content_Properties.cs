@@ -10,6 +10,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using Org.BouncyCastle.Bcpg;
 
 namespace SenseNet.Client;
 
@@ -190,14 +191,88 @@ public partial class Content
 
     protected virtual bool TryConvertToProperty(string propertyName, JToken jsonValue, out object propertyValue)
     {
+        switch (propertyName)
+        {
+            case nameof(VersioningMode):
+            case nameof(InheritableVersioningMode):
+            {
+                if (StringArrayToInt(jsonValue, out var converted))
+                    propertyValue = (VersioningMode)converted;
+                else
+                    propertyValue = null;
+                return true;
+            }
+            case nameof(ApprovingMode):
+            case nameof(InheritableApprovingMode):
+            {
+                if (StringArrayToInt(jsonValue, out var converted))
+                    propertyValue = (ApprovingEnabled)converted;
+                else
+                    propertyValue = null;
+                return true;
+            }
+            default:
+                propertyValue = null;
+                return false;
+        }
+    }
+    protected bool StringArrayToInt(JToken jsonValue, out int converted)
+    {
+        var stringValue = ((jsonValue as JArray)?.FirstOrDefault() as JValue)?.Value<string>();
+        return int.TryParse(stringValue, out converted);
+    }
+    protected bool StringArrayToEnum<TEnum>(JToken jsonValue, out object propertyValue) where TEnum : struct
+    {
+        var arrayValue = jsonValue as JArray;
+        if (arrayValue != null && arrayValue.Count == 0)
+        {
+            propertyValue = null;
+            return true;
+        }
+
+        TEnum parsed;
+        var stringValue = (arrayValue?.FirstOrDefault() as JValue)?.Value<string>();
+        if (Enum.TryParse(stringValue, true, out parsed))
+        {
+            propertyValue = parsed;
+            return true;
+        }
         propertyValue = null;
         return false;
     }
+
     protected virtual bool TryConvertFromProperty(string propertyName, out object convertedValue)
     {
-        convertedValue = null;
-        return false;
+        switch (propertyName)
+        {
+            case nameof(VersioningMode):
+                convertedValue = EnumValueToStringArray((int?)VersioningMode);
+                return true;
+            case nameof(InheritableVersioningMode):
+                convertedValue = EnumValueToStringArray((int?)InheritableVersioningMode);
+                return true;
+            case nameof(ApprovingMode):
+                convertedValue = EnumValueToStringArray((int?)ApprovingMode);
+                return true;
+            case nameof(InheritableApprovingMode):
+                convertedValue = EnumValueToStringArray((int?)InheritableApprovingMode);
+                return true;
+            default:
+                convertedValue = null;
+                return false;
+        }
     }
+    protected string[] EnumValueToStringArray(int? propertyValue)
+    {
+        return propertyValue == null ? null : new[] { propertyValue.ToString() };
+    }
+    protected string[] EnumNameToStringArray(string enumName)
+    {
+        if (string.IsNullOrEmpty(enumName))
+            return null;
+        return new[] { enumName };
+    }
+
 
     private Array GetMultiReferenceArray(object jsonValue, Type itemType)
     {
@@ -303,6 +378,16 @@ public partial class Content
                     if (currentRawValue == originalRawValue)
                         continue;
                 }
+                else
+                {
+                    if (propertyValue == null)
+                        continue;
+                }
+            }
+            else
+            {
+                if (propertyValue == null)
+                    continue;
             }
 
             postData[property.Name] = propertyValue;

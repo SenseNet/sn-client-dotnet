@@ -9,9 +9,24 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using SenseNet.Client.Security;
 
 namespace SenseNet.Client;
+
+public enum VersioningMode
+{
+    Inherited = 0,
+    None = 1,
+    MajorOnly = 2,
+    MajorAndMinor = 3
+}
+public enum ApprovingEnabled
+{
+    Inherited = 0,
+    No = 1,
+    Yes = 2
+}
 
 /// <summary>
 /// Central class for all content-related client operations. It contains predefined content 
@@ -58,6 +73,16 @@ public partial class Content : DynamicObject
     /// Content name.
     /// </summary>
     public string Name { get; set; }
+
+    public DateTime? CreationDate { get; set; }
+    public DateTime? ModificationDate { get; set; }
+    public DateTime? VersionCreationDate { get; set; }
+    public DateTime? VersionModificationDate { get; set; }
+
+    public VersioningMode? VersioningMode { get; set; }
+    public VersioningMode? InheritableVersioningMode { get; set; }
+    public ApprovingEnabled? ApprovingMode { get; set; }
+    public ApprovingEnabled? InheritableApprovingMode { get; set; }
 
     public string[] FieldNames { get; private set; } = Array.Empty<string>();
 
@@ -841,8 +866,8 @@ public partial class Content : DynamicObject
             }
         }
 
-        if (this.GetType() != typeof(Content))
-        {
+        //if (this.GetType() != typeof(Content))
+        //{
             try
             {
                 ManagePostData(postData);
@@ -852,7 +877,7 @@ public partial class Content : DynamicObject
                 throw new ApplicationException(
                     $"Cannot save the content. Id: {Id}, Path: '{Path}'. See inner exception for details.", ex);
             }
-        }
+        //}
 
         dynamic responseContent;
         if (_restCaller == null)
