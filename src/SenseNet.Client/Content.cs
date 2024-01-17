@@ -118,6 +118,31 @@ public partial class Content : DynamicObject
     //UNDONE: Implement Workspace property
     //public Workspace Workspace { get; set; }
 
+    // Not implemented fields
+    //   Noise:
+    //     CreatedById:Integer
+    //     Depth:Integer
+    //     ExtensionData:LongText
+    //     InFolder:ShortText
+    //     InTree:ShortText
+    //     IsRateable:Boolean
+    //     IsTaggable:Boolean
+    //     ModifiedById:Integer
+    //     OwnerId:Integer
+    //     Publishable:Boolean
+    //     Rate:Rating
+    //     RateAvg:Number
+    //     RateCount:Integer
+    //     RateStr:ShortText
+    //     SavingState:Choice
+    //     VersionCreatedBy:Reference
+    //   Nice to have on one complex property:
+    //      SharedBy:Sharing
+    //      SharedWith:Sharing
+    //      Sharing:Sharing
+    //      SharingLevel:Sharing
+    //      SharingMode:Sharing
+
 
 
 

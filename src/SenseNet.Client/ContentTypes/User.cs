@@ -45,14 +45,18 @@ public class User : Content
     public bool? MultiFactorRegistered { get; set; }
     DateTime? LastLoggedOut { get; set; }
     public string ExternalUserProviders { get; set; }
+    IEnumerable<Workspace> FollowedWorkspaces { get; set; }
 
-    //UNDONE: Implement FollowedWorkspaces property
-    //IEnumerable<Workspace> FollowedWorkspaces { get; set; }
     //UNDONE: Implement AllRoles property
     //AllRoles AllRoles { get; set; }
     //UNDONE: Implement DirectRoles property
     //DirectRoles DirectRoles { get; set; }
-    
+
+    // Not implemented properties
+    //     ImageData:Binary
+    //     Language:Choice
+    //     Captcha:Captcha
+
     protected override bool TryConvertToProperty(string propertyName, JToken jsonValue, out object propertyValue)
     {
         switch (propertyName)
