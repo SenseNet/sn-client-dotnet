@@ -331,7 +331,7 @@ public class ContentSavingTests : TestBase
     ""Id"": 999543,
     ""Name"": ""MyContent"",
     ""Path"": ""/Root/MyContent"",
-    ""Type"": ""Folder"",
+    ""Type"": """ + typeof(T).Name + @""",
     ""Index"": 99
   }
 }");
@@ -358,7 +358,7 @@ public class ContentSavingTests : TestBase
         Assert.AreEqual("/OData.svc/content(999543)?metadata=no&$select=Id,Name,Path,Type,Index", requestedUri.PathAndQuery);
 
         Assert.IsNotNull(content);
-        Assert.AreEqual("Folder", ((JValue)content.Type).Value<string>());
+        Assert.AreEqual(typeof(T).Name, ((JValue)content.Type).Value<string>());
         Assert.AreEqual("MyContent", ((JValue)content.Name).Value<string>());
         Assert.AreEqual(99, ((JValue)content.Index).Value<int>());
 
