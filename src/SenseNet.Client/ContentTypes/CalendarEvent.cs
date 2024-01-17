@@ -16,8 +16,6 @@ public class CalendarEvent : ListItem
     public bool? AllDay { get; set; }
     public string EventUrl { get; set; }
     public bool? RequiresRegistration { get; set; }
-    //UNDONE:!! not implemented reference: RegistrationForm:EventRegistrationForm
-    //public Reference RegistrationForm { get; set; }
     public string OwnerEmail { get; set; }
     //UNDONE: missing TryConvert*
     //public EventNotificationMode NotificationMode { get; set; }
