@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json.Linq;
 
@@ -19,7 +20,6 @@ public class User : Content
     }
 
     public string LoginName { get; set; }
-    public string DisplayName { get; set; }
     public string JobTitle { get; set; }
     public bool Enabled { get; set; }
     public string Domain { get; set; }
@@ -27,20 +27,32 @@ public class User : Content
     public string FullName { get; set; }
     public Image ImageRef { get; set; }
     public Avatar Avatar { get; set; }
+    public string SyncGuid { get; set; }
     public DateTime LastSync { get; set; }
     public User Manager { get; set; }
     public string Department { get; set; }
     public string Languages { get; set; }
     public string Phone { get; set; }
+    public Gender? Gender { get; set; }
+    public MaritalStatus? MaritalStatus { get; set; }
     public DateTime BirthDate { get; set; }
+    public string Education { get; set; }
     public string TwitterAccount { get; set; }
     public string FacebookURL { get; set; }
     public string LinkedInURL { get; set; }
     public string ProfilePath { get; set; }
-    public bool MultiFactorEnabled { get; set; }
-    public Gender? Gender { get; set; }
-    public MaritalStatus? MaritalStatus { get; set; }
+    public bool? MultiFactorEnabled { get; set; }
+    public bool? MultiFactorRegistered { get; set; }
+    DateTime? LastLoggedOut { get; set; }
+    public string ExternalUserProviders { get; set; }
 
+    //UNDONE: Implement FollowedWorkspaces property
+    //IEnumerable<Workspace> FollowedWorkspaces { get; set; }
+    //UNDONE: Implement AllRoles property
+    //AllRoles AllRoles { get; set; }
+    //UNDONE: Implement DirectRoles property
+    //DirectRoles DirectRoles { get; set; }
+    
     protected override bool TryConvertToProperty(string propertyName, JToken jsonValue, out object propertyValue)
     {
         switch (propertyName)

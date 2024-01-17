@@ -73,16 +73,58 @@ public partial class Content : DynamicObject
     /// Content name.
     /// </summary>
     public string Name { get; set; }
+    public string Type { get; set; }
+    public string DisplayName { get; set; }
+    public string Description { get; set; }
+    public string Version { get; set; }
+    public int? VersionId { get; set; }
+    public int? Index { get; set; }
+    public string Icon { get; set; }
 
     public DateTime? CreationDate { get; set; }
     public DateTime? ModificationDate { get; set; }
     public DateTime? VersionCreationDate { get; set; }
     public DateTime? VersionModificationDate { get; set; }
 
+    User Owner { get; set; }
+    User CreatedBy { get; set; }
+    User ModifiedBy { get; set; }
+    User VersionModifiedBy { get; set; }
+    User CheckedOutTo { get; set; }
+
     public VersioningMode? VersioningMode { get; set; }
     public VersioningMode? InheritableVersioningMode { get; set; }
     public ApprovingEnabled? ApprovingMode { get; set; }
     public ApprovingEnabled? InheritableApprovingMode { get; set; }
+
+    public string CheckInComments { get; set; }
+    public string RejectReason { get; set; }
+    public IEnumerable<Content> Versions { get; set; }
+    public bool? EnableLifespan { get; set; }
+    public DateTime? ValidFrom { get; set; }
+    public DateTime? ValidTill { get; set; }
+
+    public bool? Hidden { get; set; }
+    public bool? IsFolder { get; set; }
+    public bool? IsSystemContent { get; set; }
+    public bool? Locked { get; set; }
+    public string Tags { get; set; }
+    public bool? TrashDisabled { get; set; }
+
+    //UNDONE: Implement AllowedChildTypes property
+    //public AllowedChildTypes AllowedChildTypes { get; set; }
+    //UNDONE: Implement EffectiveAllowedChildTypes property
+    //public AllowedChildTypes EffectiveAllowedChildTypes { get; set; }
+    //UNDONE: Implement Workspace property
+    //public Workspace Workspace { get; set; }
+
+
+
+
+
+
+
+
 
     public string[] FieldNames { get; private set; } = Array.Empty<string>();
 
