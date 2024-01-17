@@ -4,7 +4,7 @@ using System;
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client;
 
-public enum MemoType { Generic , Iso, IAudit}
+public enum MemoType { Generic , Iso, InternalAudit}
 
 public class Memo : ListItem
 {
