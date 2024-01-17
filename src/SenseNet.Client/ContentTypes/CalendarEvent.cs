@@ -16,7 +16,7 @@ public class CalendarEvent : ListItem
     //UNDONE:!! not implemented reference: RegistrationForm:EventRegistrationForm
     //public Reference RegistrationForm { get; set; }
     public string OwnerEmail { get; set; }
-    //UNDONE: Implement NotificationMode property
+    //UNDONE: Implement NotificationMode property (Choice)
     //public Choice NotificationMode { get; set; }
     public string EmailTemplate { get; set; }
     public string EmailTemplateSubmitter { get; set; }
@@ -25,7 +25,7 @@ public class CalendarEvent : ListItem
     public string EmailField { get; set; }
     public int? MaxParticipants { get; set; }
     public int? NumParticipants { get; set; }
-    //UNDONE: Implement EventType property
+    //UNDONE: Implement EventType property (Choice)
     //public Choice EventType { get; set; }
 
     public CalendarEvent(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }

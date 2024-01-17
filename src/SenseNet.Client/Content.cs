@@ -110,13 +110,12 @@ public partial class Content : DynamicObject
     public bool? Locked { get; set; }
     public string Tags { get; set; }
     public bool? TrashDisabled { get; set; }
+    public Workspace Workspace { get; set; }
 
     //UNDONE: Implement AllowedChildTypes property
     //public AllowedChildTypes AllowedChildTypes { get; set; }
     //UNDONE: Implement EffectiveAllowedChildTypes property
     //public AllowedChildTypes EffectiveAllowedChildTypes { get; set; }
-    //UNDONE: Implement Workspace property
-    //public Workspace Workspace { get; set; }
 
     // Not implemented fields
     //   Noise:

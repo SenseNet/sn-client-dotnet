@@ -7,7 +7,7 @@ namespace SenseNet.Client;
 public class Memo : ListItem
 {
     public DateTime Date { get; set; }
-    //UNDONE: Implement MemoType property
+    //UNDONE: Implement MemoType property (Choice)
     //public Choice MemoType { get; set; } 
     public Content SeeAlso { get; set; }
 
