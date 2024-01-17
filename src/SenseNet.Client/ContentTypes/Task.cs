@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Linq;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualBasic;
 using Newtonsoft.Json.Linq;
 
 // ReSharper disable once CheckNamespace
@@ -15,19 +13,14 @@ public class SnTask : ListItem
     public DateTime StartDate { get; set; }
     public DateTime DueDate { get; set; }
     public User AssignedTo { get; set; }
-    //UNDONE: Implement Priority property (Choice)
-    //public Choice Priority { get; set; }
-    //UNDONE: Implement Status property (Choice)
-    //public Choice Status { get; set; }
+    public TaskPriority? Priority { get; set; }
+    public TaskState? Status { get; set; }
     public int? TaskCompletion { get; set; }
     public int? RemainingDays { get; set; }
     public string DueText { get; set; }
     public string DueCssClass { get; set; }
 
     public SnTask(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }
-
-    public TaskPriority? Priority { get; set; }
-    public TaskState? Status { get; set; }
 
     protected override bool TryConvertFromProperty(string propertyName, out object convertedValue)
     {

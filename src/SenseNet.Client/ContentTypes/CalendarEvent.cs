@@ -4,6 +4,9 @@ using Microsoft.Extensions.Logging;
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client;
 
+public enum EventNotificationMode { Email, EmailDigest, None}
+public enum EventType { Deadline, Meeting, Demo }
+
 public class CalendarEvent : ListItem
 {
     public string Location { get; set; }
@@ -16,8 +19,8 @@ public class CalendarEvent : ListItem
     //UNDONE:!! not implemented reference: RegistrationForm:EventRegistrationForm
     //public Reference RegistrationForm { get; set; }
     public string OwnerEmail { get; set; }
-    //UNDONE: Implement NotificationMode property (Choice)
-    //public Choice NotificationMode { get; set; }
+    //UNDONE: missing TryConvert*
+    //public EventNotificationMode NotificationMode { get; set; }
     public string EmailTemplate { get; set; }
     public string EmailTemplateSubmitter { get; set; }
     public string EmailFrom { get; set; }
@@ -25,8 +28,8 @@ public class CalendarEvent : ListItem
     public string EmailField { get; set; }
     public int? MaxParticipants { get; set; }
     public int? NumParticipants { get; set; }
-    //UNDONE: Implement EventType property (Choice)
-    //public Choice EventType { get; set; }
+    //UNDONE: missing TryConvert*
+    public EventType EventType { get; set; }
 
     public CalendarEvent(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }
 }
