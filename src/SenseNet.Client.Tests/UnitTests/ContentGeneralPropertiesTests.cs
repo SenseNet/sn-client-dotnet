@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Newtonsoft.Json.Linq;
 using NSubstitute;
 using SenseNet.Extensions.DependencyInjection;
 
@@ -834,5 +835,92 @@ public class ContentGeneralPropertiesTests : TestBase
         Assert.AreEqual("[\"Deferred\"]", RemoveWhitespaces(data.Status.ToString()));
     }
 
+    /* ====================================================================== MEMO */
 
+    [TestMethod]
+    public async Task GeneralProps_T_Save_MemoType_Null()
+    {
+        // ALIGN
+        var restCaller = CreateRestCallerFor(@"{
+  ""d"": {
+    ""Id"": 999543,
+    ""Type"": ""Memo"",
+    ""Name"": ""Content1"",
+    ""MemoType"": [ ""iaudit"" ]
+  }
+}");
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<Memo>();
+        });
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+            .ConfigureAwait(false);
+        var request = new LoadContentRequest { Path = "/Root/Content" };
+        var content = await repository.LoadContentAsync<Memo>(request, CancellationToken.None);
+        Assert.AreEqual(MemoType.InternalAudit, content.MemoType);
+
+        // ACT
+        content.MemoType = null;
+        await content.SaveAsync(_cancel);
+
+        // ASSERT
+        var calls = restCaller.ReceivedCalls().ToArray();
+        Assert.IsNotNull(calls);
+        Assert.AreEqual(3, calls.Length);
+        Assert.AreEqual("GetResponseStringAsync", calls[2].GetMethodInfo().Name);
+        var arguments = calls[2].GetArguments();
+        var json = (string)arguments[2]!;
+        json = json.Substring("models=[".Length).TrimEnd(']');
+        var dict = JsonHelper.Deserialize<Dictionary<string, object>>(json);
+        var keys = string.Join(", ", dict.Keys);
+        Assert.AreEqual("Name, MemoType", keys);
+        Assert.AreEqual(null, dict["MemoType"]);
+    }
+    [TestMethod]
+    public async Task GeneralProps_T_Save_MemoType_InternalAuditToIso()
+    {
+        // ALIGN
+        var restCaller = CreateRestCallerFor(@"{
+  ""d"": {
+    ""Id"": 999543,
+    ""Type"": ""Memo"",
+    ""Name"": ""Content1"",
+    ""MemoType"": [ ""iaudit"" ]
+  }
+}");
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<Memo>();
+        });
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+            .ConfigureAwait(false);
+        var request = new LoadContentRequest { Path = "/Root/Content" };
+        var content = await repository.LoadContentAsync<Memo>(request, CancellationToken.None);
+        Assert.AreEqual(MemoType.InternalAudit, content.MemoType);
+
+        // ACT
+        content.MemoType = MemoType.Iso;
+        await content.SaveAsync(_cancel);
+
+        // ASSERT
+        var calls = restCaller.ReceivedCalls().ToArray();
+        Assert.IsNotNull(calls);
+        Assert.AreEqual(3, calls.Length);
+        Assert.AreEqual("GetResponseStringAsync", calls[2].GetMethodInfo().Name);
+        var arguments = calls[2].GetArguments();
+        var json = (string)arguments[2]!;
+        json = json.Substring("models=[".Length).TrimEnd(']');
+        var dict = JsonHelper.Deserialize<Dictionary<string, object>>(json);
+        var keys = string.Join(", ", dict.Keys);
+        Assert.AreEqual("Name, MemoType", keys);
+        var value = dict["MemoType"];
+        Assert.IsNotNull(value);
+        var valueAsJArray = value as JArray;
+        Assert.IsNotNull(valueAsJArray);
+        Assert.AreEqual("iso", valueAsJArray.FirstOrDefault());
+    }
 }
