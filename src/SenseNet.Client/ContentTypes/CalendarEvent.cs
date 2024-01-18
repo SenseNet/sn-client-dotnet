@@ -1,10 +1,18 @@
 ﻿using System;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client;
 
-public enum EventNotificationMode { Email, EmailDigest, None}
+public enum EventNotificationMode
+{
+    [JsonProperty("E-mail")]
+    Email,
+    [JsonProperty("E-mail digest")]
+    EmailDigest,
+    None
+}
 public enum EventType { Deadline, Meeting, Demo }
 
 public class CalendarEvent : ListItem
@@ -17,8 +25,7 @@ public class CalendarEvent : ListItem
     public string EventUrl { get; set; }
     public bool? RequiresRegistration { get; set; }
     public string OwnerEmail { get; set; }
-    //UNDONE: missing TryConvert*
-    //public EventNotificationMode NotificationMode { get; set; }
+    public EventNotificationMode? NotificationMode { get; set; }
     public string EmailTemplate { get; set; }
     public string EmailTemplateSubmitter { get; set; }
     public string EmailFrom { get; set; }
@@ -27,7 +34,7 @@ public class CalendarEvent : ListItem
     public int? MaxParticipants { get; set; }
     public int? NumParticipants { get; set; }
     //UNDONE: missing TryConvert*
-    public EventType EventType { get; set; }
+    public EventType? EventType { get; set; }
 
     public CalendarEvent(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }
 }

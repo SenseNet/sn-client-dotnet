@@ -1,14 +1,20 @@
-﻿using System;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client;
 
-public enum WebHookHttpMethod { Get, Post, Patch, Put, Delete }
+public enum WebHookHttpMethod
+{
+    [JsonProperty("GET")]    Get,
+    [JsonProperty("POST")]   Post,
+    [JsonProperty("PATCH")]  Patch,
+    [JsonProperty("PUT")]    Put,
+    [JsonProperty("DELETE")] Delete
+}
 
 public class WebHookSubscription : Content
 {
-    //UNDONE: missing TryConvert*
     public WebHookHttpMethod? WebHookHttpMethod { get; set; }
     public string WebHookUrl { get; set; }
     public string WebHookFilter { get; set; }

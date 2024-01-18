@@ -923,4 +923,182 @@ public class ContentGeneralPropertiesTests : TestBase
         Assert.IsNotNull(valueAsJArray);
         Assert.AreEqual("iso", valueAsJArray.FirstOrDefault());
     }
+
+    /* ====================================================================== WebHookSubscription */
+
+    [TestMethod]
+    public async Task GeneralProps_T_Save_WebHookSubscription_Null()
+    {
+        // ALIGN
+        var restCaller = CreateRestCallerFor(@"{
+  ""d"": {
+    ""Id"": 999543,
+    ""Type"": ""WebHookSubscription"",
+    ""Name"": ""Content1"",
+    ""WebHookHttpMethod"": [ ""PATCH"" ]
+  }
+}");
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<WebHookSubscription>();
+        });
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+            .ConfigureAwait(false);
+        var request = new LoadContentRequest { Path = "/Root/Content" };
+        var content = await repository.LoadContentAsync<WebHookSubscription>(request, CancellationToken.None);
+        Assert.AreEqual(WebHookHttpMethod.Patch, content.WebHookHttpMethod);
+
+        // ACT
+        content.WebHookHttpMethod = null;
+        await content.SaveAsync(_cancel);
+
+        // ASSERT
+        var calls = restCaller.ReceivedCalls().ToArray();
+        Assert.IsNotNull(calls);
+        Assert.AreEqual(3, calls.Length);
+        Assert.AreEqual("GetResponseStringAsync", calls[2].GetMethodInfo().Name);
+        var arguments = calls[2].GetArguments();
+        var json = (string)arguments[2]!;
+        json = json.Substring("models=[".Length).TrimEnd(']');
+        var dict = JsonHelper.Deserialize<Dictionary<string, object>>(json);
+        var keys = string.Join(", ", dict.Keys);
+        Assert.AreEqual("Name, WebHookHttpMethod", keys);
+        Assert.AreEqual(null, dict["WebHookHttpMethod"]);
+    }
+    [TestMethod]
+    public async Task GeneralProps_T_Save_WebHookHttpMethod_PatchToDelete()
+    {
+        // ALIGN
+        var restCaller = CreateRestCallerFor(@"{
+  ""d"": {
+    ""Id"": 999543,
+    ""Type"": ""WebHookSubscription"",
+    ""Name"": ""Content1"",
+    ""WebHookHttpMethod"": [ ""PATCH"" ]
+  }
+}");
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<WebHookSubscription>();
+        });
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+            .ConfigureAwait(false);
+        var request = new LoadContentRequest { Path = "/Root/Content" };
+        var content = await repository.LoadContentAsync<WebHookSubscription>(request, CancellationToken.None);
+        Assert.AreEqual(WebHookHttpMethod.Patch, content.WebHookHttpMethod);
+
+        // ACT
+        content.WebHookHttpMethod = WebHookHttpMethod.Delete;
+        await content.SaveAsync(_cancel);
+
+        // ASSERT
+        var calls = restCaller.ReceivedCalls().ToArray();
+        Assert.IsNotNull(calls);
+        Assert.AreEqual(3, calls.Length);
+        Assert.AreEqual("GetResponseStringAsync", calls[2].GetMethodInfo().Name);
+        var arguments = calls[2].GetArguments();
+        var json = (string)arguments[2]!;
+        json = json.Substring("models=[".Length).TrimEnd(']');
+        var dict = JsonHelper.Deserialize<Dictionary<string, object>>(json);
+        var keys = string.Join(", ", dict.Keys);
+        Assert.AreEqual("Name, WebHookHttpMethod", keys);
+        var value = dict["WebHookHttpMethod"];
+        Assert.IsNotNull(value);
+        var valueAsJArray = value as JArray;
+        Assert.IsNotNull(valueAsJArray);
+        Assert.AreEqual("DELETE", valueAsJArray.FirstOrDefault());
+    }
+
+    /* ====================================================================== CalendarEvent */
+
+    [TestMethod]
+    public async Task GeneralProps_T_Save_NotificationMode_Null()
+    {
+        // ALIGN
+        var restCaller = CreateRestCallerFor(@"{
+  ""d"": {
+    ""Id"": 999543,
+    ""Type"": ""CalendarEvent"",
+    ""Name"": ""Content1"",
+    ""NotificationMode"": [ ""E-mail digest"" ]
+  }
+}");
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<CalendarEvent>();
+        });
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+            .ConfigureAwait(false);
+        var request = new LoadContentRequest { Path = "/Root/Content" };
+        var content = await repository.LoadContentAsync<CalendarEvent>(request, CancellationToken.None);
+        Assert.AreEqual(EventNotificationMode.EmailDigest, content.NotificationMode);
+
+        // ACT
+        content.NotificationMode = null;
+        await content.SaveAsync(_cancel);
+
+        // ASSERT
+        var calls = restCaller.ReceivedCalls().ToArray();
+        Assert.IsNotNull(calls);
+        Assert.AreEqual(3, calls.Length);
+        Assert.AreEqual("GetResponseStringAsync", calls[2].GetMethodInfo().Name);
+        var arguments = calls[2].GetArguments();
+        var json = (string)arguments[2]!;
+        json = json.Substring("models=[".Length).TrimEnd(']');
+        var dict = JsonHelper.Deserialize<Dictionary<string, object>>(json);
+        var keys = string.Join(", ", dict.Keys);
+        Assert.AreEqual("Name, NotificationMode", keys);
+        Assert.AreEqual(null, dict["NotificationMode"]);
+    }
+    [TestMethod]
+    public async Task GeneralProps_T_Save_NotificationMode_EmailToNone()
+    {
+        // ALIGN
+        var restCaller = CreateRestCallerFor(@"{
+  ""d"": {
+    ""Id"": 999543,
+    ""Type"": ""CalendarEvent"",
+    ""Name"": ""Content1"",
+    ""NotificationMode"": [ ""E-mail"" ]
+  }
+}");
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<CalendarEvent>();
+        });
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+            .ConfigureAwait(false);
+        var request = new LoadContentRequest { Path = "/Root/Content" };
+        var content = await repository.LoadContentAsync<CalendarEvent>(request, CancellationToken.None);
+        Assert.AreEqual(EventNotificationMode.Email, content.NotificationMode);
+
+        // ACT
+        content.NotificationMode = EventNotificationMode.None;
+        await content.SaveAsync(_cancel);
+
+        // ASSERT
+        var calls = restCaller.ReceivedCalls().ToArray();
+        Assert.IsNotNull(calls);
+        Assert.AreEqual(3, calls.Length);
+        Assert.AreEqual("GetResponseStringAsync", calls[2].GetMethodInfo().Name);
+        var arguments = calls[2].GetArguments();
+        var json = (string)arguments[2]!;
+        json = json.Substring("models=[".Length).TrimEnd(']');
+        var dict = JsonHelper.Deserialize<Dictionary<string, object>>(json);
+        var keys = string.Join(", ", dict.Keys);
+        Assert.AreEqual("Name, NotificationMode", keys);
+        var value = dict["NotificationMode"];
+        Assert.IsNotNull(value);
+        var valueAsJArray = value as JArray;
+        Assert.IsNotNull(valueAsJArray);
+        Assert.AreEqual("None", valueAsJArray.FirstOrDefault());
+    }
 }
