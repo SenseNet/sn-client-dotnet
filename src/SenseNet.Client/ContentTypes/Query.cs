@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client;
@@ -9,6 +10,7 @@ internal class SnQuery : Content
 {
     public string Query { get; set; }
     //UNDONE: missing TryConvert*
+    [JsonIgnore]
     public SavedQueryType QueryType { get; set; }
     public string UiFilters { get; set; }
 

@@ -10,8 +10,8 @@ public enum TaskState{ Pending, Active, Completed, Deferred, Waiting }
 
 public class SnTask : ListItem
 {
-    public DateTime StartDate { get; set; }
-    public DateTime DueDate { get; set; }
+    public DateTime? StartDate { get; set; }
+    public DateTime? DueDate { get; set; }
     public User AssignedTo { get; set; }
     public TaskPriority? Priority { get; set; }
     public TaskState? Status { get; set; }
