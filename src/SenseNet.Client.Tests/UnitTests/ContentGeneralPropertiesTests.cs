@@ -759,7 +759,7 @@ public class ContentGeneralPropertiesTests : TestBase
     ""Id"": 999543,
     ""Type"": ""Task"",
     ""Name"": ""Content1"",
-    ""Status"": [ ""Pending"" ]
+    ""Status"": [ ""pending"" ]
   }
 }");
 
@@ -800,7 +800,7 @@ public class ContentGeneralPropertiesTests : TestBase
     ""Id"": 999543,
     ""Type"": ""Task"",
     ""Name"": ""Content1"",
-    ""Status"": [ ""1"" ]
+    ""Status"": [ ""active"" ]
   }
 }");
 
@@ -832,7 +832,7 @@ public class ContentGeneralPropertiesTests : TestBase
         var keys = string.Join(", ", dict.Keys);
         Assert.AreEqual("Name, Status", keys);
         Assert.AreEqual("Content1", data.Name.ToString());
-        Assert.AreEqual("[\"Deferred\"]", RemoveWhitespaces(data.Status.ToString()));
+        Assert.AreEqual("[\"deferred\"]", RemoveWhitespaces(data.Status.ToString()));
     }
 
     /* ====================================================================== MEMO */
