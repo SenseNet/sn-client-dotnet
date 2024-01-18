@@ -299,11 +299,9 @@ public partial class Content
     }
     private string GetSingleItemFromJsonArray(JToken jToken)
     {
-        if (jToken == null)
+        if (jToken == null || jToken.Type != JTokenType.Array)
             return null;
-        if (jToken.Type != JTokenType.Array)
-            return null;
-        return jToken.First.ToString();
+        return jToken.FirstOrDefault()?.ToString();
     }
 
     protected virtual bool TryConvertFromProperty(string propertyName, out object convertedValue)
