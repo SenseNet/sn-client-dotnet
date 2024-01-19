@@ -110,7 +110,8 @@ public partial class Content : DynamicObject
     public bool? Locked { get; set; }
     public string Tags { get; set; }
     public bool? TrashDisabled { get; set; }
-    public Workspace Workspace { get; set; }
+    //UNDONE: Rewrite reference Content -> Workspace
+    public Content Workspace { get; set; }
 
     //UNDONE: Implement AllowedChildTypes property
     //public AllowedChildTypes AllowedChildTypes { get; set; }

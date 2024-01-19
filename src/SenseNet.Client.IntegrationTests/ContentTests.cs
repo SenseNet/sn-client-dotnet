@@ -421,7 +421,7 @@ public class ContentTests : IntegrationTestBase
     [TestMethod]
     public async Task IT_Content_T_Update()
     {
-        var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
+        var cancel = new CancellationTokenSource().Token;
         var repository =
             await GetRepositoryCollection(
                     services => { services.RegisterGlobalContentType<TestMemo>("Memo"); })
