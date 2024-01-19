@@ -1101,4 +1101,87 @@ public class ContentGeneralPropertiesTests : TestBase
         Assert.IsNotNull(valueAsJArray);
         Assert.AreEqual("None", valueAsJArray.FirstOrDefault());
     }
+
+    [TestMethod]
+    public async Task GeneralProps_T_Save_EventType_Null()
+    {
+        // ALIGN
+        var restCaller = CreateRestCallerFor(@"{
+  ""d"": {
+    ""Id"": 999543,
+    ""Type"": ""CalendarEvent"",
+    ""Name"": ""Content1"",
+    ""EventType"": [ ""Meeting"" ]
+  }
+}");
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<CalendarEvent>();
+        });
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+            .ConfigureAwait(false);
+        var request = new LoadContentRequest { Path = "/Root/Content" };
+        var content = await repository.LoadContentAsync<CalendarEvent>(request, CancellationToken.None);
+        Assert.AreEqual(EventType.Meeting, content.EventType);
+
+        // ACT
+        content.EventType = null;
+        await content.SaveAsync(_cancel);
+
+        // ASSERT
+        var calls = restCaller.ReceivedCalls().ToArray();
+        Assert.IsNotNull(calls);
+        Assert.AreEqual(3, calls.Length);
+        Assert.AreEqual("GetResponseStringAsync", calls[2].GetMethodInfo().Name);
+        var arguments = calls[2].GetArguments();
+        var json = (string)arguments[2]!;
+        json = json.Substring("models=[".Length).TrimEnd(']');
+        var dict = JsonHelper.Deserialize<Dictionary<string, object>>(json);
+        var keys = string.Join(", ", dict.Keys);
+        Assert.AreEqual("Name, EventType", keys);
+        Assert.AreEqual(null, dict["EventType"]);
+    }
+    [TestMethod]
+    public async Task GeneralProps_T_Save_EventType_DeadlineAndMeetingToMeetingAndDemo()
+    {
+        // ALIGN
+        var restCaller = CreateRestCallerFor(@"{
+  ""d"": {
+    ""Id"": 999543,
+    ""Type"": ""CalendarEvent"",
+    ""Name"": ""Content1"",
+    ""EventType"": [ ""Deadline"", ""Meeting"" ]
+  }
+}");
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<CalendarEvent>();
+        });
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+            .ConfigureAwait(false);
+        var request = new LoadContentRequest { Path = "/Root/Content" };
+        var content = await repository.LoadContentAsync<CalendarEvent>(request, CancellationToken.None);
+        Assert.AreEqual(EventType.Deadline | EventType.Meeting, content.EventType);
+
+        // ACT
+        content.EventType = null;
+        await content.SaveAsync(_cancel);
+
+        // ASSERT
+        var calls = restCaller.ReceivedCalls().ToArray();
+        Assert.IsNotNull(calls);
+        Assert.AreEqual(3, calls.Length);
+        Assert.AreEqual("GetResponseStringAsync", calls[2].GetMethodInfo().Name);
+        var arguments = calls[2].GetArguments();
+        var json = (string)arguments[2]!;
+        json = json.Substring("models=[".Length).TrimEnd(']');
+        var dict = JsonHelper.Deserialize<Dictionary<string, object>>(json);
+        var keys = string.Join(", ", dict.Keys);
+        Assert.AreEqual("Name, EventType", keys);
+        Assert.AreEqual(null, dict["EventType"]);
+    }
 }

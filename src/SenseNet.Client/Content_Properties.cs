@@ -272,14 +272,24 @@ public partial class Content
 
     private object ConvertToEnum(Type enumType, JToken jsonValue)
     {
-        var inputValue = GetSingleItemFromJsonArray(jsonValue);
-        if (inputValue == null)
+        var inputValues = GetStringValuesFromJsonArray(enumType, jsonValue);
+        if (inputValues == null || inputValues.Length == 0)
             return null;
 
         var names = Enum.GetNames(enumType);
         var values = new object[names.Length];
         Enum.GetValues(enumType).CopyTo(values, 0);
+        int[] intValues;
+        try
+        {
+            intValues = values.Select(Convert.ToInt32).ToArray();
+        }
+        catch(Exception e)
+        {
+            throw new ClientException($"Unsupported enum type: {enumType.FullName}.", e);
+        }
 
+        var combinedValue = 0;
         for (var i = 0; i < names.Length; i++)
         {
             var item = names[i];
@@ -292,16 +302,21 @@ public partial class Content
                 .FirstOrDefault();
             var valueName = valueAttribute?.PropertyName ?? item;
 
-            if (inputValue == valueName)
-                return values[i];
+            if (inputValues.Contains(valueName))
+                combinedValue |= intValues[i];
         }
-        return null;
+
+        return Enum.ToObject(enumType, combinedValue);
     }
-    private string GetSingleItemFromJsonArray(JToken jToken)
+    private string[] GetStringValuesFromJsonArray(Type enumType, JToken jToken)
     {
-        if (jToken == null || jToken.Type != JTokenType.Array)
-            return null;
-        return jToken.FirstOrDefault()?.ToString();
+        if (jToken == null)
+            return Array.Empty<string>();
+        var jArray = (JArray) jToken;
+        var values = jArray.Select(x=>x.ToString()).ToArray();
+        if (enumType.GetCustomAttributes<FlagsAttribute>().Any() && values.Length > 1)
+            return values;
+        return values.Take(1).ToArray();
     }
 
     protected virtual bool TryConvertFromProperty(string propertyName, out object convertedValue)

@@ -13,7 +13,8 @@ public enum EventNotificationMode
     EmailDigest,
     None
 }
-public enum EventType { Deadline, Meeting, Demo }
+
+[Flags] public enum EventType { Deadline = 1, Meeting = 2, Demo = 4 }
 
 public class CalendarEvent : ListItem
 {
