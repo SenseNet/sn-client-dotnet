@@ -292,16 +292,7 @@ public partial class Content
         var combinedValue = 0;
         for (var i = 0; i < names.Length; i++)
         {
-            var item = names[i];
-            var members = enumType.GetMember(item);
-            var member = members.FirstOrDefault(m => m.DeclaringType == enumType);
-            if (member == null)
-                continue;
-            var valueAttribute = (JsonPropertyAttribute)member
-                .GetCustomAttributes(typeof(JsonPropertyAttribute), false)
-                .FirstOrDefault();
-            var valueName = valueAttribute?.PropertyName ?? item;
-
+            var valueName = GetEnumNameFromValue(enumType, values[i]);
             if (inputValues.Contains(valueName))
                 combinedValue |= intValues[i];
         }
