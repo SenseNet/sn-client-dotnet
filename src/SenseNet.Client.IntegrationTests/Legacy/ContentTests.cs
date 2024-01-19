@@ -6,7 +6,7 @@ using SenseNet.Extensions.DependencyInjection;
 namespace SenseNet.Client.IntegrationTests.Legacy
 {
     [TestClass]
-    public class ContentTests
+    public class ContentTests : IntegrationTestBase
     {
         [ClassInitialize]
         public static void ClassInitializer(TestContext context)
@@ -26,19 +26,25 @@ namespace SenseNet.Client.IntegrationTests.Legacy
         [TestMethod]
         public async Task Content_Modify()
         {
+            var cancel = new CancellationTokenSource().Token;
+            var repository = await GetRepositoryCollection()
+                .GetRepositoryAsync("local", CancellationToken.None).ConfigureAwait(false);
+
             ClientContext.Current.Server.IsTrusted = true;
 
-            var content0 = Content.CreateNew("/Root", "Folder", Guid.NewGuid().ToString());
+//var content0 = Content.CreateNew("/Root", "Folder", Guid.NewGuid().ToString());
+            var content0 = repository.CreateContent("/Root", "Folder", Guid.NewGuid().ToString());
             content0["Index"] = 42;
-            await content0.SaveAsync().ConfigureAwait(false);
+            await content0.SaveAsync(cancel).ConfigureAwait(false);
             var contentId = content0.Id;
 
-            var content1 = await Content.LoadAsync(contentId).ConfigureAwait(false);
+//var content1 = await Content.LoadAsync(contentId).ConfigureAwait(false);
+            var content1 = await repository.LoadContentAsync(contentId, cancel).ConfigureAwait(false);
             //var indexBefore = ((JValue)content1["Index"]).Value<int>();
             content1["Index"] = 142;
-            await content1.SaveAsync().ConfigureAwait(false);
+            await content1.SaveAsync(cancel).ConfigureAwait(false);
 
-            var content2 = await Content.LoadAsync(contentId).ConfigureAwait(false);
+            var content2 = await repository.LoadContentAsync(contentId, cancel).ConfigureAwait(false);
             var indexAfter = ((JValue)content2["Index"]).Value<int>();
 
             Assert.AreEqual(142, indexAfter);
