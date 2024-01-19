@@ -548,17 +548,34 @@ public partial class Content
 
     private object ConvertFromEnum(Type propertyType, object propertyValue)
     {
-        var result = propertyValue.ToString();
-        var members = propertyType.GetMember(result);
-        var member = members.FirstOrDefault(m => m.DeclaringType == propertyType);
+        var isFlagsEnum = propertyType.GetCustomAttributes<FlagsAttribute>().Any();
+        if (!isFlagsEnum)
+            return new[] { GetEnumNameFromValue(propertyType, propertyValue) };
+
+        var intValue = Convert.ToInt32(propertyValue);
+        var resultValues = new List<string>();
+        foreach (var enumValue in Enum.GetValues(propertyType))
+        {
+            if ((intValue & Convert.ToInt32(enumValue)) == 0)
+                continue;
+            var result = GetEnumNameFromValue(propertyType, enumValue);
+            resultValues.Add(result);
+        }
+        return resultValues.ToArray();
+    }
+
+    private string GetEnumNameFromValue(Type enumType, object enumValue)
+    {
+        var result = enumValue.ToString();
+        var members = enumType.GetMember(result);
+        var member = members.FirstOrDefault(m => m.DeclaringType == enumType);
         if (member == null)
             return null;
         var valueAttribute = (JsonPropertyAttribute)member
             .GetCustomAttributes(typeof(JsonPropertyAttribute), false)
             .FirstOrDefault();
         var valueName = valueAttribute?.PropertyName ?? result;
-
-        return new[] { valueName };
+        return valueName;
     }
 
     private object[] ConvertReferencesToRequestValue(IEnumerable<Content> source, string propertyName, bool throwOnError)

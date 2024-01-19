@@ -1168,7 +1168,7 @@ public class ContentGeneralPropertiesTests : TestBase
         Assert.AreEqual(EventType.Deadline | EventType.Meeting, content.EventType);
 
         // ACT
-        content.EventType = null;
+        content.EventType = EventType.Meeting | EventType.Demo;
         await content.SaveAsync(_cancel);
 
         // ASSERT
@@ -1182,6 +1182,10 @@ public class ContentGeneralPropertiesTests : TestBase
         var dict = JsonHelper.Deserialize<Dictionary<string, object>>(json);
         var keys = string.Join(", ", dict.Keys);
         Assert.AreEqual("Name, EventType", keys);
-        Assert.AreEqual(null, dict["EventType"]);
+        Assert.IsNotNull(dict["EventType"], "EventType is null.");
+        Assert.AreEqual(typeof(JArray), dict["EventType"].GetType());
+        var values = (JArray)dict["EventType"];
+        Assert.AreEqual("Meeting", values[0].ToString());
+        Assert.AreEqual("Demo", values[1].ToString());
     }
 }
