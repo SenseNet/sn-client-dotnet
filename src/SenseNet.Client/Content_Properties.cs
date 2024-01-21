@@ -352,7 +352,21 @@ public partial class Content
         var array = Array.CreateInstance(itemType, referredContents.Length);
 
         for (int i = 0; i < referredContents.Length; i++)
-            array.SetValue(referredContents[i], i);
+        {
+            if (itemType.IsAssignableFrom(referredContents[i].GetType()))
+            {
+                array.SetValue(referredContents[i], i);
+                continue;
+            }
+            if (referredContents.Length == 1 && referredContents[0].FieldNames.SingleOrDefault() == "__deferred")
+            {
+                return null; //Array.CreateInstance(itemType, 0);
+            }
+            if (referredContents.Length > 1)
+            {
+                throw new ClientException("____");
+            }
+        }
 
         return array;
     }

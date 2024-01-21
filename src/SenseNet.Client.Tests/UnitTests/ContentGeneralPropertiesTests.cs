@@ -1188,4 +1188,164 @@ public class ContentGeneralPropertiesTests : TestBase
         Assert.AreEqual("Meeting", values[0].ToString());
         Assert.AreEqual("Demo", values[1].ToString());
     }
+
+    /* ====================================================================== Reference handling */
+
+    [TestMethod]
+    public async Task GeneralProps_T_Load_Reference_NullDeferredExpanded()
+    {
+        // ALIGN
+        var restCaller = CreateRestCallerFor(@"{
+  ""d"": {
+    ""Id"": 9125,
+    ""Type"": ""CalendarEvent"",
+    ""Name"": ""Event-1"",
+    ""Path"": ""/Root/Content/Events/Event-1"",
+    ""CreatedBy"": {
+      ""__deferred"": {
+        ""uri"": ""/odata.svc/Root/Content/Events('Event-1')/CreatedBy""
+      }
+    },
+    ""Owner"": {
+      ""Id"": 1,
+      ""Type"": ""User"",
+      ""Name"": ""Admin""
+    },
+    ""Workspace"": {
+      ""__deferred"": {
+        ""uri"": ""/odata.svc/Root/Content/Events('Event-1')/Workspace""
+      }
+    }
+  }
+}");
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<CalendarEvent>();
+        });
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+            .ConfigureAwait(false);
+        var request = new LoadContentRequest { Path = "/Root/Content" };
+
+        // ACT-1
+        var content = await repository.LoadContentAsync<CalendarEvent>(request, CancellationToken.None);
+
+        // ASSERT-1
+        Assert.IsNull(content.CreatedBy);
+        Assert.IsNull(content.ModifiedBy);
+        Assert.IsNull(content.Workspace);
+        Assert.IsNotNull(content.Owner);
+    }
+
+    /* ====================================================================== Single property tests */
+
+    [TestMethod]
+    public async Task GeneralProps_T_SingleProperty_Load_()
+    {
+        await PropertyAfterLoadTest<Folder>("", content => { Assert.IsNull(content.Workspace); });
+        await PropertyAfterLoadTest<Folder>("", content => { Assert.IsNull(content.Index); });
+
+        await PropertyAfterLoadTest<Folder>(
+            propertyJson: @"""CreatedBy"": {""__deferred"": {""uri"": ""/odata.svc/Root/Content/Events('Event-1')/CreatedBy""}}",
+            assertAfterLoad: content => { Assert.IsNull(content.CreatedBy); });
+
+        await PropertyAfterLoadTest<Folder>(
+            propertyJson: @"""Owner"": {""Type"": ""User"",""Name"": ""Admin""}",
+            assertAfterLoad: content =>
+            {
+                Assert.IsNotNull(content.Owner);
+                Assert.IsNotNull("User", content.Owner.Type);
+                Assert.IsNotNull("Admin", content.Owner.Name);
+            });
+    }
+
+    private async Task PropertyAfterLoadTest<TContent>(string propertyJson, Action<TContent> assertAfterLoad) where TContent : Content
+    {
+        // ALIGN
+        var restCaller = CreateRestCallerFor(@"{
+  ""d"": {
+    ""Id"": 9125,
+    ""Type"": """ + typeof(TContent).Name + @""",
+    ""Name"": ""Content-1"",
+    ""Path"": ""/Root/Content/Content-1"",
+    " + propertyJson + @"
+  }
+}");
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<TContent>();
+        });
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+            .ConfigureAwait(false);
+        var request = new LoadContentRequest { Path = "/Root/Content/Content-1" };
+
+        // ACT-1
+        var content = await repository.LoadContentAsync<TContent>(request, CancellationToken.None);
+
+        // ASSERT-1
+        assertAfterLoad(content);
+    }
+
+
+    [TestMethod]
+    public async Task GeneralProps_T_SingleProperty_Save_()
+    {
+        await PropertyAfterPatchTest<Folder>(
+            propertyLoadJson: "", 
+            setProperty: content => { content.Index = 42; content.DisplayName = "Content 1"; },
+            assertSaveRequest: (savedPropertyNames, properties) =>
+            {
+                Assert.AreEqual("Name, DisplayName, Index", savedPropertyNames);
+                Assert.AreEqual("42", properties["Index"].ToString());
+                Assert.AreEqual("Content 1", properties["DisplayName"].ToString());
+            });
+    }
+    private async Task PropertyAfterPatchTest<TContent>(string propertyLoadJson,
+        Action<TContent> setProperty,
+        Action<string, Dictionary<string, object>> assertSaveRequest) where TContent : Content
+    {
+        // ALIGN
+        var restCaller = CreateRestCallerFor(@"{
+  ""d"": {
+    ""Id"": 9125,
+    ""Type"": """ + typeof(TContent).Name + @""",
+    ""Name"": ""Content-1"",
+    ""Path"": ""/Root/Content/Content-1"",
+    " + propertyLoadJson + @"
+  }
+}");
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<TContent>();
+        });
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+            .ConfigureAwait(false);
+        var request = new LoadContentRequest { Path = "/Root/Content/Content-1" };
+
+        var content = await repository.LoadContentAsync<TContent>(request, CancellationToken.None);
+
+        setProperty(content);
+
+        // ACT
+        await content.SaveAsync(_cancel);
+
+        // ASSERT
+        var calls = restCaller.ReceivedCalls().ToArray();
+        Assert.IsNotNull(calls);
+        Assert.AreEqual(3, calls.Length);
+        Assert.AreEqual("GetResponseStringAsync", calls[2].GetMethodInfo().Name);
+        var arguments = calls[2].GetArguments();
+        var json = (string)arguments[2]!;
+        json = json.Substring("models=[".Length).TrimEnd(']');
+        var dict = JsonHelper.Deserialize<Dictionary<string, object>>(json);
+        var keys = string.Join(", ", dict.Keys);
+
+        assertSaveRequest(keys, dict);
+    }
+
 }

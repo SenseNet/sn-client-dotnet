@@ -34,7 +34,6 @@ public class CalendarEvent : ListItem
     public string EmailField { get; set; }
     public int? MaxParticipants { get; set; }
     public int? NumParticipants { get; set; }
-    //UNDONE: missing TryConvert*
     public EventType? EventType { get; set; }
 
     public CalendarEvent(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }

@@ -86,11 +86,11 @@ public partial class Content : DynamicObject
     public DateTime? VersionCreationDate { get; set; }
     public DateTime? VersionModificationDate { get; set; }
 
-    User Owner { get; set; }
-    User CreatedBy { get; set; }
-    User ModifiedBy { get; set; }
-    User VersionModifiedBy { get; set; }
-    User CheckedOutTo { get; set; }
+    public User Owner { get; set; }
+    public User CreatedBy { get; set; }
+    public User ModifiedBy { get; set; }
+    public User VersionModifiedBy { get; set; }
+    public User CheckedOutTo { get; set; }
 
     public VersioningMode? VersioningMode { get; set; }
     public VersioningMode? InheritableVersioningMode { get; set; }
@@ -110,8 +110,7 @@ public partial class Content : DynamicObject
     public bool? Locked { get; set; }
     public string Tags { get; set; }
     public bool? TrashDisabled { get; set; }
-    //UNDONE: Rewrite reference Content -> Workspace
-    public Content Workspace { get; set; }
+    public Workspace Workspace { get; set; }
 
     //UNDONE: Implement AllowedChildTypes property
     //public AllowedChildTypes AllowedChildTypes { get; set; }

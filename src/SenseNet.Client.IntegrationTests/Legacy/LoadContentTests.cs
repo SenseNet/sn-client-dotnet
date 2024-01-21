@@ -3,8 +3,10 @@
 namespace SenseNet.Client.IntegrationTests.Legacy
 {
     [TestClass]
-    public class LoadContentTests
+    public class LoadContentTests : IntegrationTestBase
     {
+        private CancellationToken _cancel = new CancellationTokenSource().Token;
+
         [ClassInitialize]
         public static void ClassInitializer(TestContext context)
         {
@@ -221,14 +223,17 @@ namespace SenseNet.Client.IntegrationTests.Legacy
         [TestMethod]
         public async Task GetCurrentUser()
         {
-            var server = ClientContext.Current.Server;
+            var repository = await GetRepositoryCollection()
+                .GetRepositoryAsync("local", CancellationToken.None).ConfigureAwait(false);
+
+            var server = repository.Server;
             var originalToken = server.Authentication.AccessToken;
 
             try
             {
                 // first check as Visitor
                 server.Authentication.AccessToken = null;
-                var visitor = await server.GetCurrentUserAsync();
+                var visitor = await repository.GetCurrentUserAsync(_cancel);
 
                 Assert.AreEqual("Visitor", visitor.Name);
             }
@@ -242,8 +247,8 @@ namespace SenseNet.Client.IntegrationTests.Legacy
             Assert.AreEqual("Admin", currentUser.Name);
 
             // check if expansion works
-            currentUser = await server.GetCurrentUserAsync(new[] { "Id", "Name", "Path", "CreatedBy/Id", "CreatedBy/Name" },
-                new[] { "CreatedBy" });
+            currentUser = await repository.GetCurrentUserAsync(new[] { "Id", "Name", "Path", "Type", "CreatedBy/Id", "CreatedBy/Name", "CreatedBy/Type" },
+                new[] { "CreatedBy" }, _cancel);
 
             Assert.AreEqual("Admin", (string)currentUser.CreatedBy.Name);
         }
