@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using System.Net;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
@@ -18,6 +19,42 @@ public abstract class TestBase
             .GetResponseStringAsync(Arg.Any<Uri>(), Arg.Any<HttpMethod>(), Arg.Any<string>(), Arg.Any<Dictionary<string, IEnumerable<string>>>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(returnValueOfGetResponseStringAsync));
         return restCaller;
+    }
+
+    private class TestRestCaller : IRestCaller
+    {
+        private string _responseString;
+        public ServerContext Server { get; set; }
+
+        public TestRestCaller(string responseString)
+        {
+            _responseString = responseString;
+        }
+
+        public Task<string> GetResponseStringAsync(Uri uri, HttpMethod method, string postData, Dictionary<string, IEnumerable<string>> additionalHeaders,
+            CancellationToken cancel)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task ProcessWebResponseAsync(string relativeUrl, HttpMethod method, Dictionary<string, IEnumerable<string>> additionalHeaders, HttpContent postData,
+            Func<HttpResponseMessage, CancellationToken, Task> responseProcessor, CancellationToken cancel)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task ProcessWebRequestResponseAsync(string relativeUrl, HttpMethod method, Dictionary<string, IEnumerable<string>> additionalHeaders,
+            Action<HttpClientHandler, HttpClient, HttpRequestMessage> requestProcessor, Func<HttpResponseMessage, CancellationToken, Task> responseProcessor, CancellationToken cancel)
+        {
+            responseProcessor(new HttpResponseMessage(HttpStatusCode.OK)
+                {Content = new StringContent(_responseString)}, CancellationToken.None);
+            return Task.CompletedTask;
+        }
+    }
+
+    protected IRestCaller CreateRestCallerForProcessWebRequestResponse(string responseString)
+    {
+        return new TestRestCaller(responseString);
     }
 
     protected IRepositoryCollection GetRepositoryCollection(Action<IServiceCollection>? addServices = null)

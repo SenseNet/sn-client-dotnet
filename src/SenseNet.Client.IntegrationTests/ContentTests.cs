@@ -626,9 +626,10 @@ public class ContentTests : IntegrationTestBase
         var user = await repository.InvokeFunctionAsync<User>(request, CancellationToken.None);
 
         // ASSERT
+        Assert.AreEqual(typeof(User), user.GetType());
         Assert.AreEqual(1, user.Id);
-        Assert.AreEqual("/Root/IMS/BuiltIn/Portal/Administrator", user.Path);
-        Assert.AreEqual("Administrator", user.Name);
+        Assert.AreEqual("/Root/IMS/BuiltIn/Portal/Admin", user.Path);
+        Assert.AreEqual("Admin", user.Name);
     }
     [TestMethod]
     public async Task IT_Op_InvokeFunction_Ancestors()
@@ -646,8 +647,8 @@ public class ContentTests : IntegrationTestBase
         var contents = await repository.InvokeFunctionAsync<Content[]>(request, CancellationToken.None);
 
         // ASSERT
-        var names = string.Join("|", contents.Select(x => x.Name));
-        Assert.AreEqual("Portal|BuiltIn|IMS|Root", names);
+        var names = string.Join("|", contents.Select(x => $"{x.Name}:{x["Type"]}"));
+        Assert.AreEqual("Portal:OrganizationalUnit|BuiltIn:Domain|IMS:Domains|Root:PortalRoot", names);
     }
 
 
