@@ -593,7 +593,7 @@ public class ContentTests : IntegrationTestBase
     /* ================================================================================================== OPERATIONS */
 
     [TestMethod]
-    public async Task IT_Op_CallFunction()
+    public async Task IT_Op_InvokeFunction_GetPermissions()
     {
         var repository = await GetRepositoryCollection()
             .GetRepositoryAsync("local", CancellationToken.None).ConfigureAwait(false);
@@ -610,6 +610,48 @@ public class ContentTests : IntegrationTestBase
         Assert.IsTrue(getPermissionsResponse.Entries.Length > 2);
         Assert.AreEqual("allow", getPermissionsResponse.Entries[0].Permissions.See.Value);
     }
+    [TestMethod]
+    public async Task IT_Op_InvokeFunction_GetCurrentUser()
+    {
+        var repository = await GetRepositoryCollection()
+            .GetRepositoryAsync("local", CancellationToken.None).ConfigureAwait(false);
+
+        // ACT
+        var request = new OperationRequest()
+        {
+            ContentId = 2,
+            OperationName = "GetCurrentUser",
+            Select = new[] { "Name", "Path", "Id", "Type" }
+        };
+        var user = await repository.InvokeContentFunctionAsync<User>(request, CancellationToken.None);
+
+        // ASSERT
+        Assert.AreEqual(typeof(User), user.GetType());
+        Assert.AreEqual(1, user.Id);
+        Assert.AreEqual("/Root/IMS/BuiltIn/Portal/Admin", user.Path);
+        Assert.AreEqual("Admin", user.Name);
+    }
+    [TestMethod]
+    public async Task IT_Op_InvokeFunction_Ancestors()
+    {
+        var repository = await GetRepositoryCollection()
+            .GetRepositoryAsync("local", CancellationToken.None).ConfigureAwait(false);
+
+        // ACT
+        var request = new OperationRequest
+        {
+            ContentId = 1,
+            OperationName = "Ancestors",
+            Select = new []{"Name", "Path", "Id", "Type"}
+        };
+        var contents = await repository.InvokeContentCollectionFunctionAsync<Content>(request, CancellationToken.None);
+
+        // ASSERT
+        var names = string.Join("|", contents.Select(x => $"{x.Name}:{x["Type"]}"));
+        Assert.AreEqual("Portal:OrganizationalUnit|BuiltIn:Domain|IMS:Domains|Root:PortalRoot", names);
+    }
+
+
     [TestMethod]
     public async Task IT_Op_ExecuteAction()
     {

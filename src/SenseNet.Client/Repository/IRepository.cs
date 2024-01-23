@@ -487,17 +487,58 @@ public interface IRepository
     /// <summary>
     /// Calls a server function by the provided <paramref name="request"/>
     /// and returns the response converted to the desired object.
+    /// The return object cannot be <see cref="Content"/> or <see cref="IEnumerable{Content}"/>.
+    /// See also <seealso cref="InvokeContentFunctionAsync{T}"/> and <seealso cref="InvokeContentCollectionFunctionAsync{T}"/>.
     /// </summary>
-    /// <typeparam name="T">Can be any existing class or struct.</typeparam>
+    /// <typeparam name="T">Can be any existing class or struct except any <see cref="Content"/> and any <see cref="IEnumerable{Content}"/>.</typeparam>
     /// <param name="request">The <see cref="OperationRequest"/> instance.</param>
     /// <param name="cancel">The token to monitor for cancellation requests.</param>
     /// <returns>A Task that represents the asynchronous operation and wraps the response object.</returns>
     /// <exception cref="ClientException">Thrown if the <paramref name="request"/> is invalid
     /// or not the requested operation is not an OData function.
     /// Also thrown if the server returns an error object.</exception>
+    /// <exception cref="ApplicationException">Thrown if the <typeparam name="T"/> is <see cref="Content"/>
+    /// or <see cref="IEnumerable{Content}"/> any inherited type.</exception>
+    /// <returns>A Task that represents the asynchronous operation and wraps the response object.</returns>
     Task<T> InvokeFunctionAsync<T>(OperationRequest request, CancellationToken cancel);
     /// <summary>
-    /// Executes a server action by the provided <paramref name="request"/>.
+    /// Calls a server function by the provided <paramref name="request"/>
+    /// and returns the response converted to the desired object.
+    /// The returned object can be <see cref="Content"/> or any inherited type.
+    /// See also <seealso cref="InvokeFunctionAsync{T}"/> and <seealso cref="InvokeContentCollectionFunctionAsync{T}"/>.
+    /// </summary>
+    /// <typeparam name="T">Can be <see cref="Content"/> or any inherited type.</typeparam>
+    /// <param name="request">The <see cref="OperationRequest"/> instance.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A Task that represents the asynchronous operation and wraps the response object.</returns>
+    /// <exception cref="ClientException">Thrown if the <paramref name="request"/> is invalid
+    /// or not the requested operation is not an OData function.
+    /// Also thrown if the server returns an error object.</exception>
+    /// <exception cref="ApplicationException">Thrown if the <typeparam name="T"/> is not the <see cref="Content"/>
+    /// or any inherited type.</exception>
+    /// <returns>A Task that represents the asynchronous operation and wraps the response object.</returns>
+    Task<T> InvokeContentFunctionAsync<T>(OperationRequest request, CancellationToken cancel) where T : Content;
+    /// <summary>
+    /// Calls a server function by the provided <paramref name="request"/>
+    /// and returns the response converted to a <seealso cref="IContentCollection{T}"/> instance.
+    /// Note that the type parameter defines the item type of the <see cref="IContentCollection{T}"/>, not the full return type.
+    /// See also <seealso cref="InvokeFunctionAsync{T}"/> and <seealso cref="InvokeContentFunctionAsync{T}"/>.
+    /// </summary>
+    /// <typeparam name="T">Can be <see cref="Content"/> or any inherited type.</typeparam>
+    /// <param name="request">The <see cref="OperationRequest"/> instance.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A Task that represents the asynchronous operation and wraps the response object.</returns>
+    /// <exception cref="ClientException">Thrown if the <paramref name="request"/> is invalid
+    /// or not the requested operation is not an OData function.
+    /// Also thrown if the server returns an error object.</exception>
+    /// <exception cref="ApplicationException">Thrown if the <typeparam name="T"/> is not the <see cref="Content"/>
+    /// or any inherited type.</exception>
+    /// <returns>A Task that represents the asynchronous operation and wraps the response object.</returns>
+    Task<IContentCollection<T>> InvokeContentCollectionFunctionAsync<T>(OperationRequest request,
+        CancellationToken cancel) where T : Content;
+
+    /// <summary>
+    /// Executes a server action without any return value.
     /// </summary>
     /// <param name="request">The <see cref="OperationRequest"/> instance.</param>
     /// <param name="cancel">The token to monitor for cancellation requests.</param>
@@ -507,17 +548,57 @@ public interface IRepository
     /// Also thrown if the server returns an error object.</exception>
     Task InvokeActionAsync(OperationRequest request, CancellationToken cancel);
     /// <summary>
-    /// Executes a server action by the provided <paramref name="request"/>.
+    /// Executes a server action by the provided <paramref name="request"/>
     /// and returns the response converted to the desired object.
+    /// The return object cannot be <see cref="Content"/> or <see cref="IEnumerable{Content}"/>.
+    /// See also <seealso cref="InvokeContentActionAsync{T}"/> and <seealso cref="InvokeContentCollectionActionAsync{T}"/>.
     /// </summary>
-    /// <typeparam name="T">Can be any existing class or struct.</typeparam>
+    /// <typeparam name="T">Can be any existing class or struct except any <see cref="Content"/> and any <see cref="IEnumerable{Content}"/>.</typeparam>
     /// <param name="request">The <see cref="OperationRequest"/> instance.</param>
     /// <param name="cancel">The token to monitor for cancellation requests.</param>
     /// <returns>A Task that represents the asynchronous operation and wraps the response object.</returns>
     /// <exception cref="ClientException">Thrown if the <paramref name="request"/> is invalid
     /// or not the requested operation is not an OData action.
     /// Also thrown if the server returns an error object.</exception>
+    /// <exception cref="ApplicationException">Thrown if the <typeparam name="T"/> is <see cref="Content"/>
+    /// or <see cref="IEnumerable{Content}"/> any inherited type.</exception>
+    /// <returns>A Task that represents the asynchronous operation and wraps the response object.</returns>
     Task<T> InvokeActionAsync<T>(OperationRequest request, CancellationToken cancel);
+    /// <summary>
+    /// Executes a server action by the provided <paramref name="request"/>
+    /// and returns the response converted to the desired object.
+    /// The returned object can be <see cref="Content"/> or any inherited type.
+    /// See also <seealso cref="InvokeActionAsync{T}"/> and <seealso cref="InvokeContentCollectionActionAsync{T}"/>.
+    /// </summary>
+    /// <typeparam name="T">Can be <see cref="Content"/> or any inherited type.</typeparam>
+    /// <param name="request">The <see cref="OperationRequest"/> instance.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A Task that represents the asynchronous operation and wraps the response object.</returns>
+    /// <exception cref="ClientException">Thrown if the <paramref name="request"/> is invalid
+    /// or not the requested operation is not an OData action.
+    /// Also thrown if the server returns an error object.</exception>
+    /// <exception cref="ApplicationException">Thrown if the <typeparam name="T"/> is not the <see cref="Content"/>
+    /// or any inherited type.</exception>
+    /// <returns>A Task that represents the asynchronous operation and wraps the response object.</returns>
+    Task<T> InvokeContentActionAsync<T>(OperationRequest request, CancellationToken cancel) where T : Content;
+    /// <summary>
+    /// Executes a server action by the provided <paramref name="request"/>
+    /// and returns the response converted to a <seealso cref="IContentCollection{T}"/> instance.
+    /// Note that the type parameter defines the item type of the <see cref="IContentCollection{T}"/>, not the full return type.
+    /// See also <seealso cref="InvokeActionAsync{T}"/> and <seealso cref="InvokeContentActionAsync{T}"/>.
+    /// </summary>
+    /// <typeparam name="T">Can be <see cref="Content"/> or any inherited type.</typeparam>
+    /// <param name="request">The <see cref="OperationRequest"/> instance.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A Task that represents the asynchronous operation and wraps the response object.</returns>
+    /// <exception cref="ClientException">Thrown if the <paramref name="request"/> is invalid
+    /// or not the requested operation is not an OData action.
+    /// Also thrown if the server returns an error object.</exception>
+    /// <exception cref="ApplicationException">Thrown if the <typeparam name="T"/> is not the <see cref="Content"/>
+    /// or any inherited type.</exception>
+    /// <returns>A Task that represents the asynchronous operation and wraps the response object.</returns>
+    Task<IContentCollection<T>> InvokeContentCollectionActionAsync<T>(OperationRequest request,
+        CancellationToken cancel) where T : Content;
 
     /* ============================================================================ LOW LEVEL API */
 
