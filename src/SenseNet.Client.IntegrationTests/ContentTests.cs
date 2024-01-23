@@ -485,7 +485,7 @@ public class ContentTests : IntegrationTestBase
     [TestMethod]
     public async Task IT_Content_T_Update_ReferenceList()
     {
-        var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
+        var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(120)).Token;
         var repository =
             await GetRepositoryCollection(
                     services => { services.RegisterGlobalContentType<TestMemo>("Memo"); })
@@ -508,7 +508,7 @@ public class ContentTests : IntegrationTestBase
 
         // 2 - Create container and some memos
         var container = repository.CreateContent(rootPath, containerType, containerName);
-        await container.SaveAsync().ConfigureAwait(false);
+        await container.SaveAsync(cancel).ConfigureAwait(false);
         var referredMemos = new Content[3];
         for (int i = 0; i < referredMemos.Length; i++)
         {
@@ -516,14 +516,14 @@ public class ContentTests : IntegrationTestBase
             //referredMemos[i]["MemoType"] = Array.Empty<string>();
             //referredMemos[i]["MemoType"] = new[] { "generic" };
             ((TestMemo)referredMemos[i]).MemoType = Array.Empty<string>();
-            await referredMemos[i].SaveAsync().ConfigureAwait(false);
+            await referredMemos[i].SaveAsync(cancel).ConfigureAwait(false);
         }
 
         // 3 - Create brand new content and test its existence
         var content = repository.CreateContent<TestMemo>(containerPath, null, contentName);
         content.MemoType = Array.Empty<string>();
         content.SeeAlso = referredMemos.Take(2).ToList();
-        await content.SaveAsync().ConfigureAwait(false);
+        await content.SaveAsync(cancel).ConfigureAwait(false);
         var contentId = content.Id;
         Assert.IsTrue(contentId > 0);
 
@@ -546,7 +546,7 @@ public class ContentTests : IntegrationTestBase
 
         // 6 - Update content
         loadedContent.SeeAlso[1] = referredMemos[2];
-        await loadedContent.SaveAsync().ConfigureAwait(false);
+        await loadedContent.SaveAsync(cancel).ConfigureAwait(false);
 
         // 7 - Load updated content
         var reloadedContent = await repository.LoadContentAsync<TestMemo>(expandedRequest, cancel).ConfigureAwait(false);
@@ -574,7 +574,7 @@ public class ContentTests : IntegrationTestBase
         wrongContent.SeeAlso.Add(referredMemos[2]);
         try
         {
-            await wrongContent.SaveAsync().ConfigureAwait(false);
+            await wrongContent.SaveAsync(cancel).ConfigureAwait(false);
             Assert.Fail("The expected ApplicationException was not thrown.");
         }
         catch (ApplicationException e)
