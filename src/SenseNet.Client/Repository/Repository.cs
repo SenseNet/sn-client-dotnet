@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -15,6 +16,8 @@ using System.Net;
 using System.Text;
 using System.IdentityModel.Tokens.Jwt;
 using Newtonsoft.Json;
+using System.Text.Json.Nodes;
+using System.Collections;
 
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client;
@@ -38,6 +41,7 @@ internal class Repository : IRepository
             _restCaller.Server = value;
         }
     }
+    internal IServiceProvider Services => _services;
 
     public RegisteredContentTypes GlobalContentTypes { get; }
 
@@ -715,10 +719,29 @@ internal class Repository : IRepository
         var result = default(T);
         await ProcessOperationResponseAsync(request, HttpMethod.Get, response =>
         {
-            if (!string.IsNullOrEmpty(response))
-                result = JsonConvert.DeserializeObject<T>(response);
+            result = this.ProcessOperationResponse<T>(response, false);
         }, cancel);
         return result;
+    }
+
+    public async Task<T> InvokeContentFunctionAsync<T>(OperationRequest request, CancellationToken cancel) where T : Content
+    {
+        var result = default(T);
+        await ProcessOperationResponseAsync(request, HttpMethod.Get, response =>
+        {
+            result = this.ProcessContentOperationResponse<T>(response, false);
+        }, cancel);
+        return result;
+    }
+
+    public async Task<IContentCollection<T>> InvokeContentCollectionFunctionAsync<T>(OperationRequest request, CancellationToken cancel) where T : Content
+    {
+        IContentCollection<T> result = null;
+        await ProcessOperationResponseAsync(request, HttpMethod.Get, response =>
+        {
+            result = this.ProcessContentCollectionOperationResponse<T>(response, false);
+        }, cancel);
+        return result ?? ContentCollection<T>.Empty;
     }
 
     public async Task InvokeActionAsync(OperationRequest request, CancellationToken cancel)
@@ -731,10 +754,29 @@ internal class Repository : IRepository
         var result = default(T);
         await ProcessOperationResponseAsync(request, HttpMethod.Post, response =>
         {
-            if (!string.IsNullOrEmpty(response))
-                result = JsonConvert.DeserializeObject<T>(response);
+            result = this.ProcessOperationResponse<T>(response, true);
         }, cancel);
         return result;
+    }
+
+    public async Task<T> InvokeContentActionAsync<T>(OperationRequest request, CancellationToken cancel) where T : Content
+    {
+        var result = default(T);
+        await ProcessOperationResponseAsync(request, HttpMethod.Post, response =>
+        {
+            result = this.ProcessContentOperationResponse<T>(response, true);
+        }, cancel);
+        return result;
+    }
+
+    public async Task<IContentCollection<T>> InvokeContentCollectionActionAsync<T>(OperationRequest request, CancellationToken cancel) where T : Content
+    {
+        IContentCollection<T> result = null;
+        await ProcessOperationResponseAsync(request, HttpMethod.Post, response =>
+        {
+            result = this.ProcessContentCollectionOperationResponse<T>(response, true);
+        }, cancel);
+        return result ?? ContentCollection<T>.Empty;
     }
 
     /* ============================================================================ LOW LEVEL API */
@@ -792,13 +834,13 @@ internal class Repository : IRepository
 
     /* ============================================================================ */
 
-    private T CreateContentFromResponse<T>(dynamic jObject) where T : Content
+    internal T CreateContentFromResponse<T>(dynamic jObject) where T : Content
     {
         //var content = _services.GetRequiredService<T>();
         var content = (T)CreateContentFromResponse(jObject);
         return content;
     }
-    private Content CreateContentFromResponse(dynamic jObject, Type contentType = null)
+    internal Content CreateContentFromResponse(dynamic jObject, Type contentType = null)
     {
         Type type;
         if (contentType == null)
@@ -829,7 +871,7 @@ internal class Repository : IRepository
         string contentTypeName = jsonModel.Type?.ToString();
         return GetContentTypeByName(contentTypeName);
     }
-    private Type GetContentTypeByName(string contentTypeName)
+    internal Type GetContentTypeByName(string contentTypeName)
     {
         if (contentTypeName == null)
             return null;
