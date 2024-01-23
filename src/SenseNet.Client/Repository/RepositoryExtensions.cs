@@ -14,66 +14,53 @@ namespace SenseNet.Client;
 
 internal static class RepositoryExtensions
 {
-    public static void AssertParameterTypeIsContentInFunction<T>(this Repository repository, [CallerMemberName] string caller = null)
+    public static void AssertParameterTypeIsContent<T>(this Repository repository, bool isAction, [CallerMemberName] string caller = null)
     {
         if (typeof(Content).IsAssignableFrom(typeof(T)))
             return;
 
         // :) We will consider your request but ...
-        throw new System.ApplicationException($"The {caller} cannot be called with type parameter {typeof(T).FullName}. " +
-                                              "If the type parameter is not the Content or any inherited type, call the " +
-                                              "InvokeFunctionAsync<T>");
+        var msg = $"The {caller} cannot be called with type parameter {typeof(T).FullName}. " +
+                  "If the type parameter is not the Content or any inherited type, call the " +
+                  (isAction ? "InvokeActionAsync<T>" : "InvokeFunctionAsync<T>") + " method.";
+        throw new System.ApplicationException(msg);
     }
-    public static void AssertParameterTypeIsNotContentInFunction<T>(this Repository repository, [CallerMemberName] string caller = null)
+    public static void AssertParameterTypeIsNotContent<T>(this Repository repository, bool isAction, [CallerMemberName] string caller = null)
     {
         if (!typeof(Content).IsAssignableFrom(typeof(T)))
             return;
 
-        throw new System.ApplicationException($"The {caller} cannot be called with type parameter {typeof(T).FullName}. " +
-                                              "If the type parameter is Content or any inherited type, call the " +
-                                              "InvokeContentFunctionAsync<T> or InvokeContentCollectionFunctionAsync<T> method.");
-    }
-    public static void AssertParameterTypeIsContentInAction<T>(this Repository repository, [CallerMemberName] string caller = null)
-    {
-        if (!typeof(Content).IsAssignableFrom(typeof(T)))
-            return;
-
-        throw new System.ApplicationException($"The {caller} cannot be called with type parameter {typeof(T).FullName}. " +
-                                              $"If the type parameter is not Content or any inherited type, call the " +
-                                              $"InvokeActionAsync<T>.");
-    }
-    public static void AssertParameterTypeIsNotContentInAction<T>(this Repository repository, [CallerMemberName] string caller = null)
-    {
-        if (!typeof(Content).IsAssignableFrom(typeof(T)))
-            return;
-
-        throw new System.ApplicationException($"The {caller} cannot be called with type parameter {typeof(T).FullName}. " +
-                                              $"If the type parameter is Content or any inherited type, call the " +
-                                              $"InvokeContentActionAsync<T> or InvokeContentCollectionActionAsync<T> method.");
+        var msg = $"The {caller} cannot be called with type parameter {typeof(T).FullName}. " +
+                  "If the type parameter is Content or any inherited type, call the " +
+                  (isAction
+                      ? "InvokeContentActionAsync<T> or InvokeContentCollectionActionAsync<T>"
+                      : "InvokeContentFunctionAsync<T> or InvokeContentCollectionFunctionAsync<T>") +
+                  " method."; ;
+        throw new System.ApplicationException(msg);
     }
 
-    public static T ProcessOperationResponse<T>(this Repository repository, string response)
+    public static T ProcessOperationResponse<T>(this Repository repository, string response, bool isAction)
     {
         if (string.IsNullOrEmpty(response))
             return default;
-        repository.AssertParameterTypeIsNotContentInFunction<T>();
+        repository.AssertParameterTypeIsNotContent<T>(isAction);
         return JsonConvert.DeserializeObject<T>(response);
     }
-    public static T ProcessContentOperationResponse<T>(this Repository repository, string response) where T : Content
+    public static T ProcessContentOperationResponse<T>(this Repository repository, string response, bool isAction) where T : Content
     {
         if (string.IsNullOrEmpty(response))
             return default;
-        repository.AssertParameterTypeIsContentInFunction<T>();
+        repository.AssertParameterTypeIsContent<T>(isAction);
 
         dynamic json = JsonConvert.DeserializeObject(response);
 
         return (T)BuildContentFromResponse(repository, json.d, typeof(T));
     }
-    public static IContentCollection<T> ProcessContentCollectionOperationResponse<T>(this Repository repository, string response) where T : Content
+    public static IContentCollection<T> ProcessContentCollectionOperationResponse<T>(this Repository repository, string response, bool isAction) where T : Content
     {
         if (string.IsNullOrEmpty(response))
             return ContentCollection<T>.Empty;
-        repository.AssertParameterTypeIsContentInFunction<T>();
+        repository.AssertParameterTypeIsContent<T>(isAction);
 
         var contents = BuildContentCollectionFromResponse<T>(repository, response);
         return contents;

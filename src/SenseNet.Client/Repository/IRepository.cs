@@ -520,9 +520,8 @@ public interface IRepository
     Task<T> InvokeContentFunctionAsync<T>(OperationRequest request, CancellationToken cancel) where T : Content;
     /// <summary>
     /// Calls a server function by the provided <paramref name="request"/>
-    /// and returns the response converted to the desired object.
+    /// and returns the response converted to a <seealso cref="IContentCollection{T}"/> instance.
     /// Note that the type parameter defines the item type of the <see cref="IContentCollection{T}"/>, not the full return type.
-    /// The returned object is an <see cref="IContentCollection{T}"/> instance.
     /// See also <seealso cref="InvokeFunctionAsync{T}"/> and <seealso cref="InvokeContentFunctionAsync{T}"/>.
     /// </summary>
     /// <typeparam name="T">Can be <see cref="Content"/> or any inherited type.</typeparam>
@@ -584,9 +583,8 @@ public interface IRepository
     Task<T> InvokeContentActionAsync<T>(OperationRequest request, CancellationToken cancel) where T : Content;
     /// <summary>
     /// Executes a server action by the provided <paramref name="request"/>
-    /// and returns the response converted to the desired object.
+    /// and returns the response converted to a <seealso cref="IContentCollection{T}"/> instance.
     /// Note that the type parameter defines the item type of the <see cref="IContentCollection{T}"/>, not the full return type.
-    /// The returned object is an <see cref="IContentCollection{T}"/> instance.
     /// See also <seealso cref="InvokeActionAsync{T}"/> and <seealso cref="InvokeContentActionAsync{T}"/>.
     /// </summary>
     /// <typeparam name="T">Can be <see cref="Content"/> or any inherited type.</typeparam>

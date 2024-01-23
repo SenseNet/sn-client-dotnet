@@ -623,7 +623,7 @@ public class ContentTests : IntegrationTestBase
             OperationName = "GetCurrentUser",
             Select = new[] { "Name", "Path", "Id", "Type" }
         };
-        var user = await repository.InvokeFunctionAsync<User>(request, CancellationToken.None);
+        var user = await repository.InvokeContentFunctionAsync<User>(request, CancellationToken.None);
 
         // ASSERT
         Assert.AreEqual(typeof(User), user.GetType());
@@ -644,7 +644,7 @@ public class ContentTests : IntegrationTestBase
             OperationName = "Ancestors",
             Select = new []{"Name", "Path", "Id", "Type"}
         };
-        var contents = await repository.InvokeFunctionAsync<Content[]>(request, CancellationToken.None);
+        var contents = await repository.InvokeContentCollectionFunctionAsync<Content>(request, CancellationToken.None);
 
         // ASSERT
         var names = string.Join("|", contents.Select(x => $"{x.Name}:{x["Type"]}"));

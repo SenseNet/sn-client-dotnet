@@ -719,7 +719,7 @@ internal class Repository : IRepository
         var result = default(T);
         await ProcessOperationResponseAsync(request, HttpMethod.Get, response =>
         {
-            result = this.ProcessOperationResponse<T>(response);
+            result = this.ProcessOperationResponse<T>(response, false);
         }, cancel);
         return result;
     }
@@ -729,7 +729,7 @@ internal class Repository : IRepository
         var result = default(T);
         await ProcessOperationResponseAsync(request, HttpMethod.Get, response =>
         {
-            result = this.ProcessContentOperationResponse<T>(response);
+            result = this.ProcessContentOperationResponse<T>(response, false);
         }, cancel);
         return result;
     }
@@ -739,7 +739,7 @@ internal class Repository : IRepository
         IContentCollection<T> result = null;
         await ProcessOperationResponseAsync(request, HttpMethod.Get, response =>
         {
-            result = this.ProcessContentCollectionOperationResponse<T>(response);
+            result = this.ProcessContentCollectionOperationResponse<T>(response, false);
         }, cancel);
         return result ?? ContentCollection<T>.Empty;
     }
@@ -754,7 +754,7 @@ internal class Repository : IRepository
         var result = default(T);
         await ProcessOperationResponseAsync(request, HttpMethod.Post, response =>
         {
-            result = this.ProcessOperationResponse<T>(response);
+            result = this.ProcessOperationResponse<T>(response, true);
         }, cancel);
         return result;
     }
@@ -764,15 +764,19 @@ internal class Repository : IRepository
         var result = default(T);
         await ProcessOperationResponseAsync(request, HttpMethod.Post, response =>
         {
-            result = this.ProcessContentOperationResponse<T>(response);
+            result = this.ProcessContentOperationResponse<T>(response, true);
         }, cancel);
         return result;
     }
 
-    public Task<IContentCollection<T>> InvokeContentCollectionActionAsync<T>(OperationRequest request, CancellationToken cancel) where T : Content
+    public async Task<IContentCollection<T>> InvokeContentCollectionActionAsync<T>(OperationRequest request, CancellationToken cancel) where T : Content
     {
-        //UNDONE: NotImplementedException
-        throw new NotImplementedException();
+        IContentCollection<T> result = null;
+        await ProcessOperationResponseAsync(request, HttpMethod.Post, response =>
+        {
+            result = this.ProcessContentCollectionOperationResponse<T>(response, true);
+        }, cancel);
+        return result ?? ContentCollection<T>.Empty;
     }
 
     /* ============================================================================ LOW LEVEL API */
