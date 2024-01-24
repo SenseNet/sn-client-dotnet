@@ -37,7 +37,7 @@ public class ComplexTests : IntegrationTestBase
         user1.Gender = Gender.Female;
         user1.MaritalStatus = MaritalStatus.Married;
         user1.Manager = admin;
-        user1["Password"] = "password1";
+        user1.Password = "password1";
         await user1.SaveAsync(_cancel);
 
         var group1 = repository.CreateContent<Group>(publicDomainPath, null, "Group-1");
@@ -53,6 +53,7 @@ public class ComplexTests : IntegrationTestBase
         Assert.IsTrue(user1.Id > 0);
         Assert.IsTrue(group1.Id > 0);
         Assert.IsTrue(group2.Id > 0);
+        Assert.IsTrue(group3.Id > 0);
         // check membership
         var loadedGroup2 = await repository.LoadContentAsync<Group>(
             new LoadContentRequest {ContentId = group2.Id, Expand = expand, Select = select}, _cancel).ConfigureAwait(false);
@@ -99,6 +100,21 @@ public class ComplexTests : IntegrationTestBase
         var allRoles = reloadedUser.AllRoles.Select(x => x.Name).OrderBy(x => x);
         var directRoles = reloadedUser.DirectRoles.Select(x => x.Name).OrderBy(x => x);
         Assert.AreEqual("Group-1 Group-2 Group-3", string.Join(" ", allRoles));
+        Assert.AreEqual("Group-3", string.Join(" ", directRoles));
+
+        // ACT-3: Break the circle: remove group3 to group1
+        await group1.RemoveMembersAsync(new[] { group3.Id }, _cancel).ConfigureAwait(false);
+
+        // ASSERT-3: check user roles
+        reloadedUser = await repository.LoadContentAsync<User>(new LoadContentRequest
+        {
+            ContentId = user1.Id,
+            Expand = new[] { "AllRoles", "DirectRoles" },
+            Select = new[] { "*", "AllRoles/Name", "DirectRoles/Name" }
+        }, _cancel).ConfigureAwait(false);
+        allRoles = reloadedUser.AllRoles.Select(x => x.Name).OrderBy(x => x);
+        directRoles = reloadedUser.DirectRoles.Select(x => x.Name).OrderBy(x => x);
+        Assert.AreEqual("Group-3", string.Join(" ", allRoles));
         Assert.AreEqual("Group-3", string.Join(" ", directRoles));
     }
 }

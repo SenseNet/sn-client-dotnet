@@ -47,6 +47,7 @@ public class Group : Content
     /// <param name="groupId">Group id.</param>
     /// <param name="memberIds">Ids of members to remove from the group.</param>
     /// <param name="server">Target server.</param>
+    [Obsolete("Use RemoveMembersAsync instance method")]
     public static async Task RemoveMembersAsync(int groupId, int[] memberIds, ServerContext server = null)
     {
         await RESTCaller.GetResponseStringAsync(groupId, "RemoveMembers", HttpMethod.Post, JsonHelper.GetJsonPostModel(new
@@ -63,9 +64,9 @@ public class Group : Content
     /// Adds members to a group.
     /// </summary>
     /// <param name="memberIds">Ids of members to add to the group.</param>
+    /// <param name="cancel">Optional cancellation token.</param>
     public async Task AddMembersAsync(int[] memberIds, CancellationToken cancel = default)
     {
-        //await AddMembersAsync(this.Id, memberIds, this.Server).ConfigureAwait(false);
         await Repository.InvokeActionAsync(new OperationRequest
         {
             ContentId = this.Id,
@@ -77,8 +78,14 @@ public class Group : Content
     /// Removes members from a group.
     /// </summary>
     /// <param name="memberIds">Ids of members to remove from the group.</param>
-    public async Task RemoveMembersAsync(int[] memberIds)
+    /// <param name="cancel">Optional cancellation token.</param>
+    public async Task RemoveMembersAsync(int[] memberIds, CancellationToken cancel = default)
     {
-        await RemoveMembersAsync(this.Id, memberIds, this.Server).ConfigureAwait(false);
+        await Repository.InvokeActionAsync(new OperationRequest
+        {
+            ContentId = this.Id,
+            OperationName = "RemoveMembers",
+            PostData = new { contentIds = memberIds },
+        }, cancel).ConfigureAwait(false);
     }
 }

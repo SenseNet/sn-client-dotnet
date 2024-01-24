@@ -34,6 +34,7 @@ public class User : Content
     }
 
     public string LoginName { get; set; }
+    public string Password { get; set; }
     public string JobTitle { get; set; }
     public bool Enabled { get; set; }
     public string Domain { get; set; }
