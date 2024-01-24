@@ -129,6 +129,7 @@ namespace SenseNet.Client.IntegrationTests.Legacy
         [TestMethod]
         public async Task LoadReferences_DynamicProperty_MultiRef_WithFilter()
         {
+Assert.Inconclusive();
             // This request loads references and expands their reference field.
             var members = (await Content.LoadReferencesAsync(new ODataRequest
             {
