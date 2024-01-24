@@ -9,7 +9,6 @@ public enum SavedQueryType{ Public, Private }
 internal class SnQuery : Content
 {
     public string Query { get; set; }
-    [JsonIgnore]
     public SavedQueryType QueryType { get; set; }
     public string UiFilters { get; set; }
 
