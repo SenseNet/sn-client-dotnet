@@ -842,16 +842,8 @@ internal class Repository : IRepository
     }
     internal Content CreateContentFromResponse(dynamic jObject, Type contentType = null)
     {
-        Type type;
-        if (contentType == null)
-        {
-            string contentTypeName = jObject.Type?.ToString();
-            type = GetContentTypeByName(contentTypeName);
-        }
-        else
-        {
-            type = contentType;
-        }
+        var contentTypeName = jObject.Type?.ToString();
+        Type type = GetContentTypeByName(contentTypeName) ?? contentType;
 
         var content = type != null
             ? (Content)_services.GetRequiredService(type)

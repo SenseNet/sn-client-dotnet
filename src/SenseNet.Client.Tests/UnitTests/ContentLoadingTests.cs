@@ -768,6 +768,7 @@ public class ContentLoadingTests : TestBase
 
         public MyContent3[]? Reference_Array { get; set; }
         public List<MyContent3>? Reference_List { get; set; }
+        public List<MyContent>? Reference_List_MultiType { get; set; }
     }
 
     [TestMethod]
@@ -1010,6 +1011,61 @@ public class ContentLoadingTests : TestBase
         Assert.AreEqual("/Root/Path1", referredItems[0].Path);
         Assert.AreEqual("/Root/Path2", referredItems[1].Path);
         Assert.AreEqual("/Root/Path3", referredItems[2].Path);
+    }
+    [TestMethod]
+    public async Task LoadContent_T_References_Expanded_Multi_List_MultiTypes()
+    {
+        // ALIGN
+        var restCaller = CreateRestCallerFor(@"{ ""d"": { ""Name"": ""Content"", ""Type"": ""Workspace"",
+    // multi reference
+    ""Reference_List_MultiType"": [
+      { ""Path"": ""/Root/Path1"", ""Type"": ""MyContent"" },
+      { ""Path"": ""/Root/Path2"", ""Type"": ""MyContentA"" },
+      { ""Path"": ""/Root/Path3"", ""Type"": ""MyContentB"" }
+    ]
+  }
+}");
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<MyContent>();
+            services.RegisterGlobalContentType<MyContent2>();
+            services.RegisterGlobalContentType<MyContent3>();
+            services.RegisterGlobalContentType<MyContentA>();
+            services.RegisterGlobalContentType<MyContentB>();
+            services.RegisterGlobalContentType<TestContentForReferences>("Workspace");
+        });
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+            .ConfigureAwait(false);
+
+        // ACT
+        var request = new LoadContentRequest()
+        {
+            Path = "/Root/Content",
+            Expand = new[] { "AllowedChildTypes" },
+            Select = new[] { "Name", "Type", "AllowedChildTypes/Path" }
+        };
+        var content = await repository.LoadContentAsync<TestContentForReferences>(request, CancellationToken.None);
+
+        // ASSERT
+        var requestedUri = (Uri)restCaller.ReceivedCalls().ToArray()[1].GetArguments().First()!;
+        Assert.IsNotNull(requestedUri);
+        Assert.AreEqual("/OData.svc/Root('Content')?metadata=no&$expand=AllowedChildTypes&$select=Name,Type,AllowedChildTypes/Path", requestedUri.PathAndQuery);
+
+        Assert.IsNull(content.Manager);
+        Assert.IsNull(content.Owner);
+        var referredItems = content.Reference_List_MultiType;
+        Assert.IsNotNull(referredItems);
+        Assert.AreEqual("/Root/Path1", referredItems[0].Path);
+        Assert.AreEqual("/Root/Path2", referredItems[1].Path);
+        Assert.AreEqual("/Root/Path3", referredItems[2].Path);
+        Assert.AreEqual("MyContent", referredItems[0].Type);
+        Assert.AreEqual("MyContentA", referredItems[1].Type);
+        Assert.AreEqual("MyContentB", referredItems[2].Type);
+        Assert.AreEqual(typeof(MyContent), referredItems[0].GetType());
+        Assert.AreEqual(typeof(MyContentA), referredItems[1].GetType());
+        Assert.AreEqual(typeof(MyContentB), referredItems[2].GetType());
     }
 
     /* =================================================================== CUSTOM PROPERTIES */

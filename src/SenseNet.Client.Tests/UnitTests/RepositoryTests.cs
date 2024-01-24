@@ -922,6 +922,8 @@ namespace SenseNet.Client.Tests.UnitTests
         public class MyContent2 : Content { public MyContent2(IRestCaller restCaller, ILogger<MyContent> logger) : base(restCaller, logger) { } }
         public class MyContent3 : Content { public MyContent3(IRestCaller restCaller, ILogger<MyContent> logger) : base(restCaller, logger) { } }
         public class MyContent4 : Content { public MyContent4(IRestCaller restCaller, ILogger<MyContent> logger) : base(restCaller, logger) { } }
+        public class MyContentA : MyContent { public MyContentA(IRestCaller restCaller, ILogger<MyContent> logger) : base(restCaller, logger) { } }
+        public class MyContentB : MyContent { public MyContentB(IRestCaller restCaller, ILogger<MyContent> logger) : base(restCaller, logger) { } }
 
         [TestMethod]
         public async Task Repository_T_RegisterGlobalContentType_TypeParam()
