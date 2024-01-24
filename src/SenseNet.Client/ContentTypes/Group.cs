@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -18,11 +19,7 @@ public class Group : Content
 
     /* ============================================================================= Constructors */
 
-    /// <summary>
-    /// Initializes an instance of a Group.
-    /// </summary>
-    /// <param name="server"></param>
-    protected Group(ServerContext server) : base(server) { }
+    public Group(IRestCaller restCaller, ILogger<Image> logger) : base(restCaller, logger) { }
 
     /* ============================================================================= Static API */
 

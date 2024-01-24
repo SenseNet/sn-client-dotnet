@@ -202,6 +202,61 @@ public class ContentTests : IntegrationTestBase
         }
     }
 
+    [TestMethod]
+    public async Task IT_Content_Collection_MultiType()
+    {
+        var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
+        var repository = await GetRepositoryCollection()
+            .GetRepositoryAsync("local", cancel).ConfigureAwait(false);
+
+        // ACT
+        var request = new LoadCollectionRequest()
+        {
+            Path = "/Root/IMS/BuiltIn/Portal",
+            Select = new[] { "Name", "Path", "Type" },
+            OrderBy = new[] { "Path" }
+        };
+        var result = await repository.LoadCollectionAsync(request, cancel).ConfigureAwait(false);
+
+        // ASSERT
+        var contents = result.ToArray();
+        var types = contents
+            .Select(x => x.GetType())
+            .Distinct()
+            .Select(t => t.Name)
+            .OrderBy(n => n)
+            .ToArray();
+        Assert.AreEqual("Group User", string.Join(" ", types));
+    }
+
+    [TestMethod]
+    public async Task IT_Content_Query_MultiType()
+    {
+        var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
+        var repository = await GetRepositoryCollection()
+            .GetRepositoryAsync("local", cancel).ConfigureAwait(false);
+
+        // ACT
+        var request = new QueryContentRequest
+        {
+            ContentQuery = "InTree:'/Root/IMS'",
+            Select = new[] { "Name", "Path", "Type" },
+            OrderBy = new[] { "Path" }
+        };
+        var result = await repository.QueryAsync(request, cancel).ConfigureAwait(false);
+
+        // ASSERT
+        var contents = result.ToArray();
+        var types = contents
+            .Select(x => x.GetType())
+            .Distinct()
+            .Select(t => t.Name)
+            .OrderBy(n => n)
+            .ToArray();
+        //Assert.AreEqual("Domains Domain Group Image OrganizationalUnit User", string.Join(" ", types));
+        Assert.AreEqual("Content Domain Group Image OrganizationalUnit User", string.Join(" ", types));
+    }
+
     /* ================================================================================================== ACTIONS */
 
     public class File : Content
