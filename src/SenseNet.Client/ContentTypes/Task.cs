@@ -35,44 +35,4 @@ public class SnTask : ListItem
     public string DueCssClass { get; set; }
 
     public SnTask(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }
-    /*
-    protected override bool TryConvertFromProperty(string propertyName, out object convertedValue)
-    {
-        switch (propertyName)
-        {
-            case nameof(Priority):
-                convertedValue = EnumValueToStringArray((int?)Priority);
-                return true;
-            case nameof(Status):
-                convertedValue = EnumNameToStringArray(Status?.ToString());
-                return true;
-            default:
-                return base.TryConvertFromProperty(propertyName, out convertedValue);
-        }
-    }
-    protected override bool TryConvertToProperty(string propertyName, JToken jsonValue, out object propertyValue)
-    {
-        switch (propertyName)
-        {
-            case nameof(Priority):
-            {
-                if (StringArrayToInt(jsonValue, out var converted))
-                    propertyValue = (TaskPriority)converted;
-                else
-                    propertyValue = null;
-                return true;
-            }
-            case nameof(Status):
-            {
-                if (StringArrayToEnum<TaskState>(jsonValue, out var converted))
-                    propertyValue = (TaskState)converted;
-                else
-                    propertyValue = null;
-                return true;
-            }
-            default:
-                return base.TryConvertToProperty(propertyName, jsonValue, out propertyValue);
-        }
-    }
-    */
 }

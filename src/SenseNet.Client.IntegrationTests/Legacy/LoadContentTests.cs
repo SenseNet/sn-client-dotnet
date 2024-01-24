@@ -125,6 +125,7 @@ namespace SenseNet.Client.IntegrationTests.Legacy
             }
         }
 
+        //UNDONE: Rewrite LoadReferencesAsync and this test
         [TestMethod]
         public async Task LoadReferences_DynamicProperty_MultiRef_WithFilter()
         {

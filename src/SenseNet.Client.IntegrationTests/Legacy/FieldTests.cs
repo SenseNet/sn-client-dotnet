@@ -11,6 +11,7 @@ namespace SenseNet.Client.IntegrationTests.Legacy
             Initializer.InitializeServer(context);
         }
 
+        //UNDONE: Rewrite LoadReferencesAsync and this test
         [TestMethod]
         public async Task ReferenceField_LoadReferences()
         {

@@ -49,7 +49,7 @@ public class User : Content
     public string Phone { get; set; }
     public Gender? Gender { get; set; }
     public MaritalStatus? MaritalStatus { get; set; }
-    public DateTime BirthDate { get; set; }
+    public DateTime? BirthDate { get; set; }
     public string Education { get; set; }
     public string TwitterAccount { get; set; }
     public string FacebookURL { get; set; }
