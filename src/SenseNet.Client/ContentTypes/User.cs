@@ -61,10 +61,10 @@ public class User : Content
     public string ExternalUserProviders { get; set; }
     IEnumerable<Workspace> FollowedWorkspaces { get; set; }
 
-    //UNDONE: Implement AllRoles property
-    //AllRoles AllRoles { get; set; }
-    //UNDONE: Implement DirectRoles property
-    //DirectRoles DirectRoles { get; set; }
+    [JsonIgnore] // Read only field
+    public IEnumerable<Content> AllRoles { get; set; }
+    [JsonIgnore] // Read only field
+    public IEnumerable<Content> DirectRoles { get; set; }
 
     // Not implemented properties
     //     ImageData:Binary

@@ -76,13 +76,29 @@ public class ComplexTests : IntegrationTestBase
         // ASSERT-2 check membership
         var reloadedGroup2 = await repository.LoadContentAsync<Group>(
             new LoadContentRequest {ContentId = group2.Id, Expand = expand, Select = select}, _cancel).ConfigureAwait(false);
-        Assert.IsNotNull(loadedGroup2?.Members);
+        Assert.IsNotNull(reloadedGroup2?.Members);
         var reloadedMemberNames2 = reloadedGroup2.Members.Select(c => c.Name).OrderBy(x => x);
         Assert.AreEqual("Group-1", string.Join(" ", reloadedMemberNames2));
         var reloadedGroup3 = await repository.LoadContentAsync<Group>(
             new LoadContentRequest {ContentId = group3.Id, Expand = expand, Select = select}, _cancel).ConfigureAwait(false);
-        Assert.IsNotNull(loadedGroup2?.Members);
+        Assert.IsNotNull(reloadedGroup3?.Members);
         var reloadedMemberNames3 = reloadedGroup3.Members.Select(c => c.Name).OrderBy(x => x);
         Assert.AreEqual("Group-1 User-1", string.Join(" ", reloadedMemberNames3));
+
+        // ACT-3: Make circle: Add group2 to group3, group3 to group1
+        await group3.AddMembersAsync(new[] { group2.Id }, _cancel).ConfigureAwait(false);
+        await group1.AddMembersAsync(new[] { group3.Id }, _cancel).ConfigureAwait(false);
+
+        // ASSERT-3: check user roles
+        var reloadedUser = await repository.LoadContentAsync<User>(new LoadContentRequest
+        {
+            ContentId = user1.Id,
+            Expand = new []{"AllRoles", "DirectRoles"},
+            Select = new []{"*", "AllRoles/Name", "DirectRoles/Name" }
+        }, _cancel).ConfigureAwait(false);
+        var allRoles = reloadedUser.AllRoles.Select(x => x.Name).OrderBy(x => x);
+        var directRoles = reloadedUser.DirectRoles.Select(x => x.Name).OrderBy(x => x);
+        Assert.AreEqual("Group-1 Group-2 Group-3", string.Join(" ", allRoles));
+        Assert.AreEqual("Group-3", string.Join(" ", directRoles));
     }
 }
