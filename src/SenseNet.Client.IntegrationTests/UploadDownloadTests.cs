@@ -172,13 +172,13 @@ public class UploadDownloadTests : IntegrationTestBase
 
     #region nested content classes
 
-    public class ContentType : Content
+    private class ContentType : Content
     {
         public ContentType(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }
 
         public Binary? Binary { get; set; }
     }
-    public class File : Content
+    private class File : Content
     {
         public File(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }
 
