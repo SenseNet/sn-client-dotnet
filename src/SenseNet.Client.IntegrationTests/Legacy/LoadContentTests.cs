@@ -233,7 +233,7 @@ namespace SenseNet.Client.IntegrationTests.Legacy
             {
                 // first check as Visitor
                 server.Authentication.AccessToken = null;
-                var visitor = await repository.GetCurrentUserAsync(_cancel);
+                var visitor = await repository.GetCurrentUserAsync(_cancel).ConfigureAwait(false);
 
                 Assert.AreEqual("Visitor", visitor.Name);
             }
@@ -243,12 +243,12 @@ namespace SenseNet.Client.IntegrationTests.Legacy
             }
 
             // we assume that the global test user is the Admin
-            dynamic currentUser = await server.GetCurrentUserAsync();
+            dynamic currentUser = await repository.GetCurrentUserAsync(_cancel).ConfigureAwait(false);
             Assert.AreEqual("Admin", currentUser.Name);
 
             // check if expansion works
             currentUser = await repository.GetCurrentUserAsync(new[] { "Id", "Name", "Path", "Type", "CreatedBy/Id", "CreatedBy/Name", "CreatedBy/Type" },
-                new[] { "CreatedBy" }, _cancel);
+                new[] { "CreatedBy" }, _cancel).ConfigureAwait(false);
 
             Assert.AreEqual("Admin", (string)currentUser.CreatedBy.Name);
         }

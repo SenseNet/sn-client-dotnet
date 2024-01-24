@@ -2123,7 +2123,7 @@ namespace SenseNet.Client.Tests.UnitTests
                     Arg.Any<HttpMethod>(), Arg.Any<string>(),
                     Arg.Any<Dictionary<string, IEnumerable<string>>>(),
                     Arg.Any<CancellationToken>())
-                .Returns(Task.FromResult(@"{ ""Name"": ""Visitor"", ""Id"": 6, ""Type"": ""User"" }"));
+                .Returns(Task.FromResult(@"{""d"": { ""Name"": ""Visitor"", ""Id"": 6, ""Type"": ""User"" }}"));
             
             var repositories = GetRepositoryCollection(services =>
             {
@@ -2155,7 +2155,7 @@ namespace SenseNet.Client.Tests.UnitTests
         public async Task Repository_Auth_GetCurrentUser_ValidUser_UnknownToken()
         {
             // ALIGN
-            var restCaller = CreateRestCallerFor(@"{""Name"": ""Admin"", ""Id"": 1, ""Type"": ""User"" }");
+            var restCaller = CreateRestCallerFor(@"{""d"": {""Name"": ""Admin"", ""Id"": 1, ""Type"": ""User"" }}");
             var repositories = GetRepositoryCollection(services =>
             {
                 services.AddSingleton(restCaller);
@@ -2182,7 +2182,7 @@ namespace SenseNet.Client.Tests.UnitTests
         public async Task Repository_Auth_GetCurrentUser_ValidUser_ApiKey()
         {
             // ALIGN
-            var restCaller = CreateRestCallerFor(@"{""Name"": ""Admin"", ""Id"": 1, ""Type"": ""User"" }");
+            var restCaller = CreateRestCallerFor(@"{""d"": {""Name"": ""Admin"", ""Id"": 1, ""Type"": ""User"" }}");
             var repositories = GetRepositoryCollection(services =>
             {
                 services.AddSingleton(restCaller);

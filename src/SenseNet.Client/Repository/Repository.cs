@@ -625,7 +625,7 @@ internal class Repository : IRepository
             };
 
             var response = await GetResponseJsonAsync(request, HttpMethod.Get, cancel).ConfigureAwait(false);
-            return CreateContentFromJson(response);
+            return CreateContentFromJson(response.d);
         }
 
         // no token: load Visitor
