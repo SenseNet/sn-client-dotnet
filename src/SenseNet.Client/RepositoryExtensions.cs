@@ -47,6 +47,7 @@ public static class RepositoryExtensions
             .AddTransient<Content, Content>()
             .RegisterGlobalContentType<CalendarEvent>()
             .RegisterGlobalContentType<ContentLink>()
+            .RegisterGlobalContentType<ContentType>()
             .RegisterGlobalContentType<Domain>()
             .RegisterGlobalContentType<Email>()
             .RegisterGlobalContentType<EmailTemplate>()

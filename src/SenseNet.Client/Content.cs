@@ -112,10 +112,9 @@ public partial class Content : DynamicObject
     public bool? TrashDisabled { get; set; }
     public Workspace Workspace { get; set; }
 
-    //UNDONE: Implement AllowedChildTypes property
-    //public AllowedChildTypes AllowedChildTypes { get; set; }
-    //UNDONE: Implement EffectiveAllowedChildTypes property
-    //public AllowedChildTypes EffectiveAllowedChildTypes { get; set; }
+    public IEnumerable<ContentType> AllowedChildTypes { get; set; }
+    [JsonIgnore] // Read only field
+    public IEnumerable<ContentType> EffectiveAllowedChildTypes { get; set; }
 
     // Not implemented fields
     //   Noise:

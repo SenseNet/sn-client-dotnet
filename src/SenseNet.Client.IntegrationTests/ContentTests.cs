@@ -645,6 +645,57 @@ public class ContentTests : IntegrationTestBase
         Assert.IsFalse(await repository.IsContentExistsAsync(path, cancel).ConfigureAwait(false));
     }
 
+    /* ============================================================================================= ALLOWED CHILD TYPES */
+
+    [TestMethod]
+    public async Task IT_Content_AllowedChildTypes()
+    {
+        var cancel = new CancellationTokenSource().Token;
+        var repository = await GetRepositoryCollection()
+            .GetRepositoryAsync("local", cancel).ConfigureAwait(false);
+        
+        await repository.DeleteContentAsync(new[] {"/Root/Content/DocLib-1"}, true, cancel).ConfigureAwait(false);
+
+        // ACT-1: /Root/Content
+        var request = new LoadContentRequest
+        {
+            Path = "/Root/Content",
+            Expand = new[] {"AllowedChildTypes", "EffectiveAllowedChildTypes"},
+            Select = new[] {"*", "AllowedChildTypes/Name", "EffectiveAllowedChildTypes/Name" }
+        };
+        var content1 = await repository.LoadContentAsync<Workspace>(request, cancel).ConfigureAwait(false);
+
+        // ASSERT-1: AllowedChildTypes fields are not null, not empty
+        Assert.IsNotNull(content1.AllowedChildTypes);
+        Assert.IsNotNull(content1.EffectiveAllowedChildTypes);
+        Assert.IsTrue(content1.AllowedChildTypes.Any());
+        Assert.IsTrue(content1.EffectiveAllowedChildTypes.Any());
+
+        // ACT-2: Create a doclib with child type control
+        var taskListContentType = await repository.LoadContentAsync<ContentType>(
+                "/Root/System/Schema/ContentTypes/GenericContent/Folder/ContentList/ItemList/TaskList", cancel)
+            .ConfigureAwait(false);
+        var memoListContentType = await repository.LoadContentAsync<ContentType>(
+                "/Root/System/Schema/ContentTypes/GenericContent/Folder/ContentList/ItemList/MemoList", cancel)
+            .ConfigureAwait(false);
+        var docLib1 = repository.CreateContent("/Root/Content", "DocumentLibrary", "DocLib-1");
+        docLib1.AllowedChildTypes = new ContentType[] { taskListContentType, memoListContentType};
+        await docLib1.SaveAsync(cancel).ConfigureAwait(false);
+
+        // ASSERT-2
+        request = new LoadContentRequest
+        {
+            Path = "/Root/Content/DocLib-1",
+            Expand = new[] { "AllowedChildTypes", "EffectiveAllowedChildTypes" },
+            Select = new[] { "*", "AllowedChildTypes/Name", "EffectiveAllowedChildTypes/Name" }
+        };
+        docLib1 = await repository.LoadContentAsync<Content>(request, cancel).ConfigureAwait(false);
+        var allowedChildTypes = docLib1.AllowedChildTypes.Select(x => x.Name).OrderBy(x => x);
+        var effectiveChildTypes = docLib1.EffectiveAllowedChildTypes.Select(x => x.Name).OrderBy(x => x);
+        Assert.AreEqual("MemoList TaskList", string.Join(" ", allowedChildTypes));
+        Assert.AreEqual("MemoList SystemFolder TaskList", string.Join(" ", effectiveChildTypes));
+    }
+
     /* ================================================================================================== OPERATIONS */
 
     [TestMethod]

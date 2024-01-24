@@ -16,5 +16,7 @@ public class File : Content
     public string PageAttributes { get; set; }
     public string Watermark { get; set; }
 
+    public Binary Binary { get; set; }
+
     public File(IRestCaller restCaller, ILogger<File> logger) : base(restCaller, logger) { }
 }
