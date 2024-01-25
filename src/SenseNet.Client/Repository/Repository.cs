@@ -266,6 +266,7 @@ internal class Repository : IRepository
         throw new ClientException($"Invalid count response. Request: {oDataRequest.GetUri()}. Response: {response}");
     }
 
+
     private string AddInFolderRestriction(string contentQuery, string folderPath)
     {
         var clause = $"InFolder:'{folderPath}'";
@@ -289,6 +290,44 @@ internal class Repository : IRepository
         var resultEnumerable = items?.Select(CreateContentFromResponse<T>).ToArray() ?? Array.Empty<T>();
         return new ContentCollection<T>(resultEnumerable, count,
             totalCount);
+    }
+
+    /* ============================================================================ LOAD REFERENCE */
+
+    public async Task<Content> LoadReferenceAsync(LoadReferenceRequest requestData, CancellationToken cancel)
+    {
+        return (await LoadReferencesAsync(requestData, cancel).ConfigureAwait(false)).FirstOrDefault();
+    }
+    public async Task<TContent> LoadReferenceAsync<TContent>(LoadReferenceRequest requestData, CancellationToken cancel) where TContent : Content
+    {
+        return (await LoadReferencesAsync<TContent>(requestData, cancel).ConfigureAwait(false)).FirstOrDefault();
+    }
+    public Task<IContentCollection<Content>> LoadReferencesAsync(LoadReferenceRequest requestData, CancellationToken cancel)
+    {
+        return LoadReferencesPrivateAsync<Content>(requestData, cancel);
+    }
+    public Task<IContentCollection<TContent>> LoadReferencesAsync<TContent>(LoadReferenceRequest requestData, CancellationToken cancel) where TContent : Content
+    {
+        return LoadReferencesPrivateAsync<TContent>(requestData, cancel);
+    }
+
+    private async Task<IContentCollection<TContent>> LoadReferencesPrivateAsync<TContent>(LoadReferenceRequest requestData, CancellationToken cancel) where TContent : Content
+    {
+        var oreq = requestData.ToODataRequest(this.Server);
+
+        var response = await this.GetResponseJsonAsync(oreq, HttpMethod.Get, cancel);
+        if (response.d.results != null)
+        {
+            // { "d": { "__count": 2, "results": [ { "Id": 1,
+            var contents = ((JArray)response.d.results)
+                .Select(CreateContentFromResponse<TContent>)
+                .ToArray();
+            return new ContentCollection<TContent>(contents, contents.Length, (int)response.d.__count);
+        }
+
+        // { "d": { "Name": "Admin",
+        TContent content = CreateContentFromResponse<TContent>(response.d);
+        return new ContentCollection<TContent>(new[] {content}, 1, 1);
     }
 
     /* ============================================================================ EXISTENCE */

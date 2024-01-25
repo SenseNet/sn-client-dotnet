@@ -389,6 +389,7 @@ public partial class Content : DynamicObject
     /// <param name="fieldName">Reference field name.</param>
     /// <param name="select">Field names of the referenced content to select.</param>
     /// <param name="server">Target server.</param>
+    [Obsolete("Use LoadReferenceAsync method on a Repository or Content instance", true)]
     public static async Task<Content> LoadReferenceAsync(int id, string fieldName,
         string[] select = null, ServerContext server = null)
     {
@@ -402,6 +403,7 @@ public partial class Content : DynamicObject
     /// <param name="fieldName">Reference field name.</param>
     /// <param name="select">Field names of the referenced content to select.</param>
     /// <param name="server">Target server.</param>
+    [Obsolete("Use LoadReferenceAsync method on a Repository or Content instance", true)]
     public static async Task<Content> LoadReferenceAsync(string path, string fieldName,
         string[] select = null, ServerContext server = null)
     {
@@ -415,6 +417,7 @@ public partial class Content : DynamicObject
     /// <param name="fieldName">Reference field name.</param>
     /// <param name="select">Field names of the referenced content items to select.</param>
     /// <param name="server">Target server.</param>
+    [Obsolete("Use LoadReferenceAsync method on a Repository or Content instance", true)]
     public static async Task<IEnumerable<Content>> LoadReferencesAsync(int id, string fieldName, string[] select = null, ServerContext server = null)
     {
         return await LoadReferencesAsync(null, id, fieldName, select, server).ConfigureAwait(false);
@@ -426,6 +429,7 @@ public partial class Content : DynamicObject
     /// <param name="fieldName">Reference field name.</param>
     /// <param name="select">Field names of the referenced content items to select.</param>
     /// <param name="server">Target server.</param>
+    [Obsolete("Use LoadReferenceAsync method on a Repository or Content instance", true)]
     public static async Task<IEnumerable<Content>> LoadReferencesAsync(string path, string fieldName, string[] select = null, ServerContext server = null)
     {
         return await LoadReferencesAsync(path, 0, fieldName, select, server).ConfigureAwait(false);
@@ -464,11 +468,12 @@ public partial class Content : DynamicObject
     /// <param name="requestData">Detailed information that will be sent as part of the request.
     /// For example Top, Skip, Select, Expand</param>
     /// <param name="server">Target server.</param>
-    public static async Task<IEnumerable<Content>> LoadReferencesAsync(ODataRequest requestData, ServerContext server = null)
+    public static async Task<IEnumerable<Content>> LoadReferencesAsync(ODataRequest requestData,
+        ServerContext server = null)
     {
         if (string.IsNullOrEmpty(requestData.PropertyName))
             throw new ClientException("Please provide a reference field name as the PropertyName in request data.");
-            
+
         var responseText = await RESTCaller.GetResponseStringAsync(requestData.GetUri(), server).ConfigureAwait(false);
         if (string.IsNullOrEmpty(responseText))
             return Array.Empty<Content>();
@@ -483,6 +488,78 @@ public partial class Content : DynamicObject
             JValue { HasValues: false } => Array.Empty<Content>(),
             _ => new List<Content> { CreateFromResponse(refValue, server) }
         };
+    }
+
+
+    public Task<Content> LoadReferenceAsync(string fieldName, CancellationToken cancel)
+    {
+        return Repository.LoadReferenceAsync<Content>(CreateLoadReferenceRequest(fieldName), cancel);
+    }
+
+    public Task<TContent> LoadReferenceAsync<TContent>(string fieldName, CancellationToken cancel) where TContent : Content
+    {
+        return Repository.LoadReferenceAsync<TContent>(CreateLoadReferenceRequest(fieldName), cancel);
+    }
+    public async Task<Content> LoadReferenceAsync(LoadReferenceRequest requestData, CancellationToken cancel)
+    {
+        AssertLoadReferenceRequest(requestData);
+        requestData.ContentId = this.Id;
+        return await Repository.LoadReferenceAsync<Content>(requestData, cancel).ConfigureAwait(false);
+    }
+    public async Task<TContent> LoadReferenceAsync<TContent>(LoadReferenceRequest requestData, CancellationToken cancel) where TContent : Content
+    {
+        AssertLoadReferenceRequest(requestData);
+        requestData.ContentId = this.Id;
+        return await Repository.LoadReferenceAsync<TContent>(requestData, cancel).ConfigureAwait(false);
+    }
+    public Task<IContentCollection<Content>> LoadReferencesAsync(string fieldName, CancellationToken cancel)
+    {
+        return Repository.LoadReferencesAsync<Content>(CreateLoadReferenceRequest(fieldName), cancel);
+    }
+    public Task<IContentCollection<TContent>> LoadReferencesAsync<TContent>(string fieldName, CancellationToken cancel) where TContent : Content
+    {
+        return Repository.LoadReferencesAsync<TContent>(CreateLoadReferenceRequest(fieldName), cancel);
+    }
+    public async Task<IContentCollection<Content>> LoadReferencesAsync(LoadReferenceRequest requestData, CancellationToken cancel)
+    {
+        AssertLoadReferenceRequest(requestData);
+        requestData.ContentId = this.Id;
+        return await Repository.LoadReferencesAsync<Content>(requestData, cancel).ConfigureAwait(false);
+    }
+    public async Task<IContentCollection<TContent>> LoadReferencesAsync<TContent>(LoadReferenceRequest requestData, CancellationToken cancel) where TContent : Content
+    {
+        AssertLoadReferenceRequest(requestData);
+        requestData.ContentId = this.Id;
+        return await Repository.LoadReferencesAsync<TContent>(requestData, cancel).ConfigureAwait(false);
+    }
+
+    private LoadReferenceRequest CreateLoadReferenceRequest(string fieldName)
+    {
+        if(fieldName == null)
+            throw new ArgumentNullException(nameof(fieldName));
+
+        var result = new LoadReferenceRequest {FieldName = fieldName};
+        if (Id > 0)
+            result.ContentId = Id;
+        else if (Path != null)
+            result.Path = Path;
+        else
+            throw new ApplicationException("Cannot load references of unsaved content.");
+
+        return result;
+    }
+    private void AssertLoadReferenceRequest(LoadReferenceRequest request)
+    {
+        if (request.ContentId != 0)
+            //UNDONE: NotImplementedException
+            throw new NotImplementedException();
+        if (request.Path != null)
+            //UNDONE: NotImplementedException
+            throw new NotImplementedException();
+        if (this.Id == 0)
+            //UNDONE: NotImplementedException
+            throw new NotImplementedException();
+
     }
 
     /// <summary>

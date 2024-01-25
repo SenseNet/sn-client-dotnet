@@ -11,18 +11,6 @@ namespace SenseNet.Client.IntegrationTests.Legacy
             Initializer.InitializeServer(context);
         }
 
-        //UNDONE: Rewrite LoadReferencesAsync and this test
-        [TestMethod]
-        public async Task ReferenceField_LoadReferences()
-        {
-Assert.Inconclusive();
-            var references = (await Content.LoadReferencesAsync("/Root", "CreatedBy")).ToArray();
-            Assert.AreEqual(1, references.Single().Id);
-
-            var single = await Content.LoadReferenceAsync("/Root", "CreatedBy");
-            Assert.AreEqual(1, single.Id);
-        }
-
         [TestMethod]
         public async Task LongTextField_Emoji()
         {

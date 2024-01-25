@@ -221,6 +221,41 @@ public interface IRepository
     /// <returns>The count of a children collection.</returns>
     public Task<int> GetContentCountAsync(LoadCollectionRequest requestData, CancellationToken cancel);
 
+    /* ============================================================================ LOAD REFERENCES */
+
+    /// <summary>
+    /// Loads the referenced content from a single-reference field.
+    /// </summary>
+    /// <param name="requestData">Query request parameters.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A task that wraps the content or null.</returns>
+    public Task<Content> LoadReferenceAsync(LoadReferenceRequest requestData, CancellationToken cancel);
+    /// <summary>
+    /// Loads the referenced content from a single-reference field.
+    /// </summary>
+    /// <typeparam name="TContent">Well-known type of the content.</typeparam>
+    /// <param name="requestData">Query request parameters.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A task that wraps the content or null.</returns>
+    public Task<TContent> LoadReferenceAsync<TContent>(LoadReferenceRequest requestData, CancellationToken cancel) where TContent : Content;
+
+    /// <summary>
+    /// Loads referenced content from a multi-reference field.
+    /// </summary>
+    /// <param name="requestData">Query request parameters.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A task that wraps the <seealso cref="IContentCollection{Content}"/> or null.</returns>
+    public Task<IContentCollection<Content>> LoadReferencesAsync(LoadReferenceRequest requestData, CancellationToken cancel);
+
+    /// <summary>
+    /// Loads referenced content from a multi-reference field.
+    /// </summary>
+    /// <typeparam name="TContent">Well-known type of the content.</typeparam>
+    /// <param name="requestData">Query request parameters.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A task that wraps the <seealso cref="IContentCollection{TContent}"/> or null.</returns>
+    public Task<IContentCollection<TContent>> LoadReferencesAsync<TContent>(LoadReferenceRequest requestData, CancellationToken cancel) where TContent : Content;
+
     /* ============================================================================ EXISTENCE */
 
     /// <summary>

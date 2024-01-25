@@ -32,41 +32,6 @@ namespace SenseNet.Client.IntegrationTests.Legacy
         }
 
         [TestMethod]
-        public async Task LoadReferences_Default()
-        {
-            var admins = await Content.LoadReferencesAsync(Constants.Group.AdministratorsPath, "Members").ConfigureAwait(false);
-            var admin = admins.FirstOrDefault();
-
-            Assert.IsNotNull(admin);
-            Assert.AreEqual(Constants.User.AdminId, admin.Id);
-            Assert.IsNotNull(admin["DisplayName"]); // all fields should be present in the result
-        }
-
-        [TestMethod]
-        public async Task LoadReferences_WithSelect()
-        {
-            // ------------------------------------ load by path
-
-            var admins = await Content.LoadReferencesAsync(Constants.Group.AdministratorsPath, "Members", new[] { "Id", "Path" })
-                .ConfigureAwait(false);
-            var admin = admins.FirstOrDefault();
-
-            Assert.IsNotNull(admin);
-            Assert.AreEqual(Constants.User.AdminId, admin.Id);
-            Assert.IsNull(admin["DisplayName"]); // because we did not select this field
-
-            // ------------------------------------ load by id
-
-            var adminsGroup = await Content.LoadAsync(Constants.Group.AdministratorsPath).ConfigureAwait(false);
-            admins = await Content.LoadReferencesAsync(adminsGroup.Id, "Members", new[] { "Id", "Path" }).ConfigureAwait(false);
-            admin = admins.FirstOrDefault();
-
-            Assert.IsNotNull(admin);
-            Assert.AreEqual(Constants.User.AdminId, admin.Id);
-            Assert.IsNull(admin["DisplayName"]); // because we did not select this field
-        }
-
-        [TestMethod]
         public async Task LoadReferences_DynamicProperty()
         {
             dynamic adminGroup = await Content.LoadAsync(new ODataRequest
@@ -123,48 +88,6 @@ namespace SenseNet.Client.IntegrationTests.Legacy
 
                 Assert.AreEqual(newIndex, (int)tempContent.Index);
             }
-        }
-
-        //UNDONE: Rewrite LoadReferencesAsync and this test
-        [TestMethod]
-        public async Task LoadReferences_DynamicProperty_MultiRef_WithFilter()
-        {
-Assert.Inconclusive();
-            // This request loads references and expands their reference field.
-            var members = (await Content.LoadReferencesAsync(new ODataRequest
-            {
-                Path = Constants.Group.AdministratorsPath,
-                PropertyName = "Members",
-                Expand = new[] { "CreatedBy" },
-                Select = new[] { "Id", "Name", "Path", "Index", "Type",
-                    "CreatedBy/Id", "CreatedBy/Name", "CreatedBy/Path", "CreatedBy/Type", "CreatedBy/CreationDate", "CreatedBy/Index" },
-                OrderBy = new[] { "Id" },
-                Top = 1,
-                Skip = 1
-            })).ToArray();
-
-            // there are actually 2 members but we skipped one in the filter above
-            Assert.AreEqual(1, members.Length);
-
-            dynamic content = members[0];
-            string createdByName = content.CreatedBy.Name;
-
-            Assert.AreEqual("Developers", content.Name);
-            Assert.AreEqual("Group", (string)content.Type);
-            Assert.IsTrue(content.Index > -1);
-            Assert.AreEqual("Admin", createdByName);
-        }
-        [TestMethod]
-        public async Task LoadReferences_DynamicProperty_SingleRef()
-        {
-            // Single will make sure that the array contains only 1 element
-            var reference = (await Content.LoadReferencesAsync(new ODataRequest
-            {
-                Path = Constants.User.AdminPath,
-                PropertyName = "CreatedBy",
-            })).Single();
-
-            Assert.AreEqual("Admin", reference.Name);
         }
 
         [TestMethod]
