@@ -126,7 +126,7 @@ public class LoadReferenceRequest : ContentRequest
 
         oDataRequest.Top = this.Top;
         oDataRequest.Skip = this.Skip;
-        oDataRequest.ContentQuery = this.ReferenceFilter;
+        oDataRequest.ChildrenFilter = this.ReferenceFilter;
         oDataRequest.InlineCount = this.InlineCount;
         oDataRequest.AutoFilters = this.AutoFilters;
         oDataRequest.LifespanFilter = this.LifespanFilter;
