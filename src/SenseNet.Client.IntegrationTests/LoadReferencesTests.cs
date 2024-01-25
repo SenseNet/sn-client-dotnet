@@ -205,4 +205,86 @@ public class LoadReferencesTests : IntegrationTestBase
         Assert.IsTrue(refContent.Index > -1);
         Assert.AreEqual("Admin", createdByName);
     }
+
+    [TestMethod]
+    public async Task IT_Content_LoadReferences_Error_NotSaved()
+    {
+        var cancel = new CancellationTokenSource().Token;
+        var repository = await GetRepositoryCollection()
+            .GetRepositoryAsync("local", cancel).ConfigureAwait(false);
+
+        // ACT Load content then load reference and expands their reference field.
+        var content = await repository.LoadContentAsync<Group>(Constants.Group.AdministratorsPath, cancel).ConfigureAwait(false);
+        content.Path = null;
+        content.Id = 0;
+        Exception? exception = null;
+
+        // ACT
+        try
+        {
+            var _ = await content.LoadReferencesAsync(
+                new LoadReferenceRequest {FieldName = "Members"}, cancel).ConfigureAwait(false);
+            Assert.Fail("The expected InvalidOperationException was not thrown.");
+        }
+        catch (InvalidOperationException ex)
+        {
+            exception = ex;
+        }
+
+        // ASSERT
+        Assert.AreEqual("Cannot load references of unsaved content.", exception.Message);
+    }
+    [TestMethod]
+    public async Task IT_Content_LoadReferences_Error_IdIsNotZero()
+    {
+        var cancel = new CancellationTokenSource().Token;
+        var repository = await GetRepositoryCollection()
+            .GetRepositoryAsync("local", cancel).ConfigureAwait(false);
+
+        // ACT Load content then load reference and expands their reference field.
+        var content = await repository.LoadContentAsync<Group>(Constants.Group.AdministratorsPath, cancel).ConfigureAwait(false);
+        Exception? exception = null;
+
+        // ACT
+        try
+        {
+            var _ = await content.LoadReferencesAsync(
+                new LoadReferenceRequest { FieldName = "Members", ContentId = -42 }, cancel).ConfigureAwait(false);
+            Assert.Fail("The expected InvalidOperationException was not thrown.");
+        }
+        catch (InvalidOperationException ex)
+        {
+            exception = ex;
+        }
+
+        // ASSERT
+        Assert.AreEqual("Do not provide ContentId when load reference of a content instance.", exception.Message);
+    }
+    [TestMethod]
+    public async Task IT_Content_LoadReferences_Error_PathIsNotNull()
+    {
+        var cancel = new CancellationTokenSource().Token;
+        var repository = await GetRepositoryCollection()
+            .GetRepositoryAsync("local", cancel).ConfigureAwait(false);
+
+        // ACT Load content then load reference and expands their reference field.
+        var content = await repository.LoadContentAsync<Group>(Constants.Group.AdministratorsPath, cancel).ConfigureAwait(false);
+        Exception? exception = null;
+
+        // ACT
+        try
+        {
+            var _ = await content.LoadReferencesAsync(
+                new LoadReferenceRequest { FieldName = "Members", Path = "fake" }, cancel).ConfigureAwait(false);
+            Assert.Fail("The expected InvalidOperationException was not thrown.");
+        }
+        catch (InvalidOperationException ex)
+        {
+            exception = ex;
+        }
+
+        // ASSERT
+        Assert.AreEqual("Do not provide Path when load reference of a content instance.", exception.Message);
+    }
+
 }

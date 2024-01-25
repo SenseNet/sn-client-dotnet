@@ -551,15 +551,11 @@ public partial class Content : DynamicObject
     private void AssertLoadReferenceRequest(LoadReferenceRequest request)
     {
         if (request.ContentId != 0)
-            //UNDONE: NotImplementedException
-            throw new NotImplementedException();
+            throw new InvalidOperationException("Do not provide ContentId when load reference of a content instance.");
         if (request.Path != null)
-            //UNDONE: NotImplementedException
-            throw new NotImplementedException();
-        if (this.Id == 0)
-            //UNDONE: NotImplementedException
-            throw new NotImplementedException();
-
+            throw new InvalidOperationException("Do not provide Path when load reference of a content instance.");
+        if (this.Id == 0 && this.Path == null)
+            throw new InvalidOperationException("Cannot load references of unsaved content.");
     }
 
     /// <summary>
