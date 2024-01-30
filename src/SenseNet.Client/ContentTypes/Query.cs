@@ -6,7 +6,7 @@ namespace SenseNet.Client;
 
 public enum SavedQueryType{ Public, Private }
 
-internal class SnQuery : Content
+public class SnQuery : Content
 {
     public string? Query { get; set; }
     public SavedQueryType? QueryType { get; set; }
