@@ -364,7 +364,7 @@ public partial class Content
             }
             if (referredContents.Length > 1)
             {
-                throw new ClientException("____");
+                throw new ClientException($"Cannot  convert {referredContents[i].GetType().FullName} to {itemType.FullName}");
             }
         }
 
