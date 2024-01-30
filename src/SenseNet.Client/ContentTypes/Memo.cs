@@ -19,7 +19,7 @@ public class Memo : ListItem
 {
     public DateTime? Date { get; set; }
     public MemoType? MemoType { get; set; } 
-    public Content SeeAlso { get; set; }
+    public Content? SeeAlso { get; set; }
 
     public Memo(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }
 }

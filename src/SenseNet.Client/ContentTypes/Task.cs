@@ -26,13 +26,13 @@ public class SnTask : ListItem
 {
     public DateTime? StartDate { get; set; }
     public DateTime? DueDate { get; set; }
-    public User AssignedTo { get; set; }
+    public User? AssignedTo { get; set; }
     public TaskPriority? Priority { get; set; }
     public TaskState? Status { get; set; }
     public int? TaskCompletion { get; set; }
     public int? RemainingDays { get; set; }
-    public string DueText { get; set; }
-    public string DueCssClass { get; set; }
+    public string? DueText { get; set; }
+    public string? DueCssClass { get; set; }
 
     public SnTask(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }
 }

@@ -20,7 +20,7 @@ public enum PreviewEnabled
 
 public class Folder : Content
 {
-    public Folder(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }
-
     public PreviewEnabled? PreviewEnabled { get; set; }
+
+    public Folder(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }
 }

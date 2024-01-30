@@ -5,9 +5,9 @@ namespace SenseNet.Client;
 
 public class SmartFolder : Folder
 {
-    private string Query { get; set; }
-    FilterStatus? EnableAutofilters { get; set; }
-    FilterStatus? EnableLifespanFilter { get; set; }
+    public string? Query { get; set; }
+    public FilterStatus? EnableAutofilters { get; set; }
+    public FilterStatus? EnableLifespanFilter { get; set; }
 
     public SmartFolder(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }
 }

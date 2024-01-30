@@ -5,7 +5,7 @@ namespace SenseNet.Client;
 
 public class ContentType : Content
 {
-    public Binary Binary { get; set; }
+    public Binary? Binary { get; set; }
 
     public ContentType(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }
 }

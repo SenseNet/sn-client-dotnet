@@ -5,7 +5,7 @@ namespace SenseNet.Client;
 
 public class UserProfile : Workspace
 {
-    User User { get; set; }
+    public User? User { get; set; }
 
     public UserProfile(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }
 }

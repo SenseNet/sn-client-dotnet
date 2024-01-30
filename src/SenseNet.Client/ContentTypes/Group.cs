@@ -11,13 +11,13 @@ namespace SenseNet.Client;
 
 public class Group : Content
 {
-    public IEnumerable<Content> Members { get; set; }
-    public string SyncGuid { get; set; }
-    public DateTime LastSync { get; set; }
+    public IEnumerable<Content>? Members { get; set; }
+    public string? SyncGuid { get; set; }
+    public DateTime? LastSync { get; set; }
     [JsonIgnore] // Read only field
-    public IEnumerable<Content> AllRoles { get; set; }
+    public IEnumerable<Content>? AllRoles { get; set; }
     [JsonIgnore] // Read only field
-    public IEnumerable<Content> DirectRoles { get; set; }
+    public IEnumerable<Content>? DirectRoles { get; set; }
 
     /* ============================================================================= Constructors */
 

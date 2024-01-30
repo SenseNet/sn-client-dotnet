@@ -707,8 +707,10 @@ public class ContentTests : IntegrationTestBase
             Select = new[] { "*", "AllowedChildTypes/Name", "EffectiveAllowedChildTypes/Name" }
         };
         docLib1 = await repository.LoadContentAsync<Content>(request, cancel).ConfigureAwait(false);
-        allowedChildTypes = docLib1.AllowedChildTypes.Select(x => x.Name).OrderBy(x => x).ToArray();
-        effectiveChildTypes = docLib1.EffectiveAllowedChildTypes.Select(x => x.Name).OrderBy(x => x).ToArray();
+        allowedChildTypes = docLib1.AllowedChildTypes?.Select(x => x.Name).OrderBy(x => x)
+            .ToArray() ?? Array.Empty<string>();
+        effectiveChildTypes = docLib1.EffectiveAllowedChildTypes?.Select(x => x.Name).OrderBy(x => x)
+            .ToArray() ?? Array.Empty<string>();
         Assert.AreEqual("MemoList TaskList", string.Join(" ", allowedChildTypes));
         Assert.AreEqual("MemoList SystemFolder TaskList", string.Join(" ", effectiveChildTypes));
     }

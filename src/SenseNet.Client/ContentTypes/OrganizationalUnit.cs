@@ -6,7 +6,7 @@ namespace SenseNet.Client;
 
 public class OrganizationalUnit : Folder
 {
-    public string SyncGuid { get; set; }
+    public string? SyncGuid { get; set; }
     public DateTime? LastSync { get; set; }
 
     public OrganizationalUnit(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }

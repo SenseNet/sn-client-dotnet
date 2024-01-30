@@ -775,7 +775,7 @@ internal class Repository : IRepository
 
     public async Task<IContentCollection<T>> InvokeContentCollectionFunctionAsync<T>(OperationRequest request, CancellationToken cancel) where T : Content
     {
-        IContentCollection<T> result = null;
+        IContentCollection<T>? result = null;
         await ProcessOperationResponseAsync(request, HttpMethod.Get, response =>
         {
             result = this.ProcessContentCollectionOperationResponse<T>(response, false);

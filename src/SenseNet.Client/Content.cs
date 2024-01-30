@@ -51,13 +51,13 @@ public partial class Content : DynamicObject
     /// <summary>
     /// Content path.
     /// </summary>
-    public string Path { get; set; }
+    public string? Path { get; set; }
 
-    private string _parentPath;
+    private string? _parentPath;
     /// <summary>
     /// Path of the parent content if available.
     /// </summary>
-    public string ParentPath
+    public string? ParentPath
     {
         get
         {
@@ -72,34 +72,34 @@ public partial class Content : DynamicObject
     /// <summary>
     /// Content name.
     /// </summary>
-    public string Name { get; set; }
-    public string Type { get; set; }
-    public string DisplayName { get; set; }
-    public string Description { get; set; }
-    public string Version { get; set; }
+    public string? Name { get; set; }
+    public string? Type { get; set; }
+    public string? DisplayName { get; set; }
+    public string? Description { get; set; }
+    public string? Version { get; set; }
     public int? VersionId { get; set; }
     public int? Index { get; set; }
-    public string Icon { get; set; }
+    public string? Icon { get; set; }
 
     public DateTime? CreationDate { get; set; }
     public DateTime? ModificationDate { get; set; }
     public DateTime? VersionCreationDate { get; set; }
     public DateTime? VersionModificationDate { get; set; }
 
-    public User Owner { get; set; }
-    public User CreatedBy { get; set; }
-    public User ModifiedBy { get; set; }
-    public User VersionModifiedBy { get; set; }
-    public User CheckedOutTo { get; set; }
+    public User? Owner { get; set; }
+    public User? CreatedBy { get; set; }
+    public User? ModifiedBy { get; set; }
+    public User? VersionModifiedBy { get; set; }
+    public User? CheckedOutTo { get; set; }
 
     public VersioningMode? VersioningMode { get; set; }
     public VersioningMode? InheritableVersioningMode { get; set; }
     public ApprovingEnabled? ApprovingMode { get; set; }
     public ApprovingEnabled? InheritableApprovingMode { get; set; }
 
-    public string CheckInComments { get; set; }
-    public string RejectReason { get; set; }
-    public IEnumerable<Content> Versions { get; set; }
+    public string? CheckInComments { get; set; }
+    public string? RejectReason { get; set; }
+    public IEnumerable<Content>? Versions { get; set; }
     public bool? EnableLifespan { get; set; }
     public DateTime? ValidFrom { get; set; }
     public DateTime? ValidTill { get; set; }
@@ -108,13 +108,13 @@ public partial class Content : DynamicObject
     public bool? IsFolder { get; set; }
     public bool? IsSystemContent { get; set; }
     public bool? Locked { get; set; }
-    public string Tags { get; set; }
+    public string? Tags { get; set; }
     public bool? TrashDisabled { get; set; }
-    public Workspace Workspace { get; set; }
+    public Workspace? Workspace { get; set; }
 
-    public IEnumerable<ContentType> AllowedChildTypes { get; set; }
+    public IEnumerable<ContentType>? AllowedChildTypes { get; set; }
     [JsonIgnore] // Read only field
-    public IEnumerable<ContentType> EffectiveAllowedChildTypes { get; set; }
+    public IEnumerable<ContentType>? EffectiveAllowedChildTypes { get; set; }
 
     // Not implemented fields
     //   Noise:
@@ -142,13 +142,6 @@ public partial class Content : DynamicObject
     //      SharingMode:Sharing
 
 
-
-
-
-
-
-
-
     public string[] FieldNames { get; private set; } = Array.Empty<string>();
 
     //============================================================================= Technical properties
@@ -174,7 +167,7 @@ public partial class Content : DynamicObject
     /// Internal constructor for client content.
     /// </summary>
     /// <param name="server">Target server. If null, the first one will be used from the configuration.</param>
-    protected Content(ServerContext server)
+    protected Content(ServerContext? server)
     {
         Server = server ?? ClientContext.Current.Server;
     }
@@ -221,7 +214,7 @@ public partial class Content : DynamicObject
     /// <param name="id">Content id.</param>
     /// <param name="server">Target server.</param>
     [Obsolete("Use CreateExistingContent(int id) or CreateExistingContent<T>(int id) methods of the IRepository.")]
-    public static Content Create(int id, ServerContext server = null)
+    public static Content Create(int id, ServerContext? server = null)
     {
         return new Content(server)
         {
@@ -235,7 +228,7 @@ public partial class Content : DynamicObject
     /// <param name="path">Content path.</param>
     /// <param name="server">Target server.</param>
     [Obsolete("Use CreateExistingContent(string path) or CreateExistingContent<T>(string path) methods of the IRepository.")]
-    public static Content Create(string path, ServerContext server = null)
+    public static Content Create(string path, ServerContext? server = null)
     {
         if (string.IsNullOrEmpty(path))
             throw new ArgumentNullException("path");
@@ -256,7 +249,7 @@ public partial class Content : DynamicObject
     /// <param name="contentTemplate">Content template path.</param>
     /// <param name="server">Target server.</param>
     [Obsolete("Use CreateContent or CreateContentByTemplate methods of the IRepository.")]
-    public static Content CreateNew(string parentPath, string contentType, string name, string contentTemplate = null, ServerContext server = null)
+    public static Content CreateNew(string parentPath, string contentType, string name, string? contentTemplate = null, ServerContext? server = null)
     {
         return CreateNew<Content>(parentPath, contentType, name, contentTemplate, server);
     }
@@ -270,7 +263,7 @@ public partial class Content : DynamicObject
     /// <param name="contentTemplate">Content template path.</param>
     /// <param name="server">Target server.</param>
     [Obsolete("Use CreateContent<T> or CreateContentByTemplate<T> methods of the IRepository.")]
-    public static T CreateNew<T>(string parentPath, string contentType, string name, string contentTemplate = null, ServerContext server = null) where T : Content
+    public static T CreateNew<T>(string parentPath, string contentType, string name, string? contentTemplate = null, ServerContext? server = null) where T : Content
     {
         if (string.IsNullOrEmpty(parentPath))
             throw new ArgumentNullException(nameof(parentPath));
@@ -298,7 +291,7 @@ public partial class Content : DynamicObject
 
         return dc;
     }
-    internal static Content CreateFromResponse(dynamic responseContent, ServerContext server = null)
+    internal static Content CreateFromResponse(dynamic responseContent, ServerContext? server = null)
     {
         return new Content(server, responseContent) 
         {
@@ -314,7 +307,7 @@ public partial class Content : DynamicObject
     /// <param name="id">Content id.</param>
     /// <param name="server">Target server.</param>
     [Obsolete("Use LoadContentAsync(int id, CancellationToken cancel) method of the IRepository.")]
-    public static async Task<Content> LoadAsync(int id, ServerContext server = null)
+    public static async Task<Content?> LoadAsync(int id, ServerContext? server = null)
     {
         return await RESTCaller.GetContentAsync(id, server).ConfigureAwait(false);
     }
@@ -324,7 +317,7 @@ public partial class Content : DynamicObject
     /// <param name="path">Content path.</param>
     /// <param name="server">Target server.</param>
     [Obsolete("Use LoadContentAsync(string path, CancellationToken cancel) method of the IRepository.")]
-    public static async Task<Content> LoadAsync(string path, ServerContext server = null)
+    public static async Task<Content> LoadAsync(string path, ServerContext? server = null)
     {
         return await RESTCaller.GetContentAsync(path, server).ConfigureAwait(false);
     }
@@ -335,7 +328,7 @@ public partial class Content : DynamicObject
     /// <param name="requestData">Detailed information that will be sent as part of the request.</param>
     /// <param name="server">Target server.</param>
     [Obsolete("Use LoadContentAsync<T>(LoadContentRequest requestData, CancellationToken cancel) method of the IRepository.")]
-    public static async Task<Content> LoadAsync(ODataRequest requestData, ServerContext server = null)
+    public static async Task<Content?> LoadAsync(ODataRequest requestData, ServerContext? server = null)
     {
         return await RESTCaller.GetContentAsync(requestData, server).ConfigureAwait(false);
     }
@@ -346,7 +339,7 @@ public partial class Content : DynamicObject
     /// <param name="path">Content path.</param>
     /// <param name="server">Target server.</param>
     [Obsolete("Use IsContentExistsAsync(string path, CancellationToken cancel) method of the IRepository.")]
-    public static async Task<bool> ExistsAsync(string path, ServerContext server = null)
+    public static async Task<bool> ExistsAsync(string path, ServerContext? server = null)
     {
         var requestData = new ODataRequest(server)
         {
@@ -366,7 +359,7 @@ public partial class Content : DynamicObject
     /// <param name="server">Target server.</param>
     /// <returns></returns>
     [Obsolete("Use LoadCollectionAsync or LoadCollectionAsync<T> methods of the IRepository.")]
-    public static async Task<IEnumerable<Content>> LoadCollectionAsync(string path, ServerContext server = null)
+    public static async Task<IEnumerable<Content>> LoadCollectionAsync(string path, ServerContext? server = null)
     {
         return await RESTCaller.GetCollectionAsync(path, server).ConfigureAwait(false);
     }
@@ -377,7 +370,7 @@ public partial class Content : DynamicObject
     /// For example Top, Skip, Select, etc.</param>
     /// <param name="server">Target server.</param>
     [Obsolete("Use LoadCollectionAsync or LoadCollectionAsync<T> methods of the IRepository.")]
-    public static async Task<IEnumerable<Content>> LoadCollectionAsync(ODataRequest requestData, ServerContext server = null)
+    public static async Task<IEnumerable<Content>> LoadCollectionAsync(ODataRequest requestData, ServerContext? server = null)
     {
         return await RESTCaller.GetCollectionAsync(requestData, server).ConfigureAwait(false);
     }
@@ -390,8 +383,8 @@ public partial class Content : DynamicObject
     /// <param name="select">Field names of the referenced content to select.</param>
     /// <param name="server">Target server.</param>
     [Obsolete("Use LoadReferenceAsync method on a Repository or Content instance", true)]
-    public static async Task<Content> LoadReferenceAsync(int id, string fieldName,
-        string[] select = null, ServerContext server = null)
+    public static async Task<Content?> LoadReferenceAsync(int id, string fieldName,
+        string[]? select = null, ServerContext? server = null)
     {
         return (await LoadReferencesAsync(id, fieldName, select, server)
             .ConfigureAwait(false)).FirstOrDefault();
@@ -404,8 +397,8 @@ public partial class Content : DynamicObject
     /// <param name="select">Field names of the referenced content to select.</param>
     /// <param name="server">Target server.</param>
     [Obsolete("Use LoadReferenceAsync method on a Repository or Content instance", true)]
-    public static async Task<Content> LoadReferenceAsync(string path, string fieldName,
-        string[] select = null, ServerContext server = null)
+    public static async Task<Content?> LoadReferenceAsync(string path, string fieldName,
+        string[]? select = null, ServerContext? server = null)
     {
         return (await LoadReferencesAsync(path, fieldName, select, server)
             .ConfigureAwait(false)).FirstOrDefault();
@@ -418,7 +411,7 @@ public partial class Content : DynamicObject
     /// <param name="select">Field names of the referenced content items to select.</param>
     /// <param name="server">Target server.</param>
     [Obsolete("Use LoadReferenceAsync method on a Repository or Content instance", true)]
-    public static async Task<IEnumerable<Content>> LoadReferencesAsync(int id, string fieldName, string[] select = null, ServerContext server = null)
+    public static async Task<IEnumerable<Content>> LoadReferencesAsync(int id, string fieldName, string[]? select = null, ServerContext? server = null)
     {
         return await LoadReferencesAsync(null, id, fieldName, select, server).ConfigureAwait(false);
     }
@@ -430,18 +423,19 @@ public partial class Content : DynamicObject
     /// <param name="select">Field names of the referenced content items to select.</param>
     /// <param name="server">Target server.</param>
     [Obsolete("Use LoadReferenceAsync method on a Repository or Content instance", true)]
-    public static async Task<IEnumerable<Content>> LoadReferencesAsync(string path, string fieldName, string[] select = null, ServerContext server = null)
+    public static async Task<IEnumerable<Content>> LoadReferencesAsync(string path, string fieldName, string[]? select = null, ServerContext? server = null)
     {
         return await LoadReferencesAsync(path, 0, fieldName, select, server).ConfigureAwait(false);
     }
-    private static async Task<IEnumerable<Content>> LoadReferencesAsync(string path, int id, string fieldName, string[] select = null, ServerContext server = null)
+    [Obsolete("Use LoadReferenceAsync method on a Repository or Content instance", true)]
+    private static async Task<IEnumerable<Content>> LoadReferencesAsync(string? path, int id, string fieldName, string[]? select = null, ServerContext? server = null)
     {
         if (select == null || select.Length == 0)
             select = new[] { "*" };
         var projection = new[] { "Id", "Path", "Type" };
         projection = projection.Union(select.Select(p => fieldName + "/" + p)).ToArray();
 
-        var oreq = new ODataRequest(server)
+        var req = new ODataRequest(server)
         {
             Expand = new[] { fieldName },
             Select = projection,
@@ -449,7 +443,10 @@ public partial class Content : DynamicObject
             Path = path
         };
 
-        dynamic content = await Content.LoadAsync(oreq, server).ConfigureAwait(false);
+        dynamic? content = await Content.LoadAsync(req, server).ConfigureAwait(false);
+        if(content == null)
+            return Array.Empty<Content>();
+
         var refValue = content[fieldName];
 
         // we assume that this is either an array of content json objects or a single object
@@ -469,7 +466,7 @@ public partial class Content : DynamicObject
     /// For example Top, Skip, Select, Expand</param>
     /// <param name="server">Target server.</param>
     public static async Task<IEnumerable<Content>> LoadReferencesAsync(ODataRequest requestData,
-        ServerContext server = null)
+        ServerContext? server = null)
     {
         if (string.IsNullOrEmpty(requestData.PropertyName))
             throw new ClientException("Please provide a reference field name as the PropertyName in request data.");
@@ -566,7 +563,7 @@ public partial class Content : DynamicObject
     /// <param name="server">Target server.</param>
     /// <returns>Count of result content.</returns>
     [Obsolete("Use GetContentCountAsync, QueryCountAsync or QueryCountForAdminAsync methods of the IRepository.")]
-    public static async Task<int> GetCountAsync(string path, string query, ServerContext server = null)
+    public static async Task<int> GetCountAsync(string path, string query, ServerContext? server = null)
     {
         var request = new ODataRequest(server)
         {
@@ -590,7 +587,7 @@ public partial class Content : DynamicObject
     /// <param name="settings">Query settings.</param>
     /// <param name="server">Target server.</param>
     [Obsolete("Use QueryForAdminAsync or QueryForAdminAsync<T> methods of the IRepository.")]
-    public static async Task<IEnumerable<Content>> QueryForAdminAsync(string queryText, string[] select = null, string[] expand = null, QuerySettings settings = null, ServerContext server = null)
+    public static async Task<IEnumerable<Content>> QueryForAdminAsync(string queryText, string[]? select = null, string[]? expand = null, QuerySettings? settings = null, ServerContext? server = null)
     {
         if (settings == null)
             settings = new QuerySettings();
@@ -609,7 +606,7 @@ public partial class Content : DynamicObject
     /// <param name="settings">Query settings.</param>
     /// <param name="server">Target server.</param>
     [Obsolete("Use QueryAsync or QueryAsync<T> method of the IRepository.")]
-    public static async Task<IEnumerable<Content>> QueryAsync(string queryText, string[] select = null, string[] expand = null, QuerySettings settings = null, ServerContext server = null)
+    public static async Task<IEnumerable<Content>> QueryAsync(string queryText, string[]? select = null, string[]? expand = null, QuerySettings? settings = null, ServerContext? server = null)
     {
         if (settings == null)
             settings = QuerySettings.Default;
@@ -641,7 +638,7 @@ public partial class Content : DynamicObject
     /// <param name="progressCallback">An optional callback method that is called after each chunk is uploaded to the server.</param>
     /// <returns>The uploaded file content returned at the end of the upload request.</returns>
     [Obsolete("Use the UploadAsync method of IRepository.")]
-    public static async Task<Content> UploadAsync(string parentPath, string fileName, Stream stream, string contentType = null, string propertyName = null, ServerContext server = null, Action<int> progressCallback = null)
+    public static async Task<Content> UploadAsync(string parentPath, string fileName, Stream stream, string? contentType = null, string? propertyName = null, ServerContext? server = null, Action<int>? progressCallback = null)
     {
         var uploadData = new UploadData() 
         { 
@@ -669,7 +666,7 @@ public partial class Content : DynamicObject
     /// <param name="progressCallback">An optional callback method that is called after each chunk is uploaded to the server.</param>
     /// <returns>The uploaded file content returned at the end of the upload request.</returns>
     [Obsolete("Use the UploadAsync method of IRepository.")]
-    public static async Task<Content> UploadAsync(int parentId, string fileName, Stream stream, string contentType = null, string propertyName = null, ServerContext server = null, Action<int> progressCallback = null)
+    public static async Task<Content> UploadAsync(int parentId, string fileName, Stream stream, string? contentType = null, string? propertyName = null, ServerContext? server = null, Action<int>? progressCallback = null)
     {
         var uploadData = new UploadData()
         {
@@ -702,7 +699,7 @@ public partial class Content : DynamicObject
     [Obsolete("Use the UploadTextAsync method of IRepository.")]
     public static async Task<Content> UploadTextAsync(string parentPath, string fileName, string fileText,
         CancellationToken cancellationToken,
-        string contentType = null, string propertyName = null, ServerContext server = null)
+        string? contentType = null, string? propertyName = null, ServerContext? server = null)
     {
         var uploadData = new UploadData()
         {
@@ -734,7 +731,7 @@ public partial class Content : DynamicObject
     [Obsolete("Use the UploadTextAsync method of IRepository.")]
     public static async Task<Content> UploadTextAsync(int parentId, string fileName, string fileText,
         CancellationToken cancellationToken,
-        string contentType = null, string propertyName = null, ServerContext server = null)
+        string? contentType = null, string? propertyName = null, ServerContext? server = null)
     {
         var uploadData = new UploadData()
         {
@@ -767,8 +764,8 @@ public partial class Content : DynamicObject
     /// <param name="server">Target server.</param>
     [Obsolete("Do not use this method anymore.")]
     public static async Task UploadBlobAsync(string parentPath, string contentName, long fileSize,
-        Func<int, int, string, Task> blobCallback, string contentType = null, string fileName = null, 
-        string propertyName = null, ServerContext server = null)
+        Func<int, int, string, Task> blobCallback, string? contentType = null, string? fileName = null, 
+        string? propertyName = null, ServerContext? server = null)
     {
         if (string.IsNullOrEmpty(parentPath))
             throw new ArgumentNullException(nameof(parentPath));
@@ -808,8 +805,8 @@ public partial class Content : DynamicObject
     /// <param name="server">Target server.</param>
     [Obsolete("Do not use this method anymore.")]
     public static async Task UploadBlobAsync(int parentId, string contentName, long fileSize,
-        Func<int, int, string, Task> blobCallback, string contentType = null, string fileName = null,
-        string propertyName = null, ServerContext server = null)
+        Func<int, int, string, Task> blobCallback, string? contentType = null, string? fileName = null,
+        string? propertyName = null, ServerContext? server = null)
     {
         if (string.IsNullOrEmpty(contentName))
             throw new ArgumentNullException(nameof(contentName));
@@ -834,8 +831,8 @@ public partial class Content : DynamicObject
     }
     [Obsolete("Do not use this method anymore.")]
     private static async Task SaveAndFinalizeBlobInternalAsync(string initResponse, long fileSize,
-        Func<int, int, string, Task> blobCallback, string fileName = null,
-        string propertyName = null, ServerContext server = null)
+        Func<int, int, string, Task> blobCallback, string? fileName = null,
+        string? propertyName = null, ServerContext? server = null)
     {
         // parse the response of the initial request
         var response = JsonHelper.Deserialize(initResponse);
@@ -869,7 +866,7 @@ public partial class Content : DynamicObject
     /// <param name="server">Target server.</param>
     /// <returns>A token that can be used with the Blob storage API.</returns>
     [Obsolete("Do not use this method anymore.")]
-    public static async Task<string> GetBlobToken(int id, string version = null, string propertyName = null, ServerContext server = null)
+    public static async Task<string> GetBlobToken(int id, string? version = null, string? propertyName = null, ServerContext? server = null)
     {
         var responseText = await RESTCaller.GetResponseStringAsync(id, "GetBinaryToken", HttpMethod.Post,
                 JsonHelper.Serialize(new { version, fieldName = propertyName }), server)
@@ -889,7 +886,7 @@ public partial class Content : DynamicObject
     /// <param name="server">Target server.</param>
     /// <returns>A token that can be used with the Blob storage API.</returns>
     [Obsolete("Do not use this method anymore.")]
-    public static async Task<string> GetBlobToken(string path, string version = null, string propertyName = null, ServerContext server = null)
+    public static async Task<string> GetBlobToken(string path, string? version = null, string? propertyName = null, ServerContext? server = null)
     {
         var responseText = await RESTCaller.GetResponseStringAsync(path, "GetBinaryToken", HttpMethod.Post,
                 JsonHelper.Serialize(new { version, fieldName = propertyName }), server)
@@ -910,7 +907,7 @@ public partial class Content : DynamicObject
     /// <returns>A task that represents an asynchronous operation.</returns>
     [Obsolete("Use DeleteContentAsync(string path, bool permanent, CancellationToken cancel) method of the IRepository.")]
     public static async Task DeleteAsync(string path, bool permanent, CancellationToken cancellationToken,
-        ServerContext server = null)
+        ServerContext? server = null)
     {
         await DeleteAsync(new[] {path}, permanent, cancellationToken, server).ConfigureAwait(false);
     }
@@ -925,7 +922,7 @@ public partial class Content : DynamicObject
     /// <returns>A task that represents an asynchronous operation.</returns>
     [Obsolete("Use DeleteContentAsync(string[] paths, bool permanent, CancellationToken cancel) method of the IRepository.")]
     public static async Task DeleteAsync(string[] paths, bool permanent, CancellationToken cancellationToken,
-        ServerContext server = null)
+        ServerContext? server = null)
     {
         await DeleteAsync(paths.Cast<object>().ToArray(), permanent, cancellationToken, server).ConfigureAwait(false);
     }
@@ -939,7 +936,7 @@ public partial class Content : DynamicObject
     /// <returns>A task that represents an asynchronous operation.</returns>
     [Obsolete("Use DeleteContentAsync(int id, bool permanent, CancellationToken cancel) method of the IRepository.")]
     public static async Task DeleteAsync(int id, bool permanent, CancellationToken cancellationToken,
-        ServerContext server = null)
+        ServerContext? server = null)
     {
         await DeleteAsync(new[] { id }, permanent, cancellationToken, server).ConfigureAwait(false);
     }
@@ -953,7 +950,7 @@ public partial class Content : DynamicObject
     /// <returns>A task that represents an asynchronous operation.</returns>
     [Obsolete("Use DeleteContentAsync(int[] ids, bool permanent, CancellationToken cancel) method of the IRepository.")]
     public static async Task DeleteAsync(int[] ids, bool permanent, CancellationToken cancellationToken,
-        ServerContext server = null)
+        ServerContext? server = null)
     {
         await DeleteAsync(ids.Cast<object>().ToArray(), permanent, cancellationToken, server).ConfigureAwait(false);
     }
@@ -967,7 +964,7 @@ public partial class Content : DynamicObject
     /// <returns>A task that represents an asynchronous operation.</returns>
     [Obsolete("Use DeleteContentAsync(object[] idsOrPaths, bool permanent, CancellationToken cancel) method of the IRepository.")]
     public static async Task DeleteAsync(object[] idsOrPaths, bool permanent, CancellationToken cancellationToken,
-        ServerContext server = null)
+        ServerContext? server = null)
     {
         await RESTCaller.GetResponseStringAsync("/Root", "DeleteBatch", HttpMethod.Post, 
                 JsonHelper.GetJsonPostModel(new
@@ -1289,7 +1286,7 @@ public partial class Content : DynamicObject
         return ExecuteSimpleAction("RestoreVersion", new { version }, cancel);
     }
 
-    private Task ExecuteSimpleAction(string actionName, object postData, CancellationToken cancel)
+    private Task ExecuteSimpleAction(string actionName, object? postData, CancellationToken cancel)
     {
         if (Id == 0 && Path == null)
             throw new InvalidOperationException($"Cannot execute '{actionName}' action of a Content if neither Id and Path provided.");
@@ -1302,11 +1299,11 @@ public partial class Content : DynamicObject
         };
         return ExecuteSimpleAction(requestData, postData, cancel);
     }
-    private async Task ExecuteSimpleAction(ODataRequest request, object postData, CancellationToken cancel)
+    private async Task ExecuteSimpleAction(ODataRequest request, object? postData, CancellationToken cancel)
     {
         if (_restCaller == null)
         {
-            string requestBody = null;
+            string? requestBody = null;
             if (postData != null)
                 requestBody = JsonHelper.GetJsonPostModel(postData);
             await RESTCaller.GetResponseStringAsync(request.GetUri(), Server, HttpMethod.Post, requestBody)
@@ -1327,7 +1324,7 @@ public partial class Content : DynamicObject
     /// <param name="permissions">Permission names to check.</param>
     /// <param name="user">The user who's permissions need to be checked. If it is not provided, the server checks the current user.</param>
     /// <param name="server">Target server.</param>
-    public async Task<bool> HasPermissionAsync(string[] permissions, string user = null, ServerContext server = null)
+    public async Task<bool> HasPermissionAsync(string[] permissions, string? user = null, ServerContext? server = null)
     {
         return await SecurityManager.HasPermissionAsync(this.Id, permissions, user, server).ConfigureAwait(false);
     }
@@ -1336,7 +1333,7 @@ public partial class Content : DynamicObject
     /// Breaks permissions on the content.
     /// </summary>
     /// <param name="server">Target server.</param>
-    public async Task BreakInheritanceAsync(ServerContext server = null)
+    public async Task BreakInheritanceAsync(ServerContext? server = null)
     {
         await SecurityManager.BreakInheritanceAsync(this.Id, server).ConfigureAwait(false);
     }
@@ -1344,7 +1341,7 @@ public partial class Content : DynamicObject
     /// Removes permission break on the content.
     /// </summary>
     /// <param name="server">Target server.</param>
-    public async Task UnbreakInheritanceAsync(ServerContext server = null)
+    public async Task UnbreakInheritanceAsync(ServerContext? server = null)
     {
         await SecurityManager.UnbreakInheritanceAsync(this.Id, server).ConfigureAwait(false);
     }
@@ -1401,8 +1398,8 @@ public partial class Content : DynamicObject
             ActionName = binder.Name
         };
 
-        HttpMethod method = null;
-        object postData = null;
+        HttpMethod? method = null;
+        object? postData = null;
 
         // Get http method and post data from the optional argument list. 
         // It is possible to provide both of them or none of them.

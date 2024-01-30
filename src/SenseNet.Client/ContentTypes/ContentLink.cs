@@ -5,7 +5,7 @@ namespace SenseNet.Client;
 
 public class ContentLink : Content
 {
-    public Content Link { get; set; }
+    public Content? Link { get; set; }
 
     public ContentLink(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }
 }

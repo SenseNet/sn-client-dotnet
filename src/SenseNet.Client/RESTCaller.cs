@@ -48,35 +48,25 @@ namespace SenseNet.Client
         /// </summary>
         /// <param name="contentId">Content id.</param>
         /// <param name="server">Target server.</param>
-        public static async Task<Content> GetContentAsync(int contentId, ServerContext server = null)
+        public static Task<Content?> GetContentAsync(int contentId, ServerContext? server = null)
         {
-            return await GetContentAsync(new ODataRequest(server)
-            {
-                ContentId = contentId
-            },
-            server)
-            .ConfigureAwait(false);
+            return GetContentAsync(new ODataRequest(server) {ContentId = contentId}, server);
         }
         /// <summary>
         /// Loads a content from the server.
         /// </summary>
         /// <param name="path">Content path.</param>
         /// <param name="server">Target server.</param>
-        public static async Task<Content> GetContentAsync(string path, ServerContext server = null)
+        public static Task<Content?> GetContentAsync(string path, ServerContext? server = null)
         {
-            return await GetContentAsync(new ODataRequest(server)
-            {
-                Path = path
-            },
-            server)
-            .ConfigureAwait(false);
+            return GetContentAsync(new ODataRequest(server) {Path = path}, server);
         }
         /// <summary>
         /// Loads a content from the server.
         /// </summary>
         /// <param name="requestData">OData request parameters, for example select or expand.</param>
         /// <param name="server">Target server.</param>
-        public static async Task<Content> GetContentAsync(ODataRequest requestData, ServerContext server = null)
+        public static async Task<Content?> GetContentAsync(ODataRequest requestData, ServerContext? server = null)
         {
             // just to make sure
             requestData.IsCollectionRequest = false;
@@ -93,7 +83,7 @@ namespace SenseNet.Client
         /// </summary>
         /// <param name="path">Content path.</param>
         /// <param name="server">Target server.</param>
-        public static async Task<IEnumerable<Content>> GetCollectionAsync(string path, ServerContext server = null)
+        public static async Task<IEnumerable<Content>> GetCollectionAsync(string path, ServerContext? server = null)
         {
             return await GetCollectionAsync(new ODataRequest(server)
             {
@@ -108,7 +98,7 @@ namespace SenseNet.Client
         /// </summary>
         /// <param name="requestData">OData request parameters, for example select or expand.</param>
         /// <param name="server">Target server.</param>
-        public static async Task<IEnumerable<Content>> GetCollectionAsync(ODataRequest requestData, ServerContext server = null)
+        public static async Task<IEnumerable<Content>> GetCollectionAsync(ODataRequest requestData, ServerContext? server = null)
         {
             requestData.SiteUrl = ServerContext.GetUrl(server);
 
@@ -126,7 +116,7 @@ namespace SenseNet.Client
         /// </summary>
         /// <param name="requestData">OData request parameters, most importantly the query.</param>
         /// <param name="server">Target server.</param>
-        public static async Task<int> GetCountAsync(ODataRequest requestData, ServerContext server)
+        public static async Task<int> GetCountAsync(ODataRequest requestData, ServerContext? server)
         {
             // just to make sure
             requestData.IsCollectionRequest = true;
@@ -150,7 +140,7 @@ namespace SenseNet.Client
         /// <param name="body">Request body.</param>
         /// <param name="server">Target server.</param>
         /// <returns>Raw HTTP response.</returns>
-        public static async Task<string> GetResponseStringAsync(int contentId, string actionName = null, HttpMethod method = null, string body = null, ServerContext server = null)
+        public static async Task<string> GetResponseStringAsync(int contentId, string? actionName = null, HttpMethod? method = null, string? body = null, ServerContext? server = null)
         {
             var requestData = new ODataRequest(server)
             {
@@ -169,7 +159,7 @@ namespace SenseNet.Client
         /// <param name="body">Request body.</param>
         /// <param name="server">Target server.</param>
         /// <returns>Raw HTTP response.</returns>
-        public static async Task<string> GetResponseStringAsync(string path, string actionName = null, HttpMethod method = null, string body = null, ServerContext server = null)
+        public static async Task<string> GetResponseStringAsync(string path, string? actionName = null, HttpMethod? method = null, string body = null, ServerContext? server = null)
         {
             var requestData = new ODataRequest(server)
             {
@@ -187,8 +177,8 @@ namespace SenseNet.Client
         /// <param name="body">Request body.</param>
         /// <param name="server">Target server.</param>
         /// <returns>Raw HTTP response.</returns>
-        public static async Task<string> GetResponseStringAsync(ODataRequest requestData, HttpMethod method = null,
-            string body = null, ServerContext server = null)
+        public static async Task<string> GetResponseStringAsync(ODataRequest requestData, HttpMethod? method = null,
+            string? body = null, ServerContext? server = null)
         {
             return await GetResponseStringAsync(requestData.GetUri(), server, method, body).ConfigureAwait(false);
         }
@@ -200,10 +190,10 @@ namespace SenseNet.Client
         /// <param name="method">HTTP method (SenseNet.Client.HttpMethods class has a few predefined methods).</param>
         /// <param name="jsonBody">Request body in JSON format.</param>
         /// <returns>Raw HTTP response.</returns>
-        public static async Task<string> GetResponseStringAsync(Uri uri, ServerContext server = null,
-            HttpMethod method = null, string jsonBody = null)
+        public static async Task<string> GetResponseStringAsync(Uri uri, ServerContext? server = null,
+            HttpMethod? method = null, string? jsonBody = null)
         {
-            string result = null;
+            string? result = null;
 
             SnTrace.Category(ClientContext.TraceCategory).Write("###>REQ: {0}", uri);
             //server?.Logger?.LogTrace($"Sending {method} request to {uri}");
@@ -227,7 +217,7 @@ namespace SenseNet.Client
         /// <param name="method">Http method (e.g. Post). Default is Get.</param>
         /// <param name="postData">An object containing properties to be sent in the body. It will be serialized to JSON.</param>
         /// <returns>A dynamic JSON object deserialized from the response.</returns>
-        public static async Task<dynamic> GetResponseJsonAsync(ODataRequest requestData, ServerContext server = null, HttpMethod method = null, object postData = null)
+        public static async Task<dynamic> GetResponseJsonAsync(ODataRequest requestData, ServerContext? server = null, HttpMethod? method = null, object? postData = null)
         {
             // it wouldn't work if we tried to post some data with the default GET verb
             if (postData != null && method == null)
@@ -258,7 +248,7 @@ namespace SenseNet.Client
         /// <param name="propertyName">Binary field name. Default is Binary.</param>
         /// <param name="server">Target server.</param>
         [Obsolete("Use GetStreamResponseAsync instead.")]
-        public static HttpWebRequest GetStreamRequest(int id, string version = null, string propertyName = null, ServerContext server = null)
+        public static HttpWebRequest GetStreamRequest(int id, string? version = null, string? propertyName = null, ServerContext? server = null)
         {
             var url = $"{ServerContext.GetUrl(server)}/binaryhandler.ashx?nodeid={id}&propertyname={propertyName ?? "Binary"}";
             if (!string.IsNullOrEmpty(version))
@@ -287,7 +277,7 @@ namespace SenseNet.Client
             return myRequest;
         }
         [Obsolete("Use this method with HttpRequestException type.")]
-        public static async Task<ClientException> GetClientExceptionAsync(WebException ex, string requestUrl = null, HttpMethod method = null, string body = null)
+        public static async Task<ClientException> GetClientExceptionAsync(WebException ex, string? requestUrl = null, HttpMethod? method = null, string? body = null)
         {
             var responseString = await ReadResponseStringAsync(ex.Response).ConfigureAwait(false);
             var exceptionData = GetExceptionData(responseString);
@@ -338,7 +328,7 @@ namespace SenseNet.Client
         /// <param name="postData">A .NET object to serialize as post data.</param>
         /// <param name="server">Target server.</param>
         /// <returns>A deserialized dynamic JSON object parsed from the response.</returns>
-        public static async Task<dynamic> PostContentAsync(string parentPath, object postData, ServerContext server = null)
+        public static async Task<dynamic> PostContentAsync(string parentPath, object postData, ServerContext? server = null)
         {
             return await PostContentInternalAsync(parentPath, postData, HttpMethod.Post, server).ConfigureAwait(false);
         }
@@ -349,7 +339,7 @@ namespace SenseNet.Client
         /// <param name="postData">A .NET object to serialize as post data.</param>
         /// <param name="server">Target server.</param>
         /// <returns>A deserialized dynamic JSON object parsed from the response.</returns>
-        public static async Task<dynamic> PatchContentAsync(int contentId, object postData, ServerContext server = null)
+        public static async Task<dynamic> PatchContentAsync(int contentId, object postData, ServerContext? server = null)
         {
             return await PostContentInternalAsync(contentId, postData, HttpMethods.PATCH, server).ConfigureAwait(false);
         }
@@ -360,7 +350,7 @@ namespace SenseNet.Client
         /// <param name="postData">A .NET object to serialize as post data.</param>
         /// <param name="server">Target server.</param>
         /// <returns>A deserialized dynamic JSON object parsed from the response.</returns>
-        public static async Task<dynamic> PatchContentAsync(string path, object postData, ServerContext server = null)
+        public static async Task<dynamic> PatchContentAsync(string path, object postData, ServerContext? server = null)
         {
             return await PostContentInternalAsync(path, postData, HttpMethods.PATCH, server).ConfigureAwait(false);
         }
@@ -371,12 +361,12 @@ namespace SenseNet.Client
         /// <param name="postData">A .NET object to serialize as post data.</param>
         /// <param name="server">Target server.</param>
         /// <returns>A deserialized dynamic JSON object parsed from the response.</returns>
-        public static async Task<dynamic> PutContentAsync(string path, object postData, ServerContext server = null)
+        public static async Task<dynamic> PutContentAsync(string path, object postData, ServerContext? server = null)
         {
             return await PostContentInternalAsync(path, postData, HttpMethod.Put, server).ConfigureAwait(false);
         }
 
-        private static async Task<dynamic> PostContentInternalAsync(string path, object postData, HttpMethod method, ServerContext server = null)
+        private static async Task<dynamic> PostContentInternalAsync(string path, object postData, HttpMethod method, ServerContext? server = null)
         {
             var reqData = new ODataRequest(server)
             {
@@ -388,7 +378,7 @@ namespace SenseNet.Client
 
             return JsonHelper.Deserialize(rs).d;
         }
-        private static async Task<dynamic> PostContentInternalAsync(int contentId, object postData, HttpMethod method, ServerContext server = null)
+        private static async Task<dynamic> PostContentInternalAsync(int contentId, object postData, HttpMethod method, ServerContext? server = null)
         {
             var reqData = new ODataRequest(server)
             {
@@ -412,7 +402,7 @@ namespace SenseNet.Client
         /// <param name="server">Target server.</param>
         /// <param name="progressCallback">An optional callback method that is called after each chunk is uploaded to the server.</param>
         /// <returns>The uploaded file content returned at the end of the upload request.</returns>
-        public static async Task<Content> UploadAsync(Stream binaryStream, UploadData uploadData, int parentId, ServerContext server = null, Action<int> progressCallback = null)
+        public static async Task<Content> UploadAsync(Stream binaryStream, UploadData uploadData, int parentId, ServerContext? server = null, Action<int>? progressCallback = null)
         {
             var requestData = new ODataRequest(server)
             {
@@ -431,7 +421,7 @@ namespace SenseNet.Client
         /// <param name="server">Target server.</param>
         /// <param name="progressCallback">An optional callback method that is called after each chunk is uploaded to the server.</param>
         /// <returns>The uploaded file content returned at the end of the upload request.</returns>
-        public static async Task<Content> UploadAsync(Stream binaryStream, UploadData uploadData, string parentPath, ServerContext server = null, Action<int> progressCallback = null)
+        public static async Task<Content> UploadAsync(Stream binaryStream, UploadData uploadData, string parentPath, ServerContext? server = null, Action<int>? progressCallback = null)
         {
             var requestData = new ODataRequest(server)
             {
@@ -442,7 +432,7 @@ namespace SenseNet.Client
             return await UploadInternalAsync(binaryStream, uploadData, requestData, server, progressCallback)
                 .ConfigureAwait(false);
         }
-        private static async Task<Content> UploadInternalAsync(Stream binaryStream, UploadData uploadData, ODataRequest requestData, ServerContext server = null, Action<int> progressCallback = null)
+        private static async Task<Content> UploadInternalAsync(Stream binaryStream, UploadData uploadData, ODataRequest requestData, ServerContext? server = null, Action<int>? progressCallback = null)
         {
             server ??= ClientContext.Current.Server;
 
@@ -453,7 +443,7 @@ namespace SenseNet.Client
 
             requestData.Parameters.Add("create", "1");
 
-            dynamic uploadedContent = null;
+            dynamic? uploadedContent = null;
 
             // Get ChunkToken
             try
@@ -596,7 +586,7 @@ namespace SenseNet.Client
         /// <param name="server">Target server.</param>
         /// <returns>The uploaded file content returned at the end of the upload request.</returns>
         public static async Task<Content> UploadTextAsync(string text, UploadData uploadData, int parentId,
-            CancellationToken cancellationToken, ServerContext server = null)
+            CancellationToken cancellationToken, ServerContext? server = null)
         {
             var requestData = new ODataRequest(server)
             {
@@ -615,8 +605,8 @@ namespace SenseNet.Client
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <param name="server">Target server.</param>
         /// <returns>The uploaded file content returned at the end of the upload request.</returns>
-        public static async Task<Content> UploadTextAsync(string text, UploadData uploadData, string parentPath,
-            CancellationToken cancellationToken, ServerContext server = null)
+        public static async Task<Content?> UploadTextAsync(string text, UploadData uploadData, string parentPath,
+            CancellationToken cancellationToken, ServerContext? server = null)
         {
             var requestData = new ODataRequest(server)
             {
@@ -627,7 +617,7 @@ namespace SenseNet.Client
             return await UploadTextInternalAsync(text, uploadData, requestData, cancellationToken, server).ConfigureAwait(false);
         }
         private static async Task<Content> UploadTextInternalAsync(string text, UploadData uploadData, ODataRequest requestData,
-            CancellationToken cancellationToken, ServerContext server = null)
+            CancellationToken cancellationToken, ServerContext? server = null)
         {
             // force set values
             if(Encoding.UTF8.GetBytes(text).Length > ClientContext.Current.ChunkSizeInBytes)
@@ -639,7 +629,7 @@ namespace SenseNet.Client
                 uploadData.FileLength = text.Length;
             uploadData.FileText = text;
 
-            dynamic uploadedContent = null;
+            dynamic? uploadedContent = null;
 
             var model = JsonHelper.GetJsonPostModel(uploadData.ToDictionary());
             var httpContent = new StringContent(model);
@@ -727,8 +717,8 @@ namespace SenseNet.Client
             return ProcessWebResponseAsync(url, method ?? HttpMethod.Get, server, null,
                 responseProcessor, cancellationToken);
         }
-        public static async Task ProcessWebResponseAsync(string url, HttpMethod method, ServerContext server,
-            HttpContent httpContent,
+        public static async Task ProcessWebResponseAsync(string url, HttpMethod? method, ServerContext? server,
+            HttpContent? httpContent,
             Action<HttpResponseMessage> responseProcessor, CancellationToken cancellationToken)
         {
             if (method == null)
@@ -742,7 +732,7 @@ namespace SenseNet.Client
                 }
                 , responseProcessor, cancellationToken).ConfigureAwait(false);
         }
-        public static async Task ProcessWebRequestResponseAsync(string url, HttpMethod method, ServerContext server,
+        public static async Task ProcessWebRequestResponseAsync(string url, HttpMethod method, ServerContext? server,
             Action<HttpClientHandler, HttpClient, HttpRequestMessage> requestProcessor,
             Action<HttpResponseMessage> responseProcessor, CancellationToken cancellationToken)
         {

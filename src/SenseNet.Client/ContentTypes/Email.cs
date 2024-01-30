@@ -9,8 +9,8 @@ namespace SenseNet.Client;
 /// </summary>
 public class Email : Folder
 {
-    public string From { get; set; }
-    public string Body { get; set; }
+    public string? From { get; set; }
+    public string? Body { get; set; }
     public DateTime? Sent { get; set; }
 
     public Email(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }

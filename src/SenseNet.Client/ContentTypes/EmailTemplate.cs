@@ -5,8 +5,8 @@ namespace SenseNet.Client;
 
 public class EmailTemplate : Content
 {
-    public string Subject { get; set; }
-    public string Body { get; set; }
+    public string? Subject { get; set; }
+    public string? Body { get; set; }
 
     public EmailTemplate(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }
 }

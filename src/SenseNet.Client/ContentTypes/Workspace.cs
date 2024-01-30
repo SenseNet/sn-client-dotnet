@@ -6,7 +6,7 @@ namespace SenseNet.Client;
 
 public class Workspace : Folder
 {
-    public User Manager { get; set; }
+    public User? Manager { get; set; }
     public DateTime? Deadline { get; set; }
     public bool? IsActive { get; set; }
     public bool? IsCritical { get; set; }
