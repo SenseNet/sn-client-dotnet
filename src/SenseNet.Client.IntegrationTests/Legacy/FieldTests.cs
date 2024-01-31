@@ -12,16 +12,6 @@ namespace SenseNet.Client.IntegrationTests.Legacy
         }
 
         [TestMethod]
-        public async Task ReferenceField_LoadReferences()
-        {
-            var references = (await Content.LoadReferencesAsync("/Root", "CreatedBy")).ToArray();
-            Assert.AreEqual(1, references.Single().Id);
-
-            var single = await Content.LoadReferenceAsync("/Root", "CreatedBy");
-            Assert.AreEqual(1, single.Id);
-        }
-
-        [TestMethod]
         public async Task LongTextField_Emoji()
         {
             var contentId = 0;

@@ -11,7 +11,7 @@ namespace SenseNet.Client
         /// <summary>
         /// File name to be uploaded.
         /// </summary>
-        public string FileName { get; set; }
+        public string? FileName { get; set; }
         /// <summary>
         /// Content id. Filled in case of existing content.
         /// </summary>
@@ -19,11 +19,11 @@ namespace SenseNet.Client
         /// <summary>
         /// Content type name.
         /// </summary>
-        public string ContentType { get; set; }
+        public string? ContentType { get; set; }
         /// <summary>
         /// Property name.
         /// </summary>
-        public string PropertyName { get; set; }
+        public string? PropertyName { get; set; }
         /// <summary>
         /// Whether upload data in chunks or not.
         /// </summary>
@@ -36,7 +36,7 @@ namespace SenseNet.Client
         /// Chunk token received from the server during the first upload request.
         /// Fill this in case of subsequent requests.
         /// </summary>
-        public string ChunkToken { get; set; }
+        public string? ChunkToken { get; set; }
         /// <summary>
         /// Length of the file to be uploaded.
         /// </summary>
@@ -44,7 +44,7 @@ namespace SenseNet.Client
         /// <summary>
         /// Textual content of the file if the stream upload is not used.
         /// </summary>
-        public string FileText { get; set; }
+        public string? FileText { get; set; }
 
         /// <summary>
         /// Initializes a new UploadData object.

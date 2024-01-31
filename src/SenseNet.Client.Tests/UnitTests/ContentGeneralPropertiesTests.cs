@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Newtonsoft.Json.Linq;
 using NSubstitute;
 using SenseNet.Extensions.DependencyInjection;
 
@@ -758,7 +759,7 @@ public class ContentGeneralPropertiesTests : TestBase
     ""Id"": 999543,
     ""Type"": ""Task"",
     ""Name"": ""Content1"",
-    ""Status"": [ ""Pending"" ]
+    ""Status"": [ ""pending"" ]
   }
 }");
 
@@ -799,7 +800,7 @@ public class ContentGeneralPropertiesTests : TestBase
     ""Id"": 999543,
     ""Type"": ""Task"",
     ""Name"": ""Content1"",
-    ""Status"": [ ""1"" ]
+    ""Status"": [ ""active"" ]
   }
 }");
 
@@ -831,8 +832,520 @@ public class ContentGeneralPropertiesTests : TestBase
         var keys = string.Join(", ", dict.Keys);
         Assert.AreEqual("Name, Status", keys);
         Assert.AreEqual("Content1", data.Name.ToString());
-        Assert.AreEqual("[\"Deferred\"]", RemoveWhitespaces(data.Status.ToString()));
+        Assert.AreEqual("[\"deferred\"]", RemoveWhitespaces(data.Status.ToString()));
     }
 
+    /* ====================================================================== MEMO */
+
+    [TestMethod]
+    public async Task GeneralProps_T_Save_MemoType_Null()
+    {
+        // ALIGN
+        var restCaller = CreateRestCallerFor(@"{
+  ""d"": {
+    ""Id"": 999543,
+    ""Type"": ""Memo"",
+    ""Name"": ""Content1"",
+    ""MemoType"": [ ""iaudit"" ]
+  }
+}");
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<Memo>();
+        });
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+            .ConfigureAwait(false);
+        var request = new LoadContentRequest { Path = "/Root/Content" };
+        var content = await repository.LoadContentAsync<Memo>(request, CancellationToken.None);
+        Assert.AreEqual(MemoType.InternalAudit, content.MemoType);
+
+        // ACT
+        content.MemoType = null;
+        await content.SaveAsync(_cancel);
+
+        // ASSERT
+        var calls = restCaller.ReceivedCalls().ToArray();
+        Assert.IsNotNull(calls);
+        Assert.AreEqual(3, calls.Length);
+        Assert.AreEqual("GetResponseStringAsync", calls[2].GetMethodInfo().Name);
+        var arguments = calls[2].GetArguments();
+        var json = (string)arguments[2]!;
+        json = json.Substring("models=[".Length).TrimEnd(']');
+        var dict = JsonHelper.Deserialize<Dictionary<string, object>>(json);
+        var keys = string.Join(", ", dict.Keys);
+        Assert.AreEqual("Name, MemoType", keys);
+        Assert.AreEqual(null, dict["MemoType"]);
+    }
+    [TestMethod]
+    public async Task GeneralProps_T_Save_MemoType_InternalAuditToIso()
+    {
+        // ALIGN
+        var restCaller = CreateRestCallerFor(@"{
+  ""d"": {
+    ""Id"": 999543,
+    ""Type"": ""Memo"",
+    ""Name"": ""Content1"",
+    ""MemoType"": [ ""iaudit"" ]
+  }
+}");
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<Memo>();
+        });
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+            .ConfigureAwait(false);
+        var request = new LoadContentRequest { Path = "/Root/Content" };
+        var content = await repository.LoadContentAsync<Memo>(request, CancellationToken.None);
+        Assert.AreEqual(MemoType.InternalAudit, content.MemoType);
+
+        // ACT
+        content.MemoType = MemoType.Iso;
+        await content.SaveAsync(_cancel);
+
+        // ASSERT
+        var calls = restCaller.ReceivedCalls().ToArray();
+        Assert.IsNotNull(calls);
+        Assert.AreEqual(3, calls.Length);
+        Assert.AreEqual("GetResponseStringAsync", calls[2].GetMethodInfo().Name);
+        var arguments = calls[2].GetArguments();
+        var json = (string)arguments[2]!;
+        json = json.Substring("models=[".Length).TrimEnd(']');
+        var dict = JsonHelper.Deserialize<Dictionary<string, object>>(json);
+        var keys = string.Join(", ", dict.Keys);
+        Assert.AreEqual("Name, MemoType", keys);
+        var value = dict["MemoType"];
+        Assert.IsNotNull(value);
+        var valueAsJArray = value as JArray;
+        Assert.IsNotNull(valueAsJArray);
+        Assert.AreEqual("iso", valueAsJArray.FirstOrDefault());
+    }
+
+    /* ====================================================================== WebHookSubscription */
+
+    [TestMethod]
+    public async Task GeneralProps_T_Save_WebHookSubscription_Null()
+    {
+        // ALIGN
+        var restCaller = CreateRestCallerFor(@"{
+  ""d"": {
+    ""Id"": 999543,
+    ""Type"": ""WebHookSubscription"",
+    ""Name"": ""Content1"",
+    ""WebHookHttpMethod"": [ ""PATCH"" ]
+  }
+}");
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<WebHookSubscription>();
+        });
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+            .ConfigureAwait(false);
+        var request = new LoadContentRequest { Path = "/Root/Content" };
+        var content = await repository.LoadContentAsync<WebHookSubscription>(request, CancellationToken.None);
+        Assert.AreEqual(WebHookHttpMethod.Patch, content.WebHookHttpMethod);
+
+        // ACT
+        content.WebHookHttpMethod = null;
+        await content.SaveAsync(_cancel);
+
+        // ASSERT
+        var calls = restCaller.ReceivedCalls().ToArray();
+        Assert.IsNotNull(calls);
+        Assert.AreEqual(3, calls.Length);
+        Assert.AreEqual("GetResponseStringAsync", calls[2].GetMethodInfo().Name);
+        var arguments = calls[2].GetArguments();
+        var json = (string)arguments[2]!;
+        json = json.Substring("models=[".Length).TrimEnd(']');
+        var dict = JsonHelper.Deserialize<Dictionary<string, object>>(json);
+        var keys = string.Join(", ", dict.Keys);
+        Assert.AreEqual("Name, WebHookHttpMethod", keys);
+        Assert.AreEqual(null, dict["WebHookHttpMethod"]);
+    }
+    [TestMethod]
+    public async Task GeneralProps_T_Save_WebHookHttpMethod_PatchToDelete()
+    {
+        // ALIGN
+        var restCaller = CreateRestCallerFor(@"{
+  ""d"": {
+    ""Id"": 999543,
+    ""Type"": ""WebHookSubscription"",
+    ""Name"": ""Content1"",
+    ""WebHookHttpMethod"": [ ""PATCH"" ]
+  }
+}");
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<WebHookSubscription>();
+        });
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+            .ConfigureAwait(false);
+        var request = new LoadContentRequest { Path = "/Root/Content" };
+        var content = await repository.LoadContentAsync<WebHookSubscription>(request, CancellationToken.None);
+        Assert.AreEqual(WebHookHttpMethod.Patch, content.WebHookHttpMethod);
+
+        // ACT
+        content.WebHookHttpMethod = WebHookHttpMethod.Delete;
+        await content.SaveAsync(_cancel);
+
+        // ASSERT
+        var calls = restCaller.ReceivedCalls().ToArray();
+        Assert.IsNotNull(calls);
+        Assert.AreEqual(3, calls.Length);
+        Assert.AreEqual("GetResponseStringAsync", calls[2].GetMethodInfo().Name);
+        var arguments = calls[2].GetArguments();
+        var json = (string)arguments[2]!;
+        json = json.Substring("models=[".Length).TrimEnd(']');
+        var dict = JsonHelper.Deserialize<Dictionary<string, object>>(json);
+        var keys = string.Join(", ", dict.Keys);
+        Assert.AreEqual("Name, WebHookHttpMethod", keys);
+        var value = dict["WebHookHttpMethod"];
+        Assert.IsNotNull(value);
+        var valueAsJArray = value as JArray;
+        Assert.IsNotNull(valueAsJArray);
+        Assert.AreEqual("DELETE", valueAsJArray.FirstOrDefault());
+    }
+
+    /* ====================================================================== CalendarEvent */
+
+    [TestMethod]
+    public async Task GeneralProps_T_Save_NotificationMode_Null()
+    {
+        // ALIGN
+        var restCaller = CreateRestCallerFor(@"{
+  ""d"": {
+    ""Id"": 999543,
+    ""Type"": ""CalendarEvent"",
+    ""Name"": ""Content1"",
+    ""NotificationMode"": [ ""E-mail digest"" ]
+  }
+}");
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<CalendarEvent>();
+        });
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+            .ConfigureAwait(false);
+        var request = new LoadContentRequest { Path = "/Root/Content" };
+        var content = await repository.LoadContentAsync<CalendarEvent>(request, CancellationToken.None);
+        Assert.AreEqual(EventNotificationMode.EmailDigest, content.NotificationMode);
+
+        // ACT
+        content.NotificationMode = null;
+        await content.SaveAsync(_cancel);
+
+        // ASSERT
+        var calls = restCaller.ReceivedCalls().ToArray();
+        Assert.IsNotNull(calls);
+        Assert.AreEqual(3, calls.Length);
+        Assert.AreEqual("GetResponseStringAsync", calls[2].GetMethodInfo().Name);
+        var arguments = calls[2].GetArguments();
+        var json = (string)arguments[2]!;
+        json = json.Substring("models=[".Length).TrimEnd(']');
+        var dict = JsonHelper.Deserialize<Dictionary<string, object>>(json);
+        var keys = string.Join(", ", dict.Keys);
+        Assert.AreEqual("Name, NotificationMode", keys);
+        Assert.AreEqual(null, dict["NotificationMode"]);
+    }
+    [TestMethod]
+    public async Task GeneralProps_T_Save_NotificationMode_EmailToNone()
+    {
+        // ALIGN
+        var restCaller = CreateRestCallerFor(@"{
+  ""d"": {
+    ""Id"": 999543,
+    ""Type"": ""CalendarEvent"",
+    ""Name"": ""Content1"",
+    ""NotificationMode"": [ ""E-mail"" ]
+  }
+}");
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<CalendarEvent>();
+        });
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+            .ConfigureAwait(false);
+        var request = new LoadContentRequest { Path = "/Root/Content" };
+        var content = await repository.LoadContentAsync<CalendarEvent>(request, CancellationToken.None);
+        Assert.AreEqual(EventNotificationMode.Email, content.NotificationMode);
+
+        // ACT
+        content.NotificationMode = EventNotificationMode.None;
+        await content.SaveAsync(_cancel);
+
+        // ASSERT
+        var calls = restCaller.ReceivedCalls().ToArray();
+        Assert.IsNotNull(calls);
+        Assert.AreEqual(3, calls.Length);
+        Assert.AreEqual("GetResponseStringAsync", calls[2].GetMethodInfo().Name);
+        var arguments = calls[2].GetArguments();
+        var json = (string)arguments[2]!;
+        json = json.Substring("models=[".Length).TrimEnd(']');
+        var dict = JsonHelper.Deserialize<Dictionary<string, object>>(json);
+        var keys = string.Join(", ", dict.Keys);
+        Assert.AreEqual("Name, NotificationMode", keys);
+        var value = dict["NotificationMode"];
+        Assert.IsNotNull(value);
+        var valueAsJArray = value as JArray;
+        Assert.IsNotNull(valueAsJArray);
+        Assert.AreEqual("None", valueAsJArray.FirstOrDefault());
+    }
+
+    [TestMethod]
+    public async Task GeneralProps_T_Save_EventType_Null()
+    {
+        // ALIGN
+        var restCaller = CreateRestCallerFor(@"{
+  ""d"": {
+    ""Id"": 999543,
+    ""Type"": ""CalendarEvent"",
+    ""Name"": ""Content1"",
+    ""EventType"": [ ""Meeting"" ]
+  }
+}");
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<CalendarEvent>();
+        });
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+            .ConfigureAwait(false);
+        var request = new LoadContentRequest { Path = "/Root/Content" };
+        var content = await repository.LoadContentAsync<CalendarEvent>(request, CancellationToken.None);
+        Assert.AreEqual(EventType.Meeting, content.EventType);
+
+        // ACT
+        content.EventType = null;
+        await content.SaveAsync(_cancel);
+
+        // ASSERT
+        var calls = restCaller.ReceivedCalls().ToArray();
+        Assert.IsNotNull(calls);
+        Assert.AreEqual(3, calls.Length);
+        Assert.AreEqual("GetResponseStringAsync", calls[2].GetMethodInfo().Name);
+        var arguments = calls[2].GetArguments();
+        var json = (string)arguments[2]!;
+        json = json.Substring("models=[".Length).TrimEnd(']');
+        var dict = JsonHelper.Deserialize<Dictionary<string, object>>(json);
+        var keys = string.Join(", ", dict.Keys);
+        Assert.AreEqual("Name, EventType", keys);
+        Assert.AreEqual(null, dict["EventType"]);
+    }
+    [TestMethod]
+    public async Task GeneralProps_T_Save_EventType_DeadlineAndMeetingToMeetingAndDemo()
+    {
+        // ALIGN
+        var restCaller = CreateRestCallerFor(@"{
+  ""d"": {
+    ""Id"": 999543,
+    ""Type"": ""CalendarEvent"",
+    ""Name"": ""Content1"",
+    ""EventType"": [ ""Deadline"", ""Meeting"" ]
+  }
+}");
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<CalendarEvent>();
+        });
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+            .ConfigureAwait(false);
+        var request = new LoadContentRequest { Path = "/Root/Content" };
+        var content = await repository.LoadContentAsync<CalendarEvent>(request, CancellationToken.None);
+        Assert.AreEqual(EventType.Deadline | EventType.Meeting, content.EventType);
+
+        // ACT
+        content.EventType = EventType.Meeting | EventType.Demo;
+        await content.SaveAsync(_cancel);
+
+        // ASSERT
+        var calls = restCaller.ReceivedCalls().ToArray();
+        Assert.IsNotNull(calls);
+        Assert.AreEqual(3, calls.Length);
+        Assert.AreEqual("GetResponseStringAsync", calls[2].GetMethodInfo().Name);
+        var arguments = calls[2].GetArguments();
+        var json = (string)arguments[2]!;
+        json = json.Substring("models=[".Length).TrimEnd(']');
+        var dict = JsonHelper.Deserialize<Dictionary<string, object>>(json);
+        var keys = string.Join(", ", dict.Keys);
+        Assert.AreEqual("Name, EventType", keys);
+        Assert.IsNotNull(dict["EventType"], "EventType is null.");
+        Assert.AreEqual(typeof(JArray), dict["EventType"].GetType());
+        var values = (JArray)dict["EventType"];
+        Assert.AreEqual("Meeting", values[0].ToString());
+        Assert.AreEqual("Demo", values[1].ToString());
+    }
+
+    /* ====================================================================== Reference handling */
+
+    [TestMethod]
+    public async Task GeneralProps_T_Load_Reference_NullDeferredExpanded()
+    {
+        // ALIGN
+        var restCaller = CreateRestCallerFor(@"{
+  ""d"": {
+    ""Id"": 9125,
+    ""Type"": ""CalendarEvent"",
+    ""Name"": ""Event-1"",
+    ""Path"": ""/Root/Content/Events/Event-1"",
+    ""CreatedBy"": {
+      ""__deferred"": {
+        ""uri"": ""/odata.svc/Root/Content/Events('Event-1')/CreatedBy""
+      }
+    },
+    ""Owner"": {
+      ""Id"": 1,
+      ""Type"": ""User"",
+      ""Name"": ""Admin""
+    },
+    ""Workspace"": {
+      ""__deferred"": {
+        ""uri"": ""/odata.svc/Root/Content/Events('Event-1')/Workspace""
+      }
+    }
+  }
+}");
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<CalendarEvent>();
+        });
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+            .ConfigureAwait(false);
+        var request = new LoadContentRequest { Path = "/Root/Content" };
+
+        // ACT-1
+        var content = await repository.LoadContentAsync<CalendarEvent>(request, CancellationToken.None);
+
+        // ASSERT-1
+        Assert.IsNull(content.CreatedBy);
+        Assert.IsNull(content.ModifiedBy);
+        Assert.IsNull(content.Workspace);
+        Assert.IsNotNull(content.Owner);
+    }
+
+    /* ====================================================================== Single property tests */
+
+    [TestMethod]
+    public async Task GeneralProps_T_SingleProperty_Load_()
+    {
+        await PropertyAfterLoadTest<Folder>("", content => { Assert.IsNull(content.Workspace); });
+        await PropertyAfterLoadTest<Folder>("", content => { Assert.IsNull(content.Index); });
+
+        await PropertyAfterLoadTest<Folder>(
+            propertyJson: @"""CreatedBy"": {""__deferred"": {""uri"": ""/odata.svc/Root/Content/Events('Event-1')/CreatedBy""}}",
+            assertAfterLoad: content => { Assert.IsNull(content.CreatedBy); });
+
+        await PropertyAfterLoadTest<Folder>(
+            propertyJson: @"""Owner"": {""Type"": ""User"",""Name"": ""Admin""}",
+            assertAfterLoad: content =>
+            {
+                Assert.IsNotNull(content.Owner);
+                Assert.IsNotNull("User", content.Owner.Type);
+                Assert.IsNotNull("Admin", content.Owner.Name);
+            });
+    }
+
+    private async Task PropertyAfterLoadTest<TContent>(string propertyJson, Action<TContent> assertAfterLoad) where TContent : Content
+    {
+        // ALIGN
+        var restCaller = CreateRestCallerFor(@"{
+  ""d"": {
+    ""Id"": 9125,
+    ""Type"": """ + typeof(TContent).Name + @""",
+    ""Name"": ""Content-1"",
+    ""Path"": ""/Root/Content/Content-1"",
+    " + propertyJson + @"
+  }
+}");
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<TContent>();
+        });
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+            .ConfigureAwait(false);
+        var request = new LoadContentRequest { Path = "/Root/Content/Content-1" };
+
+        // ACT-1
+        var content = await repository.LoadContentAsync<TContent>(request, CancellationToken.None);
+
+        // ASSERT-1
+        assertAfterLoad(content);
+    }
+
+
+    [TestMethod]
+    public async Task GeneralProps_T_SingleProperty_Save_()
+    {
+        await PropertyAfterPatchTest<Folder>(
+            propertyLoadJson: "", 
+            setProperty: content => { content.Index = 42; content.DisplayName = "Content 1"; },
+            assertSaveRequest: (savedPropertyNames, properties) =>
+            {
+                Assert.AreEqual("Name, DisplayName, Index", savedPropertyNames);
+                Assert.AreEqual("42", properties["Index"].ToString());
+                Assert.AreEqual("Content 1", properties["DisplayName"].ToString());
+            });
+    }
+    private async Task PropertyAfterPatchTest<TContent>(string propertyLoadJson,
+        Action<TContent> setProperty,
+        Action<string, Dictionary<string, object>> assertSaveRequest) where TContent : Content
+    {
+        // ALIGN
+        var restCaller = CreateRestCallerFor(@"{
+  ""d"": {
+    ""Id"": 9125,
+    ""Type"": """ + typeof(TContent).Name + @""",
+    ""Name"": ""Content-1"",
+    ""Path"": ""/Root/Content/Content-1"",
+    " + propertyLoadJson + @"
+  }
+}");
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<TContent>();
+        });
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+            .ConfigureAwait(false);
+        var request = new LoadContentRequest { Path = "/Root/Content/Content-1" };
+
+        var content = await repository.LoadContentAsync<TContent>(request, CancellationToken.None);
+
+        setProperty(content);
+
+        // ACT
+        await content.SaveAsync(_cancel);
+
+        // ASSERT
+        var calls = restCaller.ReceivedCalls().ToArray();
+        Assert.IsNotNull(calls);
+        Assert.AreEqual(3, calls.Length);
+        Assert.AreEqual("GetResponseStringAsync", calls[2].GetMethodInfo().Name);
+        var arguments = calls[2].GetArguments();
+        var json = (string)arguments[2]!;
+        json = json.Substring("models=[".Length).TrimEnd(']');
+        var dict = JsonHelper.Deserialize<Dictionary<string, object>>(json);
+        var keys = string.Join(", ", dict.Keys);
+
+        assertSaveRequest(keys, dict);
+    }
 
 }

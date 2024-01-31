@@ -1,13 +1,28 @@
 ﻿using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client;
 
-public enum Gender { NotDefined, Female, Male }
-public enum MaritalStatus { NotDefined, Single, Married }
+public enum Gender
+{
+    [JsonProperty("...")]
+    NotDefined,
+    Female,
+    Male
+}
+
+public enum MaritalStatus
+{
+    [JsonProperty("...")]
+    NotDefined,
+    Single,
+    Married
+}
 
 /// <summary>
 /// Represents a user in the sensenet repository.
@@ -18,95 +33,44 @@ public class User : Content
     {
     }
 
-    public string LoginName { get; set; }
-    public string DisplayName { get; set; }
-    public string JobTitle { get; set; }
-    public bool Enabled { get; set; }
-    public string Domain { get; set; }
-    public string Email { get; set; }
-    public string FullName { get; set; }
-    public Image ImageRef { get; set; }
-    public Avatar Avatar { get; set; }
-    public DateTime LastSync { get; set; }
-    public User Manager { get; set; }
-    public string Department { get; set; }
-    public string Languages { get; set; }
-    public string Phone { get; set; }
-    public DateTime BirthDate { get; set; }
-    public string TwitterAccount { get; set; }
-    public string FacebookURL { get; set; }
-    public string LinkedInURL { get; set; }
-    public string ProfilePath { get; set; }
-    public bool MultiFactorEnabled { get; set; }
+    public string? LoginName { get; set; }
+    public string? Password { get; set; }
+    public string? JobTitle { get; set; }
+    public bool? Enabled { get; set; }
+    public string? Domain { get; set; }
+    public string? Email { get; set; }
+    public string? FullName { get; set; }
+    public Image? ImageRef { get; set; }
+    public Avatar? Avatar { get; set; }
+    public string? SyncGuid { get; set; }
+    public DateTime? LastSync { get; set; }
+    public User? Manager { get; set; }
+    public string? Department { get; set; }
+    public string? Languages { get; set; }
+    public string? Phone { get; set; }
     public Gender? Gender { get; set; }
     public MaritalStatus? MaritalStatus { get; set; }
+    public DateTime? BirthDate { get; set; }
+    public string? Education { get; set; }
+    public string? TwitterAccount { get; set; }
+    public string? FacebookURL { get; set; }
+    public string? LinkedInURL { get; set; }
+    public string? ProfilePath { get; set; }
+    public bool? MultiFactorEnabled { get; set; }
+    public bool? MultiFactorRegistered { get; set; }
+    DateTime? LastLoggedOut { get; set; }
+    public string? ExternalUserProviders { get; set; }
+    IEnumerable<Workspace> FollowedWorkspaces { get; set; }
 
-    protected override bool TryConvertToProperty(string propertyName, JToken jsonValue, out object propertyValue)
-    {
-        switch (propertyName)
-        {
-            case nameof(Gender):
-            {
-                var arrayValue = jsonValue as JArray;
-                if (arrayValue != null && arrayValue.Count == 0)
-                {
-                    propertyValue = null;
-                    return true;
-                }
-                var stringValue = (arrayValue?.FirstOrDefault() as JValue)?.Value<string>();
-                if (Enum.TryParse<Gender>(stringValue, out var parsed))
-                {
-                    propertyValue = parsed;
-                    return true;
-                }
-                propertyValue = null;
-                return true;
-            }
-            case nameof(MaritalStatus):
-            {
-                var arrayValue = jsonValue as JArray;
-                if (arrayValue != null && arrayValue.Count == 0)
-                {
-                    propertyValue = Client.MaritalStatus.NotDefined;
-                    return true;
-                }
-                var stringValue = (arrayValue?.FirstOrDefault() as JValue)?.Value<string>();
-                if (Enum.TryParse<MaritalStatus>(stringValue, out var parsed))
-                {
-                    propertyValue = parsed;
-                    return true;
-                }
-                propertyValue = null;
-                return true;
-            }
-            default:
-                return base.TryConvertToProperty(propertyName, jsonValue, out propertyValue);
-        }
-    }
+    [JsonIgnore] // Read only field
+    public IEnumerable<Content>? AllRoles { get; set; }
+    [JsonIgnore] // Read only field
+    public IEnumerable<Content>? DirectRoles { get; set; }
 
-    protected override bool TryConvertFromProperty(string propertyName, out object convertedValue)
-    {
-        switch (propertyName)
-        {
-            case nameof(Gender):
-                convertedValue = GenderOrMaritalStatusToStringArray(Gender?.ToString());
-                return true;
-            case nameof(MaritalStatus):
-                convertedValue = GenderOrMaritalStatusToStringArray(MaritalStatus?.ToString());
-                return true;
-            default:
-                return base.TryConvertFromProperty(propertyName, out convertedValue);
-        }
-    }
-
-    private string[] GenderOrMaritalStatusToStringArray(string enumName)
-    {
-        if (enumName == null)
-            return null;
-        if (enumName == "NotDefined")
-            return new[] { "..." };
-        return new[] {enumName};
-    }
+    // Not implemented properties
+    //     ImageData:Binary
+    //     Language:Choice
+    //     Captcha:Captcha
 }
 
 public class Avatar

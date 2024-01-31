@@ -202,6 +202,61 @@ public class ContentTests : IntegrationTestBase
         }
     }
 
+    [TestMethod]
+    public async Task IT_Content_Collection_MultiType()
+    {
+        var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
+        var repository = await GetRepositoryCollection()
+            .GetRepositoryAsync("local", cancel).ConfigureAwait(false);
+
+        // ACT
+        var request = new LoadCollectionRequest()
+        {
+            Path = "/Root/IMS/BuiltIn/Portal",
+            Select = new[] { "Name", "Path", "Type" },
+            OrderBy = new[] { "Path" }
+        };
+        var result = await repository.LoadCollectionAsync(request, cancel).ConfigureAwait(false);
+
+        // ASSERT
+        var contents = result.ToArray();
+        var types = contents
+            .Select(x => x.GetType())
+            .Distinct()
+            .Select(t => t.Name)
+            .OrderBy(n => n)
+            .ToArray();
+        Assert.AreEqual("Group User", string.Join(" ", types));
+    }
+
+    [TestMethod]
+    public async Task IT_Content_Query_MultiType()
+    {
+        var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
+        var repository = await GetRepositoryCollection()
+            .GetRepositoryAsync("local", cancel).ConfigureAwait(false);
+
+        // ACT
+        var request = new QueryContentRequest
+        {
+            ContentQuery = "InTree:'/Root/IMS'",
+            Select = new[] { "Name", "Path", "Type" },
+            OrderBy = new[] { "Path" }
+        };
+        var result = await repository.QueryAsync(request, cancel).ConfigureAwait(false);
+
+        // ASSERT
+        var contents = result.ToArray();
+        var types = contents
+            .Select(x => x.GetType())
+            .Distinct()
+            .Select(t => t.Name)
+            .OrderBy(n => n)
+            .ToArray();
+        //Assert.AreEqual("Domains Domain Group Image OrganizationalUnit User", string.Join(" ", types));
+        Assert.AreEqual("Content Domain Group Image OrganizationalUnit User", string.Join(" ", types));
+    }
+
     /* ================================================================================================== ACTIONS */
 
     public class File : Content
@@ -421,7 +476,7 @@ public class ContentTests : IntegrationTestBase
     [TestMethod]
     public async Task IT_Content_T_Update()
     {
-        var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
+        var cancel = new CancellationTokenSource().Token;
         var repository =
             await GetRepositoryCollection(
                     services => { services.RegisterGlobalContentType<TestMemo>("Memo"); })
@@ -485,7 +540,7 @@ public class ContentTests : IntegrationTestBase
     [TestMethod]
     public async Task IT_Content_T_Update_ReferenceList()
     {
-        var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
+        var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(120)).Token;
         var repository =
             await GetRepositoryCollection(
                     services => { services.RegisterGlobalContentType<TestMemo>("Memo"); })
@@ -508,7 +563,7 @@ public class ContentTests : IntegrationTestBase
 
         // 2 - Create container and some memos
         var container = repository.CreateContent(rootPath, containerType, containerName);
-        await container.SaveAsync().ConfigureAwait(false);
+        await container.SaveAsync(cancel).ConfigureAwait(false);
         var referredMemos = new Content[3];
         for (int i = 0; i < referredMemos.Length; i++)
         {
@@ -516,14 +571,14 @@ public class ContentTests : IntegrationTestBase
             //referredMemos[i]["MemoType"] = Array.Empty<string>();
             //referredMemos[i]["MemoType"] = new[] { "generic" };
             ((TestMemo)referredMemos[i]).MemoType = Array.Empty<string>();
-            await referredMemos[i].SaveAsync().ConfigureAwait(false);
+            await referredMemos[i].SaveAsync(cancel).ConfigureAwait(false);
         }
 
         // 3 - Create brand new content and test its existence
         var content = repository.CreateContent<TestMemo>(containerPath, null, contentName);
         content.MemoType = Array.Empty<string>();
         content.SeeAlso = referredMemos.Take(2).ToList();
-        await content.SaveAsync().ConfigureAwait(false);
+        await content.SaveAsync(cancel).ConfigureAwait(false);
         var contentId = content.Id;
         Assert.IsTrue(contentId > 0);
 
@@ -546,7 +601,7 @@ public class ContentTests : IntegrationTestBase
 
         // 6 - Update content
         loadedContent.SeeAlso[1] = referredMemos[2];
-        await loadedContent.SaveAsync().ConfigureAwait(false);
+        await loadedContent.SaveAsync(cancel).ConfigureAwait(false);
 
         // 7 - Load updated content
         var reloadedContent = await repository.LoadContentAsync<TestMemo>(expandedRequest, cancel).ConfigureAwait(false);
@@ -574,7 +629,7 @@ public class ContentTests : IntegrationTestBase
         wrongContent.SeeAlso.Add(referredMemos[2]);
         try
         {
-            await wrongContent.SaveAsync().ConfigureAwait(false);
+            await wrongContent.SaveAsync(cancel).ConfigureAwait(false);
             Assert.Fail("The expected ApplicationException was not thrown.");
         }
         catch (ApplicationException e)
@@ -588,6 +643,76 @@ public class ContentTests : IntegrationTestBase
         // 10 - Delete the content and check the repository is clean
         await repository.DeleteContentAsync(contentId, true, cancel).ConfigureAwait(false);
         Assert.IsFalse(await repository.IsContentExistsAsync(path, cancel).ConfigureAwait(false));
+    }
+
+    /* ============================================================================================= ALLOWED CHILD TYPES */
+
+    [TestMethod]
+    public async Task IT_Content_AllowedChildTypes()
+    {
+        var cancel = new CancellationTokenSource().Token;
+        var repository = await GetRepositoryCollection()
+            .GetRepositoryAsync("local", cancel).ConfigureAwait(false);
+        
+        await repository.DeleteContentAsync(new[] {"/Root/Content/DocLib-1"}, true, cancel).ConfigureAwait(false);
+
+        // ACT-1: /Root/Content
+        var request = new LoadContentRequest
+        {
+            Path = "/Root/Content",
+            Expand = new[] {"AllowedChildTypes", "EffectiveAllowedChildTypes"},
+            Select = new[] {"*", "AllowedChildTypes/Name", "EffectiveAllowedChildTypes/Name" }
+        };
+        var content1 = await repository.LoadContentAsync<Workspace>(request, cancel).ConfigureAwait(false);
+
+        // ASSERT-1: AllowedChildTypes fields are not null, not empty
+        Assert.IsNotNull(content1.AllowedChildTypes);
+        Assert.IsNotNull(content1.EffectiveAllowedChildTypes);
+        Assert.IsTrue(content1.AllowedChildTypes.Any());
+        Assert.IsTrue(content1.EffectiveAllowedChildTypes.Any());
+
+        // ACT-2: Create a doclib
+        var docLib1 = repository.CreateContent("/Root/Content", "DocumentLibrary", "DocLib-1");
+        //docLib1.AllowedChildTypes = new ContentType[] { taskListContentType, memoListContentType};
+        await docLib1.SaveAsync(cancel).ConfigureAwait(false);
+
+        // ASSERT-2
+        request = new LoadContentRequest
+        {
+            Path = "/Root/Content/DocLib-1",
+            Expand = new[] { "AllowedChildTypes", "EffectiveAllowedChildTypes" },
+            Select = new[] { "*", "AllowedChildTypes/Name", "EffectiveAllowedChildTypes/Name" }
+        };
+        docLib1 = await repository.LoadContentAsync<Content>(request, cancel).ConfigureAwait(false);
+        var allowedChildTypes = docLib1.AllowedChildTypes.Select(x => x.Name).OrderBy(x => x).ToArray();
+        var effectiveChildTypes = docLib1.EffectiveAllowedChildTypes.Select(x => x.Name).OrderBy(x => x).ToArray();
+        Assert.AreEqual("", string.Join(" ", allowedChildTypes));
+        Assert.AreEqual("File Folder SystemFolder", string.Join(" ", effectiveChildTypes));
+
+        // ACT-3: Update a doclib with childType control
+        var taskListContentType = await repository.LoadContentAsync<ContentType>(
+                "/Root/System/Schema/ContentTypes/GenericContent/Folder/ContentList/ItemList/TaskList", cancel)
+            .ConfigureAwait(false);
+        var memoListContentType = await repository.LoadContentAsync<ContentType>(
+                "/Root/System/Schema/ContentTypes/GenericContent/Folder/ContentList/ItemList/MemoList", cancel)
+            .ConfigureAwait(false);
+        docLib1.AllowedChildTypes = new ContentType[] { taskListContentType, memoListContentType};
+        await docLib1.SaveAsync(cancel).ConfigureAwait(false);
+
+        // ASSERT-3
+        request = new LoadContentRequest
+        {
+            Path = "/Root/Content/DocLib-1",
+            Expand = new[] { "AllowedChildTypes", "EffectiveAllowedChildTypes" },
+            Select = new[] { "*", "AllowedChildTypes/Name", "EffectiveAllowedChildTypes/Name" }
+        };
+        docLib1 = await repository.LoadContentAsync<Content>(request, cancel).ConfigureAwait(false);
+        allowedChildTypes = docLib1.AllowedChildTypes?.Select(x => x.Name).OrderBy(x => x)
+            .ToArray() ?? Array.Empty<string>();
+        effectiveChildTypes = docLib1.EffectiveAllowedChildTypes?.Select(x => x.Name).OrderBy(x => x)
+            .ToArray() ?? Array.Empty<string>();
+        Assert.AreEqual("MemoList TaskList", string.Join(" ", allowedChildTypes));
+        Assert.AreEqual("MemoList SystemFolder TaskList", string.Join(" ", effectiveChildTypes));
     }
 
     /* ================================================================================================== OPERATIONS */

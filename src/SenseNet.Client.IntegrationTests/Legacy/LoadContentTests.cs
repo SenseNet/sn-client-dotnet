@@ -3,8 +3,10 @@
 namespace SenseNet.Client.IntegrationTests.Legacy
 {
     [TestClass]
-    public class LoadContentTests
+    public class LoadContentTests : IntegrationTestBase
     {
+        private CancellationToken _cancel = new CancellationTokenSource().Token;
+
         [ClassInitialize]
         public static void ClassInitializer(TestContext context)
         {
@@ -27,41 +29,6 @@ namespace SenseNet.Client.IntegrationTests.Legacy
 
             Assert.IsNotNull(content);
             Assert.AreEqual(Constants.User.AdminId, content.Id);
-        }
-
-        [TestMethod]
-        public async Task LoadReferences_Default()
-        {
-            var admins = await Content.LoadReferencesAsync(Constants.Group.AdministratorsPath, "Members").ConfigureAwait(false);
-            var admin = admins.FirstOrDefault();
-
-            Assert.IsNotNull(admin);
-            Assert.AreEqual(Constants.User.AdminId, admin.Id);
-            Assert.IsNotNull(admin["DisplayName"]); // all fields should be present in the result
-        }
-
-        [TestMethod]
-        public async Task LoadReferences_WithSelect()
-        {
-            // ------------------------------------ load by path
-
-            var admins = await Content.LoadReferencesAsync(Constants.Group.AdministratorsPath, "Members", new[] { "Id", "Path" })
-                .ConfigureAwait(false);
-            var admin = admins.FirstOrDefault();
-
-            Assert.IsNotNull(admin);
-            Assert.AreEqual(Constants.User.AdminId, admin.Id);
-            Assert.IsNull(admin["DisplayName"]); // because we did not select this field
-
-            // ------------------------------------ load by id
-
-            var adminsGroup = await Content.LoadAsync(Constants.Group.AdministratorsPath).ConfigureAwait(false);
-            admins = await Content.LoadReferencesAsync(adminsGroup.Id, "Members", new[] { "Id", "Path" }).ConfigureAwait(false);
-            admin = admins.FirstOrDefault();
-
-            Assert.IsNotNull(admin);
-            Assert.AreEqual(Constants.User.AdminId, admin.Id);
-            Assert.IsNull(admin["DisplayName"]); // because we did not select this field
         }
 
         [TestMethod]
@@ -124,46 +91,6 @@ namespace SenseNet.Client.IntegrationTests.Legacy
         }
 
         [TestMethod]
-        public async Task LoadReferences_DynamicProperty_MultiRef_WithFilter()
-        {
-            // This request loads references and expands their reference field.
-            var members = (await Content.LoadReferencesAsync(new ODataRequest
-            {
-                Path = Constants.Group.AdministratorsPath,
-                PropertyName = "Members",
-                Expand = new[] { "CreatedBy" },
-                Select = new[] { "Id", "Name", "Path", "Index", "Type",
-                    "CreatedBy/Id", "CreatedBy/Name", "CreatedBy/Path", "CreatedBy/Type", "CreatedBy/CreationDate", "CreatedBy/Index" },
-                OrderBy = new[] { "Id" },
-                Top = 1,
-                Skip = 1
-            })).ToArray();
-
-            // there are actually 2 members but we skipped one in the filter above
-            Assert.AreEqual(1, members.Length);
-
-            dynamic content = members[0];
-            string createdByName = content.CreatedBy.Name;
-
-            Assert.AreEqual("Developers", content.Name);
-            Assert.AreEqual("Group", (string)content.Type);
-            Assert.IsTrue(content.Index > -1);
-            Assert.AreEqual("Admin", createdByName);
-        }
-        [TestMethod]
-        public async Task LoadReferences_DynamicProperty_SingleRef()
-        {
-            // Single will make sure that the array contains only 1 element
-            var reference = (await Content.LoadReferencesAsync(new ODataRequest
-            {
-                Path = Constants.User.AdminPath,
-                PropertyName = "CreatedBy",
-            })).Single();
-
-            Assert.AreEqual("Admin", reference.Name);
-        }
-
-        [TestMethod]
         public async Task Load_PropertyAccess_DateTime()
         {
             var content = await Content.LoadAsync(Constants.User.AdminId).ConfigureAwait(false);
@@ -221,14 +148,17 @@ namespace SenseNet.Client.IntegrationTests.Legacy
         [TestMethod]
         public async Task GetCurrentUser()
         {
-            var server = ClientContext.Current.Server;
+            var repository = await GetRepositoryCollection()
+                .GetRepositoryAsync("local", CancellationToken.None).ConfigureAwait(false);
+
+            var server = repository.Server;
             var originalToken = server.Authentication.AccessToken;
 
             try
             {
                 // first check as Visitor
                 server.Authentication.AccessToken = null;
-                var visitor = await server.GetCurrentUserAsync();
+                var visitor = await repository.GetCurrentUserAsync(_cancel).ConfigureAwait(false);
 
                 Assert.AreEqual("Visitor", visitor.Name);
             }
@@ -238,12 +168,12 @@ namespace SenseNet.Client.IntegrationTests.Legacy
             }
 
             // we assume that the global test user is the Admin
-            dynamic currentUser = await server.GetCurrentUserAsync();
+            dynamic currentUser = await repository.GetCurrentUserAsync(_cancel).ConfigureAwait(false);
             Assert.AreEqual("Admin", currentUser.Name);
 
             // check if expansion works
-            currentUser = await server.GetCurrentUserAsync(new[] { "Id", "Name", "Path", "CreatedBy/Id", "CreatedBy/Name" },
-                new[] { "CreatedBy" });
+            currentUser = await repository.GetCurrentUserAsync(new[] { "Id", "Name", "Path", "Type", "CreatedBy/Id", "CreatedBy/Name", "CreatedBy/Type" },
+                new[] { "CreatedBy" }, _cancel).ConfigureAwait(false);
 
             Assert.AreEqual("Admin", (string)currentUser.CreatedBy.Name);
         }

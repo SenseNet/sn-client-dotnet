@@ -161,7 +161,7 @@ public class ServerContext
     /// instance the first one from the currently configured list will be used.
     /// </summary>
     /// <param name="server">Server context object.</param>
-    public static string GetUrl(ServerContext server)
+    public static string GetUrl(ServerContext? server)
     {
         server ??= ClientContext.Current.Server;
         return server.Url;

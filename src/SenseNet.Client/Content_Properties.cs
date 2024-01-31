@@ -2,15 +2,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Dynamic;
-using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
 using Newtonsoft.Json;
-using Org.BouncyCastle.Bcpg;
 
 namespace SenseNet.Client;
 
@@ -178,11 +172,24 @@ public partial class Content
                 }
             }
 
+            if (TryParseToEnumValue(property, jsonValue, out propertyValue))
+            {
+                try
+                {
+                    property.SetMethod.Invoke(this, new[] { propertyValue });
+                }
+                catch (Exception e)
+                {
+                    throw new ApplicationException($"The property '{property.Name}' cannot be set. " +
+                                                   $"See inner exception for details.", e);
+                }
+                continue;
+            }
+
             // General object 
             if (jsonValue is JObject customObject)
             {
                 property.SetMethod.Invoke(this, new[] {customObject.ToObject(propertyType)});
-                continue;
             }
 
             // Property could not be bound: do nothing.
@@ -240,6 +247,68 @@ public partial class Content
         propertyValue = null;
         return false;
     }
+    private bool TryParseToEnumValue(PropertyInfo property, JToken jsonValue, out object propertyValue)
+    {
+        propertyValue = null;
+        var pType = property.PropertyType;
+
+        if (pType.IsEnum)
+        {
+            propertyValue = ConvertToEnum(pType, jsonValue);
+            return true;
+        }
+
+        if (!pType.IsGenericType)
+            return false;
+        if (pType.Name != "Nullable`1")
+            return false;
+        pType = pType.GetGenericArguments()[0];
+        if (!pType.IsEnum)
+            return false;
+
+        propertyValue = ConvertToEnum(pType, jsonValue);
+        return true;
+    }
+
+    private object ConvertToEnum(Type enumType, JToken jsonValue)
+    {
+        var inputValues = GetStringValuesFromJsonArray(enumType, jsonValue);
+        if (inputValues == null || inputValues.Length == 0)
+            return null;
+
+        var names = Enum.GetNames(enumType);
+        var values = new object[names.Length];
+        Enum.GetValues(enumType).CopyTo(values, 0);
+        int[] intValues;
+        try
+        {
+            intValues = values.Select(Convert.ToInt32).ToArray();
+        }
+        catch(Exception e)
+        {
+            throw new ClientException($"Unsupported enum type: {enumType.FullName}.", e);
+        }
+
+        var combinedValue = 0;
+        for (var i = 0; i < names.Length; i++)
+        {
+            var valueName = GetEnumNameFromValue(enumType, values[i]);
+            if (inputValues.Contains(valueName))
+                combinedValue |= intValues[i];
+        }
+
+        return Enum.ToObject(enumType, combinedValue);
+    }
+    private string[] GetStringValuesFromJsonArray(Type enumType, JToken jToken)
+    {
+        if (jToken == null)
+            return Array.Empty<string>();
+        var jArray = (JArray) jToken;
+        var values = jArray.Select(x=>x.ToString()).ToArray();
+        if (enumType.GetCustomAttributes<FlagsAttribute>().Any() && values.Length > 1)
+            return values;
+        return values.Take(1).ToArray();
+    }
 
     protected virtual bool TryConvertFromProperty(string propertyName, out object convertedValue)
     {
@@ -283,7 +352,21 @@ public partial class Content
         var array = Array.CreateInstance(itemType, referredContents.Length);
 
         for (int i = 0; i < referredContents.Length; i++)
-            array.SetValue(referredContents[i], i);
+        {
+            if (itemType.IsAssignableFrom(referredContents[i].GetType()))
+            {
+                array.SetValue(referredContents[i], i);
+                continue;
+            }
+            if (referredContents.Length == 1 && referredContents[0].FieldNames.SingleOrDefault() == "__deferred")
+            {
+                return null; //Array.CreateInstance(itemType, 0);
+            }
+            if (referredContents.Length > 1)
+            {
+                throw new ClientException($"Cannot  convert {referredContents[i].GetType().FullName} to {itemType.FullName}");
+            }
+        }
 
         return array;
     }
@@ -453,7 +536,51 @@ public partial class Content
                 return items.Length == 0 ? null : items;
             }
         }
+
+        if(propertyType.IsEnum)
+        {
+            return ConvertFromEnum(propertyType, propertyValue);
+        }
+        if (propertyType.IsGenericType)
+        {
+            var genericArg = propertyType.GetGenericArguments()[0];
+            if (genericArg.IsEnum)
+                return ConvertFromEnum(genericArg, propertyValue);
+        }
+
         return propertyValue;
+    }
+
+    private object ConvertFromEnum(Type propertyType, object propertyValue)
+    {
+        var isFlagsEnum = propertyType.GetCustomAttributes<FlagsAttribute>().Any();
+        if (!isFlagsEnum)
+            return new[] { GetEnumNameFromValue(propertyType, propertyValue) };
+
+        var intValue = Convert.ToInt32(propertyValue);
+        var resultValues = new List<string>();
+        foreach (var enumValue in Enum.GetValues(propertyType))
+        {
+            if ((intValue & Convert.ToInt32(enumValue)) == 0)
+                continue;
+            var result = GetEnumNameFromValue(propertyType, enumValue);
+            resultValues.Add(result);
+        }
+        return resultValues.ToArray();
+    }
+
+    private string GetEnumNameFromValue(Type enumType, object enumValue)
+    {
+        var result = enumValue.ToString();
+        var members = enumType.GetMember(result);
+        var member = members.FirstOrDefault(m => m.DeclaringType == enumType);
+        if (member == null)
+            return null;
+        var valueAttribute = (JsonPropertyAttribute)member
+            .GetCustomAttributes(typeof(JsonPropertyAttribute), false)
+            .FirstOrDefault();
+        var valueName = valueAttribute?.PropertyName ?? result;
+        return valueName;
     }
 
     private object[] ConvertReferencesToRequestValue(IEnumerable<Content> source, string propertyName, bool throwOnError)
@@ -472,8 +599,6 @@ public partial class Content
 
     private object ConvertReferenceToRequestValue(Content content, string propertyName, bool throwOnError)
     {
-        var result = new List<object>();
-
         if (content == null)
             return null;
         if (content.Id > 0)

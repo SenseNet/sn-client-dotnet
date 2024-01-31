@@ -1163,6 +1163,8 @@ public class ODataRequestTests
 
     #endregion
 
+    #region OperationRequest_*
+
     [TestMethod]
     public void ActionRequest_Id()
     {
@@ -1250,4 +1252,135 @@ public class ODataRequestTests
             exception.Message);
     }
 
+    #endregion
+
+    //#region LoadReferenceRequest_*
+
+    [TestMethod]
+    public void LoadReferenceRequest_ContentId()
+    {
+        var request = new LoadReferenceRequest {ContentId = 42, FieldName = "Field1"};
+        Assert.AreEqual($"{_baseUri}/OData.svc/content(42)/Field1?metadata=no",
+            request.ToODataRequest(null).ToString());
+    }
+    [TestMethod]
+    public void LoadReferenceRequest_Path()
+    {
+        var request = new LoadReferenceRequest { Path = "/Root/Content", FieldName = "Field1" };
+        Assert.AreEqual($"{_baseUri}/OData.svc/Root('Content')/Field1?metadata=no",
+            request.ToODataRequest(null).ToString());
+    }
+
+    [TestMethod]
+    public void LoadReferenceRequest_Version()
+    {
+        var request = new LoadReferenceRequest { ContentId = 42, FieldName = "Field1" };
+        request.Version = "V1.0.A";
+        Assert.AreEqual($"{_baseUri}/OData.svc/content(42)/Field1?metadata=no&version=V1.0.A",
+            request.ToODataRequest(null).ToString());
+    }
+    [TestMethod]
+    public void LoadReferenceRequest_ExpandSelect()
+    {
+        var request = new LoadReferenceRequest { ContentId = 42, FieldName = "Field1" };
+        request.Expand = new[] {"Manager", "CreatedBy/Manager"};
+        request.Select = new[] {"Id", "Name", "Manager/Name", "CreatedBy/Manager/Name"};
+        Assert.AreEqual($"{_baseUri}/OData.svc/content(42)/Field1?metadata=no&$expand=Manager,CreatedBy/Manager&" +
+                        $"$select=Id,Name,Manager/Name,CreatedBy/Manager/Name",
+            request.ToODataRequest(null).ToString());
+    }
+    [TestMethod]
+    public void LoadReferenceRequest_Metadata()
+    {
+        var request = new LoadReferenceRequest { ContentId = 42, FieldName = "Field1" };
+        request.Metadata = MetadataFormat.Full;
+        Assert.AreEqual($"{_baseUri}/OData.svc/content(42)/Field1",
+            request.ToODataRequest(null).ToString());
+
+        request = new LoadReferenceRequest { ContentId = 42, FieldName = "Field1" };
+        request.Metadata = MetadataFormat.Minimal;
+        Assert.AreEqual($"{_baseUri}/OData.svc/content(42)/Field1?metadata=minimal",
+            request.ToODataRequest(null).ToString());
+
+        request = new LoadReferenceRequest { ContentId = 42, FieldName = "Field1" };
+        request.Metadata = MetadataFormat.None;
+        Assert.AreEqual($"{_baseUri}/OData.svc/content(42)/Field1?metadata=no",
+            request.ToODataRequest(null).ToString());
+    }
+    [TestMethod]
+    public void LoadReferenceRequest_Parameters()
+    {
+        var request = new LoadReferenceRequest { ContentId = 42, FieldName = "Field1" };
+        request.Parameters.Add(new KeyValuePair<string, string>("param1", "value1"));
+        request.Parameters.Add(new KeyValuePair<string, string>("param2", "value2"));
+        Assert.AreEqual($"{_baseUri}/OData.svc/content(42)/Field1?metadata=no&param1=value1&param2=value2",
+            request.ToODataRequest(null).ToString());
+    }
+    [TestMethod]
+    public void LoadReferenceRequest_Headers()
+    {
+        var request = new LoadContentRequest { ContentId = 42 };
+        request.AdditionalRequestHeaders.Add("Header1", new[] { "Value1" });
+        var actualHeaders = request.ToODataRequest(null).AdditionalRequestHeaders;
+        var header = actualHeaders.Single();
+        Assert.AreEqual("Header1", header.Key);
+        Assert.AreEqual("Value1", header.Value.Single());
+    }
+
+
+
+    [TestMethod]
+    public void LoadReferenceRequest_WellKnownParameters_ExceptQuery()
+    {
+        var request = new LoadReferenceRequest { Path = "/Root/MyContent", FieldName = "MyField"};
+        request.Parameters.Add("version", "lastmajor");
+        request.Parameters.Add("$top", "10");
+        request.Parameters.Add("$skip", "11");
+        request.Parameters.Add("$select", "Id,Name,Owner/Name");
+        request.Parameters.Add("$expand", "Owner");
+        request.Parameters.Add("metadata", "minimal");
+        request.Parameters.Add("$inlinecount", "allpages");
+        request.Parameters.Add("$filter", "isof('Folder')");
+        request.Parameters.Add("enableautofilters", "true");
+        request.Parameters.Add("enablelifespanfilter", "true");
+        request.Parameters.Add("$orderby", "Name,Index desc");
+        request.Parameters.Add("$format", "verbosejson");
+
+        var oDataRequest = request.ToODataRequest(null);
+
+        Assert.AreEqual("/Root/MyContent", oDataRequest.Path);
+        Assert.AreEqual(false, oDataRequest.IsCollectionRequest);
+        Assert.AreEqual(false, oDataRequest.CountOnly);
+
+        Assert.AreEqual("/Root/MyContent", request.Path);
+        Assert.AreEqual("lastmajor", request.Version);
+        Assert.AreEqual(10, request.Top);
+        Assert.AreEqual(11, request.Skip);
+        Assert.AreEqual("Id, Name, Owner/Name", string.Join(", ", request.Select));
+        Assert.AreEqual("Owner", string.Join(", ", request.Expand));
+        Assert.AreEqual(MetadataFormat.Minimal, request.Metadata);
+        Assert.AreEqual(InlineCountOptions.AllPages, request.InlineCount);
+        Assert.AreEqual("isof('Folder')", request.ReferenceFilter);
+        Assert.AreEqual(FilterStatus.Enabled, request.AutoFilters);
+        Assert.AreEqual(FilterStatus.Enabled, request.LifespanFilter);
+        Assert.AreEqual("Name, Index desc", string.Join(", ", request.OrderBy));
+        Assert.AreEqual(0, request.Parameters.Count);
+
+        Assert.AreEqual($"{_baseUri}/OData.svc/Root('MyContent')/MyField?" +
+                        $"metadata=minimal&" +
+                        $"$top=10&" +
+                        $"$skip=11&" +
+                        $"$expand=Owner&" +
+                        $"$select=Id,Name,Owner/Name&" +
+                        $"$filter=isof('Folder')&" +
+                        $"$orderby=Name,Index desc&" +
+                        $"$inlinecount=allpages&" +
+                        $"enableautofilters=true&" +
+                        $"enablelifespanfilter=true&" +
+                        $"version=lastmajor&" +
+                        $"$format=verbosejson",
+            request.ToODataRequest(null).ToString());
+    }
+
+    //#endregion
 }

@@ -38,7 +38,7 @@ namespace SenseNet.Client.Security
         /// <param name="permissions">Permission names to check.</param>
         /// <param name="user">The user who's permissions need to be checked. If it is not provided, the server checks the current user.</param>
         /// <param name="server">Target server.</param>
-        public static async Task<bool> HasPermissionAsync(int contentId, string[] permissions, string user = null, ServerContext server = null)
+        public static async Task<bool> HasPermissionAsync(int contentId, string[] permissions, string? user = null, ServerContext? server = null)
         {
             if (permissions == null || permissions.Length == 0)
                 throw new InvalidOperationException("Please provide at least one permission entry.");
@@ -65,7 +65,7 @@ namespace SenseNet.Client.Security
         /// </summary>
         /// <param name="contentId">Id of a content.</param>
         /// <param name="server">Target server.</param>
-        public static async Task BreakInheritanceAsync(int contentId, ServerContext server = null)
+        public static async Task BreakInheritanceAsync(int contentId, ServerContext? server = null)
         {
             await RESTCaller.GetResponseStringAsync(contentId, SETPERMISSIONS, HttpMethod.Post, JsonHelper.Serialize(new
             {
@@ -80,7 +80,7 @@ namespace SenseNet.Client.Security
         /// </summary>
         /// <param name="contentId">Id of a content.</param>
         /// <param name="server">Target server.</param>
-        public static async Task UnbreakInheritanceAsync(int contentId, ServerContext server = null)
+        public static async Task UnbreakInheritanceAsync(int contentId, ServerContext? server = null)
         {
             await RESTCaller.GetResponseStringAsync(contentId, SETPERMISSIONS, HttpMethod.Post, JsonHelper.Serialize(new
             {
