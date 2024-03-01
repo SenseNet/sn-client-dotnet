@@ -6,6 +6,10 @@ namespace SenseNet.Extensions.DependencyInjection
 {
     public static class TokenStoreExtensions
     {
+        /// <summary>
+        /// Adds the token store services to the service collection. The default
+        /// token provider is the IdentityServerTokenProvider.
+        /// </summary>
         public static IServiceCollection AddSenseNetClientTokenStore(this IServiceCollection services)
         {
             services.AddSingleton<ITokenProvider, IdentityServerTokenProvider>();

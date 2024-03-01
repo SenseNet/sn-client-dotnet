@@ -5,6 +5,9 @@ using System.Linq;
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client;
 
+/// <summary>
+/// Represents a request for loading content references from the repository.
+/// </summary>
 public class LoadReferenceRequest : ContentRequest
 {
     private static class P

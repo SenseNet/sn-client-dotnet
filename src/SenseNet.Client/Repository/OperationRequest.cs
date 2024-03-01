@@ -3,6 +3,9 @@
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client;
 
+/// <summary>
+/// Represents a request for calling an operation on a content in the repository.
+/// </summary>
 public class OperationRequest : LoadCollectionRequest
 {
     public int ContentId { get; set; }
