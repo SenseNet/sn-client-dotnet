@@ -14,5 +14,11 @@
         {
             public static readonly string AdministratorsPath = "/Root/IMS/BuiltIn/Portal/Administrators";
         }
+
+        public static class HttpClientName
+        {
+            public static readonly string Trusted = "Trusted";
+            public static readonly string Untrusted = "Untrusted";
+        }
     }
 }
