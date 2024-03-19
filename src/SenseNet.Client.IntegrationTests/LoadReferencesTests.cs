@@ -104,7 +104,7 @@ public class LoadReferencesTests : IntegrationTestBase
                 "CreatedBy/Id", "CreatedBy/Name", "CreatedBy/Path", "CreatedBy/Type", "CreatedBy/CreationDate",
                 "CreatedBy/Index"
             },
-            OrderBy = new[] {"Id"},
+            OrderBy = new[] {"Name"},
             Top = 1,
             Skip = 1
         }, cancel).ConfigureAwait(false);
@@ -187,7 +187,7 @@ public class LoadReferencesTests : IntegrationTestBase
                 "CreatedBy/Id", "CreatedBy/Name", "CreatedBy/Path", "CreatedBy/Type", "CreatedBy/CreationDate",
                 "CreatedBy/Index"
             },
-            OrderBy = new[] { "Id" },
+            OrderBy = new[] { "Name" },
             Top = 1,
             Skip = 1
         }, cancel).ConfigureAwait(false);

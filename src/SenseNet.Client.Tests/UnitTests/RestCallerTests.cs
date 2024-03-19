@@ -188,7 +188,7 @@ public class RestCallerTests
     {
         public HttpClient CreateClient(string name)
         {
-            throw new NotImplementedException();
+            return new HttpClient();
         }
     }
 
