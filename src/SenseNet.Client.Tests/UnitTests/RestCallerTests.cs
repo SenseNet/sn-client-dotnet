@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -183,13 +184,20 @@ public class RestCallerTests
     }
 
     /* =============================================================================== TOOLS */
+    private class TestHttpClientFactory : IHttpClientFactory
+    {
+        public HttpClient CreateClient(string name)
+        {
+            throw new NotImplementedException();
+        }
+    }
 
     public async Task<HttpRequestMessage?> ProcessWebRequestResponseTestAsync(string url, HttpMethod method,
         Dictionary<string, IEnumerable<string>>? headers, ServerContext? server = null)
     {
         var logger = new Logger<DefaultRetrier>(new NullLoggerFactory());
         var retrier = new DefaultRetrier(Options.Create(new RetrierOptions()), logger);
-        var restCaller = new DefaultRestCaller(retrier);
+        var restCaller = new DefaultRestCaller(retrier, new TestHttpClientFactory());
         restCaller.Server = server ?? new ServerContext { IsTrusted = true, Logger = logger, Url = "https://example.com:1234" };
         var cancellation = new CancellationTokenSource();
 
