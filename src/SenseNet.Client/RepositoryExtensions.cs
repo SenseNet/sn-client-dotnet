@@ -75,6 +75,7 @@ public static class RepositoryExtensions
             .RegisterGlobalContentType<WebHookSubscription>()
             .RegisterGlobalContentType<Workspace>()
             .AddSenseNetRetrier()
+            .AddHttpClient()
             .AddLogging()
             .Configure<ServerContextOptions>(_ => { });
     }
