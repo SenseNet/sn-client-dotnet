@@ -8,18 +8,24 @@ using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Text;
 using AngleSharp;
+using static SenseNet.Client.Constants;
 
 namespace SenseNet.Client;
 
 public class DefaultRestCaller : IRestCaller
 {
     private readonly IRetrier _retrier;
+    private readonly IHttpClientFactory _httpClientFactory;
 
     public ServerContext Server { get; set; }
 
-    public DefaultRestCaller(IRetrier retrier)
+    public DefaultRestCaller(
+        IRetrier retrier,
+        IHttpClientFactory httpClientFactory
+    )
     {
         _retrier = retrier;
+        _httpClientFactory = httpClientFactory;
     }
 
     public async Task<string> GetResponseStringAsync(Uri uri, HttpMethod method, string postData,
@@ -83,12 +89,9 @@ public class DefaultRestCaller : IRestCaller
 
         using var handler = new HttpClientHandler();
 
-        if (server.IsTrusted)
-            handler.ServerCertificateCustomValidationCallback =
-                server.ServerCertificateCustomValidationCallback
-                ?? ServerContext.DefaultServerCertificateCustomValidationCallback;
-
-        using var client = new HttpClient(handler);
+        using var client = _httpClientFactory.CreateClient(server.IsTrusted
+            ? HttpClientName.Trusted
+            : HttpClientName.Untrusted);
         var requestUri = GetRealUri(url, server.Url);
         using var request = new HttpRequestMessage(method, requestUri);
 
