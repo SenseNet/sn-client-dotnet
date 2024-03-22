@@ -2107,6 +2107,42 @@ namespace SenseNet.Client.Tests.UnitTests
             Assert.AreEqual("Admin", content.Name);
         }
         [TestMethod]
+        public async Task Repository_Auth_GetCurrentUser_ValidUser_ValidToken_ByUsername_WithParameters()
+        {
+            // ALIGN
+            var restCaller = CreateRestCallerFor(@"{ ""d"": { 
+                ""Name"": ""Admin"", ""Id"": 1, ""Type"": ""User"" 
+            }}");
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton(restCaller);
+            });
+            var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // This access token does not have sub claim but user 
+            repository.Server.Authentication.AccessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9." +
+                "eyJ1c2VyIjoiQWRtaW4iLCJuYW1lIjoiSm9obiBEb2UiLCJpYXQiOjE3MTEwOTIwNDYsImV4cCI6MTcxMTA5NTY0Nn0." +
+                "qRmwZTcSEgoCKEUpsmyrHTg9mkbO0Iiqy99amXPWmRg";
+
+            // ACT
+            // define select and expand parameters
+            var content = await repository.GetCurrentUserAsync(
+                new[] { "Id", "Name", "Type", "Manager/Name", "FullName" },
+                new[] { "Manager" },
+                CancellationToken.None).ConfigureAwait(false);
+
+            // ASSERT
+            var requestedUri = (Uri)restCaller.ReceivedCalls().ToArray()[0].GetArguments().First()!;
+            Assert.IsNotNull(requestedUri);
+            Assert.AreEqual("/OData.svc/Root?metadata=no&$expand=Manager&$select=Id,Name,Type,Manager/Name,FullName" +
+                "&query=InTree%3A%27%2FRoot%2FIMS%27%20AND%20TypeIs%3AUser%20AND%20LoginName%3AAdmin",
+                requestedUri.PathAndQuery);
+
+            Assert.IsNotNull(content);
+            Assert.AreEqual("Admin", content.Name);
+        }
+        [TestMethod]
         public async Task Repository_Auth_GetCurrentUser_ValidUser_ExpiredToken()
         {
             // ALIGN

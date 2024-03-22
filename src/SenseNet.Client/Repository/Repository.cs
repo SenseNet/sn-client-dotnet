@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
-using System.Dynamic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -16,8 +15,6 @@ using System.Net;
 using System.Text;
 using System.IdentityModel.Tokens.Jwt;
 using Newtonsoft.Json;
-using System.Text.Json.Nodes;
-using System.Collections;
 
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client;
@@ -89,7 +86,7 @@ internal class Repository : IRepository
     }
     private T CreateExistingContent<T>(int id, string path) where T : Content
     {
-        var content = (T) _services.GetRequiredService(typeof(T));
+        var content = (T)_services.GetRequiredService(typeof(T));
         content.Server = Server;
         content.Repository = this;
         if (id > 0)
@@ -119,7 +116,7 @@ internal class Repository : IRepository
 
         var contentType = GetContentTypeByName(contentTypeName) ?? typeof(Content);
 
-        var content = (Content) _services.GetRequiredService(contentType);
+        var content = (Content)_services.GetRequiredService(contentType);
         return PrepareContent(content, parentPath, name, contentTypeName);
     }
     public T CreateContent<T>(string parentPath, string contentTypeName, string name) where T : Content
@@ -188,11 +185,11 @@ internal class Repository : IRepository
 
     public Task<Content> LoadContentAsync(int id, CancellationToken cancel)
     {
-        return LoadContentAsync(new LoadContentRequest {ContentId = id}, cancel);
+        return LoadContentAsync(new LoadContentRequest { ContentId = id }, cancel);
     }
     public Task<Content> LoadContentAsync(string path, CancellationToken cancel)
     {
-        return LoadContentAsync(new LoadContentRequest {Path = path}, cancel);
+        return LoadContentAsync(new LoadContentRequest { Path = path }, cancel);
     }
     public Task<Content> LoadContentAsync(LoadContentRequest requestData, CancellationToken cancel)
     {
@@ -201,11 +198,11 @@ internal class Repository : IRepository
 
     public Task<T> LoadContentAsync<T>(int id, CancellationToken cancel) where T : Content
     {
-        return LoadContentAsync<T>(new LoadContentRequest {ContentId = id}, cancel);
+        return LoadContentAsync<T>(new LoadContentRequest { ContentId = id }, cancel);
     }
     public Task<T> LoadContentAsync<T>(string path, CancellationToken cancel) where T : Content
     {
-        return LoadContentAsync<T>(new LoadContentRequest {Path = path}, cancel);
+        return LoadContentAsync<T>(new LoadContentRequest { Path = path }, cancel);
     }
     public async Task<T> LoadContentAsync<T>(LoadContentRequest requestData, CancellationToken cancel) where T : Content
     {
@@ -245,7 +242,7 @@ internal class Repository : IRepository
             requestData.ContentQuery = AddInFolderRestriction(requestData.ContentQuery, requestData.Path);
         return LoadCollectionAsync(requestData.ToODataRequest(Server), cancel);
     }
-    public Task<IContentCollection<T>> LoadCollectionAsync<T>(LoadCollectionRequest requestData, CancellationToken cancel) where T :Content
+    public Task<IContentCollection<T>> LoadCollectionAsync<T>(LoadCollectionRequest requestData, CancellationToken cancel) where T : Content
     {
         if (requestData.ContentQuery != null)
             requestData.ContentQuery = AddInFolderRestriction(requestData.ContentQuery, requestData.Path);
@@ -259,7 +256,7 @@ internal class Repository : IRepository
         oDataRequest.CountOnly = true;
 
         var response = await GetResponseStringAsync(oDataRequest, HttpMethod.Get, cancel).ConfigureAwait(false);
-            
+
         if (int.TryParse(response, out var count))
             return count;
 
@@ -276,7 +273,7 @@ internal class Repository : IRepository
     {
         return LoadCollectionAsync<Content>(requestData, cancel);
     }
-    private async Task<IContentCollection<T>> LoadCollectionAsync<T>(ODataRequest requestData, CancellationToken cancel) where T :Content
+    private async Task<IContentCollection<T>> LoadCollectionAsync<T>(ODataRequest requestData, CancellationToken cancel) where T : Content
     {
         requestData.IsCollectionRequest = true;
         var response = await GetResponseStringAsync(requestData, HttpMethod.Get, cancel).ConfigureAwait(false);
@@ -327,7 +324,7 @@ internal class Repository : IRepository
 
         // { "d": { "Name": "Admin",
         TContent content = CreateContentFromResponse<TContent>(response.d);
-        return new ContentCollection<TContent>(new[] {content}, 1, 1);
+        return new ContentCollection<TContent>(new[] { content }, 1, 1);
     }
 
     /* ============================================================================ EXISTENCE */
@@ -638,19 +635,39 @@ internal class Repository : IRepository
                         Select = select,
                         Expand = expand
                     }, cancel).ConfigureAwait(false);
-                    
+
                     if (user != null)
                         return user;
-
-                    // the user is not found, we will load the visitor later
                 }
+                else
+                {
+                    var claims = string.Join(", ", jwtSecurityToken.Claims.Select(c => c.Subject?.ToString() ?? "[null]"));
+                    _logger.LogWarning($"Sub claim not found. Available claims: {claims}");
+                }
+
+                var userClaim = jwtSecurityToken.Claims.FirstOrDefault(c => c.Type == "user");
+                if (!string.IsNullOrEmpty(userClaim?.Value))
+                {
+                    var userContent = (await QueryAsync<User>(new QueryContentRequest
+                    {
+                        ContentQuery = $"InTree:'/Root/IMS' AND TypeIs:User AND LoginName:{userClaim.Value}",
+                        Select = select,
+                        Expand = expand
+                    }, cancel).ConfigureAwait(false))
+                        .FirstOrDefault();
+
+                    if (userContent != null)
+                        return userContent;
+                }
+
+                // the user is not found, we will load the visitor later
             }
             catch (Exception ex)
             {
                 _logger.LogTrace(ex, "Error during JWT access token conversion.");
             }
         }
-        
+
         // if there is a chance that the user is authenticated (token or key is present)
         if (!string.IsNullOrEmpty(accessToken) || !string.IsNullOrEmpty(Server?.Authentication?.ApiKey))
         {
@@ -720,7 +737,7 @@ internal class Repository : IRepository
                 if (string.IsNullOrEmpty(request.Path))
                     throw new InvalidOperationException("Invalid request properties: ContentId, Path, or MediaUrl must be specified.");
                 var content = await LoadContentAsync(
-                        new LoadContentRequest {Path = request.Path, Select = new[] {"Id"}}, cancel)
+                        new LoadContentRequest { Path = request.Path, Select = new[] { "Id" } }, cancel)
                     .ConfigureAwait(false);
                 if (content == null)
                     throw new InvalidOperationException("Content not found.");
