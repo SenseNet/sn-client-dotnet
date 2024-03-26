@@ -2220,7 +2220,7 @@ namespace SenseNet.Client.Tests.UnitTests
                 CancellationToken.None).ConfigureAwait(false);
 
             // ASSERT
-            var requestedUri = (Uri)restCaller.ReceivedCalls().ToArray()[0].GetArguments().First()!;
+            var requestedUri = (Uri)restCaller.ReceivedCalls().ToArray()[1].GetArguments().First()!;
             Assert.IsNotNull(requestedUri);
             Assert.AreEqual("/OData.svc/Root?metadata=no&$expand=Manager&$select=Id,Name,Type,Manager/Name,FullName" +
                 "&query=InTree%3A%27%2FRoot%2FIMS%27%20AND%20TypeIs%3AUser%20AND%20LoginName%3AAdmin",
