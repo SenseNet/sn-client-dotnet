@@ -893,13 +893,13 @@ internal class Repository : IRepository
     internal T CreateContentFromResponse<T>(dynamic jObject) where T : Content
     {
         //var content = _services.GetRequiredService<T>();
-        var content = (T)CreateContentFromResponse(jObject);
+        var content = (T)CreateContentFromResponse(jObject, typeof(T));
         return content;
     }
-    internal Content CreateContentFromResponse(dynamic jObject, Type contentType = null)
+    internal Content CreateContentFromResponse(dynamic jObject, Type defaultContentType)
     {
         var contentTypeName = jObject.Type?.ToString();
-        Type type = GetContentTypeByName(contentTypeName) ?? contentType;
+        Type type = GetContentTypeByName(contentTypeName) ?? defaultContentType;
 
         var content = type != null
             ? (Content)_services.GetRequiredService(type)
@@ -913,13 +913,13 @@ internal class Repository : IRepository
         return content;
     }
 
-    private Type GetTypeFromJsonModel(string rawJson)
+    private Type? GetTypeFromJsonModel(string rawJson)
     {
         var jsonModel = JsonHelper.Deserialize(rawJson).d;
         string contentTypeName = jsonModel.Type?.ToString();
         return GetContentTypeByName(contentTypeName);
     }
-    internal Type GetContentTypeByName(string contentTypeName)
+    internal Type? GetContentTypeByName(string? contentTypeName)
     {
         if (contentTypeName == null)
             return null;
