@@ -237,46 +237,7 @@ namespace SenseNet.Client
         }
 
         #region OBSOLETE
-        /// <summary>
-        /// Assembles an http request that gets a stream from the portal containing binary data.
-        /// Use this inside a using block to asynchronously get the response stream.
-        /// Please catch WebExceptions and parse them using the GetClientExceptionAsync method.
-        /// </summary>
-        /// <param name="id">Content id.</param>
-        /// <param name="version">Content version (e.g. V2.3D). If not provided, the highest version
-        /// accessible to the current user will be served.</param>
-        /// <param name="propertyName">Binary field name. Default is Binary.</param>
-        /// <param name="server">Target server.</param>
-        [Obsolete("Use GetStreamResponseAsync instead.")]
-        public static HttpWebRequest GetStreamRequest(int id, string? version = null, string? propertyName = null, ServerContext? server = null)
-        {
-            var url = $"{ServerContext.GetUrl(server)}/binaryhandler.ashx?nodeid={id}&propertyname={propertyName ?? "Binary"}";
-            if (!string.IsNullOrEmpty(version))
-                url += "&version=" + version;
-
-            return GetRequest(url, server);
-        }
-        [Obsolete("Do not use this method anymore.", true)]
-        private static HttpWebRequest GetRequest(string url, ServerContext server)
-        {
-            return GetRequest(new Uri(url), server);
-        }
-        [Obsolete("Do not use this method anymore.", true)]
-        private static HttpWebRequest GetRequest(Uri uri, ServerContext server)
-        {
-            // WebRequest.Create returns HttpWebRequest only if the url
-            // is an HTTP url. It may return FtpWebRequest also!
-            var myRequest = (HttpWebRequest)WebRequest.Create(uri);
-
-            myRequest.Timeout = -1;
-            myRequest.KeepAlive = false;
-            myRequest.ProtocolVersion = HttpVersion.Version10;
-
-            SetAuthenticationForRequest(myRequest, server);
-
-            return myRequest;
-        }
-        [Obsolete("Use this method with HttpRequestException type.")]
+        [Obsolete("Use this method with HttpRequestException type.", true)]
         public static async Task<ClientException> GetClientExceptionAsync(WebException ex, string? requestUrl = null, HttpMethod? method = null, string? body = null)
         {
             var responseString = await ReadResponseStringAsync(ex.Response).ConfigureAwait(false);
