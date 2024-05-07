@@ -5,6 +5,7 @@ using System.Threading;
 using Newtonsoft.Json.Linq;
 using System.Net.Http;
 using System.IO;
+using SenseNet.Client.Linq;
 
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client;
@@ -24,6 +25,8 @@ public interface IRepository
     /// Gets the registered repository-independent content types.
     /// </summary>
     public RegisteredContentTypes GlobalContentTypes { get; }
+
+    public Type? GetContentTypeByName(string? contentTypeName);
 
     /* ============================================================================ CREATION */
 
@@ -322,6 +325,10 @@ public interface IRepository
     /// <param name="cancel">The token to monitor for cancellation requests.</param>
     /// <returns>Count of contents returned by the provided content query.</returns>
     public Task<int> QueryCountAsync(QueryContentRequest requestData, CancellationToken cancel);
+
+    /* ============================================================================ LINQ-SUPPORT */
+
+    public ContentSet<Content> Content { get; }
 
     /* ============================================================================ UPLOAD */
 
