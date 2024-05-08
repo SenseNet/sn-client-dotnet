@@ -13,13 +13,15 @@ namespace SenseNet.Client.Linq
     internal class SnLinqVisitor : ExpressionVisitor
     {
         #region ContentHandlerGetTypePredicate, BooleanMemberPredicate
-        private class ContentHandlerGetTypePredicate : SnQueryPredicate
+
+        private class ParameterGetTypePredicate : SnQueryPredicate
         {
             public override string ToString()
             {
-                throw new SnNotSupportedException("SnLinq: ContentHandlerGetTypePredicate.ToString");
+                throw new SnNotSupportedException("SnLinq: ParameterGetTypePredicate.ToString");
             }
         }
+
         [DebuggerDisplay("BMQ: {FieldName} = {Value}")]
         internal class BooleanMemberPredicate : SnQueryPredicate
         {
@@ -279,7 +281,7 @@ namespace SenseNet.Client.Linq
             }
             catch (SnNotSupportedException e)
             {
-                throw SnExpression.CallingAsEnunerableExpectedError(node.Method.Name, e);
+                throw SnExpression.CallingAsEnumerableExpectedError(node.Method.Name, e);
             }
 
             if (!(visited is MethodCallExpression methodCallExpr))
@@ -448,13 +450,13 @@ namespace SenseNet.Client.Linq
                         break;
                     }
                 case "GetType":
-                    {
-                        if (methodCallExpr.Object is MemberExpression member && member.Member == typeof(Content).GetProperty("ContentHandler"))
-                            _predicates.Push(new ContentHandlerGetTypePredicate());
-                        else
-                            throw new NotSupportedException("GetType method is not supported: " + node);
-                        break;
-                    }
+                {
+                    if (methodCallExpr.Object is ParameterExpression parameterExpression)
+                        _predicates.Push(new ParameterGetTypePredicate());
+                    else
+                        throw new NotSupportedException("GetType method is not supported: " + node);
+                    break;
+                }
                 case "IsAssignableFrom":
                     {
                         if (!(methodCallExpr.Object is ConstantExpression member))
@@ -464,14 +466,14 @@ namespace SenseNet.Client.Linq
                             throw new NotSupportedException("IsAssignableFrom method is not supported" + node);
                         if (_predicates.Count == 0)
                             throw new NotSupportedException("IsAssignableFrom method is not supported" + node);
-                        if (!(_predicates.Pop() is ContentHandlerGetTypePredicate))
+                        if (!(_predicates.Pop() is ParameterGetTypePredicate))
                             throw new NotSupportedException("IsAssignableFrom method is not supported" + node);
                         _predicates.Push(CreateTypeIsPredicate(type));
 
                         break;
                     }
                 default:
-                    throw SnExpression.CallingAsEnunerableExpectedError(methodCallExpr.Method.Name);
+                    throw SnExpression.CallingAsEnumerableExpectedError(methodCallExpr.Method.Name);
             }
 
             return visited;
@@ -618,25 +620,29 @@ namespace SenseNet.Client.Linq
         private readonly string[] _enabledCanonicalFunctionNames = { "startswith", "endswith", "substringof", "isof" };
         private void BuildFieldExpr(BinaryExpression node)
         {
-            // normalizing sides: constant must be on the right side
-            Expression left, right;
-            if (node.Left.NodeType == ExpressionType.Constant)
-            {
-                left = node.Right;
-                right = node.Left;
-            }
-            else
-            {
-                left = node.Left;
-                right = node.Right;
-            }
+            var left = node.Left;
+            var right = node.Right;
 
             // handle nullable conversions
+            if (left.NodeType == ExpressionType.Convert)
+            {
+                if (left is UnaryExpression leftAsUnary)
+                    if (left.Type.FullName?.StartsWith("System.Nullable`1[") ?? false)
+                        if (leftAsUnary.Operand.NodeType == ExpressionType.Constant)
+                            left = leftAsUnary.Operand;
+            }
             if (right.NodeType == ExpressionType.Convert)
             {
                 if (right is UnaryExpression rightAsUnary)
-                    right = rightAsUnary.Operand;
+                    if (right.Type.FullName?.StartsWith("System.Nullable`1[") ?? false)
+                        if (rightAsUnary.Operand.NodeType == ExpressionType.Constant)
+                            right = rightAsUnary.Operand;
             }
+
+            // normalizing sides: constant must be on the right side
+            if (left.NodeType == ExpressionType.Constant)
+                // swap sides
+                (left, right) = (right, left);
 
             // getting field name
             string fieldName;
@@ -824,7 +830,7 @@ namespace SenseNet.Client.Linq
             var indexValue = ConvertToTermValue(value);
 
             //fieldDataType = fieldInfo.FieldDataType;
-            fieldDataType = value.GetType();
+            fieldDataType = value?.GetType() ?? typeof(string);
 
             return indexValue;
         }
@@ -936,8 +942,22 @@ namespace SenseNet.Client.Linq
 
         private static IndexValue ConvertToTermValue(object value)
         {
+            if (value is string stringValue)
+                return new IndexValue(stringValue.ToLowerInvariant());
             if (value is bool boolValue)
                 return new IndexValue(boolValue);
+            if (value is int intValue)
+                return new IndexValue(intValue);
+            if (value is DateTime dateTimeValue)
+                return new IndexValue(dateTimeValue);
+            if (value is Type typeValue)
+                return typeValue == typeof(Content) //UNDONE: see aliases in the type registration
+                    ? new IndexValue("genericcontent")
+                    : new IndexValue(typeValue.Name.ToLowerInvariant());
+            if (value is Content contentValue)
+                return new IndexValue(contentValue.Id);
+            if (value is null)
+                return new IndexValue(string.Empty);
             throw new NotImplementedException();
             /*
     public class NotIndexedIndexFieldHandler : FieldIndexHandler

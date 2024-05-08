@@ -26,8 +26,8 @@ namespace SenseNet.Client.Linq
 
         public override SnQueryPredicate VisitSimplePredicate(SimplePredicate simplePredicate)
         {
-            var value = Escape(simplePredicate.Value);
-            _output.Append($"{simplePredicate.FieldName}:{value}");
+            var escapedValue = Escape(simplePredicate.Value);
+            _output.Append($"{simplePredicate.FieldName}:{escapedValue}");
             BoostTostring(simplePredicate.Boost);
             FuzzyToString(simplePredicate.FuzzyValue);
 

@@ -4,17 +4,24 @@ using SenseNet.Client.Linq.Predicates;
 
 namespace SenseNet.Client.Linq;
 
+public class QueryProperties
+{
+    public FilterStatus EnableAutofilters { get; set; }
+    public FilterStatus EnableLifespanFilter { get; set; }
+    public QueryExecutionMode QueryExecutionMode { get; set; }
+}
+
 public class SnExpression
 {
-    public static LinqQuery BuildQuery(Expression expression, Type sourceCollectionItemType, IRepository repository)
+    public static LinqQuery BuildQuery(Expression expression, Type sourceCollectionItemType, QueryProperties queryProperties, IRepository repository)
     {
-        return BuildSnQuery(expression, sourceCollectionItemType, repository, out var elementSelection);
+        return BuildSnQuery(expression, sourceCollectionItemType, queryProperties, repository, out var elementSelection);
     }
-    public static LinqQuery BuildQuery(Expression expression, Type sourceCollectionItemType, IRepository repository, out string elementSelection)
+    public static LinqQuery BuildQuery(Expression expression, Type sourceCollectionItemType, QueryProperties queryProperties, IRepository repository, out string elementSelection)
     {
-        return BuildSnQuery(expression, sourceCollectionItemType, repository, out elementSelection);
+        return BuildSnQuery(expression, sourceCollectionItemType, queryProperties, repository, out elementSelection);
     }
-    private static LinqQuery BuildSnQuery(Expression expression, Type sourceCollectionItemType, IRepository repository, out string elementSelection)
+    private static LinqQuery BuildSnQuery(Expression expression, Type sourceCollectionItemType, QueryProperties queryProperties, IRepository repository, out string elementSelection)
     {
         SnQueryPredicate q0 = null;
         elementSelection = null;
@@ -53,6 +60,9 @@ public class SnExpression
             query.Sort = v.Sort.ToArray();
             query.ThrowIfEmpty = v.ThrowIfEmpty;
             query.ExistenceOnly = v.ExistenceOnly;
+            query.EnableAutofilters = queryProperties.EnableAutofilters;
+            query.EnableLifespanFilter = queryProperties.EnableLifespanFilter;
+            query.QueryExecutionMode = queryProperties.QueryExecutionMode;
         }
 
         return query;
@@ -73,12 +83,12 @@ public class SnExpression
         return logicalPredicate;
     }
 
-    internal static Exception CallingAsEnunerableExpectedError(string methodName, Exception innerException = null)
+    internal static Exception CallingAsEnumerableExpectedError(string methodName, Exception innerException = null)
     {
         var message = $"Cannot resolve an expression. Use 'AsEnumerable()' method before calling the '{methodName}' method. {innerException?.Message ?? string.Empty}";
         return new NotSupportedException(message);
     }
-    internal static Exception CallingAsEnunerableExpectedError(Expression expression)
+    internal static Exception CallingAsEnumerableExpectedError(Expression expression)
     {
         return new NotSupportedException($"Cannot resolve an expression: Use 'AsEnumerable()' method before using the '{expression}' expression.");
     }
