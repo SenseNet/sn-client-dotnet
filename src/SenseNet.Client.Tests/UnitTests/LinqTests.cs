@@ -508,6 +508,10 @@ public class LinqTests : TestBase
             Assert.AreEqual("Manager, Manager/CreatedBy", string.Join(", ", request.Expand));
             Assert.IsNotNull(request.Select);
             Assert.AreEqual("Id, Domain, LoginName, Email, Manager/Name, Manager/CreatedBy/Name", string.Join(", ", request.Select));
+            Assert.AreEqual(FilterStatus.Enabled, request.AutoFilters);
+            Assert.AreEqual(FilterStatus.Disabled, request.LifespanFilter);
+            Assert.AreEqual(true, request.CountOnly);
+            Assert.AreEqual(InlineCountOptions.AllPages, request.InlineCount);
         });
     }
     //UNDONE:LINQ: Develop projection and activate this test

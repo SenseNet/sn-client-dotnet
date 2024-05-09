@@ -242,7 +242,8 @@ namespace SenseNet.Client.Linq
                 ContentId = Constants.Repository.RootId,
                 Expand = ExpandedFieldNames,
                 Select = SelectedFieldNames,
-                CountOnly = CountOnlyEnabled
+                CountOnly = CountOnlyEnabled,
+                InlineCount = InlineCountOptions.AllPages // always active
             };
         }
     }
