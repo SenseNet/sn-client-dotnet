@@ -214,6 +214,16 @@ public partial class Content : DynamicObject
         Existing = true;
     }
 
+    /// <summary>
+    /// Used in processing LINQ expressions only. Do not use in your code this constructor.
+    /// </summary>
+    /// <param name="fieldProjection"></param>
+    /// <exception cref="NotSupportedException"></exception>
+    public Content(params object[] fieldProjection)
+    {
+        throw new NotSupportedException("Used in processing LINQ expressions only. Do not use in your code this constructor.");
+    }
+
     // ============================================================================= Creators
 
     /// <summary>

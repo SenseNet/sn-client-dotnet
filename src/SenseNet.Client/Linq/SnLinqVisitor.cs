@@ -951,7 +951,7 @@ namespace SenseNet.Client.Linq
             if (value is DateTime dateTimeValue)
                 return new IndexValue(dateTimeValue);
             if (value is Type typeValue)
-                return typeValue == typeof(Content) //UNDONE: see aliases in the type registration
+                return typeValue == typeof(Content) //UNDONE:LINQ: see aliases in the type registration
                     ? new IndexValue("genericcontent")
                     : new IndexValue(typeValue.Name.ToLowerInvariant());
             if (value is Content contentValue)

@@ -4,8 +4,10 @@ using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SenseNet.Client.Linq;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq.Expressions;
 using SenseNet.Extensions.DependencyInjection;
 using Org.BouncyCastle.Asn1.X509;
+using Org.BouncyCastle.Crypto.Generators;
 
 namespace SenseNet.Client.Tests.UnitTests;
 
@@ -482,12 +484,68 @@ public class LinqTests : TestBase
             var root = repository.CreateContent("/Root", "Folder", "Folder1");
             root.Path = "/Root/Folder1";
 
-            Assert.AreEqual("+TypeIs:folder +InTree:/root/folder1 .SORT:Index .REVERSESORT:Name .AUTOFILTERS:OFF", GetQueryString(
-                repository.Content.DisableAutofilters()
+            Assert.AreEqual("+TypeIs:folder +InTree:/root/folder1 .SORT:Index .REVERSESORT:Name .AUTOFILTERS:OFF",
+                GetQueryString(repository.Content.DisableAutofilters()
                     .Where(c => c.InTree(root) && c is Folder)
                     .OrderBy(c => c.Index)
                     .ThenByDescending(c => c.Name)));
         });
+    }
+
+    [TestMethod]
+    public async Task Linq_Projection_FluidApi()
+    {
+        await LinqTest(repository =>
+        {
+            var request = GetODataRequest(repository.Content
+                .EnableAutofilters()
+                .CountOnly()
+                .DisableLifespan()
+                .ExpandFields(nameof(User.Manager), "Manager/CreatedBy")
+                .SelectFields("Id", "Domain", "LoginName", "Email", "Manager/Name", "Manager/CreatedBy/Name")
+                .Where(c => c.Id < 100 && c is User));
+            Assert.IsNotNull(request.Expand);
+            Assert.AreEqual("Manager, Manager/CreatedBy", string.Join(", ", request.Expand));
+            Assert.IsNotNull(request.Select);
+            Assert.AreEqual("Id, Domain, LoginName, Email, Manager/Name, Manager/CreatedBy/Name", string.Join(", ", request.Select));
+        });
+    }
+    //UNDONE:LINQ: Develop projection and activate this test
+    //[TestMethod]
+    public async Task Linq_Projection_Select()
+    {
+        await LinqTest(repository =>
+        {
+            var expression = repository.Content
+                .EnableAutofilters()
+                .CountOnly()
+                .DisableLifespan()
+                //.ExpandedFields($"Manager,{nameof(User.CreatedBy)}")
+                //.SelectedFields("Id,Domain,LoginName,Email,Manager/Manager/Name")
+                .Where(c => c.Id < 100 && c is User)
+                .OfType<User>()
+                .Select(c => new User(c.Id, c.Domain, c.LoginName, c.Manager, c.Email));
+            //var query = GetQueryString(expression);
+            var request = GetODataRequest(expression);
+
+            /*
+            var tracer = new LinqTracer();
+            foreach (var item in repository.Content
+                         .EnableAutofilters()
+                         .SetTracer(tracer)
+                         .Where(c => c.InTree("/Root/IMS/Public"))
+                         .OfType<User>()
+                         .Select(c => new Content(c.Id, c.Domain, c.LoginName, c.Email, c.Manager.Manager.Name)))
+            {
+                doit(item);
+            }
+            */
+        });
+    }
+    private ODataRequest GetODataRequest<T>(IQueryable<T> queryable)
+    {
+        var cs = queryable.Provider as ContentSet<T>;
+        return cs?.GetODataRequest();
     }
 
     //    //[TestMethod]
@@ -542,7 +600,8 @@ public class LinqTests : TestBase
         });
     }
 
-    ////[TestMethod] 
+    //UNDONE:LINQ: Template replacements are not supported on the client side
+    //[TestMethod] 
     //public async Task Linq_ReplaceTemplates()
     //{
     //    await LinqTest(repository =>
@@ -666,7 +725,7 @@ Id:<42 .QUICK";
         });
     }
 
-    //UNDONE: activate the test
+    //UNDONE:LINQ: activate the test
     //[TestMethod]
     public async Task Linq_Error_NotConstants()
     {
@@ -682,7 +741,7 @@ Id:<42 .QUICK";
         });
     }
 
-    /* This is an integration test */
+    //UNDONE:LINQ: This is an integration test
     //[TestMethod]
     //public async Task Linq_All()
     //{
@@ -742,7 +801,7 @@ Id:<42 .QUICK";
 
     /* ------------------------------------------------------------------------------------------- */
 
-    /* This is an aspect-field test */
+    //UNDONE:LINQ: This is an aspect-field test
     //[TestMethod]
     //public async Task Linq_AspectField()
     //{
@@ -778,6 +837,7 @@ Id:<42 .QUICK";
     {
         await AsEnumerableError("Select", repository =>
         {
+            User[] users;
             var queryable = repository.Content.Where(c => c.Id < 10)
                 .Select(c => new { c.Id, c.Path });
         });
@@ -858,167 +918,183 @@ Id:<42 .QUICK";
             var unused = repository.Content.Where(c => true).TakeWhile(c => false).ToArray();
         });
     }
-    //    [TestMethod]
-    //    public async Task Linq_NotSupported_Join_NonameOutput()
-    //    {
-    //        AsEnumerableError("Join", () =>
-    //        {
-    //            var unused = repository.Content.Where(c => c.Id < 10000)
-    //                .Join(
-    //                    Content.All,
-    //                    user => user.Id,
-    //                    doc => doc.ContentHandler.ModifiedBy.Id,
-    //                    (user, doc) => new { UserId = user.Id, DocId = doc.Id })
-    //                .Where(item => item.UserId == 42);
-    //        });
-    //    }
-    //    [TestMethod]
-    //    public async Task Linq_NotSupported_Join_ContentOutput()
-    //    {
-    //        AsEnumerableError("Join", () =>
-    //        {
-    //            var unused = repository.Content.Where(c => false)
-    //                .Join(
-    //                    Content.All,
-    //                    user => user.Id,
-    //                    doc => doc.ContentHandler.ModifiedBy.Id,
-    //                    (user, doc) => user)
-    //                .Where(user => user.Id == 42)
-    //                .ToArray();
-    //        });
-    //    }
-    //    [TestMethod]
-    //    public async Task Linq_NotSupported_Aggregate()
-    //    {
-    //        AsEnumerableError("Aggregate", () =>
-    //        {
-    //            var unused = repository.Content.Where(c => false).Aggregate(0, (a, b) => a + b.Id);
-    //        });
-    //    }
-    //    [TestMethod]
-    //    public async Task Linq_NotSupported_Cast()
-    //    {
-    //        AsEnumerableError("Cast", () =>
-    //        {
-    //            var unused = repository.Content.Where(c => false).Cast<Content>().ToArray();
-    //        });
-    //    }
-    //    [TestMethod]
-    //    public async Task Linq_NotSupported_Distinct()
-    //    {
-    //        AsEnumerableError("Distinct", () =>
-    //        {
-    //            var unused = repository.Content.Where(c => false).Distinct().ToArray();
-    //        });
-    //    }
-    //    [TestMethod]
-    //    public async Task Linq_NotSupported_Concat()
-    //    {
-    //        AsEnumerableError("Concat", () =>
-    //        {
-    //            var unused = repository.Content.Where(c => false).Concat(new Content[0]).ToArray();
-    //        });
-    //    }
-    //    [TestMethod]
-    //    public async Task Linq_NotSupported_Union()
-    //    {
-    //        AsEnumerableError("Union", () =>
-    //        {
-    //            var unused = repository.Content.Where(c => false).Union(new Content[0]).ToArray();
-    //        });
-    //    }
-    //    [TestMethod]
-    //    public async Task Linq_NotSupported_Intersect()
-    //    {
-    //        AsEnumerableError("Intersect", () =>
-    //        {
-    //            var unused = repository.Content.Where(c => false).Intersect(new Content[0]).ToArray();
-    //        });
-    //    }
-    //    [TestMethod]
-    //    public async Task Linq_NotSupported_Except()
-    //    {
-    //        AsEnumerableError("Except", () =>
-    //        {
-    //            var unused = repository.Content.Where(c => false).Except(new Content[0]).ToArray();
-    //        });
-    //    }
+    [TestMethod]
+    public async Task Linq_NotSupported_Join_NonameOutput()
+    {
+        await AsEnumerableError("Join", repository =>
+        {
+            var unused = repository.Content.Where(c => c.Id < 10000)
+                .Join(
+                    repository.Content,
+                    user => user.Id,
+                    doc => doc.ModifiedBy.Id,
+                    (user, doc) => new { UserId = user.Id, DocId = doc.Id })
+                .Where(item => item.UserId == 42);
+        });
+    }
+    [TestMethod]
+    public async Task Linq_NotSupported_Join_ContentOutput()
+    {
+        await AsEnumerableError("Join", repository =>
+        {
+            var unused = repository.Content.Where(c => false)
+                .Join(
+                    repository.Content,
+                    user => user.Id,
+                    doc => doc.ModifiedBy.Id,
+                    (user, doc) => user)
+                .Where(user => user.Id == 42);
+        });
+    }
+    [TestMethod]
+    public async Task Linq_NotSupported_Aggregate()
+    {
+        await AsEnumerableError("Aggregate", repository =>
+        {
+            var unused = repository.Content.Where(c => false).Aggregate(0, (a, b) => a + b.Id);
+        });
+    }
+    [TestMethod]
+    public async Task Linq_NotSupported_Cast()
+    {
+        await AsEnumerableError("Cast", repository =>
+        {
+            var unused = repository.Content.Where(c => false).Cast<Content>().ToArray();
+        });
+    }
+    [TestMethod]
+    public async Task Linq_NotSupported_Distinct()
+    {
+        await AsEnumerableError("Distinct", repository =>
+        {
+            var unused = repository.Content.Where(c => false).Distinct().ToArray();
+        });
+    }
+    [TestMethod]
+    public async Task Linq_NotSupported_Concat()
+    {
+        await AsEnumerableError("Concat", repository =>
+        {
+            var unused = repository.Content.Where(c => false).Concat(new Content[0]).ToArray();
+        });
+    }
+    [TestMethod]
+    public async Task Linq_NotSupported_Union()
+    {
+        await AsEnumerableError("Union", repository =>
+        {
+            var unused = repository.Content.Where(c => false).Union(new Content[0]).ToArray();
+        });
+    }
+    [TestMethod]
+    public async Task Linq_NotSupported_Intersect()
+    {
+        await AsEnumerableError("Intersect", repository =>
+        {
+            var unused = repository.Content.Where(c => false).Intersect(new Content[0]).ToArray();
+        });
+    }
+    [TestMethod]
+    public async Task Linq_NotSupported_Except()
+    {
+        await AsEnumerableError("Except", repository =>
+        {
+            var unused = repository.Content.Where(c => false).Except(new Content[0]).ToArray();
+        });
+    }
+    [TestMethod]
+    public async Task Linq_NotSupported_GroupBy()
+    {
+        await AsEnumerableError("GroupBy", repository =>
+        {
+            var unused = repository.Content.Where(c => false).GroupBy(c => c);
+        });
+    }
+    [TestMethod]
+    public async Task Linq_NotSupported_GroupJoin()
+    {
+        await AsEnumerableError("GroupJoin", repository =>
+        {
+            var unused = repository.Content.Where(c => false)
+                .GroupJoin(new Content[0], a => a, b => b, (c, d) => new { A = c, B = d });
+        });
+    }
+    [TestMethod]
+    public async Task Linq_NotSupported_All()
+    {
+        await AsEnumerableError("All", repository =>
+        {
+            var unused = repository.Content.Where(c => false).All(c => true);
+        });
+    }
+    [TestMethod]
+    public async Task Linq_NotSupported_Reverse()
+    {
+        await AsEnumerableError("Reverse", repository =>
+        {
+            var unused = repository.Content.Where(c => false).Reverse().ToArray();
+        });
+    }
+    [TestMethod]
+    public async Task Linq_NotSupported_SequenceEqual()
+    {
+        await AsEnumerableError("SequenceEqual", repository =>
+        {
+            var unused = repository.Content.Where(c => false).SequenceEqual(new Content[0]);
+        });
+    }
+    [TestMethod]
+    public async Task Linq_NotSupported_DefaultIfEmpty()
+    {
+        await AsEnumerableError("DefaultIfEmpty", repository =>
+        {
+            var unused = repository.Content.Where(c => false).DefaultIfEmpty().ToArray();
+        });
+    }
+    [TestMethod]
+    public async Task Linq_NotSupported_DefaultIfEmptyDefault()
+    {
+        await AsEnumerableError("DefaultIfEmpty", repository =>
+        {
+            Content defaultContent = null;
+            var unused = repository.Content.Where(c => false).DefaultIfEmpty(defaultContent).ToArray();
+        });
+    }
+
+    [TestMethod]
+    public async Task Linq_NotSupported_Zip()
+    {
+        await AsEnumerableError("Zip", repository =>
+        {
+            var unused = repository.Content.Where(c => false).Zip(new Content[0], (a, b) => a).ToArray();
+        });
+    }
 
 
-    //    [TestMethod]
-    //    public async Task Linq_NotSupported_GroupBy()
-    //    {
-    //        AsEnumerableError("GroupBy", () =>
-    //        {
-    //            var unused = repository.Content.Where(c => false).GroupBy(c => c);
-    //        });
-    //    }
-    //    [TestMethod]
-    //    public async Task Linq_NotSupported_GroupJoin()
-    //    {
-    //        AsEnumerableError("GroupJoin", () =>
-    //        {
-    //            var unused = repository.Content.Where(c => false)
-    //                .GroupJoin(new Content[0], a => a, b => b, (c, d) => new { A = c, B = d });
-    //        });
-    //    }
-    //    [TestMethod]
-    //    public async Task Linq_NotSupported_All()
-    //    {
-    //        AsEnumerableError("All", () =>
-    //        {
-    //            var unused = repository.Content.Where(c => false).All(c => true);
-    //        });
-    //    }
-    //    [TestMethod]
-    //    public async Task Linq_NotSupported_Reverse()
-    //    {
-    //        AsEnumerableError("Reverse", () =>
-    //        {
-    //            var unused = repository.Content.Where(c => false).Reverse().ToArray();
-    //        });
-    //    }
-    //    [TestMethod]
-    //    public async Task Linq_NotSupported_SequenceEqual()
-    //    {
-    //        AsEnumerableError("SequenceEqual", () =>
-    //        {
-    //            var unused = repository.Content.Where(c => false).SequenceEqual(new Content[0]);
-    //        });
-    //    }
-    //    [TestMethod]
-    //    public async Task Linq_NotSupported_DefaultIfEmpty()
-    //    {
-    //        AsEnumerableError("DefaultIfEmpty", () =>
-    //        {
-    //            var unused = repository.Content.Where(c => false).DefaultIfEmpty().ToArray();
-    //        });
-    //    }
-    //    [TestMethod]
-    //    public async Task Linq_NotSupported_DefaultIfEmptyDefault()
-    //    {
-    //        AsEnumerableError("DefaultIfEmpty", () =>
-    //        {
-    //            Content defaultContent = null;
-    //            var unused = repository.Content.Where(c => false).DefaultIfEmpty(defaultContent).ToArray();
-    //        });
-    //    }
+    /* ========================================================================================== Linq_Ex_ */
 
-    //    [TestMethod]
-    //    public async Task Linq_NotSupported_Zip()
-    //    {
-    //        AsEnumerableError("Zip", () =>
-    //        {
-    //            var unused = repository.Content.Where(c => false).Zip(new Content[0], (a, b) => a).ToArray();
-    //        });
-    //    }
+    class LinqTracer //UNDONE:LINQ: class LinqTracer
+    {
+    }
+    [TestMethod]
+    public async Task Linq_Ex_LinqTracer() //UNDONE:LINQ: Linq_Ex_LinqTracer
+    {
+        await LinqTest(repository =>
+        {
+            //var tracer = new LinqTracer();
+            var result = repository.Content
+                .EnableAutofilters()
+                //.SetTracer(tracer)
+                .Where(c => c.InTree("/Root/IMS/Public"))
+                .Take(10)
+                .ToArray();
+        });
+    }
 
-
-    //    /* ========================================================================================== LinqEx_ */
     //    /* When the framework calls Provider.Execute */
 
     //    [TestMethod]
-    //    public void LinqEx_FirstLastSingle()
+    //    public void Linq_Ex_FirstLastSingle()
     //    {
     //        await LinqTest(repository =>
     //        {
@@ -1074,7 +1150,7 @@ Id:<42 .QUICK";
     //    }
 
     //    [TestMethod]
-    //    public void LinqEx_ElementAt()
+    //    public void Linq_Ex_ElementAt()
     //    {
     //        await LinqTest(repository =>
     //        {
@@ -1096,7 +1172,7 @@ Id:<42 .QUICK";
     //    }
 
     //    [TestMethod]
-    //    public void LinqEx_Any()
+    //    public void Linq_Ex_Any()
     //    {
     //        await LinqTest(repository =>
     //        {
@@ -1111,7 +1187,7 @@ Id:<42 .QUICK";
     //    }
 
     //    [TestMethod]
-    //    public void LinqEx_CountOnly()
+    //    public void Linq_Ex_CountOnly()
     //    {
     //        await LinqTest(repository =>
     //        {
@@ -1124,7 +1200,7 @@ Id:<42 .QUICK";
     //    }
 
     //    //[TestMethod]
-    //    //public void LinqEx_CountIsDeferred()
+    //    //public void Linq_Ex_CountIsDeferred()
     //    //{
     //    //    string log = null;
     //    //    try
@@ -1142,7 +1218,7 @@ Id:<42 .QUICK";
     //    //}
 
     //    //[TestMethod]
-    //    //public void LinqEx_OfTypeAndFirst()
+    //    //public void Linq_Ex_OfTypeAndFirst()
     //    //{
     //    //    var email = "admin@b.c";
     //    //    var user = new User(User.Administrator.Parent);
@@ -1154,7 +1230,7 @@ Id:<42 .QUICK";
     //    //    Assert.IsTrue(result != null);
     //    //}
     //    //[TestMethod]
-    //    //public void LinqEx_OfTypeAndWhere()
+    //    //public void Linq_Ex_OfTypeAndWhere()
     //    //{
     //    //    string path = "/Root/IMS/BuiltIn/Portal";
     //    //    User user = User.Administrator;
@@ -1166,7 +1242,7 @@ Id:<42 .QUICK";
 
 
     //    //[TestMethod]
-    //    //public void LinqEx_Error_UnknownField()
+    //    //public void Linq_Ex_Error_UnknownField()
     //    //{
     //    //    try
     //    //    {

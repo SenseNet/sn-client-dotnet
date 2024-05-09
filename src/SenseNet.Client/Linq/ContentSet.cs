@@ -4,6 +4,31 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 
+/*
+Name            QueryString             LINQ Method
+--------------- ----------------------- ----------------------------------------------------
+Top             $top                    Take
+Skip            $skip                   Skip
+Expand          $expand                 ?
+Select          $select                 ?
+Filter          $filter                 _not_supported_
+OrderBy         $orderby                OrderBy, ThenBy, OrderByDescending, ThenByDescending
+InlineCount     $inlinecount            ?
+Format          $format                 ?
+
+CountOnly       $count                  ?
+
+Metadata        metadata                ?
+AutoFilters     enableautofilters       EnableAutofilters, DisableAutofilters
+LifespanFilter  enablelifespanfilter    EnableLifespan, DisableLifespan
+Version         version                 _not_supported_
+Scenario        scenario                _not_supported_
+
+ContentQuery    query                   COMPILED QUERY
+Permissions     permissions             _not_supported_
+User            user                    _not_supported_
+*/
+
 namespace SenseNet.Client.Linq
 {
     public interface ISnQueryable<T> : IOrderedQueryable<T>
@@ -14,6 +39,8 @@ namespace SenseNet.Client.Linq
         ISnQueryable<T> DisableAutofilters();
         ISnQueryable<T> EnableLifespan();
         ISnQueryable<T> DisableLifespan();
+        ISnQueryable<T> ExpandFields(params string[] expandedFieldNames);
+        ISnQueryable<T> SelectFields(params string[] selectedFieldNames);
     }
 
     public class ContentSet<T> : IOrderedEnumerable<T>, IQueryProvider, ISnQueryable<T>
@@ -23,6 +50,8 @@ namespace SenseNet.Client.Linq
         protected internal FilterStatus Autofilters { get; protected set; }
         protected internal FilterStatus LifespanFilter { get; protected set; }
         protected internal QueryExecutionMode QueryExecutionMode { get; protected set; }
+        protected string[] ExpandedFieldNames { get; set; }
+        protected string[] SelectedFieldNames { get; set; }
 
         protected internal Type TypeFilter { get; protected set; }
 
@@ -65,7 +94,12 @@ namespace SenseNet.Client.Linq
             return Clone<TElement>(expression);
         }
 
-        private readonly string[] _forbiddenMethodNames = {"SelectMany", "Average", "Min", "Max", "SkipWhile", "TakeWhile" };
+        // ReSharper disable once StaticMemberInGenericType
+        private static readonly string[] ForbiddenMethodNames =
+        {
+            "SelectMany", "Join", "Cast", "Concat", "Distinct", "Except", "Intersect", "Union", "SkipWhile", "TakeWhile",
+            "DefaultIfEmpty", "Reverse", "Zip"
+        };
         private ContentSet<Q> Clone<Q>(Expression expression)
         {
             if (typeof(Content) != typeof(Q))
@@ -74,7 +108,7 @@ namespace SenseNet.Client.Linq
             if (expression is MethodCallExpression callExpr)
             {
                 callExpression = callExpr;
-                if(_forbiddenMethodNames.Contains(callExpr.Method.Name))
+                if(ForbiddenMethodNames.Contains(callExpr.Method.Name))
                     throw SnExpression.CallingAsEnumerableExpectedError(callExpr.Method.Name);
             }
             if (typeof(Q) == typeof(Content) || typeof(Content).IsAssignableFrom(typeof(Q)))
@@ -85,6 +119,8 @@ namespace SenseNet.Client.Linq
                     Autofilters = this.Autofilters,
                     LifespanFilter = this.LifespanFilter,
                     QueryExecutionMode = this.QueryExecutionMode,
+                    ExpandedFieldNames = this.ExpandedFieldNames,
+                    SelectedFieldNames = this.SelectedFieldNames,
                     TypeFilter = this.TypeFilter
                 };
             if (callExpression != null)
@@ -112,7 +148,9 @@ namespace SenseNet.Client.Linq
             {
                 EnableAutofilters = Autofilters,
                 EnableLifespanFilter = LifespanFilter,
-                QueryExecutionMode = QueryExecutionMode
+                QueryExecutionMode = QueryExecutionMode,
+                ExpandedFieldNames = ExpandedFieldNames,
+                SelectedFieldNames = SelectedFieldNames
             };
             var query = SnExpression.BuildQuery(expression, typeof(T), queryProperties, _repository);
 
@@ -159,6 +197,22 @@ namespace SenseNet.Client.Linq
             this.QueryExecutionMode = executionMode;
             return this;
         }
+        /// <summary>
+        /// Gets or sets expanded field names. Use '/' separator for deeper expansions e.g. "CreatedBy/Manager"
+        /// </summary>
+        public ISnQueryable<T> ExpandFields(params string[] expandedFieldNames)
+        {
+            this.ExpandedFieldNames = expandedFieldNames;
+            return this;
+        }
+        /// <summary>
+        /// Gets or sets selected field names. Use '/' separator for deeper selection e.g. "CreatedBy/Manager/Name"
+        /// </summary>
+        public ISnQueryable<T> SelectFields(params string[] selectedFieldNames)
+        {
+            this.SelectedFieldNames = selectedFieldNames;
+            return this;
+        }
 
         public LinqQuery GetCompiledQuery()
         {
@@ -170,6 +224,26 @@ namespace SenseNet.Client.Linq
             };
             return SnExpression.BuildQuery(this.Expression, typeof(T), queryProperties, _repository);
         }
+        public ODataRequest GetODataRequest()
+        {
+            var queryProperties = new QueryProperties
+            {
+                EnableAutofilters = Autofilters,
+                EnableLifespanFilter = LifespanFilter,
+                QueryExecutionMode = QueryExecutionMode
+            };
+            var query = SnExpression.BuildQuery(this.Expression, typeof(T), queryProperties, _repository);
 
+            return new ODataRequest(_repository.Server)
+            {
+                ContentQuery = query.ToString(),
+                AutoFilters = Autofilters,
+                LifespanFilter = LifespanFilter,
+                ContentId = Constants.Repository.RootId,
+                Expand = ExpandedFieldNames,
+                Select = SelectedFieldNames,
+                CountOnly = CountOnlyEnabled
+            };
+        }
     }
 }

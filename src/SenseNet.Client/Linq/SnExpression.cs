@@ -9,6 +9,8 @@ public class QueryProperties
     public FilterStatus EnableAutofilters { get; set; }
     public FilterStatus EnableLifespanFilter { get; set; }
     public QueryExecutionMode QueryExecutionMode { get; set; }
+    public string[] ExpandedFieldNames { get; set; }
+    public string[] SelectedFieldNames { get; set; }
 }
 
 public class SnExpression
@@ -63,6 +65,9 @@ public class SnExpression
             query.EnableAutofilters = queryProperties.EnableAutofilters;
             query.EnableLifespanFilter = queryProperties.EnableLifespanFilter;
             query.QueryExecutionMode = queryProperties.QueryExecutionMode;
+            //UNDONE:LINQ: set projection from the SnLinqVisitor
+            //queryProperties.ExpandedFieldNames = v.ExpandedFields;
+            //queryProperties.SelectedFieldNames = v.SelectedFields;
         }
 
         return query;
