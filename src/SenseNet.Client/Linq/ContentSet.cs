@@ -41,6 +41,7 @@ namespace SenseNet.Client.Linq
         ISnQueryable<T> DisableLifespan();
         ISnQueryable<T> ExpandFields(params string[] expandedFieldNames);
         ISnQueryable<T> SelectFields(params string[] selectedFieldNames);
+        ISnQueryable<T> SetTracer(ILinqTracer tracer);
     }
 
     public class ContentSet<T> : IOrderedEnumerable<T>, IQueryProvider, ISnQueryable<T>
@@ -55,7 +56,7 @@ namespace SenseNet.Client.Linq
 
         protected internal Type TypeFilter { get; protected set; }
 
-
+        private ILinqTracer? _tracer;
         private IRepository _repository;
         private Expression _expression;
 
@@ -121,7 +122,9 @@ namespace SenseNet.Client.Linq
                     QueryExecutionMode = this.QueryExecutionMode,
                     ExpandedFieldNames = this.ExpandedFieldNames,
                     SelectedFieldNames = this.SelectedFieldNames,
-                    TypeFilter = this.TypeFilter
+                    TypeFilter = this.TypeFilter,
+
+                    _tracer = this._tracer
                 };
             if (callExpression != null)
             {
@@ -214,6 +217,12 @@ namespace SenseNet.Client.Linq
             return this;
         }
 
+        public ISnQueryable<T> SetTracer(ILinqTracer tracer)
+        {
+            _tracer = tracer;
+            return this;
+        }
+
         public LinqQuery GetCompiledQuery()
         {
             var queryProperties = new QueryProperties
@@ -222,8 +231,11 @@ namespace SenseNet.Client.Linq
                 EnableLifespanFilter = LifespanFilter,
                 QueryExecutionMode = QueryExecutionMode
             };
-            return SnExpression.BuildQuery(this.Expression, typeof(T), queryProperties, _repository);
+            var query =  SnExpression.BuildQuery(this.Expression, typeof(T), queryProperties, _repository);
+            _tracer?.AddTrace($"Compiled: {query}");
+            return query;
         }
+
         public ODataRequest GetODataRequest()
         {
             var queryProperties = new QueryProperties

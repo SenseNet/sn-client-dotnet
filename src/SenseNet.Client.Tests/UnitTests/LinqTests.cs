@@ -1077,21 +1077,21 @@ Id:<42 .QUICK";
 
     /* ========================================================================================== Linq_Ex_ */
 
-    class LinqTracer //UNDONE:LINQ: class LinqTracer
-    {
-    }
     [TestMethod]
-    public async Task Linq_Ex_LinqTracer() //UNDONE:LINQ: Linq_Ex_LinqTracer
+    public async Task Linq_Ex_LinqTracer()
     {
         await LinqTest(repository =>
         {
-            //var tracer = new LinqTracer();
-            var result = repository.Content
+            var tracer = new LinqTracer();
+            var expected = "InTree:/root/ims/public .TOP:10";
+            var actual = GetQueryString(repository.Content
                 .EnableAutofilters()
-                //.SetTracer(tracer)
+                .SetTracer(tracer)
                 .Where(c => c.InTree("/Root/IMS/Public"))
-                .Take(10)
-                .ToArray();
+                .Take(10));
+
+            Assert.AreEqual($"Compiled: {expected}\r\n", tracer.Trace);
+            Assert.AreEqual(expected, actual);
         });
     }
 
