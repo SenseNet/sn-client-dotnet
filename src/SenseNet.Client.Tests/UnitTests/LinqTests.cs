@@ -647,17 +647,7 @@ public class LinqTests : TestBase
 
             var queries = new string[contentSets.Length];
             for (var i = 0; i < contentSets.Length; i++)
-            {
-                var set = contentSets[i];
-                var queryProps = new QueryProperties
-                {
-                    EnableAutofilters = set.Autofilters,
-                    EnableLifespanFilter = set.LifespanFilter,
-                    QueryExecutionMode = set.QueryExecutionMode
-                };
-                queries[i] = SnExpression.BuildQuery(contentSets[i].Expression, typeof(Content), queryProps, repository)
-                    .ToString();
-            }
+                queries[i] = GetQueryString(contentSets[i]);
 
             var expected = @"Id:2
 Id:2 .SKIP:5
@@ -701,15 +691,7 @@ Id:2 .QUICK";
             var queries = new string[contentSets.Length];
             for (var i = 0; i < contentSets.Length; i++)
             {
-                var set = contentSets[i];
-                var queryProps = new QueryProperties
-                {
-                    EnableAutofilters = set.Autofilters,
-                    EnableLifespanFilter = set.LifespanFilter,
-                    QueryExecutionMode = set.QueryExecutionMode
-                };
-                queries[i] = SnExpression.BuildQuery(contentSets[i].Expression, typeof(Content), queryProps, repository)
-                    .ToString();
+                queries[i] = GetQueryString(contentSets[i]);
             }
 
             var expected = @"Id:<42

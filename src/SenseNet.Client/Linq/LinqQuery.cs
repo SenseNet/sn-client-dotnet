@@ -101,4 +101,8 @@ public partial class LinqQuery
     /// This is a simple storage slot.
     /// </summary>
     public bool ExistenceOnly { get; set; }
+
+    public string[]? ExpandedFieldNames { get; set; }
+    public string[]? SelectedFieldNames { get; set; }
+
 }

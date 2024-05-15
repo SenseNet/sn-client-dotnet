@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using SenseNet.Client.Linq.Predicates;
 
 namespace SenseNet.Client.Linq
@@ -48,30 +45,6 @@ namespace SenseNet.Client.Linq
                 new LogicalClause(clause, occurence),
             });
         }
-
-        //internal static void PrepareQuery(LinqQuery query, IQueryContext context)
-        //{
-        //    if (query.FiltersPrepared)
-        //        return;
-
-        //    var autoFiltersEnabled = IsAutofilterEnabled(query.EnableAutofilters);
-        //    var lifespanFiltersEnabled = IsLifespanFilterEnabled(query.EnableLifespanFilter);
-
-        //    if (autoFiltersEnabled || lifespanFiltersEnabled)
-        //    {
-        //        var topLevelPredicate = new LogicalPredicate();
-        //        topLevelPredicate.Clauses.Add(new LogicalClause(query.QueryTree, Occurence.Must));
-
-        //        if (autoFiltersEnabled)
-        //            topLevelPredicate.Clauses.Add(new LogicalClause(GetAutoFilterClause(context), Occurence.Must));
-        //        if (lifespanFiltersEnabled)
-        //            topLevelPredicate.Clauses.Add(new LogicalClause(GetLifespanFilterClause(context), Occurence.Must));
-
-        //        query.QueryTree = topLevelPredicate;
-        //    }
-
-        //    query.FiltersPrepared = true;
-        //}
 
         internal static LinqQuery ApplyVisitors(LinqQuery query)
         {

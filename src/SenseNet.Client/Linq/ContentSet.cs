@@ -283,21 +283,22 @@ namespace SenseNet.Client.Linq
             };
         }
 
+        private readonly string[] NullArray = new[] { "[null]" };
         private LinqQuery Compile(Expression expression, out ElementSelection elementSelection, out bool throwIfEmpty, out bool countOnly, out bool existenceOnly)
         {
-            _tracer?.AddTrace($"Expression: {expression}");
-            var queryProperties = new QueryProperties
-            {
-                EnableAutofilters = Autofilters,
-                EnableLifespanFilter = LifespanFilter,
-                QueryExecutionMode = QueryExecutionMode,
-                ExpandedFieldNames = ExpandedFieldNames,
-                SelectedFieldNames = SelectedFieldNames
-            };
-            _tracer?.AddTrace($"Properties: {queryProperties}");
-            var query = SnExpression.BuildQuery(expression, typeof(T), queryProperties, _repository, out elementSelection, out throwIfEmpty, out countOnly, out existenceOnly);
+            var query = SnExpression.BuildQuery(expression, typeof(T), _repository, out elementSelection, out throwIfEmpty, out countOnly, out existenceOnly);
+            query.EnableAutofilters = this.Autofilters;
+            query.EnableLifespanFilter = this.LifespanFilter;
+            query.QueryExecutionMode = this.QueryExecutionMode;
 
+            _tracer?.AddTrace($"Expression: {expression}");
+            _tracer?.AddTrace($"Properties: AutoFilters: {query.EnableAutofilters}, " +
+                              $"Lifespan: {query.EnableLifespanFilter}, " +
+                              $"Mode: {query.QueryExecutionMode}, " +
+                              $"Expand: {string.Join(",", ExpandedFieldNames ?? NullArray)}, " +
+                              $"Select: {string.Join(",", SelectedFieldNames ?? NullArray)}");
             _tracer?.AddTrace($"Compiled: {query}");
+
             return query;
         }
     }
