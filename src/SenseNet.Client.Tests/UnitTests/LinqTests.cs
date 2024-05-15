@@ -493,7 +493,7 @@ public class LinqTests : TestBase
     }
 
     [TestMethod]
-    public async Task Linq_Projection_FluidApi()
+    public async Task Linq_Projection_FluentApi()
     {
         await LinqTest(repository =>
         {
@@ -505,9 +505,11 @@ public class LinqTests : TestBase
                 .SelectFields("Id", "Domain", "LoginName", "Email", "Manager/Name", "Manager/CreatedBy/Name")
                 .Where(c => c.Id < 100 && c is User));
             Assert.IsNotNull(request.Expand);
-            Assert.AreEqual("Manager, Manager/CreatedBy", string.Join(", ", request.Expand));
+            Assert.AreEqual(2, request.Expand.Count());
+            Assert.AreEqual("Manager,Manager/CreatedBy", string.Join(",", request.Expand));
             Assert.IsNotNull(request.Select);
-            Assert.AreEqual("Id, Domain, LoginName, Email, Manager/Name, Manager/CreatedBy/Name", string.Join(", ", request.Select));
+            Assert.AreEqual(6, request.Select.Count());
+            Assert.AreEqual("Id,Domain,LoginName,Email,Manager/Name,Manager/CreatedBy/Name", string.Join(",", request.Select));
             Assert.AreEqual(FilterStatus.Enabled, request.AutoFilters);
             Assert.AreEqual(FilterStatus.Disabled, request.LifespanFilter);
             Assert.AreEqual(InlineCountOptions.AllPages, request.InlineCount);
@@ -523,13 +525,16 @@ public class LinqTests : TestBase
                 .EnableAutofilters()
                 .CountOnly()
                 .DisableLifespan()
-                //.ExpandedFields($"Manager,{nameof(User.CreatedBy)}")
-                //.SelectedFields("Id,Domain,LoginName,Email,Manager/Manager/Name")
                 .Where(c => c.Id < 100 && c is User)
                 .OfType<User>()
-                .Select(c => new User(c.Id, c.Domain, c.LoginName, c.Manager, c.Email));
-            //var query = GetQueryString(expression);
+                .Select(u => new User(u.Id, u.Domain, u.LoginName, u.Email, u.Manager, u.CreatedBy));
+
             var request = GetODataRequest(expression);
+
+            Assert.AreEqual("Manager,CreatedBy",
+                string.Join(",", request.Expand ?? Array.Empty<string>()));
+            Assert.AreEqual("Id,Domain,LogiName,Email,Manager,CreatedBy",
+                string.Join(",", request.Select ?? Array.Empty<string>()));
         });
     }
     private QueryContentRequest GetODataRequest<T>(IQueryable<T> queryable)

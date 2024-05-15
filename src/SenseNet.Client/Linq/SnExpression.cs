@@ -80,8 +80,8 @@ public class SnExpression
             query.EnableLifespanFilter = queryProperties.EnableLifespanFilter;
             query.QueryExecutionMode = queryProperties.QueryExecutionMode;
             //UNDONE:LINQ: set projection from the SnLinqVisitor
-            //queryProperties.ExpandedFieldNames = v.ExpandedFields;
-            //queryProperties.SelectedFieldNames = v.SelectedFields;
+            queryProperties.ExpandedFieldNames = v.ExpandedFields;
+            queryProperties.SelectedFieldNames = v.SelectedFields;
         }
 
         return query;

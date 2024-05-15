@@ -296,6 +296,7 @@ namespace SenseNet.Client.Linq
             };
             _tracer?.AddTrace($"Properties: {queryProperties}");
             var query = SnExpression.BuildQuery(expression, typeof(T), queryProperties, _repository, out elementSelection, out throwIfEmpty, out countOnly, out existenceOnly);
+
             _tracer?.AddTrace($"Compiled: {query}");
             return query;
         }

@@ -78,6 +78,8 @@ namespace SenseNet.Client.Linq
         public bool ThrowIfEmpty { get; private set; }
         public bool ExistenceOnly { get; private set; }
         public ElementSelection ElementSelection { get; private set; }
+        public string[] ExpandedFields { get; private set; }
+        public string[] SelectedFields { get; private set; }
 
         public override Expression Visit(Expression node)
         {
@@ -474,6 +476,12 @@ namespace SenseNet.Client.Linq
 
                         break;
                     }
+                case "Select":
+                {
+                    ExpandedFields = new[] {"Manager?", "CreatedBy?"};
+                    SelectedFields = new[] {"Id", "Name", "Type"};
+                    break;
+                }
                 default:
                     throw SnExpression.CallingAsEnumerableExpectedError(methodCallExpr.Method.Name);
             }
