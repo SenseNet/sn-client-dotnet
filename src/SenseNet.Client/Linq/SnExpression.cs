@@ -9,24 +9,35 @@ public class QueryProperties
     public FilterStatus EnableAutofilters { get; set; }
     public FilterStatus EnableLifespanFilter { get; set; }
     public QueryExecutionMode QueryExecutionMode { get; set; }
-    public string[] ExpandedFieldNames { get; set; }
-    public string[] SelectedFieldNames { get; set; }
+    public string[]? ExpandedFieldNames { get; set; }
+    public string[]? SelectedFieldNames { get; set; }
+
+    private readonly string[] NullArray = new[] {"[null]"};
+    public override string ToString()
+    {
+        return $"AutoFilters: {EnableAutofilters}, Lifespan: {EnableLifespanFilter}, Mode: {QueryExecutionMode}, " +
+               $"Expand: {string.Join(",", ExpandedFieldNames ?? NullArray)}, " +
+               $"Select: {string.Join(",", SelectedFieldNames ?? NullArray)}";
+    }
 }
 
 public class SnExpression
 {
     public static LinqQuery BuildQuery(Expression expression, Type sourceCollectionItemType, QueryProperties queryProperties, IRepository repository)
     {
-        return BuildSnQuery(expression, sourceCollectionItemType, queryProperties, repository, out var elementSelection);
+        return BuildSnQuery(expression, sourceCollectionItemType, queryProperties, repository, out var _, out var _, out var _, out var _);
     }
-    public static LinqQuery BuildQuery(Expression expression, Type sourceCollectionItemType, QueryProperties queryProperties, IRepository repository, out string elementSelection)
+    internal static LinqQuery BuildQuery(Expression expression, Type sourceCollectionItemType, QueryProperties queryProperties, IRepository repository, out ElementSelection elementSelection, out bool throwIfEmpty, out bool countOnly, out bool existenceOnly)
     {
-        return BuildSnQuery(expression, sourceCollectionItemType, queryProperties, repository, out elementSelection);
+        return BuildSnQuery(expression, sourceCollectionItemType, queryProperties, repository, out elementSelection, out throwIfEmpty, out countOnly, out existenceOnly);
     }
-    private static LinqQuery BuildSnQuery(Expression expression, Type sourceCollectionItemType, QueryProperties queryProperties, IRepository repository, out string elementSelection)
+    private static LinqQuery BuildSnQuery(Expression expression, Type sourceCollectionItemType, QueryProperties queryProperties, IRepository repository, out ElementSelection elementSelection, out bool throwIfEmpty, out bool countOnly, out bool existenceOnly)
     {
         SnQueryPredicate q0 = null;
-        elementSelection = null;
+        elementSelection = ElementSelection.None;
+        throwIfEmpty = false;
+        countOnly = false;
+        existenceOnly = false;
 
         SnLinqVisitor v = null;
         // #1 compiling linq expression
@@ -44,6 +55,9 @@ public class SnExpression
             v.Visit(expr2);
             q0 = v.GetPredicate(sourceCollectionItemType);
             elementSelection = v.ElementSelection;
+            throwIfEmpty = v.ThrowIfEmpty;
+            countOnly = v.CountOnly;
+            existenceOnly = v.ExistenceOnly;
         }
 
         // #4 empty query substitution

@@ -510,7 +510,6 @@ public class LinqTests : TestBase
             Assert.AreEqual("Id, Domain, LoginName, Email, Manager/Name, Manager/CreatedBy/Name", string.Join(", ", request.Select));
             Assert.AreEqual(FilterStatus.Enabled, request.AutoFilters);
             Assert.AreEqual(FilterStatus.Disabled, request.LifespanFilter);
-            Assert.AreEqual(true, request.CountOnly);
             Assert.AreEqual(InlineCountOptions.AllPages, request.InlineCount);
         });
     }
@@ -531,22 +530,9 @@ public class LinqTests : TestBase
                 .Select(c => new User(c.Id, c.Domain, c.LoginName, c.Manager, c.Email));
             //var query = GetQueryString(expression);
             var request = GetODataRequest(expression);
-
-            /*
-            var tracer = new LinqTracer();
-            foreach (var item in repository.Content
-                         .EnableAutofilters()
-                         .SetTracer(tracer)
-                         .Where(c => c.InTree("/Root/IMS/Public"))
-                         .OfType<User>()
-                         .Select(c => new Content(c.Id, c.Domain, c.LoginName, c.Email, c.Manager.Manager.Name)))
-            {
-                doit(item);
-            }
-            */
         });
     }
-    private ODataRequest GetODataRequest<T>(IQueryable<T> queryable)
+    private QueryContentRequest GetODataRequest<T>(IQueryable<T> queryable)
     {
         var cs = queryable.Provider as ContentSet<T>;
         return cs?.GetODataRequest();
@@ -804,6 +790,25 @@ Id:<42 .QUICK";
     }
 
     /* ------------------------------------------------------------------------------------------- */
+
+    [TestMethod]
+    public async Task Linq_Tracer()
+    {
+        await LinqTest(repository =>
+        {
+            var tracer = new LinqTracer();
+            var expected = "Expression: value(SenseNet.Client.Linq.ContentSet`1[SenseNet.Client.Content]).Where(c => c.InTree(\"/Root/IMS\")).Take(10)" +
+                           "\r\nProperties: AutoFilters: Enabled, Lifespan: Default, Mode: Default, Expand: [null], Select: [null]" +
+                           "\r\nCompiled: InTree:/root/ims .TOP:10\r\n";
+            var actual = GetQueryString(repository.Content
+                .EnableAutofilters()
+                .SetTracer(tracer)
+                .Where(c => c.InTree("/Root/IMS"))
+                .Take(10));
+
+            Assert.AreEqual(expected, tracer.Trace);
+        });
+    }
 
     //UNDONE:LINQ: This is an aspect-field test
     //[TestMethod]
@@ -1075,178 +1080,362 @@ Id:<42 .QUICK";
     }
 
 
-    /* ========================================================================================== Linq_Ex_ */
+    /* ========================================================================================== Linq_Exec_ */
 
     [TestMethod]
-    public async Task Linq_Ex_LinqTracer()
+    public async Task Linq_Exec_ToArray()
+    {
+        var mockResult = @"{
+  ""d"": {
+    ""__count"": 9,
+    ""results"": [
+      { ""Id"": 1, ""Name"": ""C1"", ""Type"": ""Content"" },
+      { ""Id"": 2, ""Name"": ""C2"", ""Type"": ""Content"" },
+      { ""Id"": 3, ""Name"": ""C3"", ""Type"": ""Content"" },
+      { ""Id"": 4, ""Name"": ""C4"", ""Type"": ""Content"" },
+      { ""Id"": 5, ""Name"": ""C5"", ""Type"": ""Content"" },
+      { ""Id"": 6, ""Name"": ""C6"", ""Type"": ""Content"" },
+      { ""Id"": 7, ""Name"": ""C7"", ""Type"": ""Content"" },
+      { ""Id"": 8, ""Name"": ""C8"", ""Type"": ""Content"" },
+      { ""Id"": 9, ""Name"": ""C9"", ""Type"": ""Content"" }
+    ]
+  }
+}";
+        await LinqExecutionTest(mockResult, repository =>
+        {
+            var result = repository.Content
+                .DisableAutofilters()
+                .Where(c => c.Id < 10)
+                .OrderBy(c => c.Id).ToArray();
+            Assert.AreEqual(result.Select(c=>c.GetType()).Distinct().Single().FullName, typeof(Content).FullName);
+            Assert.AreEqual("1,2,3,4,5,6,7,8,9", string.Join(",", result.Select(c => c.Id)));
+        });
+    }
+
+    string _emptyResult = @"{""d"": {""__count"": 0,""results"": []}}";
+    string _fiveResult = @"{
+  ""d"": {
+    ""__count"": 9,
+    ""results"": [
+      { ""Id"": 1, ""Name"": ""C1"", ""Type"": ""Content"" },
+      { ""Id"": 2, ""Name"": ""C2"", ""Type"": ""Content"" },
+      { ""Id"": 3, ""Name"": ""C3"", ""Type"": ""Content"" },
+      { ""Id"": 4, ""Name"": ""C4"", ""Type"": ""Content"" },
+      { ""Id"": 5, ""Name"": ""C5"", ""Type"": ""Content"" }
+    ]
+  }
+}";
+    string _fiveResultDescending = @"{
+  ""d"": {
+    ""__count"": 9,
+    ""results"": [
+      { ""Id"": 5, ""Name"": ""C5"", ""Type"": ""Content"" },
+      { ""Id"": 4, ""Name"": ""C4"", ""Type"": ""Content"" },
+      { ""Id"": 3, ""Name"": ""C3"", ""Type"": ""Content"" },
+      { ""Id"": 2, ""Name"": ""C2"", ""Type"": ""Content"" },
+      { ""Id"": 1, ""Name"": ""C1"", ""Type"": ""Content"" },
+    ]
+  }
+}";
+    string _nineResult = @"{
+  ""d"": {
+    ""__count"": 9,
+    ""results"": [
+      { ""Id"": 1, ""Name"": ""C1"", ""Type"": ""Content"" },
+      { ""Id"": 2, ""Name"": ""C2"", ""Type"": ""Content"" },
+      { ""Id"": 3, ""Name"": ""C3"", ""Type"": ""Content"" },
+      { ""Id"": 4, ""Name"": ""C4"", ""Type"": ""Content"" },
+      { ""Id"": 5, ""Name"": ""C5"", ""Type"": ""Content"" },
+      { ""Id"": 6, ""Name"": ""C6"", ""Type"": ""Content"" },
+      { ""Id"": 7, ""Name"": ""C7"", ""Type"": ""Content"" },
+      { ""Id"": 8, ""Name"": ""C8"", ""Type"": ""Content"" },
+      { ""Id"": 9, ""Name"": ""C9"", ""Type"": ""Content"" }
+    ]
+  }
+}";
+    string _nineResultDescending = @"{
+  ""d"": {
+    ""__count"": 9,
+    ""results"": [
+      { ""Id"": 9, ""Name"": ""C9"", ""Type"": ""Content"" },
+      { ""Id"": 8, ""Name"": ""C8"", ""Type"": ""Content"" },
+      { ""Id"": 7, ""Name"": ""C7"", ""Type"": ""Content"" },
+      { ""Id"": 6, ""Name"": ""C6"", ""Type"": ""Content"" },
+      { ""Id"": 5, ""Name"": ""C5"", ""Type"": ""Content"" },
+      { ""Id"": 4, ""Name"": ""C4"", ""Type"": ""Content"" },
+      { ""Id"": 3, ""Name"": ""C3"", ""Type"": ""Content"" },
+      { ""Id"": 2, ""Name"": ""C2"", ""Type"": ""Content"" },
+      { ""Id"": 1, ""Name"": ""C1"", ""Type"": ""Content"" },
+    ]
+  }
+}";
+
+    [TestMethod]
+    public async Task Linq_Exec_First()
+    {
+        // ======== First()
+        await LinqExecutionTest(_fiveResultDescending, repository =>
+        {
+            Assert.AreEqual(5, repository.Content.DisableAutofilters().Where(c => c.Id < 6).OrderByDescending(c => c.Id).First().Id);
+            Assert.AreEqual(5, repository.Content.DisableAutofilters().Where(c => c.Id < 6).OrderByDescending(c => c.Id).First().Id);
+            Assert.AreEqual(5, repository.Content.DisableAutofilters().Where(c => c.Id < 10).OrderByDescending(c => c.Id).First(c => c.Id < 6).Id);
+        });
+
+        // empty
+        await LinqExecutionTest(_emptyResult, repository =>
+        {
+            InvalidOperationTest(() => { repository.Content.Where(c => c.Id < 0).First(); });
+            InvalidOperationTest(() => { repository.Content.First(c => c.Id < 0); });
+        });
+
+        // ======== FirstOrDefault()
+        await LinqExecutionTest(_fiveResultDescending, repository =>
+        {
+            Assert.AreEqual(5, repository.Content.DisableAutofilters().Where(c => c.Id < 6).OrderByDescending(c => c.Id).FirstOrDefault().Id);
+            Assert.AreEqual(5, repository.Content.DisableAutofilters().Where(c => c.Id < 10).OrderByDescending(c => c.Id).FirstOrDefault(c => c.Id < 6).Id);
+        });
+
+        // empty
+        await LinqExecutionTest(_emptyResult, repository =>
+        {
+            Assert.IsNull(repository.Content.Where(c => c.Id < 0).FirstOrDefault());
+            Assert.IsNull(repository.Content.Where(c => c.Id < 0).FirstOrDefault(c => c.Id < 4));
+        });
+    }
+    [TestMethod]
+    public async Task Linq_Exec_Last()
+    {
+        // ======== Last()
+        await LinqExecutionTest(_fiveResult, repository =>
+        {
+            Assert.AreEqual(5, repository.Content.DisableAutofilters().Where(c => c.Id < 6).OrderBy(c => c.Id).Last().Id);
+            Assert.AreEqual(5, repository.Content.DisableAutofilters().Where(c => c.Id < 10).OrderBy(c => c.Id).Last(c => c.Id < 6).Id);
+        });
+
+        // empty
+        await LinqExecutionTest(_emptyResult, repository =>
+        {
+            InvalidOperationTest(() => { repository.Content.Where(c => c.Id < 0).Last(); });
+            InvalidOperationTest(() => { repository.Content.Last(c => c.Id < 0); });
+        });
+
+        // ======== LastOrDefault()
+        await LinqExecutionTest(_fiveResult, repository =>
+        {
+            Assert.AreEqual(5, repository.Content.DisableAutofilters().Where(c => c.Id < 6).OrderBy(c => c.Id).LastOrDefault().Id);
+            Assert.AreEqual(5, repository.Content.DisableAutofilters().Where(c => c.Id < 10).OrderBy(c => c.Id).LastOrDefault(c => c.Id < 6).Id);
+        });
+
+        // empty
+        await LinqExecutionTest(_emptyResult, repository =>
+        {
+            Assert.IsNull(repository.Content.Where(c => c.Id < 0).LastOrDefault());
+            Assert.IsNull(repository.Content.Where(c => c.Id < 0).LastOrDefault(c => c.Id < 4));
+        });
+    }
+    [TestMethod]
+    public async Task Linq_Exec_Single()
+    {
+        string mockResult = @"{""d"": {""__count"": 1,""results"": [{ ""Id"": 5, ""Name"": ""C5"", ""Type"": ""Content"" }]}}";
+
+        // ======== Single()
+        await LinqExecutionTest(mockResult, repository =>
+        {
+            Assert.AreEqual(5, repository.Content.DisableAutofilters().Where(c => c.Id == 5).Single().Id);
+            Assert.AreEqual(5, repository.Content.DisableAutofilters().Single(c => c.Id == 5).Id);
+        });
+
+        // empty
+        await LinqExecutionTest(_emptyResult, repository =>
+        {
+            InvalidOperationTest(() => { repository.Content.Where(c => c.Id < 0).Single(); });
+            InvalidOperationTest(() => { repository.Content.Single(c => c.Id < 0); });
+        });
+
+        // more than one
+        await LinqExecutionTest(_fiveResult, repository =>
+        {
+            InvalidOperationTest(() => { repository.Content.Where(c => c.Id < 6).Single(); });
+            InvalidOperationTest(() => { repository.Content.Single(c => c.Id < 6); });
+        });
+
+        // ======== SingleOrDefault()
+        await LinqExecutionTest(mockResult, repository =>
+        {
+            Assert.AreEqual(5, repository.Content.DisableAutofilters().Where(c => c.Id == 5).SingleOrDefault().Id);
+            Assert.AreEqual(5, repository.Content.DisableAutofilters().SingleOrDefault(c => c.Id == 5).Id);
+        });
+
+        // empty
+        await LinqExecutionTest(_emptyResult, repository =>
+        {
+            Assert.IsNull(repository.Content.Where(c => c.Id < 0).SingleOrDefault()); 
+            Assert.IsNull(repository.Content.SingleOrDefault(c => c.Id < 0));
+        });
+
+        // more than one
+        await LinqExecutionTest(_fiveResult, repository =>
+        {
+            InvalidOperationTest(() => { repository.Content.Where(c => c.Id < 6).SingleOrDefault(); });
+            InvalidOperationTest(() => { repository.Content.SingleOrDefault(c => c.Id < 6); });
+        });
+    }
+    [TestMethod]
+    public async Task Linq_Exec_ElementAt()
+    {
+        var mockResult = @"{""d"": {""__count"": 1,""results"": [{ ""Id"": 6, ""Name"": ""C6"", ""Type"": ""Content"" }]}}";
+
+        // ======== ElementAt()
+        await LinqExecutionTest(mockResult, repository =>
+        {
+            var x = 2;
+            Assert.AreEqual(6, repository.Content.DisableAutofilters().Where(c => c.Id < 10).OrderBy(c => c.Id).ElementAt(3 + x).Id);
+        });
+        await LinqExecutionTest(_emptyResult, repository =>
+        {
+            // less
+            ArgumentOutOfRangeTest(() => { repository.Content.DisableAutofilters().Where(c => c.Id < 3).OrderBy(c => c.Id).ElementAt(5); });
+        });
+        await LinqExecutionTest(_emptyResult, repository =>
+        {
+            // empty
+            ArgumentOutOfRangeTest(() => { repository.Content.DisableAutofilters().Where(c => c.Id < 0).OrderBy(c => c.Id).ElementAt(5); });
+        });
+
+        // ======== ElementAtOrDefault()
+        await LinqExecutionTest(mockResult, repository =>
+        {
+            Assert.AreEqual(6, repository.Content.DisableAutofilters().Where(c => c.Id < 10).OrderBy(c => c.Id).ElementAtOrDefault(5).Id);
+        });
+        await LinqExecutionTest(_emptyResult, repository =>
+        {
+            // less
+            Assert.IsNull(repository.Content.DisableAutofilters().Where(c => c.Id < 3).OrderBy(c => c.Id).ElementAtOrDefault(5));
+        });
+        await LinqExecutionTest(_emptyResult, repository =>
+        {
+            // empty
+            Assert.IsNull(repository.Content.DisableAutofilters().Where(c => c.Id < 0).OrderBy(c => c.Id).ElementAtOrDefault(5));
+        });
+    }
+
+
+    [TestMethod]
+    public async Task Linq_Exec_Any()
+    {
+        var oneResult = @"{""d"": {""__count"": 1,""results"": [{""Id"": 1,""Name"": ""Admin"",""Type"": ""Content""}]}}";
+        // Where + Any
+        await LinqExecutionTest(_emptyResult, repository =>
+        {
+            Assert.IsFalse(repository.Content.DisableAutofilters().Where(c => c.Id == 0).Any());
+        });
+        await LinqExecutionTest(oneResult, repository =>
+        {
+            Assert.IsTrue(repository.Content.DisableAutofilters().Where(c => c.Id == 1).Any());
+        });
+        await LinqExecutionTest(_fiveResult, repository =>
+        {
+            Assert.IsTrue(repository.Content.DisableAutofilters().Where(c => c.Id > 0).Any());
+        });
+
+        // only Any
+        await LinqExecutionTest(_emptyResult, repository =>
+        {
+            Assert.IsFalse(repository.Content.DisableAutofilters().Any(c => c.Id == 0));
+        });
+        await LinqExecutionTest(oneResult, repository =>
+        {
+            Assert.IsTrue(repository.Content.DisableAutofilters().Any(c => c.Id == 1));
+        });
+        await LinqExecutionTest(_fiveResult, repository =>
+        {
+            Assert.IsTrue(repository.Content.DisableAutofilters().Any(c => c.Id > 0));
+        });
+    }
+    [TestMethod]
+    public async Task Linq_Exec_CountOnly()
+    {
+        await LinqExecutionTest(_nineResult, repository =>
+        {
+            Assert.AreEqual(9, repository.Content.DisableAutofilters().Where(c => c.Id < 10).Count());
+            Assert.AreEqual(9, repository.Content.DisableAutofilters().Count(c => c.Id < 10));
+
+            Assert.AreEqual(9L, repository.Content.DisableAutofilters().Where(c => c.Id < 10).LongCount());
+            Assert.AreEqual(9L, repository.Content.DisableAutofilters().LongCount(c => c.Id < 10));
+        });
+    }
+    [TestMethod]
+    public async Task Linq_Exec_CountIsDeferred()
     {
         await LinqTest(repository =>
         {
             var tracer = new LinqTracer();
-            var expected = "InTree:/root/ims/public .TOP:10";
-            var actual = GetQueryString(repository.Content
-                .EnableAutofilters()
+            var count = repository.Content
                 .SetTracer(tracer)
-                .Where(c => c.InTree("/Root/IMS/Public"))
-                .Take(10));
+                .DisableAutofilters()
+                .Where(c => c.InFolder("/Root/Content"))
+                .Count();
+            Assert.IsTrue(tracer.Trace.Contains(".COUNTONLY"));
 
-            Assert.AreEqual($"Compiled: {expected}\r\n", tracer.Trace);
-            Assert.AreEqual(expected, actual);
+            tracer = new LinqTracer();
+            count = repository.Content
+                .SetTracer(tracer)
+                .DisableAutofilters()
+                .Count(c => c.InFolder("/Root/Content"));
+
         });
     }
+    [TestMethod]
+    public async Task Linq_Exec_OfTypeAndFirst()
+    {
+        var mockResult = @"{
+  ""d"": {
+    ""__count"": 2,
+    ""results"": [
+      { ""Id"": 1111, ""Name"": ""G1"", ""Type"": ""User"" },
+      { ""Id"": 2222, ""Name"": ""G2"", ""Type"": ""User"" },
+    ]
+  }
+}";
 
-    //    /* When the framework calls Provider.Execute */
+        await LinqExecutionTest(mockResult, repository =>
+        {
+            var result = repository.Content.OfType<User>()
+                .FirstOrDefault(c => c.InTree("/Root/IMS") && c.Email == "user1@example.com");
+            Assert.IsTrue(result != null);
+        });
+    }
+    [TestMethod]
+    public async Task Linq_Exec_OfTypeAndWhere()
+    {
+        var mockResult = @"{
+  ""d"": {
+    ""__count"": 9,
+    ""results"": [
+      { ""Id"": 1111, ""Name"": ""G1"", ""Type"": ""Group"" },
+      { ""Id"": 2222, ""Name"": ""G2"", ""Type"": ""Group"" },
+    ]
+  }
+}";
 
-    //    [TestMethod]
-    //    public void Linq_Ex_FirstLastSingle()
-    //    {
-    //        await LinqTest(repository =>
-    //        {
-    //            // ======== First()
-    //            Assert.AreEqual(5, repository.Content.DisableAutofilters().Where(c => c.Id < 6).OrderByDescending(c => c.Id).First().Id);
-    //            Assert.AreEqual(5, repository.Content.DisableAutofilters().Where(c => c.Id < 10).OrderByDescending(c => c.Id).First(c => c.Id < 6).Id);
-    //            // empty
-    //            InvalidOperationTest(() => { repository.Content.Where(c => c.Id < 0).First(); });
-    //            InvalidOperationTest(() => { repository.Content.First(c => c.Id < 0); });
+        await LinqExecutionTest(mockResult, repository =>
+        {
+            string path = "/Root/IMS/BuiltIn/Portal";
+            var ok = repository.Content
+                .OfType<Group>()
+                .Where(g => g.InTree(path))
+                .AsEnumerable()
+                .Any(g => g.Id > 0); // something that can be executed locally
+            Assert.IsTrue(ok);
+        });
 
-    //            // ======== FirstOrDefault()
-    //            Assert.AreEqual(5, repository.Content.DisableAutofilters().Where(c => c.Id < 6).OrderByDescending(c => c.Id).FirstOrDefault().Id);
-    //            Assert.AreEqual(5, repository.Content.DisableAutofilters().Where(c => c.Id < 10).OrderByDescending(c => c.Id).FirstOrDefault(c => c.Id < 6).Id);
-    //            // empty
-    //            Assert.IsNull(repository.Content.Where(c => c.Id < 0).FirstOrDefault());
-    //            Assert.IsNull(repository.Content.Where(c => c.Id < 0).FirstOrDefault(c => c.Id < 4));
-
-    //            // ======== Last()
-    //            Assert.AreEqual(5, repository.Content.DisableAutofilters().Where(c => c.Id < 6).OrderBy(c => c.Id).Last().Id);
-    //            Assert.AreEqual(5, repository.Content.DisableAutofilters().Where(c => c.Id < 10).OrderBy(c => c.Id).Last(c => c.Id < 6).Id);
-    //            // empty
-    //            InvalidOperationTest(() => { repository.Content.Where(c => c.Id < 0).Last(); });
-    //            InvalidOperationTest(() => { repository.Content.Last(c => c.Id < 0); });
-
-    //            // ======== LastOrDefault()
-    //            Assert.AreEqual(5, repository.Content.DisableAutofilters().Where(c => c.Id < 6).OrderBy(c => c.Id).LastOrDefault().Id);
-    //            Assert.AreEqual(5, repository.Content.DisableAutofilters().Where(c => c.Id < 10).OrderBy(c => c.Id).LastOrDefault(c => c.Id < 6).Id);
-    //            // empty
-    //            Assert.IsNull(repository.Content.Where(c => c.Id < 0).LastOrDefault());
-    //            Assert.IsNull(repository.Content.Where(c => c.Id < 0).LastOrDefault(c => c.Id < 4));
-
-
-    //            // ======== Single()
-    //            Assert.AreEqual(5, repository.Content.DisableAutofilters().Where(c => c.Id == 5).Single().Id);
-    //            Assert.AreEqual(5, repository.Content.DisableAutofilters().Single(c => c.Id == 5).Id);
-    //            // empty
-    //            InvalidOperationTest(() => { repository.Content.Where(c => c.Id < 0).Single(); });
-    //            InvalidOperationTest(() => { repository.Content.Single(c => c.Id < 0); });
-    //            // more than one
-    //            InvalidOperationTest(() => { repository.Content.Where(c => c.Id < 6).Single(); });
-    //            InvalidOperationTest(() => { repository.Content.Single(c => c.Id < 6); });
-
-    //            // ======== SingleOrDefault()
-    //            Assert.AreEqual(5, repository.Content.DisableAutofilters().Where(c => c.Id == 5).SingleOrDefault().Id);
-    //            Assert.AreEqual(5, repository.Content.DisableAutofilters().SingleOrDefault(c => c.Id == 5).Id);
-    //            // empty
-    //            Assert.IsNull(repository.Content.Where(c => c.Id < 0).SingleOrDefault());
-    //            Assert.IsNull(repository.Content.SingleOrDefault(c => c.Id < 0));
-    //            // more than one
-    //            InvalidOperationTest(() => { repository.Content.Where(c => c.Id < 6).SingleOrDefault(); });
-    //            InvalidOperationTest(() => { repository.Content.SingleOrDefault(c => c.Id < 6); });
-    //        });
-    //    }
-
-    //    [TestMethod]
-    //    public void Linq_Ex_ElementAt()
-    //    {
-    //        await LinqTest(repository =>
-    //        {
-    //            var x = 2;
-    //            // ======== ElementAt()
-    //            Assert.AreEqual(6, repository.Content.DisableAutofilters().Where(c => c.Id < 10).OrderBy(c => c.Id).ElementAt(3 + x).Id);
-    //            // less
-    //            ArgumentOutOfRangeTest(() => { repository.Content.DisableAutofilters().Where(c => c.Id < 3).OrderBy(c => c.Id).ElementAt(5); });
-    //            // empty
-    //            ArgumentOutOfRangeTest(() => { repository.Content.DisableAutofilters().Where(c => c.Id < 0).OrderBy(c => c.Id).ElementAt(5); });
-
-    //            // ======== ElementAtOrDefault()
-    //            Assert.AreEqual(6, repository.Content.DisableAutofilters().Where(c => c.Id < 10).OrderBy(c => c.Id).ElementAtOrDefault(5).Id);
-    //            // less
-    //            Assert.IsNull(repository.Content.DisableAutofilters().Where(c => c.Id < 3).OrderBy(c => c.Id).ElementAtOrDefault(5));
-    //            // empty
-    //            Assert.IsNull(repository.Content.DisableAutofilters().Where(c => c.Id < 0).OrderBy(c => c.Id).ElementAtOrDefault(5));
-    //        });
-    //    }
-
-    //    [TestMethod]
-    //    public void Linq_Ex_Any()
-    //    {
-    //        await LinqTest(repository =>
-    //        {
-    //            Assert.IsFalse(repository.Content.DisableAutofilters().Where(c => c.Id == 0).Any());
-    //            Assert.IsTrue(repository.Content.DisableAutofilters().Where(c => c.Id == 1).Any());
-    //            Assert.IsTrue(repository.Content.DisableAutofilters().Where(c => c.Id > 0).Any());
-
-    //            Assert.IsFalse(repository.Content.DisableAutofilters().Any(c => c.Id == 0));
-    //            Assert.IsTrue(repository.Content.DisableAutofilters().Any(c => c.Id == 1));
-    //            Assert.IsTrue(repository.Content.DisableAutofilters().Any(c => c.Id > 0));
-    //        });
-    //    }
-
-    //    [TestMethod]
-    //    public void Linq_Ex_CountOnly()
-    //    {
-    //        await LinqTest(repository =>
-    //        {
-    //            Assert.AreEqual(9, repository.Content.DisableAutofilters().Where(c => c.Id < 10).Count());
-    //            Assert.AreEqual(9, repository.Content.DisableAutofilters().Count(c => c.Id < 10));
-
-    //            Assert.AreEqual(9L, repository.Content.DisableAutofilters().Where(c => c.Id < 10).LongCount());
-    //            Assert.AreEqual(9L, repository.Content.DisableAutofilters().LongCount(c => c.Id < 10));
-    //        });
-    //    }
-
-    //    //[TestMethod]
-    //    //public void Linq_Ex_CountIsDeferred()
-    //    //{
-    //    //    string log = null;
-    //    //    try
-    //    //    {
-    //    //        ContentSet<Content>.TracingEnabled = true;
-    //    //        var count = repository.Content.DisableAutofilters().Where(c => c.InFolder(TestRoot)).Count();
-    //    //        log = ContentSet<Content>.TraceLog.ToString();
-    //    //    }
-    //    //    finally
-    //    //    {
-    //    //        ContentSet<Content>.TraceLog.Clear();
-    //    //        ContentSet<Content>.TracingEnabled = false;
-    //    //    }
-    //    //    Assert.IsTrue(log.Contains(".COUNTONLY"));
-    //    //}
-
-    //    //[TestMethod]
-    //    //public void Linq_Ex_OfTypeAndFirst()
-    //    //{
-    //    //    var email = "admin@b.c";
-    //    //    var user = new User(User.Administrator.Parent);
-    //    //    user.Name = "testuser129";
-    //    //    user.Email = email;
-    //    //    user.SaveAsync(CancellationToken.None).GetAwaiter().GetResult();
-
-    //    //    var result = repository.Content.OfType<User>().FirstOrDefault(c => c.InTree(Repository.ImsFolderPath) && c.Email == email);
-    //    //    Assert.IsTrue(result != null);
-    //    //}
-    //    //[TestMethod]
-    //    //public void Linq_Ex_OfTypeAndWhere()
-    //    //{
-    //    //    string path = "/Root/IMS/BuiltIn/Portal";
-    //    //    User user = User.Administrator;
-    //    //    var ok = repository.Content.OfType<Group>().Where(g => g.InTree(path)).AsEnumerable().Any(g => user.IsInGroup(g));
-    //    //    Assert.IsTrue(ok);
-    //    //}
+    }
 
     //    ///* ------------------------------------------------------------------------------------------- */ 
 
 
     //    //[TestMethod]
-    //    //public void Linq_Ex_Error_UnknownField()
+    //    //public void Linq_Exec_Error_UnknownField()
     //    //{
     //    //    try
     //    //    {
@@ -1366,6 +1555,22 @@ Id:<42 .QUICK";
         return cs?.GetCompiledQuery().ToString() ?? string.Empty;
     }
 
+    private async Task LinqExecutionTest(string mockResponse, Action<IRepository> callback)
+    {
+        var restCaller = CreateRestCallerFor(mockResponse);
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<Content>();
+            services.RegisterGlobalContentType<RefTestNode>();
+        });
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+            .ConfigureAwait(false);
+
+        callback(repository);
+    }
+
     private async Task AsEnumerableError(string expectedMethodName, Action<IRepository> action)
     {
         await LinqTest(repository =>
@@ -1392,6 +1597,30 @@ Id:<42 .QUICK";
             Assert.AreEqual(expectedMethodName, actualMethodName);
         });
 
+    }
+    private void InvalidOperationTest(Action action)
+    {
+        try
+        {
+            action();
+            Assert.Fail("InvalidOperationException was not thrown.");
+        }
+        catch (InvalidOperationException e)
+        {
+            // expected exception
+        }
+    }
+    private void ArgumentOutOfRangeTest(Action action)
+    {
+        try
+        {
+            action();
+            Assert.Fail("ArgumentOutOfRangeException was not thrown.");
+        }
+        catch (ArgumentOutOfRangeException e)
+        {
+            // expected exception
+        }
     }
 
 }

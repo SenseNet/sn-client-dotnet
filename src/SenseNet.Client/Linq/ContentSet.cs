@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading;
 
 /*
 Name            QueryString             LINQ Method
@@ -77,7 +78,9 @@ namespace SenseNet.Client.Linq
 
         public IEnumerator<T> GetEnumerator()
         {
-            throw new NotImplementedException();
+            var request = GetODataRequest();
+            var result = _repository.QueryAsync(request, CancellationToken.None).GetAwaiter().GetResult();
+            return result.Cast<T>().GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -141,22 +144,53 @@ namespace SenseNet.Client.Linq
 
         public TResult Execute<TResult>(Expression expression)
         {
-            var count = 0;
+            var request = GetODataRequest(expression, out var elementSelection, out var throwIfEmpty, out var countOnly, out var existenceOnly);
+            var result = _repository.QueryAsync(request, CancellationToken.None).GetAwaiter().GetResult();
+            //var resultArray = result.Cast<TResult>().ToArray();
+            var count = result.TotalCount;
 
-            //// in case there is a predefined list of nodes, we do not execute a query (but we still need to build it)
-            //if (!this.ExecuteQuery)
-            //    count = ChildrenDefinition.BaseCollection.Count();
-
-            var queryProperties = new QueryProperties
+            if (count == 0)
             {
-                EnableAutofilters = Autofilters,
-                EnableLifespanFilter = LifespanFilter,
-                QueryExecutionMode = QueryExecutionMode,
-                ExpandedFieldNames = ExpandedFieldNames,
-                SelectedFieldNames = SelectedFieldNames
-            };
-            var query = SnExpression.BuildQuery(expression, typeof(T), queryProperties, _repository);
+                if (throwIfEmpty)
+                {
+                    if (elementSelection == ElementSelection.ElementAt)
+                        // ReSharper disable once NotResolvedInText
+                        throw new ArgumentOutOfRangeException("Index was out of range.");
+                    throw new InvalidOperationException("Sequence contains no elements.");
+                }
+                return default;
+            }
+            if (countOnly)
+            {
+                if (existenceOnly)
+                    return (TResult)Convert.ChangeType(count > 0, typeof(TResult));
+                return (TResult)Convert.ChangeType(count, typeof(TResult));
+            }
 
+            switch (elementSelection)
+            {
+                case ElementSelection.None:
+                    break;
+                case ElementSelection.First:
+                    return (TResult) Convert.ChangeType(result.First(), typeof(TResult));
+                case ElementSelection.Single:
+                    return (TResult)Convert.ChangeType(result.Single(), typeof(TResult));
+                case ElementSelection.Last:
+                    return (TResult)Convert.ChangeType(result.Last(), typeof(TResult));
+                case ElementSelection.ElementAt:
+                    var any = result.Any();
+                    if (!any)
+                    {
+                        if (throwIfEmpty)
+                            // ReSharper disable once NotResolvedInText
+                            throw new ArgumentOutOfRangeException("Index was out of range.");
+                        return default;
+                    }
+
+                    return (TResult) Convert.ChangeType(result.First(), typeof(TResult));
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
             throw new NotImplementedException();
         }
 
@@ -225,38 +259,45 @@ namespace SenseNet.Client.Linq
 
         public LinqQuery GetCompiledQuery()
         {
-            var queryProperties = new QueryProperties
-            {
-                EnableAutofilters = Autofilters,
-                EnableLifespanFilter = LifespanFilter,
-                QueryExecutionMode = QueryExecutionMode
-            };
-            var query =  SnExpression.BuildQuery(this.Expression, typeof(T), queryProperties, _repository);
-            _tracer?.AddTrace($"Compiled: {query}");
-            return query;
+            return Compile(Expression, out var _, out var _, out var _, out var _);
         }
 
-        public ODataRequest GetODataRequest()
+        public QueryContentRequest GetODataRequest()
         {
-            var queryProperties = new QueryProperties
-            {
-                EnableAutofilters = Autofilters,
-                EnableLifespanFilter = LifespanFilter,
-                QueryExecutionMode = QueryExecutionMode
-            };
-            var query = SnExpression.BuildQuery(this.Expression, typeof(T), queryProperties, _repository);
+            return GetODataRequest(this.Expression, out var _, out var _, out var _, out var _);
+        }
+        private QueryContentRequest GetODataRequest(Expression expression, out ElementSelection elementSelection, out bool throwIfEmpty, out bool countOnly, out bool existenceOnly)
+        {
+            var query = Compile(expression, out elementSelection, out throwIfEmpty, out countOnly, out existenceOnly);
 
-            return new ODataRequest(_repository.Server)
+            return new QueryContentRequest
             {
                 ContentQuery = query.ToString(),
                 AutoFilters = Autofilters,
                 LifespanFilter = LifespanFilter,
-                ContentId = Constants.Repository.RootId,
+                //ContentId = Constants.Repository.RootId,
                 Expand = ExpandedFieldNames,
                 Select = SelectedFieldNames,
-                CountOnly = CountOnlyEnabled,
+                //CountOnly = CountOnlyEnabled,
                 InlineCount = InlineCountOptions.AllPages // always active
             };
+        }
+
+        private LinqQuery Compile(Expression expression, out ElementSelection elementSelection, out bool throwIfEmpty, out bool countOnly, out bool existenceOnly)
+        {
+            _tracer?.AddTrace($"Expression: {expression}");
+            var queryProperties = new QueryProperties
+            {
+                EnableAutofilters = Autofilters,
+                EnableLifespanFilter = LifespanFilter,
+                QueryExecutionMode = QueryExecutionMode,
+                ExpandedFieldNames = ExpandedFieldNames,
+                SelectedFieldNames = SelectedFieldNames
+            };
+            _tracer?.AddTrace($"Properties: {queryProperties}");
+            var query = SnExpression.BuildQuery(expression, typeof(T), queryProperties, _repository, out elementSelection, out throwIfEmpty, out countOnly, out existenceOnly);
+            _tracer?.AddTrace($"Compiled: {query}");
+            return query;
         }
     }
 }

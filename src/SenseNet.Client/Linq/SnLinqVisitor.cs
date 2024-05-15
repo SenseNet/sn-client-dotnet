@@ -10,6 +10,8 @@ using SenseNet.Client.Linq.Predicates;
 
 namespace SenseNet.Client.Linq
 {
+    internal enum ElementSelection{ None, First, Single, Last, ElementAt }
+
     internal class SnLinqVisitor : ExpressionVisitor
     {
         #region ContentHandlerGetTypePredicate, BooleanMemberPredicate
@@ -75,7 +77,7 @@ namespace SenseNet.Client.Linq
         public List<SortInfo> Sort { get; private set; }
         public bool ThrowIfEmpty { get; private set; }
         public bool ExistenceOnly { get; private set; }
-        public string ElementSelection { get; private set; }
+        public ElementSelection ElementSelection { get; private set; }
 
         public override Expression Visit(Expression node)
         {
@@ -352,7 +354,7 @@ namespace SenseNet.Client.Linq
                     throw NotSupportedException(node, "#3");
                 case "FirstOrDefault":
                 case "First":
-                    ElementSelection = "first";
+                    ElementSelection = ElementSelection.First;
                     this.Top = 1;
                     this.ThrowIfEmpty = methodName == "First";
                     if (methodCallExpr.Arguments.Count == 2)
@@ -361,7 +363,7 @@ namespace SenseNet.Client.Linq
                     break;
                 case "SingleOrDefault":
                 case "Single":
-                    ElementSelection = "single";
+                    ElementSelection = ElementSelection.Single;
                     this.ThrowIfEmpty = methodName == "Single";
                     if (methodCallExpr.Arguments.Count == 2)
                         if (_predicates.Count > 1)
@@ -369,7 +371,7 @@ namespace SenseNet.Client.Linq
                     break;
                 case "LastOrDefault":
                 case "Last":
-                    ElementSelection = "last";
+                    ElementSelection = ElementSelection.Last;
                     this.ThrowIfEmpty = methodName == "Last";
                     if (methodCallExpr.Arguments.Count == 2)
                         if (_predicates.Count > 1)
@@ -377,7 +379,7 @@ namespace SenseNet.Client.Linq
                     break;
                 case "ElementAtOrDefault":
                 case "ElementAt":
-                    ElementSelection = "elementat";
+                    ElementSelection = ElementSelection.ElementAt;
                     this.ThrowIfEmpty = methodName == "ElementAt";
                     var constExpr = GetArgumentAsConstant(methodCallExpr, 1);
                     var index = Convert.ToInt32(constExpr.Value);
@@ -385,7 +387,7 @@ namespace SenseNet.Client.Linq
                     this.Top = 1;
                     break;
                 case "Any":
-                    ElementSelection = "first";
+                    ElementSelection = ElementSelection.First;
                     this.CountOnly = true;
                     this.ExistenceOnly = true;
                     this.Top = 1;
