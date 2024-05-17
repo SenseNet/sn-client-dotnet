@@ -478,9 +478,20 @@ namespace SenseNet.Client.Linq
                     }
                 case "Select":
                 {
-                    ExpandedFields = new[] {"Manager?", "CreatedBy?"};
-                    SelectedFields = new[] {"Id", "Name", "Type"};
-                    break;
+                    if (methodCallExpr.Arguments.Count == 2)
+                        if (methodCallExpr.Arguments[1] is UnaryExpression unaryExpression)
+                            if (unaryExpression.Operand is LambdaExpression lambdaExpression)
+                                if (lambdaExpression.Body is NewExpression newExpression)
+                                {
+                                    var sv = new ProjectionVisitor();
+                                    sv.Visit(lambdaExpression);
+                                    ExpandedFields = sv.ExpandedFields;
+                                    SelectedFields = sv.SelectedFields;
+                                    break;
+                                }
+
+                    throw new NotSupportedException(
+                        "The select method can contain only one creation expression of the Content or any inherited type.");
                 }
                 default:
                     throw SnExpression.CallingAsEnumerableExpectedError(methodCallExpr.Method.Name);

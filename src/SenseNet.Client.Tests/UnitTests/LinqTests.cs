@@ -5,9 +5,12 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SenseNet.Client.Linq;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
+using System.Reflection;
 using SenseNet.Extensions.DependencyInjection;
 using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Crypto.Generators;
+using SenseNet.Testing;
+using SenseNet.Tools;
 
 namespace SenseNet.Client.Tests.UnitTests;
 
@@ -492,6 +495,8 @@ public class LinqTests : TestBase
         });
     }
 
+    /* ------------------------------------------------------------------------------------------- */
+
     [TestMethod]
     public async Task Linq_Projection_FluentApi()
     {
@@ -515,9 +520,10 @@ public class LinqTests : TestBase
             Assert.AreEqual(InlineCountOptions.AllPages, request.InlineCount);
         });
     }
-    //UNDONE:LINQ: Develop projection and activate this test
-    //[TestMethod]
-    public async Task Linq_Projection_Select()
+
+    [TestMethod]
+    [ExpectedException(typeof(NotSupportedException))]
+    public async Task Linq_Projection_NoSelect_NoExpand()
     {
         await LinqTest(repository =>
         {
@@ -527,20 +533,198 @@ public class LinqTests : TestBase
                 .DisableLifespan()
                 .Where(c => c.Id < 100 && c is User)
                 .OfType<User>()
-                .Select(u => new User(u.Id, u.Domain, u.LoginName, u.Email, u.Manager, u.CreatedBy));
+                .Select(u => new User());
+
+            var request = GetODataRequest(expression);
+            Assert.Fail("The expected exception was not thrown.");
+        });
+    }
+    [TestMethod]
+    public async Task Linq_Projection_Select_NoExpand()
+    {
+        await LinqTest(repository =>
+        {
+            var expression = repository.Content
+                .EnableAutofilters()
+                .CountOnly()
+                .DisableLifespan()
+                .Where(c => c.Id < 100 && c is User)
+                .OfType<User>()
+                .Select(u => new User(u.Id, u.Domain, u.LoginName, u.Email));
 
             var request = GetODataRequest(expression);
 
-            Assert.AreEqual("Manager,CreatedBy",
-                string.Join(",", request.Expand ?? Array.Empty<string>()));
-            Assert.AreEqual("Id,Domain,LogiName,Email,Manager,CreatedBy",
+            Assert.IsNull(request.Expand);
+            Assert.AreEqual("Id,Domain,LoginName,Email",
                 string.Join(",", request.Select ?? Array.Empty<string>()));
         });
     }
-    private QueryContentRequest GetODataRequest<T>(IQueryable<T> queryable)
+    [TestMethod]
+    public async Task Linq_Projection_Select_Expand()
     {
-        var cs = queryable.Provider as ContentSet<T>;
-        return cs?.GetODataRequest();
+        await LinqTest(repository =>
+        {
+            var expression = repository.Content
+                .EnableAutofilters()
+                .CountOnly()
+                .DisableLifespan()
+                .Where(c => c.Id < 100 && c is User)
+                .OfType<User>()
+                .Select(u => new User(
+                    u.Id,
+                    u.Domain,
+                    u.LoginName,
+                    u.Email,
+                    u.Manager.Id,
+                    u.Manager.Type,
+                    u.Manager.Path,
+                    u.Manager.FullName,
+                    u.CreatedBy.Id,
+                    u.CreatedBy.Type,
+                    u.CreatedBy.Path,
+                    u.CreatedBy.FullName,
+                    u.ModifiedBy));
+
+            var request = GetODataRequest(expression);
+
+            Assert.AreEqual("Manager,CreatedBy,ModifiedBy",
+                string.Join(",", request.Expand ?? Array.Empty<string>()));
+            Assert.AreEqual("Id,Domain,LoginName,Email,Manager/Id,Manager/Type,Manager/Path,Manager/FullName,CreatedBy/Id,CreatedBy/Type,CreatedBy/Path,CreatedBy/FullName,ModifiedBy",
+                string.Join(",", request.Select ?? Array.Empty<string>()));
+        });
+    }
+
+    [TestMethod]
+    public async Task Linq_Projection_Select_NotProperty_1_NotSupported()
+    {
+        await LinqTest(repository =>
+        {
+            var expression = repository.Content
+                .OfType<User>()
+                .Select(u => new User(u.Domain, new User(u.Id), u.Email));
+
+            try
+            {
+                // ACT
+                var request = GetODataRequest(expression);
+                Assert.Fail("The expected exception was not thrown.");
+            }
+            catch (NotSupportedException e)
+            {
+                // ASSERT
+                Assert.AreEqual("Invalid Select expression. The second parameter is forbidden." +
+                                " Only the property-access expressions of the are allowed.", e.Message);
+            }
+        });
+    }
+    [TestMethod]
+    public async Task Linq_Projection_Select_NotProperty_2_NotSupported()
+    {
+        await LinqTest(repository =>
+        {
+            var user = repository.CreateContent<User>("/Root/IMS/Public", "User", "U1");
+            var expression = repository.Content
+                .OfType<User>()
+                .Select(u => new User(user.Name, u.Email));
+
+            try
+            {
+                var request = GetODataRequest(expression);
+                Assert.Fail("The expected exception was not thrown.");
+            }
+            catch (NotSupportedException e)
+            {
+                // ASSERT
+                Assert.AreEqual("Invalid Select expression. The first parameter is forbidden. " +
+                                "Only the property-access expressions of the are allowed.", e.Message);
+            }
+        });
+    }
+    [TestMethod]
+    public async Task Linq_Projection_Select_NotCreation_NotSupported()
+    {
+        await LinqTest(repository =>
+        {
+            try
+            {
+                // ACT
+                var expression = repository.Content
+                    .OfType<User>()
+                    .Select(u => u.Domain);
+
+                Assert.Fail("The expected exception was not thrown.");
+            }
+            catch (NotSupportedException e)
+            {
+                // ASSERT
+                Assert.AreEqual("Cannot resolve an expression. Use 'AsEnumerable()' " +
+                                "method before calling the 'Select' method. ", e.Message);
+            }
+        });
+    }
+    [TestMethod]
+    public async Task Linq_Projection_Select_ExecutedCreation_TargetInvocationException()
+    {
+        await LinqTest(repository =>
+        {
+            var expression = repository.Content
+                .OfType<User>()
+                .Select(u => new User("u.Domain"));
+
+            try
+            {
+                var request = GetODataRequest(expression);
+                Assert.Fail("The expected exception was not thrown.");
+            }
+            catch (TargetInvocationException e)
+            {
+                // ASSERT
+                Assert.AreEqual("Used in processing LINQ expressions only. Do not use in your code this constructor.", e.InnerException?.Message);
+            }
+        });
+    }
+    [TestMethod]
+    public async Task Linq_Projection_Select_StringLiteral_NotSupported()
+    {
+        await LinqTest(repository =>
+        {
+            var expression = repository.Content
+                .OfType<User>()
+                .Select(u => new User(u.Name, u.Email, "u.Domain"));
+
+            try
+            {
+                var request = GetODataRequest(expression);
+                Assert.Fail("The expected exception was not thrown.");
+            }
+            catch (NotSupportedException e)
+            {
+                // ASSERT
+                Assert.AreEqual("Invalid Select expression. The third parameter is forbidden. " +
+                                "Only the property-access expressions of the are allowed.", e.Message);
+            }
+        });
+    }
+    [TestMethod]
+    public async Task Linq_Projection_Select_TooManyLambdaParam_NotSupported()
+    {
+        await LinqTest(repository =>
+        {
+            var expression = repository.Content
+                .OfType<User>()
+                .Select((u, i) => new User(u.Name, u.Email, "u.Domain"));
+
+            try
+            {
+                var request = GetODataRequest(expression);
+                Assert.Fail("The expected exception was not thrown.");
+            }
+            catch (NotSupportedException e)
+            {
+                // ASSERT
+                Assert.AreEqual("Invalid Select expression. Too many lambda parameters.", e.Message);
+            }
+        });
     }
 
     //    //[TestMethod]
@@ -575,6 +759,8 @@ public class LinqTests : TestBase
     //    //    var y = String.Join(", ", x.Select(a => String.Concat(a.Id, ", ", a.Name)));
     //    //    Assert.AreEqual("1, Admin, 2, Root, 3, IMS, 4, BuiltIn, 5, Portal, 6, Visitor, 7, Administrators, 8, Everyone, 9, Owners", y);
     //    //}
+
+    /* ------------------------------------------------------------------------------------------- */
 
     [TestMethod]
     public async Task Linq_OfType()
@@ -1514,6 +1700,23 @@ Id:<42 .QUICK";
     //    }
 
     /* ================================================================================= */
+    [TestMethod]
+    public void Linq_ProjectionVisitorFormat()
+    {
+        var acc = new TypeAccessor(typeof(ProjectionVisitor));
+        var expected = new[]
+        {
+            "0", "first", "second", "third", "4th", "5th", "6th", "7th", "8th", "9th",
+            "10th", "11th", "12th", "13th", "14th", "15th", "16th", "17th", "18th", "19th",
+            "20th", "21st", "22nd", "23rd", "24th", "25th", "26th", "27th", "28th", "29th",
+            "30th", "31st", "32nd", "33rd", "34th", "35th", "36th", "37th", "38th", "39th"
+        };
+        for (int i = 0; i < 40; i++)
+        {
+            Assert.AreEqual(expected[i], acc.InvokeStatic("FormatId", i));
+        }
+    }
+    /* ================================================================================= */
 
     private async Task LinqTest(Action<IRepository> callback)
     {
@@ -1540,6 +1743,11 @@ Id:<42 .QUICK";
     {
         var cs = queryable.Provider as ContentSet<T>;
         return cs?.GetCompiledQuery().ToString() ?? string.Empty;
+    }
+    private QueryContentRequest GetODataRequest<T>(IQueryable<T> queryable)
+    {
+        var cs = queryable.Provider as ContentSet<T>;
+        return cs?.GetODataRequest();
     }
 
     private async Task LinqExecutionTest(string mockResponse, Action<IRepository> callback)

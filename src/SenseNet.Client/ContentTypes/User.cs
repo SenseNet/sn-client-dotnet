@@ -1,9 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client;
@@ -33,7 +31,7 @@ public class User : Content
     {
     }
     /// <inheritdoc />
-    public User(params object[] fieldProjection) : base(fieldProjection) { }
+    public User(params object?[] fieldProjection) : base(fieldProjection) { }
 
     public string? LoginName { get; set; }
     public string? Password { get; set; }

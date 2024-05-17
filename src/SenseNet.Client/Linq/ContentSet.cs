@@ -52,8 +52,8 @@ namespace SenseNet.Client.Linq
         protected internal FilterStatus Autofilters { get; protected set; }
         protected internal FilterStatus LifespanFilter { get; protected set; }
         protected internal QueryExecutionMode QueryExecutionMode { get; protected set; }
-        protected string[] ExpandedFieldNames { get; set; }
-        protected string[] SelectedFieldNames { get; set; }
+        protected string[]? ExpandedFieldNames { get; set; }
+        protected string[]? SelectedFieldNames { get; set; }
 
         protected internal Type TypeFilter { get; protected set; }
 
@@ -290,6 +290,10 @@ namespace SenseNet.Client.Linq
             query.EnableAutofilters = this.Autofilters;
             query.EnableLifespanFilter = this.LifespanFilter;
             query.QueryExecutionMode = this.QueryExecutionMode;
+            if (ExpandedFieldNames == null)
+                ExpandedFieldNames = query.ExpandedFieldNames;
+            if (SelectedFieldNames == null)
+                SelectedFieldNames = query.SelectedFieldNames;
 
             _tracer?.AddTrace($"Expression: {expression}");
             _tracer?.AddTrace($"Properties: AutoFilters: {query.EnableAutofilters}, " +
