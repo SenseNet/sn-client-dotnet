@@ -1,16 +1,10 @@
-﻿using AngleSharp.Dom;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SenseNet.Client.Linq;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq.Expressions;
 using System.Reflection;
 using SenseNet.Extensions.DependencyInjection;
-using Org.BouncyCastle.Asn1.X509;
-using Org.BouncyCastle.Crypto.Generators;
 using SenseNet.Testing;
-using SenseNet.Tools;
 
 namespace SenseNet.Client.Tests.UnitTests;
 
@@ -613,7 +607,7 @@ public class LinqTests : TestBase
             {
                 // ASSERT
                 Assert.AreEqual("Invalid Select expression. The second parameter is forbidden." +
-                                " Only the property-access expressions of the are allowed.", e.Message);
+                                " Only the property-access expressions are allowed.", e.Message);
             }
         });
     }
@@ -636,10 +630,11 @@ public class LinqTests : TestBase
             {
                 // ASSERT
                 Assert.AreEqual("Invalid Select expression. The first parameter is forbidden. " +
-                                "Only the property-access expressions of the are allowed.", e.Message);
+                                "Only the property-access expressions are allowed.", e.Message);
             }
         });
     }
+
     [TestMethod]
     public async Task Linq_Projection_Select_NotCreation_NotSupported()
     {
@@ -670,6 +665,7 @@ public class LinqTests : TestBase
             var expression = repository.Content
                 .OfType<User>()
                 .Select(u => new User("u.Domain"));
+                //.Select(u => Content.Create<User>("u.Domain"));
 
             try
             {
@@ -683,6 +679,7 @@ public class LinqTests : TestBase
             }
         });
     }
+
     [TestMethod]
     public async Task Linq_Projection_Select_StringLiteral_NotSupported()
     {
@@ -701,7 +698,7 @@ public class LinqTests : TestBase
             {
                 // ASSERT
                 Assert.AreEqual("Invalid Select expression. The third parameter is forbidden. " +
-                                "Only the property-access expressions of the are allowed.", e.Message);
+                                "Only the property-access expressions are allowed.", e.Message);
             }
         });
     }

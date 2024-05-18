@@ -68,7 +68,7 @@ internal class ProjectionVisitor : ExpressionVisitor
                     if(convertExpr.Operand.NodeType == ExpressionType.MemberAccess)
                         continue;
                 }
-                throw new NotSupportedException($"Invalid Select expression. The {FormatId(expressionId)} parameter is forbidden. Only the property-access expressions of the are allowed.");
+                throw new NotSupportedException($"Invalid Select expression. The {FormatId(expressionId)} parameter is forbidden. Only the property-access expressions are allowed.");
             }
         }
 
