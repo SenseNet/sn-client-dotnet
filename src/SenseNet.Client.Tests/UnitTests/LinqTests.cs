@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SenseNet.Client.Linq;
 using System.Reflection;
+using System.ServiceProcess;
 using SenseNet.Extensions.DependencyInjection;
 using SenseNet.Testing;
 
@@ -527,7 +528,7 @@ public class LinqTests : TestBase
                 .DisableLifespan()
                 .Where(c => c.Id < 100 && c is User)
                 .OfType<User>()
-                .Select(u => new User());
+                .Select(u => Content.Create<User>());
 
             var request = GetODataRequest(expression);
             Assert.Fail("The expected exception was not thrown.");
@@ -544,7 +545,7 @@ public class LinqTests : TestBase
                 .DisableLifespan()
                 .Where(c => c.Id < 100 && c is User)
                 .OfType<User>()
-                .Select(u => new User(u.Id, u.Domain, u.LoginName, u.Email));
+                .Select(u => Content.Create<User>(u.Id, u.Domain, u.LoginName, u.Email));
 
             var request = GetODataRequest(expression);
 
@@ -564,7 +565,7 @@ public class LinqTests : TestBase
                 .DisableLifespan()
                 .Where(c => c.Id < 100 && c is User)
                 .OfType<User>()
-                .Select(u => new User(
+                .Select(u => Content.Create<User>(
                     u.Id,
                     u.Domain,
                     u.LoginName,
@@ -595,7 +596,7 @@ public class LinqTests : TestBase
         {
             var expression = repository.Content
                 .OfType<User>()
-                .Select(u => new User(u.Domain, new User(u.Id), u.Email));
+                .Select(u => Content.Create<User>(u.Domain, u.Id + 10, u.Email));
 
             try
             {
@@ -619,7 +620,7 @@ public class LinqTests : TestBase
             var user = repository.CreateContent<User>("/Root/IMS/Public", "User", "U1");
             var expression = repository.Content
                 .OfType<User>()
-                .Select(u => new User(user.Name, u.Email));
+                .Select(u => Content.Create<User>(user.Name, u.Email));
 
             try
             {
@@ -664,8 +665,7 @@ public class LinqTests : TestBase
         {
             var expression = repository.Content
                 .OfType<User>()
-                .Select(u => new User("u.Domain"));
-                //.Select(u => Content.Create<User>("u.Domain"));
+                .Select(u => Content.Create<User>("u.Domain"));
 
             try
             {
@@ -687,7 +687,7 @@ public class LinqTests : TestBase
         {
             var expression = repository.Content
                 .OfType<User>()
-                .Select(u => new User(u.Name, u.Email, "u.Domain"));
+                .Select(u => Content.Create<User>(u.Name, u.Email, "u.Domain"));
 
             try
             {
@@ -709,7 +709,7 @@ public class LinqTests : TestBase
         {
             var expression = repository.Content
                 .OfType<User>()
-                .Select((u, i) => new User(u.Name, u.Email, "u.Domain"));
+                .Select((u, i) => Content.Create<User>(u.Name, u.Email, "u.Domain"));
 
             try
             {

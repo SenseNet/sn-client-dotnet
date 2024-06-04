@@ -30,8 +30,6 @@ public class User : Content
     public User(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger)
     {
     }
-    /// <inheritdoc />
-    public User(params object?[] fieldProjection) : base(fieldProjection) { }
 
     public string? LoginName { get; set; }
     public string? Password { get; set; }
