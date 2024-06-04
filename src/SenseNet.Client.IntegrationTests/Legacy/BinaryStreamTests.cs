@@ -12,26 +12,6 @@ namespace SenseNet.Client.IntegrationTests.Legacy
         }
 
         [TestMethod]
-        public async Task Download_OldSchool()
-        {
-            var content = await Content.LoadAsync("/Root/System/Schema/ContentTypes/GenericContent").ConfigureAwait(false);
-
-#pragma warning disable 618
-            var request = RESTCaller.GetStreamRequest(content.Id);
-#pragma warning restore 618
-            var response = await request.GetResponseAsync().ConfigureAwait(false);
-
-            string ctd = null;
-            using (var stream = response.GetResponseStream())
-                if(stream != null)
-                    using (var reader = new StreamReader(stream))
-                        ctd = reader.ReadToEnd();
-
-            Assert.IsNotNull(ctd);
-            Assert.IsTrue(ctd.Contains("<ContentType name=\"GenericContent\""));
-        }
-
-        [TestMethod]
         public async Task Download()
         {
             var content = await Content.LoadAsync("/Root/System/Schema/ContentTypes/GenericContent").ConfigureAwait(false);

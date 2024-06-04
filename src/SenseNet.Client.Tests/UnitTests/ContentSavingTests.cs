@@ -331,7 +331,7 @@ public class ContentSavingTests : TestBase
     ""Id"": 999543,
     ""Name"": ""MyContent"",
     ""Path"": ""/Root/MyContent"",
-    ""Type"": ""Folder"",
+    ""Type"": """ + typeof(T).Name + @""",
     ""Index"": 99
   }
 }");
@@ -358,7 +358,7 @@ public class ContentSavingTests : TestBase
         Assert.AreEqual("/OData.svc/content(999543)?metadata=no&$select=Id,Name,Path,Type,Index", requestedUri.PathAndQuery);
 
         Assert.IsNotNull(content);
-        Assert.AreEqual("Folder", ((JValue)content.Type).Value<string>());
+        Assert.AreEqual(typeof(T).Name, ((JValue)content.Type).Value<string>());
         Assert.AreEqual("MyContent", ((JValue)content.Name).Value<string>());
         Assert.AreEqual(99, ((JValue)content.Index).Value<int>());
 
@@ -377,6 +377,70 @@ public class ContentSavingTests : TestBase
         JObject data = JsonHelper.Deserialize(json);
         var dict = data.ToObject<Dictionary<string, object>>();
         return dict;
+    }
+
+    /* =================================================================== CUSTOM PROPERTIES */
+
+    private class TestContent_IgnoredProperties : Content
+    {
+        public TestContent_IgnoredProperties(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }
+
+        public int Index { get; set; }
+        public string String1 { get; set; }
+        [JsonIgnore]
+        public string String2 { get; set; }
+        [System.Text.Json.Serialization.JsonIgnore]
+        public string String3 { get; set; }
+    }
+    [TestMethod]
+    public async Task Content_T_IgnoredProperty_Save()
+    {
+        var restCaller = CreateRestCallerFor(@"{
+  ""d"": {
+    ""Id"": 999543,
+    ""Name"": ""MyContent"",
+    ""Path"": ""/Root/MyContent"",
+    ""Type"": ""Folder"",
+  }
+}");
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.RegisterGlobalContentType<TestContent_IgnoredProperties>();
+            services.AddSingleton(restCaller);
+        });
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+            .ConfigureAwait(false);
+
+        // ACT
+        var content = repository.CreateContent<TestContent_IgnoredProperties>("/Root/Content", null, "MyContent-1");
+        content.Index = 9998;
+        content.String1 = "String1Value";
+        content.String2 = "String2Value";
+        content.String3 = "String3Value";
+        await content.SaveAsync(CancellationToken.None).ConfigureAwait(false);
+
+        // ASSERT
+        var calls = restCaller.ReceivedCalls().ToArray();
+        Assert.IsNotNull(calls);
+        Assert.AreEqual(2, calls.Length);
+        Assert.AreEqual("GetResponseStringAsync", calls[1].GetMethodInfo().Name);
+        var arguments = calls[1].GetArguments();
+        Assert.IsTrue(arguments[0].ToString().Contains("Root('Content')"));
+        Assert.AreEqual(HttpMethod.Post, arguments[1]);
+        var json = (string)arguments[2]!;
+        json = json.Substring("models=[".Length).TrimEnd(']');
+        dynamic data = JsonHelper.Deserialize(json);
+        Dictionary<string, object> fields = data.ToObject<Dictionary<string, object>>();
+
+        var names = string.Join(", ", fields.Keys.OrderBy(x => x));
+        Assert.AreEqual("__ContentType, Existing, Index, Name, String1", names);
+        Assert.IsNotNull(data);
+        Assert.AreEqual("TestContent_IgnoredProperties", data.__ContentType.ToString());
+        Assert.AreEqual("MyContent-1", data.Name.ToString());
+        Assert.AreEqual("False", data.Existing.ToString());
+        Assert.AreEqual("9998", data.Index.ToString());
+        Assert.AreEqual("String1Value", data.String1.ToString());
     }
 
     /* =================================================================== CUSTOM PROPERTIES */

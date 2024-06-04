@@ -184,7 +184,7 @@ namespace SenseNet.Client
         /// <summary>
         /// Content path that will be the base of the OData request if the Content id is not provided.
         /// </summary>
-        public string Path { get; set; }
+        public string? Path { get; set; }
         /// <summary>
         /// Content id that will be the base of the OData request.
         /// </summary>
@@ -223,11 +223,11 @@ namespace SenseNet.Client
         /// <summary>
         /// Gets or sets the list of selectable field names.
         /// </summary>
-        public IEnumerable<string> Select { get; set; }
+        public IEnumerable<string>? Select { get; set; }
         /// <summary>
         /// Gets or sets the list of expandable field names.
         /// </summary>
-        public IEnumerable<string> Expand { get; set; }
+        public IEnumerable<string>? Expand { get; set; }
 
         /// <summary>
         /// Gets or sets whether this is a request that targets a single OData resource or a collection.
@@ -249,7 +249,7 @@ namespace SenseNet.Client
         /// <summary>
         /// Gets or sets the path of a User
         /// </summary>
-        public string User { get; set; }
+        public string? User { get; set; }
 
         /// <summary>
         /// Gets a container for any custom URL parameters.
@@ -291,7 +291,7 @@ namespace SenseNet.Client
         /// <summary>
         /// Gets or sets body of the request when the method is POST, PATCH, etc.
         /// </summary>
-        public object PostData { get; set; }
+        public object? PostData { get; set; }
 
         //============================================================================= Constructors and overrides
 
@@ -303,7 +303,7 @@ namespace SenseNet.Client
         /// <summary>
         /// Initializes an instance of the ODataRequest class.
         /// </summary>
-        public ODataRequest(ServerContext server)
+        public ODataRequest(ServerContext? server)
         {
             // set default values
             Parameters = new ODataRequestParameterCollection(AddWellKnownItem, RemoveWellKnownItem);

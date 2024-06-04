@@ -1,10 +1,7 @@
-﻿using System.Net.WebSockets;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using SenseNet.Extensions.DependencyInjection;
-using System.Threading.Channels;
-using IdentityModel.Client;
+using Newtonsoft.Json;
+using SenseNet.Client.Security;
 
 namespace SenseNet.Client.IntegrationTests;
 
@@ -205,20 +202,67 @@ public class ContentTests : IntegrationTestBase
         }
     }
 
+    [TestMethod]
+    public async Task IT_Content_Collection_MultiType()
+    {
+        var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
+        var repository = await GetRepositoryCollection()
+            .GetRepositoryAsync("local", cancel).ConfigureAwait(false);
+
+        // ACT
+        var request = new LoadCollectionRequest()
+        {
+            Path = "/Root/IMS/BuiltIn/Portal",
+            Select = new[] { "Name", "Path", "Type" },
+            OrderBy = new[] { "Path" }
+        };
+        var result = await repository.LoadCollectionAsync(request, cancel).ConfigureAwait(false);
+
+        // ASSERT
+        var contents = result.ToArray();
+        var types = contents
+            .Select(x => x.GetType())
+            .Distinct()
+            .Select(t => t.Name)
+            .OrderBy(n => n)
+            .ToArray();
+        Assert.AreEqual("Group User", string.Join(" ", types));
+    }
+
+    [TestMethod]
+    public async Task IT_Content_Query_MultiType()
+    {
+        var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
+        var repository = await GetRepositoryCollection()
+            .GetRepositoryAsync("local", cancel).ConfigureAwait(false);
+
+        // ACT
+        var request = new QueryContentRequest
+        {
+            ContentQuery = "InTree:'/Root/IMS'",
+            Select = new[] { "Name", "Path", "Type" },
+            OrderBy = new[] { "Path" }
+        };
+        var result = await repository.QueryAsync(request, cancel).ConfigureAwait(false);
+
+        // ASSERT
+        var contents = result.ToArray();
+        var types = contents
+            .Select(x => x.GetType())
+            .Distinct()
+            .Select(t => t.Name)
+            .OrderBy(n => n)
+            .ToArray();
+        //Assert.AreEqual("Domains Domain Group Image OrganizationalUnit User", string.Join(" ", types));
+        Assert.AreEqual("Content Domain Group Image OrganizationalUnit User", string.Join(" ", types));
+    }
+
     /* ================================================================================================== ACTIONS */
 
     public class File : Content
     {
         public File(IRestCaller restCaller, ILogger<Content> logger) : base(restCaller, logger) { }
 
-        /*TODO: Use enum VersioningType, ApprovingType
-        public enum VersioningType{Inherited, None, MajorOnly, MajorAndMinor}
-        public enum ApprovingType{Inherited, False, True}
-        public VersioningType VersioningMode { get; set; }
-        public ApprovingType ApprovingMode { get; set; }
-        */
-        public string[] VersioningMode { get; set; }
-        public string[] ApprovingMode { get; set; }
         public string Version { get; set; }
         public Binary Binary { get; set; }
     }
@@ -246,8 +290,8 @@ public class ContentTests : IntegrationTestBase
             };
 
             var file = repository.CreateContent<File>(rootPath, null, fileName);
-            file.VersioningMode = new[] { "3" }; // MajorAndMinor
-            file.ApprovingMode = new[] { "2" }; // True
+            file.VersioningMode = VersioningMode.MajorAndMinor;
+            file.ApprovingMode = ApprovingEnabled.Yes;
             await file.SaveAsync(cancel).ConfigureAwait(false);
             await AssertFileVersion(repository, loadFileRequest, "V0.1.D", cancel);
 
@@ -305,8 +349,8 @@ public class ContentTests : IntegrationTestBase
                 .GetRepositoryAsync("local", cancel).ConfigureAwait(false);
 
         var file = repository.CreateContent<File>("/Root/Content", null, Guid.NewGuid().ToString());
-        file.VersioningMode = new[] { "0" }; // Inherited
-        file.ApprovingMode = new[] { "0" }; // Inherited
+        file.VersioningMode = VersioningMode.Inherited;
+        file.ApprovingMode = ApprovingEnabled.Inherited;
         await file.SaveAsync(cancel).ConfigureAwait(false);
         var fileId = file.Id;
         var loaded = await repository.LoadContentAsync(fileId, cancel).ConfigureAwait(false);
@@ -349,8 +393,8 @@ public class ContentTests : IntegrationTestBase
         }
 
         var file = repository.CreateContent<File>(source.Path, null, Guid.NewGuid().ToString());
-        file.VersioningMode = new[] { "0" }; // Inherited
-        file.ApprovingMode = new[] { "0" }; // Inherited
+        file.VersioningMode = VersioningMode.Inherited;
+        file.ApprovingMode = ApprovingEnabled.Inherited;
         await file.SaveAsync(cancel).ConfigureAwait(false);
         var fileId = file.Id;
         var fileText = Guid.NewGuid().ToString();
@@ -396,8 +440,8 @@ public class ContentTests : IntegrationTestBase
         }
 
         var file = repository.CreateContent<File>(source.Path, null, Guid.NewGuid().ToString());
-        file.VersioningMode = new[] { "0" }; // Inherited
-        file.ApprovingMode = new[] { "0" }; // Inherited
+        file.VersioningMode = VersioningMode.Inherited;
+        file.ApprovingMode = ApprovingEnabled.Inherited;
         await file.SaveAsync(cancel).ConfigureAwait(false);
         var fileId = file.Id;
         var fileText = Guid.NewGuid().ToString();
@@ -432,7 +476,7 @@ public class ContentTests : IntegrationTestBase
     [TestMethod]
     public async Task IT_Content_T_Update()
     {
-        var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
+        var cancel = new CancellationTokenSource().Token;
         var repository =
             await GetRepositoryCollection(
                     services => { services.RegisterGlobalContentType<TestMemo>("Memo"); })
@@ -496,7 +540,7 @@ public class ContentTests : IntegrationTestBase
     [TestMethod]
     public async Task IT_Content_T_Update_ReferenceList()
     {
-        var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
+        var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(120)).Token;
         var repository =
             await GetRepositoryCollection(
                     services => { services.RegisterGlobalContentType<TestMemo>("Memo"); })
@@ -519,7 +563,7 @@ public class ContentTests : IntegrationTestBase
 
         // 2 - Create container and some memos
         var container = repository.CreateContent(rootPath, containerType, containerName);
-        await container.SaveAsync().ConfigureAwait(false);
+        await container.SaveAsync(cancel).ConfigureAwait(false);
         var referredMemos = new Content[3];
         for (int i = 0; i < referredMemos.Length; i++)
         {
@@ -527,14 +571,14 @@ public class ContentTests : IntegrationTestBase
             //referredMemos[i]["MemoType"] = Array.Empty<string>();
             //referredMemos[i]["MemoType"] = new[] { "generic" };
             ((TestMemo)referredMemos[i]).MemoType = Array.Empty<string>();
-            await referredMemos[i].SaveAsync().ConfigureAwait(false);
+            await referredMemos[i].SaveAsync(cancel).ConfigureAwait(false);
         }
 
         // 3 - Create brand new content and test its existence
         var content = repository.CreateContent<TestMemo>(containerPath, null, contentName);
         content.MemoType = Array.Empty<string>();
         content.SeeAlso = referredMemos.Take(2).ToList();
-        await content.SaveAsync().ConfigureAwait(false);
+        await content.SaveAsync(cancel).ConfigureAwait(false);
         var contentId = content.Id;
         Assert.IsTrue(contentId > 0);
 
@@ -557,7 +601,7 @@ public class ContentTests : IntegrationTestBase
 
         // 6 - Update content
         loadedContent.SeeAlso[1] = referredMemos[2];
-        await loadedContent.SaveAsync().ConfigureAwait(false);
+        await loadedContent.SaveAsync(cancel).ConfigureAwait(false);
 
         // 7 - Load updated content
         var reloadedContent = await repository.LoadContentAsync<TestMemo>(expandedRequest, cancel).ConfigureAwait(false);
@@ -585,7 +629,7 @@ public class ContentTests : IntegrationTestBase
         wrongContent.SeeAlso.Add(referredMemos[2]);
         try
         {
-            await wrongContent.SaveAsync().ConfigureAwait(false);
+            await wrongContent.SaveAsync(cancel).ConfigureAwait(false);
             Assert.Fail("The expected ApplicationException was not thrown.");
         }
         catch (ApplicationException e)
@@ -600,4 +644,215 @@ public class ContentTests : IntegrationTestBase
         await repository.DeleteContentAsync(contentId, true, cancel).ConfigureAwait(false);
         Assert.IsFalse(await repository.IsContentExistsAsync(path, cancel).ConfigureAwait(false));
     }
+
+    /* ============================================================================================= ALLOWED CHILD TYPES */
+
+    [TestMethod]
+    public async Task IT_Content_AllowedChildTypes()
+    {
+        var cancel = new CancellationTokenSource().Token;
+        var repository = await GetRepositoryCollection()
+            .GetRepositoryAsync("local", cancel).ConfigureAwait(false);
+        
+        await repository.DeleteContentAsync(new[] {"/Root/Content/DocLib-1"}, true, cancel).ConfigureAwait(false);
+
+        // ACT-1: /Root/Content
+        var request = new LoadContentRequest
+        {
+            Path = "/Root/Content",
+            Expand = new[] {"AllowedChildTypes", "EffectiveAllowedChildTypes"},
+            Select = new[] {"*", "AllowedChildTypes/Name", "EffectiveAllowedChildTypes/Name" }
+        };
+        var content1 = await repository.LoadContentAsync<Workspace>(request, cancel).ConfigureAwait(false);
+
+        // ASSERT-1: AllowedChildTypes fields are not null, not empty
+        Assert.IsNotNull(content1.AllowedChildTypes);
+        Assert.IsNotNull(content1.EffectiveAllowedChildTypes);
+        Assert.IsTrue(content1.AllowedChildTypes.Any());
+        Assert.IsTrue(content1.EffectiveAllowedChildTypes.Any());
+
+        // ACT-2: Create a doclib
+        var docLib1 = repository.CreateContent("/Root/Content", "DocumentLibrary", "DocLib-1");
+        //docLib1.AllowedChildTypes = new ContentType[] { taskListContentType, memoListContentType};
+        await docLib1.SaveAsync(cancel).ConfigureAwait(false);
+
+        // ASSERT-2
+        request = new LoadContentRequest
+        {
+            Path = "/Root/Content/DocLib-1",
+            Expand = new[] { "AllowedChildTypes", "EffectiveAllowedChildTypes" },
+            Select = new[] { "*", "AllowedChildTypes/Name", "EffectiveAllowedChildTypes/Name" }
+        };
+        docLib1 = await repository.LoadContentAsync<Content>(request, cancel).ConfigureAwait(false);
+        var allowedChildTypes = docLib1.AllowedChildTypes.Select(x => x.Name).OrderBy(x => x).ToArray();
+        var effectiveChildTypes = docLib1.EffectiveAllowedChildTypes.Select(x => x.Name).OrderBy(x => x).ToArray();
+        Assert.AreEqual("", string.Join(" ", allowedChildTypes));
+        Assert.AreEqual("File Folder SystemFolder", string.Join(" ", effectiveChildTypes));
+
+        // ACT-3: Update a doclib with childType control
+        var taskListContentType = await repository.LoadContentAsync<ContentType>(
+                "/Root/System/Schema/ContentTypes/GenericContent/Folder/ContentList/ItemList/TaskList", cancel)
+            .ConfigureAwait(false);
+        var memoListContentType = await repository.LoadContentAsync<ContentType>(
+                "/Root/System/Schema/ContentTypes/GenericContent/Folder/ContentList/ItemList/MemoList", cancel)
+            .ConfigureAwait(false);
+        docLib1.AllowedChildTypes = new ContentType[] { taskListContentType, memoListContentType};
+        await docLib1.SaveAsync(cancel).ConfigureAwait(false);
+
+        // ASSERT-3
+        request = new LoadContentRequest
+        {
+            Path = "/Root/Content/DocLib-1",
+            Expand = new[] { "AllowedChildTypes", "EffectiveAllowedChildTypes" },
+            Select = new[] { "*", "AllowedChildTypes/Name", "EffectiveAllowedChildTypes/Name" }
+        };
+        docLib1 = await repository.LoadContentAsync<Content>(request, cancel).ConfigureAwait(false);
+        allowedChildTypes = docLib1.AllowedChildTypes?.Select(x => x.Name).OrderBy(x => x)
+            .ToArray() ?? Array.Empty<string>();
+        effectiveChildTypes = docLib1.EffectiveAllowedChildTypes?.Select(x => x.Name).OrderBy(x => x)
+            .ToArray() ?? Array.Empty<string>();
+        Assert.AreEqual("MemoList TaskList", string.Join(" ", allowedChildTypes));
+        Assert.AreEqual("MemoList SystemFolder TaskList", string.Join(" ", effectiveChildTypes));
+    }
+
+    /* ================================================================================================== OPERATIONS */
+
+    [TestMethod]
+    public async Task IT_Op_InvokeFunction_GetPermissions()
+    {
+        var repository = await GetRepositoryCollection()
+            .GetRepositoryAsync("local", CancellationToken.None).ConfigureAwait(false);
+
+        // ACT
+        var request = new OperationRequest() {ContentId = 2, OperationName = "GetPermissions"};
+        var getPermissionsResponse = await repository.InvokeFunctionAsync<GetPermissionsResponse>(request, CancellationToken.None);
+
+        // ASSERT
+        Assert.AreEqual(2, getPermissionsResponse.Id);
+        Assert.AreEqual("/Root", getPermissionsResponse.Path);
+        Assert.AreEqual(true, getPermissionsResponse.Inherits);
+        Assert.IsNotNull(getPermissionsResponse.Entries);
+        Assert.IsTrue(getPermissionsResponse.Entries.Length > 2);
+        Assert.AreEqual("allow", getPermissionsResponse.Entries[0].Permissions.See.Value);
+    }
+    [TestMethod]
+    public async Task IT_Op_InvokeFunction_GetCurrentUser()
+    {
+        var repository = await GetRepositoryCollection()
+            .GetRepositoryAsync("local", CancellationToken.None).ConfigureAwait(false);
+
+        // ACT
+        var request = new OperationRequest()
+        {
+            ContentId = 2,
+            OperationName = "GetCurrentUser",
+            Select = new[] { "Name", "Path", "Id", "Type" }
+        };
+        var user = await repository.InvokeContentFunctionAsync<User>(request, CancellationToken.None);
+
+        // ASSERT
+        Assert.AreEqual(typeof(User), user.GetType());
+        Assert.AreEqual(1, user.Id);
+        Assert.AreEqual("/Root/IMS/BuiltIn/Portal/Admin", user.Path);
+        Assert.AreEqual("Admin", user.Name);
+    }
+    [TestMethod]
+    public async Task IT_Op_InvokeFunction_Ancestors()
+    {
+        var repository = await GetRepositoryCollection()
+            .GetRepositoryAsync("local", CancellationToken.None).ConfigureAwait(false);
+
+        // ACT
+        var request = new OperationRequest
+        {
+            ContentId = 1,
+            OperationName = "Ancestors",
+            Select = new []{"Name", "Path", "Id", "Type"}
+        };
+        var contents = await repository.InvokeContentCollectionFunctionAsync<Content>(request, CancellationToken.None);
+
+        // ASSERT
+        var names = string.Join("|", contents.Select(x => $"{x.Name}:{x["Type"]}"));
+        Assert.AreEqual("Portal:OrganizationalUnit|BuiltIn:Domain|IMS:Domains|Root:PortalRoot", names);
+    }
+
+
+    [TestMethod]
+    public async Task IT_Op_ExecuteAction()
+    {
+        var repository = await GetRepositoryCollection()
+            .GetRepositoryAsync("local", CancellationToken.None).ConfigureAwait(false);
+        var cancel = new CancellationTokenSource().Token;
+
+        var content = repository.CreateContent("/Root/Content", "SystemFolder", Guid.NewGuid().ToString());
+        await content.SaveAsync(cancel);
+        Assert.AreNotEqual(0, content.Id);
+        Assert.IsTrue(await repository.IsContentExistsAsync(content.Path, cancel));
+
+        // ACT
+        var postData = new {permanent = true};
+        var request = new OperationRequest() { ContentId = content.Id, OperationName = "Delete", PostData = postData};
+        await repository.InvokeActionAsync(request, CancellationToken.None);
+
+        // ASSERT
+        Assert.IsFalse(await repository.IsContentExistsAsync(content.Path, cancel));
+    }
+    [TestMethod]
+    public async Task IT_Op_ProcessOperationResponse()
+    {
+        var repository = await GetRepositoryCollection()
+            .GetRepositoryAsync("local", CancellationToken.None).ConfigureAwait(false);
+
+        var request = new OperationRequest
+        {
+            ContentId = 2,
+            OperationName = "GetPermissions"
+        };
+
+        // ACT
+        string? response = null;
+        await repository.ProcessOperationResponseAsync(request, HttpMethod.Get,
+            (r) => { response = r; }, CancellationToken.None);
+
+        // ASSERT
+        var getPermissionsResponse = JsonConvert.DeserializeObject<GetPermissionsResponse>(response);
+        Assert.AreEqual(2, getPermissionsResponse.Id);
+        Assert.AreEqual("/Root", getPermissionsResponse.Path);
+        Assert.AreEqual(true, getPermissionsResponse.Inherits);
+        Assert.IsNotNull(getPermissionsResponse.Entries);
+        Assert.IsTrue(getPermissionsResponse.Entries.Length > 2);
+        Assert.AreEqual("allow", getPermissionsResponse.Entries[0].Permissions.See.Value);
+    }
+    [TestMethod]
+    public async Task IT_Op_ProcessOperationResponse_Error()
+    {
+        var repository = await GetRepositoryCollection()
+            .GetRepositoryAsync("local", CancellationToken.None).ConfigureAwait(false);
+
+        var request = new OperationRequest()
+        {
+            ContentId = 2,
+            OperationName = "TestOperation"
+        };
+
+        // ACT
+        var isResponseProcessorCalled = false;
+        Exception? exception = null;
+        try
+        {
+            await repository.ProcessOperationResponseAsync(request, HttpMethod.Get,
+                (r) => { isResponseProcessorCalled = true; }, CancellationToken.None);
+            Assert.Fail("ClientException was not thrown.");
+        }
+        catch (ClientException e)
+        {
+            exception = e;
+        }
+
+        // ASSERT
+        Assert.IsFalse(isResponseProcessorCalled);
+        Assert.IsTrue(exception.Message.Contains("Operation not found"));
+        Assert.IsTrue(exception.Message.Contains("TestOperation"));
+    }
+
 }

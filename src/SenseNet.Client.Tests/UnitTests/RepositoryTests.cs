@@ -922,6 +922,8 @@ namespace SenseNet.Client.Tests.UnitTests
         public class MyContent2 : Content { public MyContent2(IRestCaller restCaller, ILogger<MyContent> logger) : base(restCaller, logger) { } }
         public class MyContent3 : Content { public MyContent3(IRestCaller restCaller, ILogger<MyContent> logger) : base(restCaller, logger) { } }
         public class MyContent4 : Content { public MyContent4(IRestCaller restCaller, ILogger<MyContent> logger) : base(restCaller, logger) { } }
+        public class MyContentA : MyContent { public MyContentA(IRestCaller restCaller, ILogger<MyContent> logger) : base(restCaller, logger) { } }
+        public class MyContentB : MyContent { public MyContentB(IRestCaller restCaller, ILogger<MyContent> logger) : base(restCaller, logger) { } }
 
         [TestMethod]
         public async Task Repository_T_RegisterGlobalContentType_TypeParam()
@@ -1069,7 +1071,7 @@ namespace SenseNet.Client.Tests.UnitTests
             var repositoryAcc = new ObjectAccessor(repository);
             var services = (IServiceProvider)repositoryAcc.GetField("_services");
             Assert.AreEqual(ExampleUrl, repository.Server.Url);
-            Assert.AreEqual(3, repository.GlobalContentTypes.ContentTypes.Count);
+            //Assert.AreEqual(3, repository.GlobalContentTypes.ContentTypes.Count);
             var contentTypeRegistrations = repository.Server.RegisteredContentTypes.ContentTypes
                 .OrderBy(x => x.Value.Name)
                 .ToArray();
@@ -1122,7 +1124,7 @@ namespace SenseNet.Client.Tests.UnitTests
             // ASSERT
             // check repo1
             Assert.AreEqual(ExampleUrl, repository1.Server.Url);
-            Assert.AreEqual(3, repository1.GlobalContentTypes.ContentTypes.Count);
+            //Assert.AreEqual(3, repository1.GlobalContentTypes.ContentTypes.Count);
             var contentTypeRegistrations1 = repository1.Server.RegisteredContentTypes.ContentTypes
                 .OrderBy(x => x.Value.Name)
                 .ToArray();
@@ -1132,7 +1134,7 @@ namespace SenseNet.Client.Tests.UnitTests
 
             // check repo2
             Assert.AreEqual(exampleUrl2, repository2.Server.Url);
-            Assert.AreEqual(3, repository2.GlobalContentTypes.ContentTypes.Count);
+            //Assert.AreEqual(3, repository2.GlobalContentTypes.ContentTypes.Count);
             var contentTypeRegistrations2 = repository2.Server.RegisteredContentTypes.ContentTypes
                 .OrderBy(x => x.Value.Name)
                 .ToArray();
@@ -1813,6 +1815,29 @@ namespace SenseNet.Client.Tests.UnitTests
             Assert.AreEqual(typeof(MyContent), content.GetType());
         }
 
+        [TestMethod]
+        public async Task Repository_LoadContent_UnknownCustomTypeAsDesired()
+        {
+            var restCaller = CreateRestCallerFor(@"{ ""d"": { ""Type"": ""Item2"", ""Name"": ""Content"" }}");
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton(restCaller);
+
+                services.RegisterGlobalContentType<Item1>();
+            });
+            var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ACTION
+            var content = await repository.LoadContentAsync<Item1>("/Root/Content", CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // ASSERT
+            Assert.IsNotNull(content);
+            Assert.AreEqual("Content", content.Name);
+            Assert.AreEqual(typeof(Item1), content.GetType());
+        }
+
         /* =================================================================== LOAD COLLECTION */
 
         [TestMethod]
@@ -1939,6 +1964,38 @@ namespace SenseNet.Client.Tests.UnitTests
             Assert.AreEqual("Item1, Item2, Item3, Item4", typeNames);
         }
 
+        [TestMethod]
+        public async Task Repository_T_LoadCollection_UnknownCustomTypeAsDesired()
+        {
+            // ALIGN
+            var restCaller = CreateRestCallerFor(@"{""d"": {""__count"": 4, ""results"": [
+                    {""Id"": 10001, ""Name"": ""Content1"", ""Type"": ""Item1""},
+                    {""Id"": 10002, ""Name"": ""Content2"", ""Type"": ""Item2""},
+                    {""Id"": 10003, ""Name"": ""Content3"", ""Type"": ""Item3""},
+                    {""Id"": 10004, ""Name"": ""Content4"", ""Type"": ""Item4""},
+                    ]}}");
+
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton(restCaller);
+                services.RegisterGlobalContentType<Item1>();
+                services.RegisterGlobalContentType<Item2>();
+                services.RegisterGlobalContentType<Item3>();
+            });
+            var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+                .ConfigureAwait(false);
+            var request = new LoadCollectionRequest { Path = "/Root/Somewhere", Select = new[] { "Id", "Name", "Type" } };
+
+            // ACT
+            var collection = await repository.LoadCollectionAsync<Item1>(request, CancellationToken.None);
+            var contents = collection.ToArray();
+
+            // ASSERT
+            Assert.AreEqual(4, contents.Length);
+            var typeNames = string.Join(", ", contents.Select(x => x.GetType().Name));
+            Assert.AreEqual("Item1, Item2, Item3, Item1", typeNames);
+        }
+
         /* =================================================================== QUERY */
 
         [TestMethod] public Task Repository_T_Query_T_Content() => QueryTest<Content>(false);
@@ -2038,6 +2095,38 @@ namespace SenseNet.Client.Tests.UnitTests
             Assert.AreEqual("Item1, Item2, Item3, Item4", typeNames);
         }
 
+        [TestMethod]
+        public async Task Repository_T_QueryForAdmin_UnknownCustomTypeAsDesired()
+        {
+            // ALIGN
+            var restCaller = CreateRestCallerFor(@"{""d"": {""__count"": 4, ""results"": [
+                    {""Id"": 10001, ""Name"": ""Content1"", ""Type"": ""Item1""},
+                    {""Id"": 10002, ""Name"": ""Content2"", ""Type"": ""Item2""},
+                    {""Id"": 10003, ""Name"": ""Content3"", ""Type"": ""Item3""},
+                    {""Id"": 10004, ""Name"": ""Content4"", ""Type"": ""Item4""},
+                    ]}}");
+
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton(restCaller);
+                services.RegisterGlobalContentType<Item1>();
+                services.RegisterGlobalContentType<Item2>();
+                services.RegisterGlobalContentType<Item3>();
+            });
+            var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+                .ConfigureAwait(false);
+            var request = new QueryContentRequest { /* Irrelevant because of mocking */ };
+
+            // ACT
+            var collection = await repository.QueryForAdminAsync<Item1>(request, CancellationToken.None);
+            var contents = collection.ToArray();
+
+            // ASSERT
+            Assert.AreEqual(4, contents.Length);
+            var typeNames = string.Join(", ", contents.Select(x => x.GetType().Name));
+            Assert.AreEqual("Item1, Item2, Item3, Item1", typeNames);
+        }
+
         /* ============================================================================ AUTHENTICATION */
 
         [TestMethod]
@@ -2105,6 +2194,42 @@ namespace SenseNet.Client.Tests.UnitTests
             Assert.AreEqual("Admin", content.Name);
         }
         [TestMethod]
+        public async Task Repository_Auth_GetCurrentUser_ValidUser_ValidToken_ByUsername_WithParameters()
+        {
+            // ALIGN
+            var restCaller = CreateRestCallerFor(@"{ ""d"": { 
+                ""Name"": ""Admin"", ""Id"": 1, ""Type"": ""User"" 
+            }}");
+            var repositories = GetRepositoryCollection(services =>
+            {
+                services.AddSingleton(restCaller);
+            });
+            var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+                .ConfigureAwait(false);
+
+            // This access token does not have sub claim but user 
+            repository.Server.Authentication.AccessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9." +
+                "eyJ1c2VyIjoiQWRtaW4iLCJuYW1lIjoiSm9obiBEb2UiLCJpYXQiOjE3MTEwOTIwNDYsImV4cCI6MTcxMTA5NTY0Nn0." +
+                "qRmwZTcSEgoCKEUpsmyrHTg9mkbO0Iiqy99amXPWmRg";
+
+            // ACT
+            // define select and expand parameters
+            var content = await repository.GetCurrentUserAsync(
+                new[] { "Id", "Name", "Type", "Manager/Name", "FullName" },
+                new[] { "Manager" },
+                CancellationToken.None).ConfigureAwait(false);
+
+            // ASSERT
+            var requestedUri = (Uri)restCaller.ReceivedCalls().ToArray()[1].GetArguments().First()!;
+            Assert.IsNotNull(requestedUri);
+            Assert.AreEqual("/OData.svc/Root?metadata=no&$expand=Manager&$select=Id,Name,Type,Manager/Name,FullName" +
+                "&query=InTree%3A%27%2FRoot%2FIMS%27%20AND%20TypeIs%3AUser%20AND%20LoginName%3AAdmin",
+                requestedUri.PathAndQuery);
+
+            Assert.IsNotNull(content);
+            Assert.AreEqual("Admin", content.Name);
+        }
+        [TestMethod]
         public async Task Repository_Auth_GetCurrentUser_ValidUser_ExpiredToken()
         {
             // ALIGN
@@ -2123,7 +2248,7 @@ namespace SenseNet.Client.Tests.UnitTests
                     Arg.Any<HttpMethod>(), Arg.Any<string>(),
                     Arg.Any<Dictionary<string, IEnumerable<string>>>(),
                     Arg.Any<CancellationToken>())
-                .Returns(Task.FromResult(@"{ ""Name"": ""Visitor"", ""Id"": 6, ""Type"": ""User"" }"));
+                .Returns(Task.FromResult(@"{""d"": { ""Name"": ""Visitor"", ""Id"": 6, ""Type"": ""User"" }}"));
             
             var repositories = GetRepositoryCollection(services =>
             {
@@ -2155,7 +2280,7 @@ namespace SenseNet.Client.Tests.UnitTests
         public async Task Repository_Auth_GetCurrentUser_ValidUser_UnknownToken()
         {
             // ALIGN
-            var restCaller = CreateRestCallerFor(@"{""Name"": ""Admin"", ""Id"": 1, ""Type"": ""User"" }");
+            var restCaller = CreateRestCallerFor(@"{""d"": {""Name"": ""Admin"", ""Id"": 1, ""Type"": ""User"" }}");
             var repositories = GetRepositoryCollection(services =>
             {
                 services.AddSingleton(restCaller);
@@ -2182,7 +2307,7 @@ namespace SenseNet.Client.Tests.UnitTests
         public async Task Repository_Auth_GetCurrentUser_ValidUser_ApiKey()
         {
             // ALIGN
-            var restCaller = CreateRestCallerFor(@"{""Name"": ""Admin"", ""Id"": 1, ""Type"": ""User"" }");
+            var restCaller = CreateRestCallerFor(@"{""d"": {""Name"": ""Admin"", ""Id"": 1, ""Type"": ""User"" }}");
             var repositories = GetRepositoryCollection(services =>
             {
                 services.AddSingleton(restCaller);

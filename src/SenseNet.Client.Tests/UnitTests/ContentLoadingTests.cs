@@ -50,8 +50,6 @@ public class ContentLoadingTests : TestBase
         public DateTime? ValidTill { get; set; }
         public Content[] AllowedChildTypes { get; set; }
         public Content[] EffectiveAllowedChildTypes { get; set; }
-        public string VersioningMode { get; set; }
-        public string InheritableVersioningMode { get; set; }
         public Content CreatedBy { get; set; }
         public Content VersionCreatedBy { get; set; }
         public DateTime? CreationDate { get; set; }
@@ -60,8 +58,6 @@ public class ContentLoadingTests : TestBase
         public Content VersionModifiedBy { get; set; }
         public DateTime? ModificationDate { get; set; }
         public DateTime? VersionModificationDate { get; set; }
-        public string ApprovingMode { get; set; }
-        public string InheritableApprovingMode { get; set; }
         public bool? Locked { get; set; }
         public Content CheckedOutTo { get; set; }
         public bool? TrashDisabled { get; set; }
@@ -311,8 +307,8 @@ public class ContentLoadingTests : TestBase
         Assert.AreEqual(DateTime.Parse("2022-12-15T01:54:20Z").ToUniversalTime(), content.ValidTill); // DateTime
         Assert.AreEqual(null, content.AllowedChildTypes); // AllowedChildTypes
         Assert.AreEqual(null, content.EffectiveAllowedChildTypes); // AllowedChildTypes
-        Assert.AreEqual("0", content.VersioningMode); // VersioningMode
-        Assert.AreEqual("0", content.InheritableVersioningMode); // InheritableVersioningMode
+        Assert.AreEqual(VersioningMode.Inherited, content.VersioningMode); // VersioningMode
+        Assert.AreEqual(VersioningMode.Inherited, content.InheritableVersioningMode); // InheritableVersioningMode
         Assert.AreEqual(null, content.CreatedBy); // Reference
         Assert.AreEqual(null, content.VersionCreatedBy); // Reference
         Assert.AreEqual(DateTime.Parse("2022-12-15T00:54:20.64Z").ToUniversalTime(), content.CreationDate); // DateTime
@@ -321,8 +317,8 @@ public class ContentLoadingTests : TestBase
         Assert.AreEqual(null, content.VersionModifiedBy); // Reference
         Assert.AreEqual(DateTime.Parse("2023-03-08T13:58:24.2076017Z").ToUniversalTime(), content.ModificationDate); // DateTime
         Assert.AreEqual(DateTime.Parse("2023-03-08T13:58:24.2076369Z").ToUniversalTime(), content.VersionModificationDate); // DateTime
-        Assert.AreEqual("0", content.ApprovingMode); // ApprovingMode
-        Assert.AreEqual("0", content.InheritableApprovingMode); // InheritableApprovingMode
+        Assert.AreEqual(ApprovingEnabled.Inherited, content.ApprovingMode); // ApprovingMode
+        Assert.AreEqual(ApprovingEnabled.Inherited, content.InheritableApprovingMode); // InheritableApprovingMode
         Assert.AreEqual(false, content.Locked); // Boolean
         Assert.AreEqual(null, content.CheckedOutTo); // Reference
         Assert.AreEqual(false, content.TrashDisabled); // Boolean
@@ -772,6 +768,7 @@ public class ContentLoadingTests : TestBase
 
         public MyContent3[]? Reference_Array { get; set; }
         public List<MyContent3>? Reference_List { get; set; }
+        public List<MyContent>? Reference_List_MultiType { get; set; }
     }
 
     [TestMethod]
@@ -1014,6 +1011,61 @@ public class ContentLoadingTests : TestBase
         Assert.AreEqual("/Root/Path1", referredItems[0].Path);
         Assert.AreEqual("/Root/Path2", referredItems[1].Path);
         Assert.AreEqual("/Root/Path3", referredItems[2].Path);
+    }
+    [TestMethod]
+    public async Task LoadContent_T_References_Expanded_Multi_List_MultiTypes()
+    {
+        // ALIGN
+        var restCaller = CreateRestCallerFor(@"{ ""d"": { ""Name"": ""Content"", ""Type"": ""Workspace"",
+    // multi reference
+    ""Reference_List_MultiType"": [
+      { ""Path"": ""/Root/Path1"", ""Type"": ""MyContent"" },
+      { ""Path"": ""/Root/Path2"", ""Type"": ""MyContentA"" },
+      { ""Path"": ""/Root/Path3"", ""Type"": ""MyContentB"" }
+    ]
+  }
+}");
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<MyContent>();
+            services.RegisterGlobalContentType<MyContent2>();
+            services.RegisterGlobalContentType<MyContent3>();
+            services.RegisterGlobalContentType<MyContentA>();
+            services.RegisterGlobalContentType<MyContentB>();
+            services.RegisterGlobalContentType<TestContentForReferences>("Workspace");
+        });
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+            .ConfigureAwait(false);
+
+        // ACT
+        var request = new LoadContentRequest()
+        {
+            Path = "/Root/Content",
+            Expand = new[] { "AllowedChildTypes" },
+            Select = new[] { "Name", "Type", "AllowedChildTypes/Path" }
+        };
+        var content = await repository.LoadContentAsync<TestContentForReferences>(request, CancellationToken.None);
+
+        // ASSERT
+        var requestedUri = (Uri)restCaller.ReceivedCalls().ToArray()[1].GetArguments().First()!;
+        Assert.IsNotNull(requestedUri);
+        Assert.AreEqual("/OData.svc/Root('Content')?metadata=no&$expand=AllowedChildTypes&$select=Name,Type,AllowedChildTypes/Path", requestedUri.PathAndQuery);
+
+        Assert.IsNull(content.Manager);
+        Assert.IsNull(content.Owner);
+        var referredItems = content.Reference_List_MultiType;
+        Assert.IsNotNull(referredItems);
+        Assert.AreEqual("/Root/Path1", referredItems[0].Path);
+        Assert.AreEqual("/Root/Path2", referredItems[1].Path);
+        Assert.AreEqual("/Root/Path3", referredItems[2].Path);
+        Assert.AreEqual("MyContent", referredItems[0].Type);
+        Assert.AreEqual("MyContentA", referredItems[1].Type);
+        Assert.AreEqual("MyContentB", referredItems[2].Type);
+        Assert.AreEqual(typeof(MyContent), referredItems[0].GetType());
+        Assert.AreEqual(typeof(MyContentA), referredItems[1].GetType());
+        Assert.AreEqual(typeof(MyContentB), referredItems[2].GetType());
     }
 
     /* =================================================================== CUSTOM PROPERTIES */

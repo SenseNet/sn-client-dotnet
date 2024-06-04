@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net.Http;
 using Microsoft.Extensions.DependencyInjection;
 using SenseNet.Client;
 
@@ -39,18 +40,58 @@ public static class RepositoryExtensions
     /// the ConfigureSenseNetRepository registration method.</remarks>
     public static IServiceCollection AddSenseNetClient(this IServiceCollection services)
     {
-        return services.AddSenseNetClientTokenStore()
+        services.AddSenseNetClientTokenStore()
             .AddSingleton<IServerContextFactory, ServerContextFactory>()
             .AddSingleton<IRepositoryCollection, RepositoryCollection>()
             .AddTransient<IRestCaller, DefaultRestCaller>()
             .AddTransient<IRepository, Repository>()
             .AddTransient<Content, Content>()
+            .RegisterGlobalContentType<CalendarEvent>()
+            .RegisterGlobalContentType<ContentLink>()
+            .RegisterGlobalContentType<ContentType>()
+            .RegisterGlobalContentType<Domain>()
+            .RegisterGlobalContentType<Email>()
+            .RegisterGlobalContentType<EmailTemplate>()
+            .RegisterGlobalContentType<ExecutableFile>()
             .RegisterGlobalContentType<File>()
+            .RegisterGlobalContentType<Folder>()
+            .RegisterGlobalContentType<Group>()
             .RegisterGlobalContentType<Image>()
+            .RegisterGlobalContentType<Link>()
+            //.RegisterGlobalContentType<ListItem>()
+            .RegisterGlobalContentType<Memo>()
+            .RegisterGlobalContentType<OrganizationalUnit>()
+            .RegisterGlobalContentType<PortalRoot>()
+            .RegisterGlobalContentType<Resource>()
+            .RegisterGlobalContentType<Settings>()
+            .RegisterGlobalContentType<SmartFolder>()
+            .RegisterGlobalContentType<SnQuery>("Query")
+            .RegisterGlobalContentType<SnTask>("Task")
+            .RegisterGlobalContentType<SystemFile>()
+            .RegisterGlobalContentType<SystemFolder>()
+            .RegisterGlobalContentType<TrashBin>()
+            .RegisterGlobalContentType<TrashBag>()
             .RegisterGlobalContentType<User>()
+            .RegisterGlobalContentType<UserProfile>()
+            .RegisterGlobalContentType<WebHookSubscription>()
+            .RegisterGlobalContentType<Workspace>()
             .AddSenseNetRetrier()
+            .AddHttpClient()
             .AddLogging()
             .Configure<ServerContextOptions>(_ => { });
+
+        services.AddHttpClient(Constants.HttpClientName.Untrusted);
+
+        services.AddHttpClient(Constants.HttpClientName.Trusted)
+            .ConfigureHttpMessageHandlerBuilder((c) =>
+                new HttpClientHandler()
+                {
+                    ServerCertificateCustomValidationCallback =
+                        ServerContext.DefaultServerCertificateCustomValidationCallback
+                }
+            );
+
+        return services;
     }
 
     /// <summary>
@@ -64,7 +105,7 @@ public static class RepositoryExtensions
     /// <param name="configure">Callback for configuring <see cref="RepositoryOptions"/> instance.</param>
     /// <param name="registerContentTypes">Optional callback for register custom content types.</param>
     /// <returns></returns>
-    public static IServiceCollection ConfigureSenseNetRepository(this IServiceCollection services, 
+    public static IServiceCollection ConfigureSenseNetRepository(this IServiceCollection services,
         Action<RepositoryOptions> configure, Action<RegisteredContentTypes> registerContentTypes = null)
     {
         return services.ConfigureSenseNetRepository(ServerContextOptions.DefaultServerName, configure, registerContentTypes);
