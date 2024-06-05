@@ -22,8 +22,8 @@ namespace SenseNet.Client.TestsForDocs
         {
             try
             {
-                await EnsureContentAsync("/Root/Content/truck", "Folder");
-                await EnsureContentAsync("/Root/Content/trunk", "Folder");
+                await EnsureContentAsync("/Root/Content/truck", "Folder", repository, cancel);
+                await EnsureContentAsync("/Root/Content/trunk", "Folder", repository, cancel);
 
                 // ACTION for doc
                 /*<doc>*/
@@ -78,8 +78,8 @@ namespace SenseNet.Client.TestsForDocs
         {
             try
             {
-                await EnsureContentAsync("/Root/Content/truck", "Folder");
-                await EnsureContentAsync("/Root/Content/trunk", "Folder");
+                await EnsureContentAsync("/Root/Content/truck", "Folder", repository, cancel);
+                await EnsureContentAsync("/Root/Content/trunk", "Folder", repository, cancel);
 
                 // ACTION for doc
                 /*<doc>*/
@@ -114,7 +114,7 @@ namespace SenseNet.Client.TestsForDocs
 Assert.Inconclusive();
             try
             {
-                var folder = await EnsureContentAsync("/Root/Content/folder1", "Folder");
+                var folder = await EnsureContentAsync("/Root/Content/folder1", "Folder", repository, cancel);
                 folder["DisplayName"] = "-- Lorem ipsum dolor sit amet --";
                 folder["Description"] = "-- Lorem ipsum dolor sit amet --";
                 await folder.SaveAsync(cancel);
@@ -167,7 +167,7 @@ Assert.Inconclusive();
             try
             {
                 // This name is not possible: (1+1):2. The forbidden characters are replaced.
-                var content = await EnsureContentAsync("/Root/Content/(1-1)-2", "Folder");
+                var content = await EnsureContentAsync("/Root/Content/(1-1)-2", "Folder", repository, cancel);
                 content["DisplayName"] = "(1+1):2";
                 await content.SaveAsync(cancel);
 
@@ -327,7 +327,7 @@ Assert.Inconclusive();
         {
             try
             {
-                var folder = await EnsureContentAsync("/Root/Content/Folder1", "Folder");
+                var folder = await EnsureContentAsync("/Root/Content/Folder1", "Folder", repository, cancel);
                 folder["Description"] = "My company works here.";
                 await folder.SaveAsync(cancel);
 
@@ -406,8 +406,8 @@ Assert.Inconclusive();
         {
             try
             {
-                await EnsureContentAsync("/Root/Content/Memos1", "MemoList");
-                var memo = await EnsureContentAsync("/Root/Content/Memos1/Memo1", "Memo");
+                await EnsureContentAsync("/Root/Content/Memos1", "MemoList", repository, cancel);
+                var memo = await EnsureContentAsync("/Root/Content/Memos1/Memo1", "Memo", repository, cancel);
                 memo["MemoType"] = "iaudit";
                 await memo.SaveAsync(cancel);
 
@@ -439,8 +439,8 @@ Assert.Inconclusive();
         {
             try
             {
-                await EnsureContentAsync("/Root/Content/Memos1", "MemoList");
-                var memo = await EnsureContentAsync("/Root/Content/Memos1/Memo1", "Memo");
+                await EnsureContentAsync("/Root/Content/Memos1", "MemoList", repository, cancel);
+                var memo = await EnsureContentAsync("/Root/Content/Memos1/Memo1", "Memo", repository, cancel);
                 memo["MemoType"] = "iaudit";
                 await memo.SaveAsync(cancel);
 
@@ -474,7 +474,7 @@ Assert.Inconclusive();
         {
             try
             {
-                var folder = await EnsureContentAsync("/Root/Content/Folder1", "Folder");
+                var folder = await EnsureContentAsync("/Root/Content/Folder1", "Folder", repository, cancel);
                 folder["DisplayName"] = "-- Lorem ipsum dolor sit amet --";
                 folder["Description"] = "-- Lorem ipsum dolor sit amet --";
                 await folder.SaveAsync(cancel);
@@ -509,7 +509,7 @@ Assert.Inconclusive();
         {
             try
             {
-                var folder = await EnsureContentAsync("/Root/Content/Folder1", "Folder");
+                var folder = await EnsureContentAsync("/Root/Content/Folder1", "Folder", repository, cancel);
                 folder["CreationDate"] = new DateTime(2019, 2, 15, 0, 0, 0, DateTimeKind.Utc);
                 await folder.SaveAsync(cancel);
 
@@ -541,7 +541,7 @@ Assert.Inconclusive();
         {
             try
             {
-                var folder = await EnsureContentAsync("/Root/Content/Folder1", "Folder");
+                var folder = await EnsureContentAsync("/Root/Content/Folder1", "Folder", repository, cancel);
                 folder["CreationDate"] = new DateTime(2019, 2, 15, 9, 30, 0, DateTimeKind.Utc);
                 await folder.SaveAsync(cancel);
 
@@ -737,7 +737,7 @@ Assert.Inconclusive();
         {
             try
             {
-                var folder = await EnsureContentAsync("/Root/Content/Folder1", "Folder");
+                var folder = await EnsureContentAsync("/Root/Content/Folder1", "Folder", repository, cancel);
                 var date = DateTime.UtcNow.AddDays(-1.0);
                 folder["ModificationDate"] = new DateTime(date.Year, date.Month, date.Day, 0, 0, 0, DateTimeKind.Utc);
                 await folder.SaveAsync(cancel);
@@ -770,8 +770,8 @@ Assert.Inconclusive();
         {
             try
             {
-                await EnsureContentAsync("/Root/Content/Events1", "EventList");
-                var @event = await EnsureContentAsync("/Root/Content/Events1/Event1", "CalendarEvent");
+                await EnsureContentAsync("/Root/Content/Events1", "EventList", repository, cancel);
+                var @event = await EnsureContentAsync("/Root/Content/Events1/Event1", "CalendarEvent", repository, cancel);
                 var date = DateTime.UtcNow.AddMonths(1);
                 @event["StartDate"] = new DateTime(date.Year, date.Month, 1, 0, 0, 0, DateTimeKind.Utc);
                 @event["EndDate"] = new DateTime(date.Year, date.Month, 22, 0, 0, 0, DateTimeKind.Utc);
@@ -804,7 +804,7 @@ Assert.Inconclusive();
         {
             try
             {
-                var folder = await EnsureContentAsync("/Root/Content/Folder1", "Folder");
+                var folder = await EnsureContentAsync("/Root/Content/Folder1", "Folder", repository, cancel);
                 var date = DateTime.UtcNow.AddYears(-1);
                 folder["CreationDate"] = new DateTime(date.Year, 1, 1, 0, 0, 0, DateTimeKind.Utc);
                 await folder.SaveAsync(cancel);
@@ -837,7 +837,7 @@ Assert.Inconclusive();
         {
             try
             {
-                await EnsureContentAsync("/Root/Content/Folder1", "Folder");
+                await EnsureContentAsync("/Root/Content/Folder1", "Folder", repository, cancel);
 
                 // ACTION for doc
                 /*<doc>*/
@@ -1079,13 +1079,13 @@ Assert.Inconclusive();
         {
             try
             {
-                var folder1 = await EnsureContentAsync("/Root/Content/Folder1", "Folder");
+                var folder1 = await EnsureContentAsync("/Root/Content/Folder1", "Folder", repository, cancel);
                 folder1["Description"] = "cherry apple banana";
                 await folder1.SaveAsync(cancel);
-                var folder2 = await EnsureContentAsync("/Root/Content/Folder2", "Folder");
+                var folder2 = await EnsureContentAsync("/Root/Content/Folder2", "Folder", repository, cancel);
                 folder2["Description"] = "cherry melon walnut";
                 await folder2.SaveAsync(cancel);
-                var folder3 = await EnsureContentAsync("/Root/Content/Folder3", "Folder");
+                var folder3 = await EnsureContentAsync("/Root/Content/Folder3", "Folder", repository, cancel);
                 folder3["Description"] = "cherry pear banana";
                 await folder3.SaveAsync(cancel);
 
@@ -1122,13 +1122,13 @@ Assert.Inconclusive();
             //    new QueryContentRequest { ContentQuery = "Description:*document* AND Description:*library*" }, cancel);
             try
             {
-                var folder1 = await EnsureContentAsync("/Root/Content/Folder1", "Folder");
+                var folder1 = await EnsureContentAsync("/Root/Content/Folder1", "Folder", repository, cancel);
                 folder1["Description"] = "cherry apple banana";
                 await folder1.SaveAsync(cancel);
-                var folder2 = await EnsureContentAsync("/Root/Content/Folder2", "Folder");
+                var folder2 = await EnsureContentAsync("/Root/Content/Folder2", "Folder", repository, cancel);
                 folder2["Description"] = "cherry melon walnut";
                 await folder2.SaveAsync(cancel);
-                var folder3 = await EnsureContentAsync("/Root/Content/Folder3", "Folder");
+                var folder3 = await EnsureContentAsync("/Root/Content/Folder3", "Folder", repository, cancel);
                 folder3["Description"] = "cherry pear banana";
                 await folder3.SaveAsync(cancel);
 

@@ -382,8 +382,8 @@ namespace SenseNet.Client.TestsForDocs
         public async Task Docs_ContentManagement_Delete_Single()
         {
             // ALIGN
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder", repository, cancel);
 
             // ACTION for doc
             var content = await Content.LoadAsync("/Root/Content/IT/Document_Library/Calgary");
@@ -409,9 +409,9 @@ namespace SenseNet.Client.TestsForDocs
         public async Task Docs_ContentManagement_Delete_ToTrash()
         {
             // ALIGN
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Chicago", "Folder");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Chicago/100Pages.docx", "File");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Chicago", "Folder", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Chicago/100Pages.docx", "File", repository, cancel);
             Assert.IsNotNull(await Content.LoadAsync("/Root/Content/IT/Document_Library/Chicago/100Pages.docx"));
 
             // ACTION for doc
@@ -430,7 +430,7 @@ namespace SenseNet.Client.TestsForDocs
         public async Task Docs_ContentManagement_Upload_File()
         {
             // ALIGN
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
 
             //UNDONE:- the test is not implemented well because the doc-action contains local filesystem path.
             // ACTION for doc
@@ -467,7 +467,7 @@ namespace SenseNet.Client.TestsForDocs
         public async Task Docs_ContentManagement_Upload_RawText()
         {
             // ALIGN
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
 
             // ACTION for doc
             /*<doc>*/
@@ -608,7 +608,7 @@ namespace SenseNet.Client.TestsForDocs
         public async Task Docs_ContentManagement_Copy_Single()
         {
             // ALIGN
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
 
             // ACTION for doc
             var body = @"models=[{""targetPath"": ""/Root/Content/IT/Document_Library/Munich"",
@@ -625,7 +625,7 @@ namespace SenseNet.Client.TestsForDocs
         public async Task Docs_ContentManagement_Copy_Multiple()
         {
             // ALIGN
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
 
             // ACTION for doc
             var body = @"models=[{""targetPath"": ""/Root/Content/IT/Document_Library/Munich"",
@@ -643,10 +643,10 @@ namespace SenseNet.Client.TestsForDocs
         public async Task Docs_ContentManagement_Move_Single()
         {
             // ALIGN
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Munich", "Folder");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Chicago", "Folder");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Chicago/100Pages.pdf", "File");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Munich", "Folder", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Chicago", "Folder", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Chicago/100Pages.pdf", "File", repository, cancel);
 
             try
             {
@@ -672,11 +672,11 @@ namespace SenseNet.Client.TestsForDocs
         public async Task Docs_ContentManagement_Move_Multiple()
         {
             // ALIGN
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Munich", "Folder");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Chicago", "Folder");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Chicago/100Pages.pdf", "File");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Chicago/400Pages.pdf", "File");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Munich", "Folder", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Chicago", "Folder", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Chicago/100Pages.pdf", "File", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Chicago/400Pages.pdf", "File", repository, cancel);
             try
             {
                 // ACTION for doc
@@ -974,7 +974,7 @@ namespace SenseNet.Client.TestsForDocs
         public async Task Docs_ContentManagement_ListFields_Metadata()
         {
             // ALIGN
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
 
             try
             {
@@ -996,7 +996,7 @@ namespace SenseNet.Client.TestsForDocs
         public async Task Docs_ContentManagement_ListFields_Add()
         {
             // ALIGN
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
             try
             {
                 // ACTION for doc
@@ -1023,7 +1023,7 @@ namespace SenseNet.Client.TestsForDocs
         public async Task Docs_ContentManagement_ListFields_Edit1()
         {
             // ALIGN
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
             try
             {
                 // ACTION for doc
@@ -1045,7 +1045,7 @@ namespace SenseNet.Client.TestsForDocs
         public async Task Docs_ContentManagement_ListFields_Edit2()
         {
             // ALIGN
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
             try
             {
                 // ACTION for doc
@@ -1091,7 +1091,7 @@ namespace SenseNet.Client.TestsForDocs
         public async Task Docs_ContentManagement_ListFields_Remove1()
         {
             // ALIGN
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
             try
             {
                 // ACTION for doc

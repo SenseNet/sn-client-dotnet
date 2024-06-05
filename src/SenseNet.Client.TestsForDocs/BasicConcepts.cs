@@ -10,11 +10,15 @@ namespace SenseNet.Client.TestsForDocs
     public class BasicConcepts : ClientIntegrationTestBase
     {
         private class MyContent : Content { public MyContent(IRestCaller rc, ILogger<Content> l) : base(rc, l) { } }
+
         // ReSharper disable once InconsistentNaming
         private CancellationToken cancel => new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
         // ReSharper disable once InconsistentNaming
-        IRepository repository =>
-            GetRepositoryCollection(services => { services.RegisterGlobalContentType<MyContent>(); })
+        private IRepository repository =>
+            GetRepositoryCollection(services =>
+                {
+                    services.RegisterGlobalContentType<MyContent>();
+                })
                 .GetRepositoryAsync("local", cancel).GetAwaiter().GetResult();
 
         /* ====================================================================================== Entry */
@@ -25,18 +29,18 @@ namespace SenseNet.Client.TestsForDocs
         public async Task Docs2_BasicConcepts_GetSingleContentById()
         {
             var content =
-                /*<doc>*/await repository.LoadContentAsync(1284, cancel)/*</doc>*/.ConfigureAwait(false);
+                /*<doc>*/await repository.LoadContentAsync(1368, cancel)/*</doc>*/.ConfigureAwait(false);
             Assert.IsNotNull(content);
-            Assert.AreEqual(1284, content.Id);
+            Assert.AreEqual(1368, content.Id);
 
             /*<doc>*/
             // or
             /*</doc>*/
 
             var myContent =
-                /*<doc>*/await repository.LoadContentAsync<MyContent>(1284, cancel)/*</doc>*/.ConfigureAwait(false);
+                /*<doc>*/await repository.LoadContentAsync<Folder>(1368, cancel)/*</doc>*/.ConfigureAwait(false);
             Assert.IsNotNull(myContent);
-            Assert.AreEqual(1284, myContent.Id);
+            Assert.AreEqual(1368, myContent.Id);
         }
 
         /// <tab category="basic-concepts" article="entry" example="byPath" />
@@ -45,17 +49,17 @@ namespace SenseNet.Client.TestsForDocs
         public async Task Docs2_BasicConcepts_GetSingleContentByPath()
         {
             var content =
-                /*<doc>*/await repository.LoadContentAsync("/Root/Content/IT", cancel)/*</doc>*/
+                /*<doc>*/await repository.LoadContentAsync("/Root/Content/Cars", cancel)/*</doc>*/
                     .ConfigureAwait(false);
             Assert.IsNotNull(content);
-            Assert.AreEqual("/Root/Content/IT", content.Path);
+            Assert.AreEqual("/Root/Content/Cars", content.Path);
             /*<doc>*/
             // or
             /*</doc>*/
             var myContent =
-                /*<doc>*/await repository.LoadContentAsync<MyContent>("/Root/Content/IT", cancel)/*</doc>*/.ConfigureAwait(false);
+                /*<doc>*/await repository.LoadContentAsync<Folder>("/Root/Content/Cars", cancel)/*</doc>*/.ConfigureAwait(false);
             Assert.IsNotNull(myContent);
-            Assert.AreEqual("/Root/Content/IT", myContent.Path);
+            Assert.AreEqual("/Root/Content/Cars", myContent.Path);
         }
 
         /// <tab category="basic-concepts" article="entry" example="property" />
@@ -68,12 +72,12 @@ namespace SenseNet.Client.TestsForDocs
                 /*<doc>*/
                 await repository.GetResponseStringAsync(new ODataRequest
                 {
-                    Path = "/Root/Content/IT",
-                    PropertyName = "DisplayName"
+                    Path = "/Root/Content/Cars",
+                    PropertyName = "Description"
                 }, HttpMethod.Get, cancel);
                 /*</doc>*/
             // ASSERT
-            Assert.AreEqual("{\"d\":{\"DisplayName\":\"IT\"}}", response.RemoveWhitespaces());
+            Assert.AreEqual("{\"d\":{\"Description\":\"Thisfoldercontainsourcars.\"}}", response.RemoveWhitespaces());
         }
 
         /// <tab category="basic-concepts" article="entry" example="propertyValue" />
@@ -85,7 +89,7 @@ namespace SenseNet.Client.TestsForDocs
                 // ACTION for doc
                 /*<doc>*/
                 await repository.GetResponseStringAsync(
-                    new Uri(repository.Server.Url + "/OData.svc/Root/Content/('IT')/DisplayName/$value"),
+                    new Uri(repository.Server.Url + "/OData.svc/Root/Content/('Cars')/Description/$value"),
                     HttpMethod.Get,
                     postData: null,
                     additionalHeaders: null,
@@ -93,7 +97,7 @@ namespace SenseNet.Client.TestsForDocs
                 /*</doc>*/
 
             // ASSERT
-            Assert.AreEqual("IT", response.RemoveWhitespaces());
+            Assert.AreEqual("This folder contains our cars.", response);
         }
 
         /* ====================================================================================== Collection */
@@ -105,7 +109,7 @@ namespace SenseNet.Client.TestsForDocs
         {
             var children1 =
                 /*<doc>*/
-                await repository.LoadCollectionAsync(new LoadCollectionRequest { Path = "/Root/Content" }, cancel)
+                await repository.LoadCollectionAsync(new LoadCollectionRequest { Path = "/Root/Content/Cars" }, cancel)
                 /*</doc>*/
                 .ConfigureAwait(false);
 
@@ -138,7 +142,7 @@ namespace SenseNet.Client.TestsForDocs
         {
             var tasks = new Task[10];
             for (var i = 0; i < tasks.Length; i++)
-                tasks[i] = EnsureContentAsync($"/Root/Content/IT/Document_Library{i}", "DocumentLibrary");
+                tasks[i] = EnsureContentAsync($"/Root/Content/IT/Document_Library{i}", "DocumentLibrary", repository, cancel);
             await Task.WhenAll(tasks).ConfigureAwait(false);
             try
             {
@@ -278,7 +282,7 @@ namespace SenseNet.Client.TestsForDocs
         [Description("")]
         public async Task Docs2_BasicConcepts_OrderBy_DisplayName()
         {
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
 
             var result = /*<doc>*/await repository.LoadCollectionAsync(new LoadCollectionRequest
             {
@@ -297,7 +301,7 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Order by a field in an explicit direction")]
         public async Task Docs2_BasicConcepts_OrderBy_Id_Asc()
         {
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
 
             var result = /*<doc>*/await repository.LoadCollectionAsync(new LoadCollectionRequest
             {
@@ -317,10 +321,10 @@ namespace SenseNet.Client.TestsForDocs
         public async Task Docs2_BasicConcepts_OrderBy_CreationDate_Desc()
         {
             // ALIGN
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Chicago", "Folder");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Munich", "Folder");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Chicago", "Folder", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Munich", "Folder", repository, cancel);
 
             var date = DateTime.Today.AddDays(-1);
             var children = await repository.LoadCollectionAsync(
@@ -350,10 +354,10 @@ namespace SenseNet.Client.TestsForDocs
         public async Task Docs2_BasicConcepts_OrderBy_DisplayNameAndName()
         {
             // ALIGN
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Chicago", "Folder");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Munich", "Folder");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Chicago", "Folder", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Munich", "Folder", repository, cancel);
 
             var date = DateTime.Today.AddDays(-1);
             var children = await repository.LoadCollectionAsync(
@@ -382,9 +386,9 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Top")]
         public async Task Docs2_BasicConcepts_Top()
         {
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
             for (var i = 0; i < 6; i++)
-                await EnsureContentAsync($"/Root/Content/IT/Document_Library/Folder-{i + 1}", "Folder");
+                await EnsureContentAsync($"/Root/Content/IT/Document_Library/Folder-{i + 1}", "Folder", repository, cancel);
 
             var result = /*<doc>*/await repository.LoadCollectionAsync(new LoadCollectionRequest
             {
@@ -400,9 +404,9 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Skip")]
         public async Task Docs2_BasicConcepts_Skip()
         {
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
             for (var i = 0; i < 6; i++)
-                await EnsureContentAsync($"/Root/Content/IT/Document_Library/Folder-{i + 1}", "Folder");
+                await EnsureContentAsync($"/Root/Content/IT/Document_Library/Folder-{i + 1}", "Folder", repository, cancel);
 
             var result = /*<doc>*/await repository.LoadCollectionAsync(new LoadCollectionRequest
             {
@@ -426,9 +430,9 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Pagination")]
         public async Task Docs2_BasicConcepts_Pagination()
         {
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
             for (var i = 0; i < 6; i++)
-                await EnsureContentAsync($"/Root/Content/IT/Document_Library/Folder-{i + 1}", "Folder");
+                await EnsureContentAsync($"/Root/Content/IT/Document_Library/Folder-{i + 1}", "Folder", repository, cancel);
 
             var result = /*<doc>*/await repository.LoadCollectionAsync(new LoadCollectionRequest
             {
@@ -455,7 +459,7 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Filtering by Field value 1")]
         public async Task Docs2_BasicConcepts_Filter_Id()
         {
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
 
             var result = /*<doc>*/await repository.LoadCollectionAsync(new LoadCollectionRequest
             {
@@ -474,8 +478,8 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Filtering by Field value 2")]
         public async Task Docs2_BasicConcepts_Filter_substringof()
         {
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Folder-1", "Folder");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Folder-1", "Folder", repository, cancel);
             dynamic folder1 = await repository.LoadContentAsync("/Root/Content/IT/Document_Library/Folder-1", cancel)
                 .ConfigureAwait(false);
             folder1.Description = "Lorem ipsum dolor sit amet";
@@ -497,9 +501,9 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Filtering by Field value 3")]
         public async Task Docs2_BasicConcepts_Filter_startswith()
         {
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Documents-1", "Folder");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Documents-2", "Folder");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Documents-1", "Folder", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Documents-2", "Folder", repository, cancel);
 
             var result = /*<doc>*/await repository.LoadCollectionAsync(new LoadCollectionRequest
             {
@@ -517,8 +521,8 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Filtering by Field value 4")]
         public async Task Docs2_BasicConcepts_Filter_endswith()
         {
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Book-Library", "Folder");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Book-Library", "Folder", repository, cancel);
 
             var result = /*<doc>*/await repository.LoadCollectionAsync(new LoadCollectionRequest
             {
@@ -536,7 +540,7 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Filtering by Date")]
         public async Task Docs2_BasicConcepts_Filter_DateTime()
         {
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
 
             var result = /*<doc>*/await repository.LoadCollectionAsync(new LoadCollectionRequest
             {
@@ -555,8 +559,8 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Filtering by an exact Type")]
         public async Task Docs2_BasicConcepts_Filter_ContentType()
         {
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/SystemFolder-1", "SystemFolder");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/SystemFolder-1", "SystemFolder", repository, cancel);
 
             var result = /*<doc>*/await repository.LoadCollectionAsync(new LoadCollectionRequest
             {
@@ -575,8 +579,8 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Filtering by Type family")]
         public async Task Docs2_BasicConcepts_Filter_isof()
         {
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/SystemFolder-1", "SystemFolder");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/SystemFolder-1", "SystemFolder", repository, cancel);
 
             var result = /*<doc>*/await repository.LoadCollectionAsync(new LoadCollectionRequest
             {
@@ -633,7 +637,7 @@ namespace SenseNet.Client.TestsForDocs
         public async Task Docs_BasicConcepts_LocalMetadata()
         {
             // ALIGN
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
 
             var response =
                 // ACTION for doc
@@ -658,7 +662,7 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Accessing system content")]
         public async Task Docs2_BasicConcepts_AutoFilters()
         {
-            await EnsureContentAsync("/Root/Content/IT/SystemFolder-1", "SystemFolder");
+            await EnsureContentAsync("/Root/Content/IT/SystemFolder-1", "SystemFolder", repository, cancel);
 
             var result = /*<doc>*/await repository.LoadCollectionAsync(new LoadCollectionRequest
             {

@@ -60,9 +60,9 @@ namespace SenseNet.Client.TestsForDocs
             // ALIGN
             // ReSharper disable once InconsistentNaming
             await using var Console = new StringWriter();
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File", repository, cancel);
             try
             {
                 // ACTION for doc
@@ -94,9 +94,9 @@ namespace SenseNet.Client.TestsForDocs
             // ALIGN
             // ReSharper disable once InconsistentNaming
             await using var Console = new StringWriter();
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File", repository, cancel);
             try
             {
                 // ACTION for doc
@@ -132,9 +132,9 @@ namespace SenseNet.Client.TestsForDocs
             // ALIGN
             // ReSharper disable once InconsistentNaming
             await using var Console = new StringWriter();
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File", repository, cancel);
             try
             {
                 // ACTION for doc
@@ -164,9 +164,9 @@ namespace SenseNet.Client.TestsForDocs
             // ALIGN
             // ReSharper disable once InconsistentNaming
             await using var Console = new StringWriter();
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File", repository, cancel);
             try
             {
                 var content1 = await repository.LoadContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", cancel);
@@ -200,9 +200,9 @@ namespace SenseNet.Client.TestsForDocs
             // ALIGN
             // ReSharper disable once InconsistentNaming
             await using var Console = new StringWriter();
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File", repository, cancel);
             try
             {
                 var content1 = await repository.LoadContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", cancel);
@@ -242,9 +242,9 @@ namespace SenseNet.Client.TestsForDocs
             // ALIGN
             // ReSharper disable once InconsistentNaming
             await using var Console = new StringWriter();
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File", repository, cancel);
             try
             {
                 var content1 = await repository.LoadContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", cancel);
@@ -284,9 +284,9 @@ namespace SenseNet.Client.TestsForDocs
             // ALIGN
             // ReSharper disable once InconsistentNaming
             await using var Console = new StringWriter();
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File", repository, cancel);
             try
             {
                 var content1 = await repository.LoadContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", cancel);
@@ -324,9 +324,9 @@ namespace SenseNet.Client.TestsForDocs
             // ALIGN
             // ReSharper disable once InconsistentNaming
             await using var Console = new StringWriter();
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder");
-            var doc = await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder", repository, cancel);
+            var doc = await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File", repository, cancel);
             var docId = doc.Id;
             var user = await repository.LoadContentAsync("/Root/IMS/BuiltIn/Portal/PublicAdmin", cancel);
             try
@@ -374,9 +374,9 @@ namespace SenseNet.Client.TestsForDocs
             // ALIGN
             // ReSharper disable once InconsistentNaming
             await using var Console = new StringWriter();
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder");
-            var doc = await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder", repository, cancel);
+            var doc = await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File", repository, cancel);
             var docId = doc.Id;
             var user = await repository.LoadContentAsync("/Root/IMS/BuiltIn/Portal/PublicAdmin", cancel);
             try
@@ -445,9 +445,9 @@ namespace SenseNet.Client.TestsForDocs
             // ALIGN
             // ReSharper disable once InconsistentNaming
             await using var Console = new StringWriter();
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder");
-            var doc = await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder", repository, cancel);
+            var doc = await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File", repository, cancel);
             var docId = doc.Id;
             try
             {
@@ -540,9 +540,9 @@ namespace SenseNet.Client.TestsForDocs
             // ALIGN
             // ReSharper disable once InconsistentNaming
             await using var Console = new StringWriter();
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder");
-            var doc = await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder", repository, cancel);
+            var doc = await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File", repository, cancel);
             var docId = doc.Id;
             try
             {
@@ -611,9 +611,9 @@ namespace SenseNet.Client.TestsForDocs
             // ALIGN
             // ReSharper disable once InconsistentNaming
             await using var Console = new StringWriter();
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File", repository, cancel);
             try
             {
                 // ACTION for doc
@@ -645,9 +645,9 @@ namespace SenseNet.Client.TestsForDocs
             // ALIGN
             // ReSharper disable once InconsistentNaming
             await using var Console = new StringWriter();
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File");
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File", repository, cancel);
             try
             {
                 // ACTION for doc

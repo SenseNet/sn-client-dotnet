@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,6 +9,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SenseNet.Client.Authentication;
 using SenseNet.Diagnostics;
 using SenseNet.Extensions.DependencyInjection;
+// ReSharper disable ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
 
 namespace SenseNet.Client.TestsForDocs.Infrastructure
 {
@@ -21,70 +23,33 @@ namespace SenseNet.Client.TestsForDocs.Infrastructure
         [AssemblyInitialize]
         public static void InitializeAllTests(TestContext context)
         {
-            InitServer(context);
+            var repository = InitServer(context);
+            var cancel = new CancellationToken();
 
-            EnsureBasicStructureAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+            EnsureBasicStructureAsync(repository, cancel).ConfigureAwait(false).GetAwaiter().GetResult();
 
             SnTrace.Custom.Enabled = true;
             SnTrace.Test.Enabled = true;
         }
-        private static async Task EnsureBasicStructureAsync()
+        private static async Task EnsureBasicStructureAsync(IRepository repository, CancellationToken cancel)
         {
-            var c = await Content.LoadAsync("/Root/Content");
-            if (c == null)
+            await EnsureContentAsync("/Root/Content", "Folder", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT", "Workspace", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", c =>
             {
-                c = Content.CreateNew("/Root", "Folder", "Content");
-                await c.SaveAsync();
-            }
-            c = await Content.LoadAsync("/Root/Content/IT");
-            if (c == null)
-            {
-                c = Content.CreateNew("/Root/Content", "Workspace", "IT");
-                await c.SaveAsync();
-            }
-            c = await Content.LoadAsync("/Root/Content/IT/Document_Library");
-            if (c == null)
-            {
-                c = Content.CreateNew("/Root/Content/IT", "DocumentLibrary", "Document_Library");
                 c["Description"] = "Document library of IT";
-                await c.SaveAsync();
-            }
-            c = await Content.LoadAsync("/Root/Content/IT/Document_Library/Chicago");
-            if (c == null)
+            }, repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Chicago", "Folder", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File", repository, cancel);
+            await EnsureContentAsync("/Root/Content/IT/Document_Library/Munich", "Folder", repository, cancel);
+            await EnsureContentAsync("/Root/IMS/Public", "Domain", repository, cancel);
+            await EnsureContentAsync("/Root/IMS/Public/Editors", "Group", repository, cancel);
+
+            await EnsureContentAsync("/Root/Content/Cars", "Folder", c =>
             {
-                c = Content.CreateNew("/Root/Content/IT/Document_Library", "Folder", "Chicago");
-                await c.SaveAsync();
-            }
-            c = await Content.LoadAsync("/Root/Content/IT/Document_Library/Calgary");
-            if (c == null)
-            {
-                c = Content.CreateNew("/Root/Content/IT/Document_Library", "Folder", "Calgary");
-                await c.SaveAsync();
-            }
-            c = await Content.LoadAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx");
-            if (c == null)
-            {
-                c = Content.CreateNew("/Root/Content/IT/Document_Library/Calgary", "File", "BusinessPlan.docx");
-                await c.SaveAsync();
-            }
-            c = await Content.LoadAsync("/Root/Content/IT/Document_Library/Munich");
-            if (c == null)
-            {
-                c = Content.CreateNew("/Root/Content/IT/Document_Library", "Folder", "Munich");
-                await c.SaveAsync();
-            }
-            c = await Content.LoadAsync("/Root/IMS/Public");
-            if (c == null)
-            {
-                c = Content.CreateNew("/Root/IMS", "Domain", "Public");
-                await c.SaveAsync();
-            }
-            c = await Content.LoadAsync("/Root/IMS/Public/Editors");
-            if (c == null)
-            {
-                c = Content.CreateNew("/Root/IMS/Public", "Group", "Editors");
-                await c.SaveAsync();
-            }
+                c["Description"] = "This folder contains our cars.";
+            }, repository, cancel);
         }
 
         [TestInitialize]
@@ -92,7 +57,7 @@ namespace SenseNet.Client.TestsForDocs.Infrastructure
         {
         }
 
-        private static void InitServer(TestContext context)
+        private static IRepository InitServer(TestContext context)
         {
             // workaround for authenticating using the configured client id and secret
             var config = new ConfigurationBuilder()
@@ -119,23 +84,25 @@ namespace SenseNet.Client.TestsForDocs.Infrastructure
             var ctx = ClientContext.Current;
             ctx.RemoveServers(ctx.Servers);
             ctx.AddServer(server);
+
+            return repository;
         }
 
-        protected Task<Content> EnsureContentAsync(string path, string typeName)
+        protected static Task<Content> EnsureContentAsync(string path, string typeName, IRepository repository, CancellationToken cancel)
         {
-            return EnsureContentAsync(path, typeName, null);
+            return EnsureContentAsync(path, typeName, null, repository, cancel);
         }
-        protected async Task<Content> EnsureContentAsync(string path, string typeName, Action<Content> setProperties)
+        protected static async Task<Content> EnsureContentAsync(string path, string typeName, Action<Content>? setProperties, IRepository repository, CancellationToken cancel)
         {
-            var content = await Content.LoadAsync(path);
+            var content = await repository.LoadContentAsync(path, cancel);
             if (content == null)
             {
                 var parentPath = RepositoryPath.GetParentPath(path);
                 var name = RepositoryPath.GetFileName(path);
-                content = Content.CreateNew(parentPath, typeName, name);
+                content = repository.CreateContent(parentPath, typeName, name);
                 if (setProperties == null)
                 {
-                    await content.SaveAsync();
+                    await content.SaveAsync(cancel);
                     return content;
                 }
             }
@@ -143,13 +110,13 @@ namespace SenseNet.Client.TestsForDocs.Infrastructure
             if (setProperties != null)
             {
                 setProperties(content);
-                await content.SaveAsync();
+                await content.SaveAsync(cancel);
             }
 
             return content;
         }
 
-        protected IRepositoryCollection GetRepositoryCollection(Action<IServiceCollection> addServices = null)
+        protected IRepositoryCollection GetRepositoryCollection(Action<IServiceCollection>? addServices = null)
         {
             var services = new ServiceCollection();
 
