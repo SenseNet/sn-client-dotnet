@@ -57,16 +57,10 @@ namespace SenseNet.Client.TestsForDocs.Infrastructure
       </Configuration>
     </Field>
     <Field name='StartingDate' type='DateTime'/>
-    <Field name='Color' type='Color'>
-      <Configuration>
-        <DefaultValue>#ff0000</DefaultValue>
-        <Palette>#ff0000;#f0d0c9;#e2a293;#d4735e;#65281a</Palette>
-      </Configuration>
-    </Field>
+    <Field name='Color' type='ShortText'/>
     <Field name='EngineSize' type='ShortText'/>
     <Field name='Power' type='ShortText'/>
     <Field name='Price' type='Number'/>
-    <Field name='Description' type='LongText'/>
   </Fields>
 </ContentType>
 ";
@@ -102,6 +96,11 @@ namespace SenseNet.Client.TestsForDocs.Infrastructure
             await EnsureContentAsync("/Root/IMS/Public", "Domain", repository, cancel);
             await EnsureContentAsync("/Root/IMS/Public/Editors", "Group", repository, cancel);
 
+            await EnsureContentAsync("/Root/Content/Cars", "Folder", c =>
+            {
+                c["Description"] = "This folder contains our cars.";
+            }, repository, cancel);
+
             await EnsureContentAsync("/Root/Content/Cars/out-of-order", "Folder", c =>
             {
                 c["DisplayName"] = "Out of order";
@@ -111,10 +110,6 @@ namespace SenseNet.Client.TestsForDocs.Infrastructure
                 c["DisplayName"] = "Settings";
             }, repository, cancel);
 
-            await EnsureContentAsync("/Root/Content/Cars", "Folder", c =>
-            {
-                c["Description"] = "This folder contains our cars.";
-            }, repository, cancel);
             await EnsureContentAsync("/Root/Content/Cars/OT1234", "Car", c =>
             {
                 c["DisplayName"] = "Fiat 126";
