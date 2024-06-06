@@ -31,30 +31,218 @@ namespace SenseNet.Client.TestsForDocs.Infrastructure
             SnTrace.Custom.Enabled = true;
             SnTrace.Test.Enabled = true;
         }
+
+        protected static readonly string CarContentType = @"<?xml version='1.0' encoding='utf-8'?>
+<ContentType name='Car' parentType='GenericContent' handler='SenseNet.ContentRepository.GenericContent' xmlns='http://schemas.sensenet.com/SenseNet/ContentRepository/ContentTypeDefinition'>
+  <DisplayName>Car</DisplayName>
+  <Description>Car</Description>
+  <Icon>Car</Icon>
+  <AllowIncrementalNaming>true</AllowIncrementalNaming>
+  <Fields>
+    <Field name='Name' type='ShortText'/>
+    <Field name='Make' type='ShortText'/>
+    <Field name='Model' type='ShortText'/>
+    <Field name='Style' type='Choice'>
+      <Configuration>
+        <AllowMultiple>false</AllowMultiple>
+        <AllowExtraValue>true</AllowExtraValue>
+        <Options>
+          <Option value='Sedan' selected='true'>Sedan</Option>
+          <Option value='Coupe'>Coupe</Option>
+          <Option value='Cabrio'>Cabrio</Option>
+          <Option value='Roadster'>Roadster</Option>
+          <Option value='SUV'>SUV</Option>
+          <Option value='Van'>Van</Option>
+        </Options>
+      </Configuration>
+    </Field>
+    <Field name='StartingDate' type='DateTime'/>
+    <Field name='Color' type='Color'>
+      <Configuration>
+        <DefaultValue>#ff0000</DefaultValue>
+        <Palette>#ff0000;#f0d0c9;#e2a293;#d4735e;#65281a</Palette>
+      </Configuration>
+    </Field>
+    <Field name='EngineSize' type='ShortText'/>
+    <Field name='Power' type='ShortText'/>
+    <Field name='Price' type='Number'/>
+    <Field name='Description' type='LongText'/>
+  </Fields>
+</ContentType>
+";
         private static async Task EnsureBasicStructureAsync(IRepository repository, CancellationToken cancel)
         {
-            await EnsureContentAsync("/Root/Content", "Folder", repository, cancel);
-            await EnsureContentAsync("/Root/Content/IT", "Workspace", repository, cancel);
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", c =>
+            var carCt = await repository.LoadContentAsync<ContentType>("/Root/System/Schema/ContentTypes/GenericContent/Car", cancel);
+            if (carCt == null)
             {
-                c["Description"] = "Document library of IT";
-            }, repository, cancel);
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Chicago", "Folder", repository, cancel);
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder", repository, cancel);
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File", repository, cancel);
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Munich", "Folder", repository, cancel);
+                await repository.UploadAsync(new UploadRequest
+                {
+                    FileName = "Car", ContentName = "Car", ContentType = "ContentType",
+                    ParentPath = "/Root/System/Schema/ContentTypes/GenericContent"
+                }, CarContentType, cancel);
+            }
+
+            await repository.InvokeActionAsync(new OperationRequest
+            {
+                Path = "/Root/Content",
+                OperationName = "AddAllowedChildTypes",
+                Parameters = { { "contentTypes", "Car"} }
+            }, cancel);
+
+            await EnsureContentAsync("/Root/Content", "Folder", repository, cancel);
+            //await EnsureContentAsync("/Root/Content/IT", "Workspace", repository, cancel);
+            //await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", c =>
+            //{
+            //    c["Description"] = "Document library of IT";
+            //}, repository, cancel);
+            //await EnsureContentAsync("/Root/Content/IT/Document_Library/Chicago", "Folder", repository, cancel);
+            //await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder", repository, cancel);
+            //await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File", repository, cancel);
+            //await EnsureContentAsync("/Root/Content/IT/Document_Library/Munich", "Folder", repository, cancel);
             await EnsureContentAsync("/Root/IMS/Public", "Domain", repository, cancel);
             await EnsureContentAsync("/Root/IMS/Public/Editors", "Group", repository, cancel);
+
+            await EnsureContentAsync("/Root/Content/Cars/out-of-order", "Folder", c =>
+            {
+                c["DisplayName"] = "Out of order";
+            }, repository, cancel);
+            await EnsureContentAsync("/Root/Content/Cars/Settings", "SystemFolder", c =>
+            {
+                c["DisplayName"] = "Settings";
+            }, repository, cancel);
 
             await EnsureContentAsync("/Root/Content/Cars", "Folder", c =>
             {
                 c["Description"] = "This folder contains our cars.";
             }, repository, cancel);
+            await EnsureContentAsync("/Root/Content/Cars/OT1234", "Car", c =>
+            {
+                c["DisplayName"] = "Fiat 126";
+                c["Make"] = "Fiat";
+                c["Model"] = "126";
+                c["Style"] = "Coupe";
+                c["StartingDate"] = DateTime.Parse("1986-11-20");
+                c["Color"] = "Yellow";
+                c["EngineSize"] = "600 ccm";
+                c["Power"] = "21 hp";
+                c["Price"] = 120_000;
+            }, repository, cancel);
+            await EnsureContentAsync("/Root/Content/Cars/AADF953", "Car", c =>
+            {
+                c["DisplayName"] = "Opel Astra H";
+                c["Make"] = "Opel";
+                c["Model"] = "Astra H";
+                c["Style"] = "Coupe";
+                c["StartingDate"] = DateTime.Parse("2010-06-10");
+                c["Color"] = "Gray";
+                c["EngineSize"] = "1600 ccm";
+                c["Power"] = "120 hp";
+                c["Price"] = 1_200_000;
+            }, repository, cancel);
+            await EnsureContentAsync("/Root/Content/Cars/AASE642", "Car", c =>
+            {
+                c["DisplayName"] = "Skoda Octavia";
+                c["Make"] = "Skoda";
+                c["Model"] = "Octavia";
+                c["Style"] = "Coupe";
+                c["StartingDate"] = DateTime.Parse("2021-04-22");
+                c["Color"] = "White";
+                c["EngineSize"] = "1400 ccm";
+                c["Power"] = "140 hp";
+                c["Price"] = 8_350_000;
+            }, repository, cancel);
+            await EnsureContentAsync("/Root/Content/Cars/AAKE452", "Car", c =>
+            {
+                c["DisplayName"] = "Mazda 6";
+                c["Make"] = "Mazda";
+                c["Model"] = "6";
+                c["Style"] = "Coupe";
+                c["StartingDate"] = DateTime.Parse("2021-08-28");
+                c["Color"] = "Red";
+                c["EngineSize"] = "1800 ccm";
+                c["Power"] = "130 hp";
+                c["Price"] = 7_850_000;
+            }, repository, cancel);
+            await EnsureContentAsync("/Root/Content/Cars/OT6578", "Car", c =>
+            {
+                c["DisplayName"] = "Toyota AE86";
+                c["Make"] = "Toyota";
+                c["Model"] = "AE86";
+                c["Style"] = "Sedan";
+                c["StartingDate"] = DateTime.Parse("1981-05-26");
+                c["Color"] = "White";
+                c["EngineSize"] = "1600 ccm";
+                c["Power"] = "190 hp";
+                c["Price"] = 16_900_000;
+            }, repository, cancel);
+            await EnsureContentAsync("/Root/Content/Cars/JRT5698", "Car", c =>
+            {
+                c["DisplayName"] = "Toyota Supra MK4";
+                c["Make"] = "Toyota";
+                c["Model"] = "Supra MK4";
+                c["Style"] = "Coupe";
+                c["StartingDate"] = DateTime.Parse("1999-04-27");
+                c["Color"] = "Red";
+                c["EngineSize"] = "3000 ccm";
+                c["Power"] = "320 hp";
+                c["Price"] = 18_600_000;
+            }, repository, cancel);
+            await EnsureContentAsync("/Root/Content/Cars/KLT1159", "Car", c =>
+            {
+                c["DisplayName"] = "Renault Thalia";
+                c["Make"] = "Renault";
+                c["Model"] = "Thalia";
+                c["Style"] = "Coupe";
+                c["StartingDate"] = DateTime.Parse("2013-09-11");
+                c["Color"] = "Green";
+                c["EngineSize"] = "1400 ccm";
+                c["Power"] = "105 hp";
+                c["Price"] = 4_930_000;
+            }, repository, cancel);
+            await EnsureContentAsync("/Root/Content/Cars/GLW1814", "Car", c =>
+            {
+                c["DisplayName"] = "Suzuki Swift";
+                c["Make"] = "Suzuki";
+                c["Model"] = "Swift";
+                c["Style"] = "Coupe";
+                c["StartingDate"] = DateTime.Parse("2006-01-10");
+                c["Color"] = "Brown";
+                c["EngineSize"] = "900 ccm";
+                c["Power"] = "90 hp";
+                c["Price"] = 2_240_000;
+            }, repository, cancel);
+            await EnsureContentAsync("/Root/Content/Cars/AACE257", "Car", c =>
+            {
+                c["DisplayName"] = "Nissan GTR R32";
+                c["Make"] = "Nissan";
+                c["Model"] = "GTR R32";
+                c["Style"] = "Coupe";
+                c["StartingDate"] = DateTime.Parse("2023-12-29");
+                c["Color"] = "Black";
+                c["EngineSize"] = "2800 ccm";
+                c["Power"] = "320 hp";
+                c["Price"] = 38_000_000;
+            }, repository, cancel);
+            await EnsureContentAsync("/Root/Content/Cars/AAXX123", "Car", c =>
+            {
+                c["DisplayName"] = "Ferrari California";
+                c["Make"] = "Ferrari";
+                c["Model"] = "California";
+                c["Style"] = "Roadster";
+                c["StartingDate"] = DateTime.Parse("2002-03-14");
+                c["Color"] = "Black";
+                c["EngineSize"] = "4.3 l";
+                c["Power"] = "454 hp";
+                c["Price"] = 60_000_000;
+            }, repository, cancel);
         }
+
+        public TestContext TestContext { get; set; }
 
         [TestInitialize]
         public void InitializeTest()
         {
+            SnTrace.Test.Write($">>>> TEST: {TestContext.TestName}");
         }
 
         private static IRepository InitServer(TestContext context)

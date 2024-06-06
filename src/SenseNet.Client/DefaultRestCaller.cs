@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Text;
 using AngleSharp;
+using SenseNet.Diagnostics;
 using static SenseNet.Client.Constants;
 
 namespace SenseNet.Client;
@@ -102,6 +103,9 @@ public class DefaultRestCaller : IRestCaller
 
         requestProcessor?.Invoke(handler, client, request);
 
+var content = request.Content;
+var body = content == null ? "null" : await content.ReadAsStringAsync();
+SnTrace.Test.Write($">>>> RAW REQUEST: {method} {url} | {body}");
         cancel.ThrowIfCancellationRequested();
 
         try
