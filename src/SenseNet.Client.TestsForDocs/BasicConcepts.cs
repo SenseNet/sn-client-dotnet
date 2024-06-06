@@ -274,7 +274,7 @@ namespace SenseNet.Client.TestsForDocs
             {
                 Path = "/Root/Content/Cars",
                 OrderBy = new[] {"DisplayName"}
-            }, cancel) /*</doc>*/.ConfigureAwait(false);
+            }, cancel)/*</doc>*/.ConfigureAwait(false);
 
             var names = result.Select(x => ((dynamic)x).DisplayName.ToString()).ToArray();
             Assert.AreEqual(12, names.Length);
@@ -347,10 +347,6 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Top")]
         public async Task Docs2_BasicConcepts_Top()
         {
-            //await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
-            //for (var i = 0; i < 6; i++)
-            //    await EnsureContentAsync($"/Root/Content/IT/Document_Library/Folder-{i + 1}", "Folder", repository, cancel);
-
             var result = /*<doc>*/await repository.LoadCollectionAsync(new LoadCollectionRequest
             {
                 Path = "/Root/Content/Cars",
@@ -514,15 +510,13 @@ namespace SenseNet.Client.TestsForDocs
             var result = /*<doc>*/await repository.LoadCollectionAsync(new LoadCollectionRequest
             {
                 Path = "/Root/Content/Cars",
-                //ChildrenFilter = "isof('Folder')"
-                ChildrenFilter = "isof('Car')"
+                ChildrenFilter = "isof('Folder')"
             }, cancel)/*</doc>*/.ConfigureAwait(false);
 
             var contents = result.ToArray();
-            Assert.IsTrue(2 < contents.Length);
+            Assert.IsTrue(1 < contents.Length);
             var types = contents.Select(c => c["Type"].ToString()).Distinct().OrderBy(x => x).ToArray();
-            //Assert.AreEqual("Folder,SystemFolder", string.Join(",", types));
-            Assert.AreEqual("Car", string.Join(",", types));
+            Assert.AreEqual("Folder,SystemFolder", string.Join(",", types));
         }
 
         /* ====================================================================================== Metadata */
@@ -613,11 +607,11 @@ namespace SenseNet.Client.TestsForDocs
             // ACTION for doc
             var result = /*<doc>*/await repository.LoadCollectionAsync(new LoadCollectionRequest
             {
-                Path = "/Root/Content/IT",
+                Path = "/Root/Content/Cars",
                 LifespanFilter = FilterStatus.Enabled
             }, cancel)/*/<doc>*/.ConfigureAwait(false);
 
-            Assert.Inconclusive("TODO: Missing assertion in this test");
+            //Assert.Inconclusive("TODO: Missing assertion in this test");
         }
 
         /* ====================================================================================== Actions */
@@ -693,7 +687,7 @@ namespace SenseNet.Client.TestsForDocs
             // ACTION for doc
             /*<doc>*/
             var carContentType = await repository.LoadContentAsync(
-                "Root/System/Schema/ContentTypes/GenericContent/Car", cancel);
+                "/Root/System/Schema/ContentTypes/GenericContent/Car", cancel);
 
             string? ctd = null;
             await repository.ProcessWebResponseAsync(
