@@ -65,7 +65,7 @@ namespace SenseNet.Client.TestsForDocs
         /// <tab category="basic-concepts" article="entry" example="property" />
         [TestMethod]
         [Description("Addressing a single property of a content")]
-        public async Task Docs_BasicConcepts_GetSingleProperty()
+        public async Task Docs2_BasicConcepts_GetSingleProperty()
         {
             var response =
                 // ACTION for doc
@@ -83,7 +83,7 @@ namespace SenseNet.Client.TestsForDocs
         /// <tab category="basic-concepts" article="entry" example="propertyValue" />
         [TestMethod]
         [Description("Addressing a property value")]
-        public async Task Docs_BasicConcepts_GetSinglePropertyValue()
+        public async Task Docs2_BasicConcepts_GetSinglePropertyValue()
         {
             var response =
                 // ACTION for doc
@@ -138,7 +138,7 @@ namespace SenseNet.Client.TestsForDocs
         /// <tab category="basic-concepts" article="collection" example="inlinecount" />
         [TestMethod]
         [Description("$inlinecount query option")]
-        public async Task Docs_BasicConcepts_ChildrenInlineCount()
+        public async Task Docs2_BasicConcepts_ChildrenInlineCount()
         {
             // ACTION for doc
             /*<doc>*/
@@ -538,7 +538,7 @@ namespace SenseNet.Client.TestsForDocs
         /// <tab category="basic-concepts" article="metadata" example="global-metadata" />
         [TestMethod]
         [Description("$metadata 1")]
-        public async Task Docs_BasicConcepts_GlobalMetadata()
+        public async Task Docs2_BasicConcepts_GlobalMetadata()
         {
             var response =
                 // ACTION for doc
@@ -559,7 +559,7 @@ namespace SenseNet.Client.TestsForDocs
         /// <tab category="basic-concepts" article="metadata" example="doclib-metadata" />
         [TestMethod]
         [Description("$metadata 2")]
-        public async Task Docs_BasicConcepts_LocalMetadata()
+        public async Task Docs2_BasicConcepts_LocalMetadata()
         {
             var response =
                 // ACTION for doc
@@ -635,7 +635,7 @@ namespace SenseNet.Client.TestsForDocs
         /// <tab category="basic-concepts" article="action" example="scenario" />
         [TestMethod]
         [Description("Scenario")]
-        public async Task Docs_BasicConcepts_Scenario()
+        public async Task Docs2_BasicConcepts_Scenario()
         {
             // ACTION for doc
             /*<doc>*/
@@ -662,7 +662,7 @@ namespace SenseNet.Client.TestsForDocs
         /// <tab category="basic-concepts" article="schema" example="getSchema" />
         [TestMethod]
         [Description("Get schema")]
-        public async Task Docs_BasicConcepts_GetSchema()
+        public async Task Docs2_BasicConcepts_GetSchema()
         {
             // ACTION for doc
             /*<doc>*/
@@ -682,7 +682,7 @@ namespace SenseNet.Client.TestsForDocs
         /// <tab category="basic-concepts" article="schema" example="getBinary" />
         [TestMethod]
         [Description("Change the schema")]
-        public async Task Docs_BasicConcepts_GetCtd()
+        public async Task Docs2_BasicConcepts_GetCtd()
         {
             // ACTION for doc
             /*<doc>*/
