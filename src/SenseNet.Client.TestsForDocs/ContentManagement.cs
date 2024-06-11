@@ -1523,6 +1523,8 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Browsing list fields")]
         public async Task Docs2_ContentManagement_ListFields_Select()
         {
+            Assert.Inconclusive();
+
             /*<doc>*/
             /*</doc>*/
             // ACTION for doc
@@ -1543,6 +1545,8 @@ namespace SenseNet.Client.TestsForDocs
         [Description("List expando fields defined on a specified list")]
         public async Task Docs2_ContentManagement_ListFields_Metadata()
         {
+            Assert.Inconclusive();
+
             /*<doc>*/
             /*</doc>*/
             // ALIGN
@@ -1569,29 +1573,58 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Add a new list field")]
         public async Task Docs2_ContentManagement_ListFields_Add()
         {
-            /*<doc>*/
-            /*</doc>*/
+            Assert.Inconclusive();
+
             // ALIGN
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
+            await EnsureContentAsync("/Root/Content/Document_Library", "DocumentLibrary", repository, cancel);
             try
             {
-                // ACTION for doc
-                var body = @"models=[{
-                    ""__ContentType"": ""IntegerFieldSetting"",
-                    ""Name"": ""MyField1"",
-                    ""DisplayName"": ""My Field 1"",
-                    ""Compulsory"": true,
-                    ""MinValue"": 10}]";
-                var result = await RESTCaller.GetResponseStringAsync(
-                    "/Root/Content/IT/Document_Library", null, HttpMethod.Post, body);
-                Console.WriteLine(result);
+                /*<doc>*/
+                var result = await repository.GetResponseStringAsync(new ODataRequest
+                {
+                    Path =  "/Root/Content/Document_Library",
+                    PostData = new
+                    {
+                        __ContentType = "IntegerFieldSetting",
+                        Name = "MyField1",
+                        DisplayName = "My Field 1",
+                        Compulsory = true,
+                        MinValue = 10
+                    }
+                }, HttpMethod.Post, cancel);
+                /*</doc>*/
+                /* RAW REQUEST:
+                POST https://localhost:44362/OData.svc/Root/Content('Document_Library')
+                models=[{
+                  "__ContentType":"IntegerFieldSetting",
+                  "Name":"MyField1",
+                  "DisplayName":"My Field 1",
+                  "Compulsory":true,
+                  "MinValue":10
+                }] 
+                */
 
                 // ASSERT
+                await EnsureContentAsync("/Root/Content/Document_Library/Folder1", "Folder", c =>
+                {
+                    c["#MyField"] = 789;
+                }, repository, cancel);
+                var body = @"models=[{""#MyField1"":1234}]";
+                var xx = await RESTCaller.GetResponseStringAsync("/Root/Content/Document_Library/Folder1", null,
+                    HttpMethod.Patch, body, repository.Server);
+                ////var x = repository.GetResponseStringAsync(new ODataRequest
+                ////{
+                ////    Path = "/Root/Content/Document_Library",
+                ////    PostData = new{}
+                ////}, HttpMethod.Patch, cancel);
+                //var content = await repository.LoadContentAsync("/Root/Content/Document_Library", cancel);
+                //content["%23MyField1"] = 456;
+                //await content.SaveAsync(cancel);
                 Assert.Inconclusive();
             }
             finally
             {
-                await Content.DeleteAsync("/Root/Content/IT/Document_Library", true, CancellationToken.None);
+                await repository.DeleteContentAsync("/Root/Content/Document_Library", true, cancel);
             }
         }
 
@@ -1600,6 +1633,8 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Edit expando fields 1")]
         public async Task Docs2_ContentManagement_ListFields_Edit1()
         {
+            Assert.Inconclusive();
+
             /*<doc>*/
             /*</doc>*/
             // ALIGN
@@ -1626,6 +1661,8 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Edit expando fields 2")]
         public async Task Docs2_ContentManagement_ListFields_Edit2()
         {
+            Assert.Inconclusive();
+
             /*<doc>*/
             /*</doc>*/
             // ALIGN
@@ -1652,6 +1689,8 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Edit expando fields 3")]
         public async Task Docs2_ContentManagement_ListFields_Edit3()
         {
+            Assert.Inconclusive();
+
             /*<doc>*/
             /*</doc>*/
             //UNDONE:- The server returned an error (HttpStatus: InternalServerError): Operation not found: EditField(Name,MinValue,MaxValue)
@@ -1680,6 +1719,8 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Remove a list field 1")]
         public async Task Docs2_ContentManagement_ListFields_Remove1()
         {
+            Assert.Inconclusive();
+
             /*<doc>*/
             /*</doc>*/
             // ALIGN
@@ -1705,6 +1746,8 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Remove a list field 2")]
         public async Task Docs2_ContentManagement_ListFields_Remove2()
         {
+            Assert.Inconclusive();
+
             /*<doc>*/
             /*</doc>*/
             //UNDONE:- The server returned an error (HttpStatus: InternalServerError): Operation not found: DeleteField(Name)
