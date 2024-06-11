@@ -103,10 +103,16 @@ public class DefaultRestCaller : IRestCaller
 
         requestProcessor?.Invoke(handler, client, request);
 
-var content = request.Content;
-var body = content == null ? "null" : await content.ReadAsStringAsync();
-SnTrace.Test.Write($">>>> RAW REQUEST: {method} {url} | {body}");
         cancel.ThrowIfCancellationRequested();
+
+        if (SnTrace.Test.Enabled)
+        {
+            var content = request.Content;
+            var body = content == null ? "null" : await content.ReadAsStringAsync();
+            var msg = $">>>> RAW REQUEST: {method} {url} | {body}";
+            msg = msg.Replace("{", "{{").Replace("}", "}}");
+            SnTrace.Test.Write(msg);
+        }
 
         try
         {

@@ -64,7 +64,7 @@ namespace SenseNet.Client.TestsForDocs.Infrastructure
   </Fields>
 </ContentType>
 ";
-        private static async Task EnsureBasicStructureAsync(IRepository repository, CancellationToken cancel)
+        protected static async Task EnsureBasicStructureAsync(IRepository repository, CancellationToken cancel)
         {
             var carCt = await repository.LoadContentAsync<ContentType>("/Root/System/Schema/ContentTypes/GenericContent/Car", cancel);
             if (carCt == null)
@@ -96,11 +96,12 @@ namespace SenseNet.Client.TestsForDocs.Infrastructure
             await EnsureContentAsync("/Root/IMS/Public", "Domain", repository, cancel);
             await EnsureContentAsync("/Root/IMS/Public/Editors", "Group", repository, cancel);
 
+            await EnsureContentAsync("/Root/Content/Documents", "DocumentLibrary", repository, cancel);
+
             await EnsureContentAsync("/Root/Content/Cars", "Folder", c =>
             {
                 c["Description"] = "This folder contains our cars.";
             }, repository, cancel);
-
             await EnsureContentAsync("/Root/Content/Cars/out-of-order", "Folder", c =>
             {
                 c["DisplayName"] = "Out of order";
@@ -108,6 +109,10 @@ namespace SenseNet.Client.TestsForDocs.Infrastructure
             await EnsureContentAsync("/Root/Content/Cars/Settings", "SystemFolder", c =>
             {
                 c["DisplayName"] = "Settings";
+            }, repository, cancel);
+            await EnsureContentAsync("/Root/Content/Cars/Backup", "SystemFolder", c =>
+            {
+                c["DisplayName"] = "Backup";
             }, repository, cancel);
 
             await EnsureContentAsync("/Root/Content/Cars/OT1234", "Car", c =>
@@ -224,8 +229,8 @@ namespace SenseNet.Client.TestsForDocs.Infrastructure
                 c["Make"] = "Ferrari";
                 c["Model"] = "California";
                 c["Style"] = "Roadster";
-                c["StartingDate"] = DateTime.Parse("2002-03-14");
-                c["Color"] = "Black";
+                c["StartingDate"] = DateTime.Parse("2019-03-14");
+                c["Color"] = "Nero Daytona";
                 c["EngineSize"] = "4.3 l";
                 c["Power"] = "454 hp";
                 c["Price"] = 60_000_000;

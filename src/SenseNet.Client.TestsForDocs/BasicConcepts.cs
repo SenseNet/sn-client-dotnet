@@ -154,7 +154,7 @@ namespace SenseNet.Client.TestsForDocs
 
             // ASSERT
             Assert.AreEqual(3, result.Count);
-            Assert.AreEqual(12, result.TotalCount);
+            Assert.AreEqual(13, result.TotalCount);
         }
 
         /* ====================================================================================== Select and expand */
@@ -277,7 +277,7 @@ namespace SenseNet.Client.TestsForDocs
             }, cancel)/*</doc>*/.ConfigureAwait(false);
 
             var names = result.Select(x => ((dynamic)x).DisplayName.ToString()).ToArray();
-            Assert.AreEqual(12, names.Length);
+            Assert.AreEqual(13, names.Length);
             for (int i = 1; i < names.Length; i++)
                 Assert.IsTrue(string.CompareOrdinal(names[i], names[i - 1]) >= 0, $"names[{i}] < names[{i - 1}]");
         }
@@ -411,7 +411,7 @@ namespace SenseNet.Client.TestsForDocs
             var result = /*<doc>*/await repository.LoadCollectionAsync(new LoadCollectionRequest
             {
                 Path = "/Root/Content/Cars",
-                ChildrenFilter = "Price gt 1000000"
+                ChildrenFilter = "Price gt 1000000.0m" // The "m" suffix is required in case of Number fields
             }, cancel)/*</doc>*/.ConfigureAwait(false);
 
             // ASSERT
