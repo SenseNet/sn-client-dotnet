@@ -33,7 +33,6 @@ namespace SenseNet.Client.TestsForDocs
         {
             try
             {
-                // ACTION for doc
                 /*<doc>*/
                 var content = repository.CreateContent("/Root/Content/Cars", "Folder", "New cars");
                 await content.SaveAsync(cancel);
@@ -69,7 +68,6 @@ namespace SenseNet.Client.TestsForDocs
         {
             try
             {
-                // ACTION for doc
                 /*<doc>*/
                 var content = repository.CreateContent("/Root/Content", "Workspace", "My workspace");
                 await content.SaveAsync(cancel);
@@ -99,7 +97,6 @@ namespace SenseNet.Client.TestsForDocs
         {
             try
             {
-                // ACTION for doc
                 /*<doc>*/
                 var content = repository.CreateContent("/Root/Content", "DocumentLibrary", "My Documents");
                 await content.SaveAsync(cancel);
@@ -128,7 +125,6 @@ namespace SenseNet.Client.TestsForDocs
         {
             try
             {
-                // ACTION for doc
                 /*<doc>*/
                 var content = repository.CreateContent("/Root/IMS/Public", "User", "jsmith");
                 content["LoginName"] = "jsmith";
@@ -179,7 +175,6 @@ namespace SenseNet.Client.TestsForDocs
         {
             try
             {
-                // ACTION for doc
                 /*<doc>*/
                 var content = repository.CreateContentByTemplate("/Root/Content", "EventList", "My Calendar",
                     "/Root/ContentTemplates/DemoWorkspace/Demo_Workspace/Calendar");
@@ -223,7 +218,6 @@ namespace SenseNet.Client.TestsForDocs
 
             try
             {
-                // ACTION for doc
                 /*<doc>*/
                 var content = await repository.LoadContentAsync("/Root/Content/Cars/AAXX123", cancel);
                 content["Color"] = "Rosso Corsa";
@@ -257,7 +251,6 @@ namespace SenseNet.Client.TestsForDocs
 
             try
             {
-                // ACTION for doc
                 /*<doc>*/
                 var content = await repository.LoadContentAsync("/Root/Content/Cars/OT1234", cancel);
                 content["Model"] = "126p";
@@ -296,7 +289,6 @@ namespace SenseNet.Client.TestsForDocs
 
             try
             {
-                // ACTION for doc
                 /*<doc>*/
                 var content = await repository.LoadContentAsync("/Root/Content/Cars/OT1234", cancel);
                 content["StartingDate"] = DateTime.Parse("1986-11-21");
@@ -328,7 +320,6 @@ namespace SenseNet.Client.TestsForDocs
             var originalStyle = ((JArray) temp["Style"]).Select(x => x.ToString()).ToArray();
             try
             {
-                // ACTION for doc
                 /*<doc>*/
                 var content = await repository.LoadContentAsync("/Root/Content/Cars/OT1234", cancel);
                 content["Style"] = new[] { "Roadster" };
@@ -360,7 +351,6 @@ namespace SenseNet.Client.TestsForDocs
         {
             try
             {
-                // ACTION for doc
                 /*<doc>*/
                 var content = await repository.LoadContentAsync("/Root/Content", cancel);
                 content["Manager"] = 12345; // Id of the referenced content
@@ -396,7 +386,6 @@ namespace SenseNet.Client.TestsForDocs
             Assert.Inconclusive();
             try
             {
-                // ACTION for doc
                 /*<doc>*/
                 var content = await repository.LoadContentAsync("/Root/Content/IT", cancel);
                 content["Customers"] = new[] { "/Root/Customer1", "/Root/Customer2" };
@@ -418,7 +407,6 @@ namespace SenseNet.Client.TestsForDocs
         {
             Assert.Inconclusive();
             /*
-            // ACTION for doc
             var postData = new Dictionary<string, object>
                 { {"Manager", "/Root/IMS/Public/businesscat"} };
             await RESTCaller.PutContentAsync("/Root/Content/IT", postData);
@@ -436,10 +424,8 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Update a choice field")]
         public async Task Docs2_ContentManagement_Delete_Single()
         {
-            // ALIGN
             await EnsureContentAsync("/Root/Content/Cars/AAXY123", "Car", repository, cancel);
 
-            // ACTION for doc
             /*<doc>*/
             await repository.DeleteContentAsync("/Root/Content/Cars/AAXY123", true, cancel);
             /*</doc>*/
@@ -465,7 +451,6 @@ namespace SenseNet.Client.TestsForDocs
             await EnsureContentAsync("/Root/Content/Cars/AAXY852", "Car", repository, cancel);
             await EnsureContentAsync("/Root/Content/Cars/AAXY246", "Car", repository, cancel);
 
-            // ACTION for doc
             /*<doc>*/
             await repository.DeleteContentAsync(new[]
             {
@@ -500,7 +485,6 @@ namespace SenseNet.Client.TestsForDocs
             // ALIGN
             await EnsureContentAsync("/Root/Content/Cars/AAXY123", "Car", repository, cancel);
 
-            // ACTION for doc
             /*<doc>*/
             await repository.DeleteContentAsync("/Root/Content/Cars/AAXY123", false, cancel);
             /*</doc>*/
@@ -508,7 +492,8 @@ namespace SenseNet.Client.TestsForDocs
             POST https://localhost:44362/OData.svc/('Root')/DeleteBatch
             models=[{
               "permanent":false,
-              "paths":["/Root/Content/Cars/AAXY123"]}] 
+              "paths":["/Root/Content/Cars/AAXY123"]
+            }] 
             */
 
             // ASSERT
@@ -538,7 +523,9 @@ namespace SenseNet.Client.TestsForDocs
                     fileStream,
                     cancel);
                 /*</doc>*/
-                /* RAW REQUEST: POST https://localhost:44362/OData.svc/Root/Content('Documents')/Upload?metadata=no |
+                /* RAW REQUEST:
+                POST https://localhost:44362/OData.svc/Root/Content('Documents')/Upload
+
                 -----------------------------8dc86bc2e2dc8b5
                 Content-Type: text/plain; charset=utf-8
                 Content-Disposition: form-data; name=FileName
@@ -676,7 +663,8 @@ namespace SenseNet.Client.TestsForDocs
                     cancel);
                 /*</doc>*/
                 /* RAW REQUEST:
-                POST https://localhost:44362/OData.svc/Root/System/Schema/ContentTypes('GenericContent')/Upload?metadata=no
+                POST https://localhost:44362/OData.svc/Root/System/Schema/ContentTypes('GenericContent')/Upload
+
                 -----------------------------8dc86cabae328e4
                 Content-Type: text/plain; charset=utf-8
                 Content-Disposition: form-data; name=FileName
@@ -984,7 +972,8 @@ namespace SenseNet.Client.TestsForDocs
                     }
                 }, cancel);
                 /*</doc>*/
-                /* RAW REQUEST: POST https://localhost:44362/OData.svc/('Root')/MoveBatch
+                /* RAW REQUEST:
+                POST https://localhost:44362/OData.svc/('Root')/MoveBatch
                 {
                   "targetPath":"/Root/Content/Cars/out-of-order",
                   "paths":[
