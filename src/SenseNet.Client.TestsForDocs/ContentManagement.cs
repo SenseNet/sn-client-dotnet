@@ -383,16 +383,30 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Update the value of a reference field 2")]
         public async Task Docs2_ContentManagement_Update_MultiReference()
         {
-            Assert.Inconclusive();
             try
             {
                 /*<doc>*/
-                var content = await repository.LoadContentAsync("/Root/Content/IT", cancel);
-                content["Customers"] = new[] { "/Root/Customer1", "/Root/Customer2" };
-                await content.SaveAsync(cancel);
+                var user1 = await repository.LoadContentAsync("/Root/IMS/Public/etaylor", cancel);
+                var user2 = await repository.LoadContentAsync("/Root/IMS/Public/jjohnson", cancel);
+                var editors = await repository.LoadContentAsync<Group>("/Root/IMS/Public/Editors", cancel);
+                editors.Members = new[] { user1, user2};
+                await editors.SaveAsync(cancel);
                 /*</doc>*/
+                /* RAW REQUEST:
+                PATCH https://localhost:44362/OData.svc/content(1399)
+                models=[{"Members":["/Root/IMS/Public/etaylor", "/Root/IMS/Public/jjohnson"]}]
+                */
 
                 // ASSERT
+                var loaded = await repository.LoadContentAsync<Group>(new LoadContentRequest
+                {
+                    Path = "/Root/IMS/Public/Editors",
+                    Expand = new[] {"Members"},
+                    Select = new[] { "Id", "Name", "Type", "Path", "Members/Id", "Members/Name", "Members/Type", "Members/Path" },
+                }, cancel);
+                var members = loaded.Members?.OrderBy(x=>x.Name).ToArray();
+                Assert.AreEqual(2, members.Length);
+                Assert.AreEqual("etaylor, jjohnson", string.Join(", ", members.Select(x => x.Name)));
             }
             finally
             {

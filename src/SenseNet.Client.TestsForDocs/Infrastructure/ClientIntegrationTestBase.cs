@@ -95,6 +95,22 @@ namespace SenseNet.Client.TestsForDocs.Infrastructure
             //await EnsureContentAsync("/Root/Content/IT/Document_Library/Munich", "Folder", repository, cancel);
             await EnsureContentAsync("/Root/IMS/Public", "Domain", repository, cancel);
             await EnsureContentAsync("/Root/IMS/Public/Editors", "Group", repository, cancel);
+            await EnsureContentAsync("/Root/IMS/Public/etaylor", "User", c =>
+            {
+                c["LoginName"] = "etaylor";
+                c["Email"] = "etaylor@example.com";
+                c["Password"] = "sYYsdqPVnuOg5YPb8Rkg";
+                c["FullName"] = "Emma Taylor";
+                c["Enabled"] = true;
+            }, repository, cancel);
+            await EnsureContentAsync("/Root/IMS/Public/jjohnson", "User", c =>
+            {
+                c["LoginName"] = "jjohnson";
+                c["Email"] = "jjohnson@example.com";
+                c["Password"] = "QJjJdNKY8ejZ1rUJWFsf";
+                c["FullName"] = "James Johnson";
+                c["Enabled"] = true;
+            }, repository, cancel);
 
             await EnsureContentAsync("/Root/Content/Documents", "DocumentLibrary", repository, cancel);
 
