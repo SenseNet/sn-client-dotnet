@@ -435,12 +435,14 @@ public partial class Content
 
     private readonly string[] _skippedProperties = new[]
         {"FieldNames", "Id", "Item", "ParentPath", "ParentId", "Path", "Repository", "Server"};
-    private void ManagePostData(IDictionary<string, object> postData)
+    private void ManagePostData(IDictionary<string, object> postData, bool isNewContent)
     {
         var originalFields = (JObject)_responseContent;
 
         foreach (var property in this.GetType().GetProperties().Where(p=>!IsIgnored(p)))
         {
+            if (!isNewContent && property.Name == "Password")
+                continue;
             if (_skippedProperties.Contains(property.Name))
                 continue;
 
