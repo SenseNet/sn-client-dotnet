@@ -417,18 +417,44 @@ namespace SenseNet.Client.TestsForDocs
         //UNDONE:Docs2:-- Do not use this API. Choose any other solution for this problem.
         [TestMethod]
         [Description("Setting (resetting) all fields of an entity")]
-        public void Docs2_ContentManagement_Update_ResetAllAndSetOneField()
+        public async Task Docs2_ContentManagement_Update_ResetAllAndSetOneField()
         {
-            Assert.Inconclusive();
-            /*
-            var postData = new Dictionary<string, object>
-                { {"Manager", "/Root/IMS/Public/businesscat"} };
-            await RESTCaller.PutContentAsync("/Root/Content/IT", postData);
-            */
-            /*<doc>*/
-            /*</doc>*/
+            var backup = await repository.LoadContentAsync("/Root/Content/Cars/OT1234", cancel);
+            try
+            {
+                /*<doc>*/
+                var postData = new Dictionary<string, object>
+                {
+                    {"DisplayName", "Fiat 126"},
+                    {"Color", "Yellow"}
+                };
+                var content = await repository.LoadContentAsync("/Root/Content/Cars/OT1234", cancel);
+                await content.ResetAsync(postData, cancel);
+                /*</doc>*/
+                /* RAW REQUEST:
+                PUT https://localhost:44362/OData.svc/Root/Content/Cars('OT1234')
+                models=[{
+                  "DisplayName":"Fiat 126",
+                  "Color":"Yellow"
+                }]
+                */
 
-            // ASSERT
+                // ASSERT
+                var loaded = await repository.LoadContentAsync("/Root/Content/Cars/OT1234", cancel);
+                Assert.AreEqual("OT1234", loaded.Name);
+                Assert.AreEqual("Fiat 126", loaded.DisplayName);
+                Assert.AreEqual("Yellow", loaded["Color"].ToString());
+                Assert.AreEqual(string.Empty, loaded["Model"].ToString());
+                Assert.AreEqual("[]", loaded["Style"].ToString());
+                Assert.AreEqual("0001-01-01 00:00:00", ((JValue)loaded["StartingDate"]).Value<DateTime>().ToString("yyyy-MM-dd HH:mm:ss"));
+                Assert.AreEqual(string.Empty, loaded["EngineSize"].ToString());
+                Assert.AreEqual(string.Empty, loaded["Power"].ToString());
+                Assert.AreEqual("0", loaded["Price"].ToString());
+            }
+            finally
+            {
+                await backup.SaveAsync(cancel);
+            }
         }
 
         /* ====================================================================================== Delete */
@@ -1259,7 +1285,6 @@ namespace SenseNet.Client.TestsForDocs
             */
 
             // ASSERT
-            Assert.Inconclusive();
         }
 
         /* ====================================================================================== Trash */
@@ -1304,7 +1329,7 @@ namespace SenseNet.Client.TestsForDocs
             {
                 /*<doc>*/
                 content = await repository.LoadContentAsync("/Root/Content/Cars/AAXX123", cancel);
-                content["TrashDisabled"] = true;
+                content["TrashDisabled"] = false;
                 await content.SaveAsync(cancel);
                 /*</doc>*/
                 /* RAW REQUEST:

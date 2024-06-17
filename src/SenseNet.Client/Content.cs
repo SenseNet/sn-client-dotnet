@@ -952,6 +952,10 @@ public partial class Content : DynamicObject
         // reset local values
         InitializeFromResponse(responseContent);
     }
+    public async Task ResetAsync(object initialData, CancellationToken cancel)
+    {
+        await PutContentAsync(this.Path, initialData, cancel).ConfigureAwait(false);
+    }
     private async Task<dynamic> PostContentAsync(string parentPath, object postData, CancellationToken cancel)
     {
         return await PostContentInternalAsync(parentPath, postData, HttpMethod.Post, cancel).ConfigureAwait(false);
