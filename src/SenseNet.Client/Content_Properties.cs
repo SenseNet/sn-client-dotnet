@@ -441,8 +441,6 @@ public partial class Content
 
         foreach (var property in this.GetType().GetProperties().Where(p=>!IsIgnored(p)))
         {
-            if (!isNewContent && property.Name == "Password")
-                continue;
             if (_skippedProperties.Contains(property.Name))
                 continue;
 

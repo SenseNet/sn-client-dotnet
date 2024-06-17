@@ -920,7 +920,7 @@ public partial class Content : DynamicObject
         //{
             try
             {
-                ManagePostData(postData, this.Id == 0);
+                ManagePostData(postData);
             }
             catch (Exception ex)
             {
