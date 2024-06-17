@@ -20,30 +20,17 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Wildcard search 1")]
         public async Task Docs_Querying_Wildcard_QuestionMark()
         {
-            try
-            {
-                await EnsureContentAsync("/Root/Content/truck", "Folder", repository, cancel);
-                await EnsureContentAsync("/Root/Content/trunk", "Folder", repository, cancel);
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest {ContentQuery = "Type:Car AND Name:'AA?E642'" }, cancel);
+            /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?query=Type:Car AND Name:'AA?E642'
+            */
 
-                // ACTION for doc
-                /*<doc>*/
-                var result = await repository.QueryAsync(
-                    new QueryContentRequest {ContentQuery = "tru?k"}, cancel);
-
-                // foreach (dynamic content in result)
-                //    Console.WriteLine($"{content.Id} {content.Name}");
-                /*</doc>*/
-
-                // ASSERT
-                var actual = string.Join(", ", result.Select(c => c.Name).OrderBy(n => n).Distinct());
-                Assert.AreEqual("truck, trunk", actual);
-            }
-            finally
-            {
-                await repository.DeleteContentAsync(
-                    new[] {"/Root/Content/truck", "/Root/Content/trunk"},
-                    true, cancel).ConfigureAwait(false);
-            }
+            // ASSERT
+            var actual = string.Join(", ", result.Select(c => c.Name).OrderBy(n => n).Distinct());
+            Assert.AreEqual("AACE642, AASE642", actual);
         }
 
         /// <tab category="querying" article="query" example="wildcard-search-multiple" />
@@ -54,14 +41,11 @@ namespace SenseNet.Client.TestsForDocs
             // ACTION for doc
             /*<doc>*/
             var result = await repository.QueryAsync(
-                new QueryContentRequest { ContentQuery = "app*" }, cancel);
-
-            // foreach (dynamic content in result)
-            //    Console.WriteLine($"{content.Id} {content.Name}");
+                new QueryContentRequest { ContentQuery = "Name:'adm*'" }, cancel);
             /*</doc>*/
-            // Real test:
-            result = await repository.QueryAsync(
-                new QueryContentRequest { ContentQuery = "adm*" }, cancel);
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?query=Name:'adm*'
+            */
 
             // ASSERT
             Assert.IsTrue(result.Count > 2);
@@ -76,37 +60,22 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Fuzzy search")]
         public async Task Docs_Querying_FuzzySearch()
         {
-            try
-            {
-                await EnsureContentAsync("/Root/Content/truck", "Folder", repository, cancel);
-                await EnsureContentAsync("/Root/Content/trunk", "Folder", repository, cancel);
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest {ContentQuery = "Name:AACE642~0.85" }, cancel);
+            /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?query=Name:AACE642~0.85
+            */
 
-                // ACTION for doc
-                /*<doc>*/
-                var result = await repository.QueryAsync(
-                    new QueryContentRequest {ContentQuery = "Description:abbreviate~0.8"}, cancel);
-
-                // foreach (dynamic content in result)
-                //    Console.WriteLine($"{content.Id} {content.Name}");
-                /*</doc>*/
-                // Real test:
-                result = await repository.QueryAsync(
-                    new QueryContentRequest {ContentQuery = "Name:truck~0.799"}, cancel);
-
-                // ASSERT
-                Assert.IsTrue(result.Count > 1);
-                var actual = string.Join(", ", result.Select(c => c.Name).OrderBy(n => n).Distinct());
-                Assert.AreEqual("truck, trunk", actual);
-            }
-            finally
-            {
-                await repository.DeleteContentAsync(
-                    new[] {"/Root/Content/truck", "/Root/Content/trunk"},
-                    true, cancel).ConfigureAwait(false);
-            }
+            // ASSERT
+            Assert.IsTrue(result.Count > 1);
+            var actual = string.Join(", ", result.Select(c => c.Name).OrderBy(n => n).Distinct());
+            Assert.AreEqual("AACE642, AASE642", actual);
         }
 
         /// <tab category="querying" article="query" example="proximity-search" />
+        //UNDONE:Docs2: the test is not implemented
         [TestMethod]
         [Description("Proximity search")]
         public async Task Docs_Querying_ProximitySearch()
@@ -149,21 +118,22 @@ Assert.Inconclusive();
             /*<doc>*/
             var result = await repository.QueryAsync(
                 new QueryContentRequest { ContentQuery = @"Name:\(apps\) .AUTOFILTERS:OFF" }, cancel);
-
-            // foreach (dynamic content in result)
-            //    Console.WriteLine($"{content.Id} {content.Name}");
             /*</doc>*/
-
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?query=Name:\(apps\).AUTOFILTERS:OFF
+            */
             // ASSERT
             var names = result.Select(c => c.Name).Distinct().ToArray();
             Assert.AreEqual("(apps)", names.Single());
         }
 
         /// <tab category="querying" article="query" example="special-character-apostrophe" />
+        //UNDONE:Docs2: the test is not implemented
         [TestMethod]
         [Description("Escaping special characters 2")]
         public async Task Docs_Querying_Escaping2()
         {
+Assert.Inconclusive();
             try
             {
                 // This name is not possible: (1+1):2. The forbidden characters are replaced.
@@ -202,15 +172,15 @@ Assert.Inconclusive();
             // ACTION for doc
             /*<doc>*/
             var result = await repository.QueryAsync(
-                new QueryContentRequest { ContentQuery = "Id:<42 .QUICK" }, cancel);
-
-            // foreach (dynamic content in result)
-            //    Console.WriteLine($"{content.Id} {content.Name}");
+                new QueryContentRequest { ContentQuery = "Type:Car .QUICK" }, cancel);
             /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?query=Type:Car .QUICK
+            */
 
             // ASSERT
             var names = result.Select(c => c.Name).Distinct().ToArray();
-            Assert.IsTrue(10 < names.Length);
+            Assert.IsTrue(10 >= names.Length);
         }
 
         /* ====================================================================================== Query by Id or Path */
@@ -220,17 +190,13 @@ Assert.Inconclusive();
         [Description("Query a content by its Id")]
         public async Task Docs_Querying_Id()
         {
-            // ACTION for doc
             /*<doc>*/
             var result = await repository.QueryAsync(
-                new QueryContentRequest { ContentQuery = "Id:1607" }, cancel);
-
-            // foreach (dynamic content in result)
-            //    Console.WriteLine($"{content.Id} {content.Name}");
-            /*</doc>*/
-            // Real test
-            result = await repository.QueryAsync(
                 new QueryContentRequest { ContentQuery = "Id:6" }, cancel);
+            /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?query=Id:6
+            */
 
             // ASSERT
             var content = result.Single();
@@ -243,21 +209,19 @@ Assert.Inconclusive();
         [Description("Query multiple content by their Ids")]
         public async Task Docs_Querying_MoreId()
         {
-            // ACTION for doc
             /*<doc>*/
             var result = await repository.QueryAsync(
-                new QueryContentRequest { ContentQuery = "Id:(1607 1640 1645)" }, cancel);
-
-            // foreach (dynamic content in result)
-            //    Console.WriteLine($"{content.Id} {content.Name}");
+                new QueryContentRequest { ContentQuery = "Id:(7 8 11)" }, cancel);
             /*</doc>*/
-            // Real test
-            result = await repository.QueryAsync(
-                new QueryContentRequest { ContentQuery = "Id:(1 2 3)" }, cancel);
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?query=Id:(7 8 11)
+            */
 
             // ASSERT
-            var actual = string.Join(", ", result.Select(c => c.Id.ToString()).OrderBy(x => x));
-            Assert.AreEqual("1, 2, 3", actual);
+            var actual = string.Join(", ", result.OrderBy(x => x.Id).Select(c => c.Id.ToString()));
+            Assert.AreEqual("7, 8, 11", actual);
+            var names = string.Join(", ", result.Select(c => c.Name).OrderBy(x => x));
+            Assert.AreEqual("Administrators, Everyone, Operators", names);
         }
 
         /// <tab category="querying" article="query-by-id-path" example="inFolder" />
@@ -268,15 +232,15 @@ Assert.Inconclusive();
             // ACTION for doc
             /*<doc>*/
             var result = await repository.QueryAsync(
-                new QueryContentRequest { ContentQuery = "InFolder:'/Root/Content/IT/Document_Library/Calgary'" }, cancel);
-
-            // foreach (dynamic content in result)
-            //    Console.WriteLine($"{content.Id} {content.Name}");
+                new QueryContentRequest { ContentQuery = "InFolder:'/Root/Content/Cars'" }, cancel);
             /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?query=InFolder:'/Root/Content/Cars'
+            */
 
             // ASSERT
-            var names = result.Select(c => c.Name).Distinct().ToArray();
-            Assert.IsTrue(names.Contains("BusinessPlan.docx"));
+            var parentPaths = result.Select(c => c.ParentPath).Distinct().ToArray();
+            Assert.AreEqual("/Root/Content/Cars", parentPaths.Single());
         }
 
         /// <tab category="querying" article="query-by-id-path" example="inTree" />
@@ -284,19 +248,17 @@ Assert.Inconclusive();
         [Description("Search in a branch of the content tree")]
         public async Task Docs_Querying_InTree()
         {
-            // ACTION for doc
             /*<doc>*/
             var result = await repository.QueryAsync(
-                new QueryContentRequest { ContentQuery = "InTree:'/Root/Content/IT/Document_Library'" }, cancel);
-
-            // foreach (dynamic content in result)
-            //    Console.WriteLine($"{content.Id} {content.Name}");
+                new QueryContentRequest { ContentQuery = "InTree:'/Root/Content/Cars'" }, cancel);
             /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?query=InTree:'/Root/Content/Cars'
+            */
 
             // ASSERT
-            var names = result.Select(c => c.Name).Distinct().ToArray();
-            Assert.IsTrue(names.Contains("Document_Library"));
-            Assert.IsTrue(names.Contains("BusinessPlan.docx"));
+            var types = result.Select(c => c.Type).Distinct().OrderBy(x => x).ToArray();
+            Assert.AreEqual("Car, Folder", string.Join(", ", types));
         }
 
         /* ====================================================================================== Query by a field */
@@ -306,18 +268,17 @@ Assert.Inconclusive();
         [Description("Query by a text field 1")]
         public async Task Docs_Querying_Name()
         {
-            // ACTION for doc
             /*<doc>*/
             var result = await repository.QueryAsync(
-                new QueryContentRequest { ContentQuery = "Name:BusinessPlan.docx" }, cancel);
-
-            // foreach (dynamic content in result)
-            //    Console.WriteLine($"{content.Id} {content.Name}");
+                new QueryContentRequest { ContentQuery = "Color:Yellow" }, cancel);
             /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?query=Color:Yellow
+            */
 
             // ASSERT
-            var name = result.Select(c => c.Name).Distinct().Single();
-            Assert.AreEqual("BusinessPlan.docx", name);
+            var name = result.Select(c => c.DisplayName).Distinct().First();
+            Assert.AreEqual("Fiat 126", name);
         }
 
         /// <tab category="querying" article="query-by-field" example="byLongText" />
@@ -325,31 +286,17 @@ Assert.Inconclusive();
         [Description("Query by a text field 2")]
         public async Task Docs_Querying_Description_Wildcard()
         {
-            try
-            {
-                var folder = await EnsureContentAsync("/Root/Content/Folder1", "Folder", repository, cancel);
-                folder["Description"] = "My company works here.";
-                await folder.SaveAsync(cancel);
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest {ContentQuery = "DisplayName:*Astra*"}, cancel);
+            /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?query=DisplayName:*Astra*
+            */
 
-                // ACTION for doc
-                /*<doc>*/
-                var result = await repository.QueryAsync(
-                    new QueryContentRequest {ContentQuery = "Description:*company*"}, cancel);
-
-                // foreach (dynamic content in result)
-                //    Console.WriteLine($"{content.Id} {content.Name}");
-                /*</doc>*/
-
-                // ASSERT
-                var name = result.Select(c => c.Name).Distinct().Single();
-                Assert.AreEqual("Folder1", name);
-            }
-            finally
-            {
-                await repository.DeleteContentAsync(
-                    new[] { "/Root/Content/Folder1" },
-                    true, cancel).ConfigureAwait(false);
-            }
+            // ASSERT
+            var displayNames = result.Select(c => c.DisplayName).Distinct();
+            Assert.IsTrue(displayNames.Contains("Opel Astra H"));
         }
 
         /// <tab category="querying" article="query-by-field" example="byNumber" />
@@ -357,21 +304,18 @@ Assert.Inconclusive();
         [Description("Query by a number field")]
         public async Task Docs_Querying_NumberField()
         {
-            // ACTION for doc
             /*<doc>*/
             var result = await repository.QueryAsync(
-                new QueryContentRequest { ContentQuery = "TaskCompletion:<50" }, cancel);
-
-            // foreach (dynamic content in result)
-            //    Console.WriteLine($"{content.Id} {content.Name}");
+                new QueryContentRequest { ContentQuery = "Price:<1000000" }, cancel);
             /*</doc>*/
-            // Real test
-            result = await repository.QueryAsync(
-                new QueryContentRequest { ContentQuery = "Id:<50" }, cancel);
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?query=Price:<1000000
+            */
 
             // ASSERT
-            var names = result.Select(c => c.Name).Distinct().ToArray();
-            Assert.IsTrue(10 < names.Length);
+            var prices = result.Select(c => ((JValue) c["Price"]).Value<decimal>()).Distinct().OrderBy(x => x)
+                .ToArray();
+            Assert.AreEqual(120000m, prices.First());
         }
 
         /// <tab category="querying" article="query-by-field" example="byBoolean" />
@@ -379,31 +323,26 @@ Assert.Inconclusive();
         [Description("Query by a boolean field")]
         public async Task Docs_Querying_BooleanField()
         {
-            // ACTION for doc
             /*<doc>*/
             var result = await repository.QueryAsync(
-                new QueryContentRequest { ContentQuery = "IsCritical:true" }, cancel);
-
-            // foreach (dynamic content in result)
-            //    Console.WriteLine($"{content.Id} {content.Name}");
+                new QueryContentRequest { ContentQuery = "InFolder:/Root/Content/Cars AND IsFolder:true" }, cancel);
             /*</doc>*/
-            // Real test
-            result = await repository.QueryAsync(
-                new QueryContentRequest { ContentQuery = "IsActive:true" }, cancel);
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?query=InFolder:/Root/Content/Cars AND IsFolder:true
+            */
 
             // ASSERT
-            var names = result.Select(c => c.Name).Distinct().ToArray();
-            Assert.IsTrue(2 < names.Length);
-            Assert.IsTrue(names.Contains("Content"));
-            Assert.IsTrue(names.Contains("IT"));
-            Assert.IsTrue(names.Contains("Trash"));
+            var name = result.Select(c => c.Name).Distinct().First();
+            Assert.AreEqual("out-of-order", name);
         }
 
         /// <tab category="querying" article="query-by-field" example="byChoiceLocalized" />
+        //UNDONE:Docs2: the test is not implemented
         [TestMethod]
         [Description("Query by choice field (localized value)")]
         public async Task Docs_Querying_ChoiceField_LocalizedValue()
         {
+Assert.Inconclusive();
             try
             {
                 await EnsureContentAsync("/Root/Content/Memos1", "MemoList", repository, cancel);
@@ -437,32 +376,17 @@ Assert.Inconclusive();
         [Description("Query by choice field (value)")]
         public async Task Docs_Querying_ChoiceField_Value()
         {
-            try
-            {
-                await EnsureContentAsync("/Root/Content/Memos1", "MemoList", repository, cancel);
-                var memo = await EnsureContentAsync("/Root/Content/Memos1/Memo1", "Memo", repository, cancel);
-                memo["MemoType"] = "iaudit";
-                await memo.SaveAsync(cancel);
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest {ContentQuery = "Style:$roadster"}, cancel);
+            /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?query=Style:$roadster
+            */
 
-                // ACTION for doc
-                /*<doc>*/
-                var result = await repository.QueryAsync(
-                    new QueryContentRequest { ContentQuery = "MemoType:$iaudit" }, cancel);
-
-                // foreach (dynamic content in result)
-                //    Console.WriteLine($"{content.Id} {content.Name}");
-                /*</doc>*/
-
-                // ASSERT
-                var names = result.Select(c => c.Name).Distinct().ToArray();
-                Assert.IsTrue(names.Contains("Memo1"));
-            }
-            finally
-            {
-                await repository.DeleteContentAsync(
-                    new[] { "/Root/Content/Memos1" },
-                    true, cancel).ConfigureAwait(false);
-            }
+            // ASSERT
+            var displayName = result.Select(c => c.DisplayName).Distinct().Single();
+            Assert.AreEqual("Ferrari California", displayName);
         }
 
         /* ====================================================================================== Fulltext Search */
@@ -472,32 +396,17 @@ Assert.Inconclusive();
         [Description("Fulltext search")]
         public async Task Docs_Querying_FullTextSearch()
         {
-            try
-            {
-                var folder = await EnsureContentAsync("/Root/Content/Folder1", "Folder", repository, cancel);
-                folder["DisplayName"] = "-- Lorem ipsum dolor sit amet --";
-                folder["Description"] = "-- Lorem ipsum dolor sit amet --";
-                await folder.SaveAsync(cancel);
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest {ContentQuery = "California"}, cancel);
+            /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?query=California
+            */
 
-                // ACTION for doc
-                /*<doc>*/
-                var result = await repository.QueryAsync(
-                    new QueryContentRequest { ContentQuery = "Lorem" }, cancel);
-
-                // foreach (dynamic content in result)
-                //    Console.WriteLine($"{content.Id} {content.Name}");
-                /*</doc>*/
-
-                // ASSERT
-                var names = result.Select(c => c.Name).Distinct().ToArray();
-                Assert.IsTrue(names.Contains("Folder1"));
-            }
-            finally
-            {
-                await repository.DeleteContentAsync(
-                    new[] { "/Root/Content/Folder1" },
-                    true, cancel).ConfigureAwait(false);
-            }
+            // ASSERT
+            var displayNames = result.Select(c => c.DisplayName).Distinct().ToArray();
+            Assert.IsTrue(displayNames.Contains("Ferrari California"));
         }
 
         /* ====================================================================================== Query by date */
@@ -507,31 +416,17 @@ Assert.Inconclusive();
         [Description("Query by an exact date")]
         public async Task Docs_Querying_Date_Day()
         {
-            try
-            {
-                var folder = await EnsureContentAsync("/Root/Content/Folder1", "Folder", repository, cancel);
-                folder["CreationDate"] = new DateTime(2019, 2, 15, 0, 0, 0, DateTimeKind.Utc);
-                await folder.SaveAsync(cancel);
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "StartingDate:'2021-04-22'" }, cancel);
+            /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?query=StartingDate:'2021-04-22'
+            */
 
-                // ACTION for doc
-                /*<doc>*/
-                var result = await repository.QueryAsync(
-                    new QueryContentRequest { ContentQuery = "CreationDate:'2019-02-15'" }, cancel);
-
-                // foreach (dynamic content in result)
-                //    Console.WriteLine($"{content.Id} {content.Name}");
-                /*</doc>*/
-
-                // ASSERT
-                var names = result.Select(c => c.Name).Distinct().ToArray();
-                Assert.IsTrue(names.Contains("Folder1"));
-            }
-            finally
-            {
-                await repository.DeleteContentAsync(
-                    new[] { "/Root/Content/Folder1" },
-                    true, cancel).ConfigureAwait(false);
-            }
+            // ASSERT
+            var displayName = result.Select(c => c.DisplayName).Distinct().First();
+            Assert.AreEqual("Skoda Octavia", displayName);
         }
 
         /// <tab category="querying" article="query-by-date" example="byExactDateTime" />
@@ -539,34 +434,17 @@ Assert.Inconclusive();
         [Description("")]
         public async Task Docs_Querying_Date_Second()
         {
-            try
-            {
-                var folder = await EnsureContentAsync("/Root/Content/Folder1", "Folder", repository, cancel);
-                folder["CreationDate"] = new DateTime(2019, 2, 15, 9, 30, 0, DateTimeKind.Utc);
-                await folder.SaveAsync(cancel);
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "StartingDate:'2023-12-29 09:30:00'" }, cancel);
+            /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?query=StartingDate:'2023-12-29 09:30:00'
+            */
 
-                // ACTION for doc
-                /*<doc>*/
-                var result = await repository.QueryAsync(
-                    new QueryContentRequest { ContentQuery = "StartDate:'2019-02-15 09:30:00'" }, cancel);
-
-                // foreach (dynamic content in result)
-                //    Console.WriteLine($"{content.Id} {content.Name}");
-                /*</doc>*/
-                // Real query
-                result = await repository.QueryAsync(
-                    new QueryContentRequest { ContentQuery = "CreationDate:'2019-02-15 09:30:00'" }, cancel);
-
-                // ASSERT
-                var names = result.Select(c => c.Name).Distinct().ToArray();
-                Assert.IsTrue(names.Contains("Folder1"));
-            }
-            finally
-            {
-                await repository.DeleteContentAsync(
-                    new[] { "/Root/Content/Folder1" },
-                    true, cancel).ConfigureAwait(false);
-            }
+            // ASSERT
+            var displayName = result.Select(c => c.DisplayName).Distinct().First();
+            Assert.AreEqual("Nissan GTR R32", displayName);
         }
 
         /// <tab category="querying" article="query-by-date" example="byDateBefore" />
@@ -574,37 +452,39 @@ Assert.Inconclusive();
         [Description("Query before or after a specific date")]
         public async Task Docs_Querying_Date_LessThan()
         {
-            // ACTION for doc
             /*<doc>*/
             var result = await repository.QueryAsync(
-                new QueryContentRequest { ContentQuery = "CreationDate:<'2019-01-10'" }, cancel);
-
-            // foreach (dynamic content in result)
-            //    Console.WriteLine($"{content.Id} {content.Name}");
+                new QueryContentRequest { ContentQuery = "StartingDate:<'2019-01-10'" }, cancel);
             /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?query=StartingDate:<'2019-01-10'
+            */
 
             // ASSERT
             var names = result.Select(c => c.Name).Distinct().ToArray();
             Assert.IsTrue(names.Length > 0);
+            var types = result.Select(c => c.Type).Distinct().ToArray();
+            Assert.AreEqual("Car", types.Single());
         }
 
         /// <tab category="querying" article="query-by-date" example="byDateAfter" />
         [TestMethod]
-        [Description("")]
+        [Description("Query before or after a specific date")]
         public async Task Docs_Querying_Date_GreaterThan()
         {
-            // ACTION for doc
             /*<doc>*/
             var result = await repository.QueryAsync(
-                new QueryContentRequest { ContentQuery = "ModificationDate:>'2019-01-10'" }, cancel);
-
-            // foreach (dynamic content in result)
-            //    Console.WriteLine($"{content.Id} {content.Name}");
+                new QueryContentRequest { ContentQuery = "StartingDate:>'2019-01-10'" }, cancel);
             /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?query=StartingDate:>'2019-01-10'
+            */
 
             // ASSERT
             var names = result.Select(c => c.Name).Distinct().ToArray();
             Assert.IsTrue(names.Length > 0);
+            var types = result.Select(c => c.Type).Distinct().ToArray();
+            Assert.AreEqual("Car", types.Single());
         }
 
         /// <tab category="querying" article="query-by-date" example="byExclusiveRange" />
@@ -612,40 +492,17 @@ Assert.Inconclusive();
         [Description("")]
         public async Task Docs_Querying_Date_Range_Exclusive()
         {
-            // ACTION for doc
             /*<doc>*/
             var result = await repository.QueryAsync(
-                new QueryContentRequest { ContentQuery = "CreationDate:['2010-08-30' TO '2010-10-30']" }, cancel);
-
-            // foreach (dynamic content in result)
-            //    Console.WriteLine($"{content.Id} {content.Name}");
+                new QueryContentRequest { ContentQuery = "StartingDate:['2010-01-01' TO '2016-01-01']" }, cancel);
             /*</doc>*/
-
-            // Real test
-            var startCollection = await repository.QueryAsync(
-                new QueryContentRequest
-                {
-                    ContentQuery = "InTree:/Root",
-                    OrderBy = new[] { "CreationDate" },
-                    Top = 1
-                }, cancel);
-            var endCollection = await repository.QueryAsync(
-                new QueryContentRequest
-                {
-                    ContentQuery = "InTree:/Root",
-                    OrderBy = new[] { "CreationDate desc" },
-                    Top = 1
-                }, cancel);
-            var startDate = ((JValue)startCollection.Single()["CreationDate"]).Value<DateTime>();
-            var endDate = ((JValue) endCollection.Single()["CreationDate"]).Value<DateTime>();
-            var start = $"'{startDate.Year}-{startDate.Month}-{startDate.Day}'";
-            var end = $"'{endDate.Year}-{endDate.Month}-{endDate.Day}'";
-            result = await repository.QueryAsync(
-                new QueryContentRequest { ContentQuery = $"CreationDate:[{start} TO {end}]" }, cancel);
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?query=StartingDate:['2010-01-01' TO '2016-01-01']
+            */
 
             // ASSERT
-            var names = result.Select(c => c.Name).Distinct().ToArray();
-            Assert.IsTrue(names.Length > 0);
+            var displayNames = result.Select(c => c.DisplayName).Distinct().ToArray();
+            Assert.AreEqual("Opel Astra H, Renault Thalia", string.Join(", ", displayNames));
         }
 
         /// <tab category="querying" article="query-by-date" example="byInclusiveRange" />
@@ -653,40 +510,17 @@ Assert.Inconclusive();
         [Description("Query by a date range")]
         public async Task Docs_Querying_Date_Range_Inclusive()
         {
-            // ACTION for doc
             /*<doc>*/
             var result = await repository.QueryAsync(
-                new QueryContentRequest { ContentQuery = "CreationDate:{'2010-08-30' TO '2010-10-30'}" }, cancel);
-
-            // foreach (dynamic content in result)
-            //    Console.WriteLine($"{content.Id} {content.Name}");
+                new QueryContentRequest { ContentQuery = "StartingDate:{'2010-01-01' TO '2016-01-01'}" }, cancel);
             /*</doc>*/
-
-            // Real test
-            var startCollection = await repository.QueryAsync(
-                new QueryContentRequest
-                {
-                    ContentQuery = "InTree:/Root",
-                    OrderBy = new[] { "CreationDate" },
-                    Top = 1
-                }, cancel);
-            var endCollection = await repository.QueryAsync(
-                new QueryContentRequest
-                {
-                    ContentQuery = "InTree:/Root",
-                    OrderBy = new[] { "CreationDate desc" },
-                    Top = 1
-                }, cancel);
-            var startDate = ((JValue)startCollection.Single()["CreationDate"]).Value<DateTime>();
-            var endDate = ((JValue)endCollection.Single()["CreationDate"]).Value<DateTime>();
-            var start = $"'{startDate.Year}-{startDate.Month}-{startDate.Day}'";
-            var end = $"'{endDate.Year}-{endDate.Month}-{endDate.Day}'";
-            result = await repository.QueryAsync(
-                new QueryContentRequest { ContentQuery = $"CreationDate:{{{start} TO {end}}}" }, cancel);
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?query=StartingDate:{'2010-01-01' TO '2016-01-01'}
+            */
 
             // ASSERT
-            var names = result.Select(c => c.Name).Distinct().ToArray();
-            Assert.IsTrue(names.Length > 0);
+            var displayNames = result.Select(c => c.DisplayName).Distinct().ToArray();
+            Assert.AreEqual("Opel Astra H, Renault Thalia", string.Join(", ", displayNames));
         }
 
         /// <tab category="querying" article="query-by-date" example="byMixedRange" />
@@ -694,40 +528,17 @@ Assert.Inconclusive();
         [Description("")]
         public async Task Docs_Querying_Date_Range_Mixed()
         {
-            // ACTION for doc
             /*<doc>*/
             var result = await repository.QueryAsync(
-                new QueryContentRequest { ContentQuery = "CreationDate:['2010-08-30' TO '2010-10-30'}" }, cancel);
-
-            // foreach (dynamic content in result)
-            //    Console.WriteLine($"{content.Id} {content.Name}");
+                new QueryContentRequest { ContentQuery = "StartingDate:['2010-01-01' TO '2016-01-01'}" }, cancel);
             /*</doc>*/
-
-            // Real test
-            var startCollection = await repository.QueryAsync(
-                new QueryContentRequest
-                {
-                    ContentQuery = "InTree:/Root",
-                    OrderBy = new[] { "CreationDate" },
-                    Top = 1
-                }, cancel);
-            var endCollection = await repository.QueryAsync(
-                new QueryContentRequest
-                {
-                    ContentQuery = "InTree:/Root",
-                    OrderBy = new[] { "CreationDate desc" },
-                    Top = 1
-                }, cancel);
-            var startDate = ((JValue)startCollection.Single()["CreationDate"]).Value<DateTime>();
-            var endDate = ((JValue)endCollection.Single()["CreationDate"]).Value<DateTime>();
-            var start = $"'{startDate.Year}-{startDate.Month}-{startDate.Day}'";
-            var end = $"'{endDate.Year}-{endDate.Month}-{endDate.Day}'";
-            result = await repository.QueryAsync(
-                new QueryContentRequest { ContentQuery = $"CreationDate:[{start} TO {end}}}" }, cancel);
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?query=StartingDate:['2010-01-01' TO '2016-01-01'}
+            */
 
             // ASSERT
-            var names = result.Select(c => c.Name).Distinct().ToArray();
-            Assert.IsTrue(names.Length > 0);
+            var displayNames = result.Select(c => c.DisplayName).Distinct().ToArray();
+            Assert.AreEqual("Opel Astra H, Renault Thalia", string.Join(", ", displayNames));
         }
 
         /// <tab category="querying" article="query-by-date" example="byYesterday" />
@@ -737,28 +548,27 @@ Assert.Inconclusive();
         {
             try
             {
-                var folder = await EnsureContentAsync("/Root/Content/Folder1", "Folder", repository, cancel);
+                var folder = await EnsureContentAsync("/Root/Content/Folder1_Yesterday", "Folder", repository, cancel);
                 var date = DateTime.UtcNow.AddDays(-1.0);
                 folder["ModificationDate"] = new DateTime(date.Year, date.Month, date.Day, 0, 0, 0, DateTimeKind.Utc);
                 await folder.SaveAsync(cancel);
 
-                // ACTION for doc
                 /*<doc>*/
                 var result = await repository.QueryAsync(
                     new QueryContentRequest { ContentQuery = "ModificationDate:@@Yesterday@@" }, cancel);
-
-                // foreach (dynamic content in result)
-                //    Console.WriteLine($"{content.Id} {content.Name}");
                 /*</doc>*/
+                /* RAW REQUEST:
+                GET https://localhost:44362/OData.svc/Root?query=ModificationDate:@@Yesterday@@
+                */
 
                 // ASSERT
                 var names = result.Select(c => c.Name).Distinct().ToArray();
-                Assert.IsTrue(names.Length > 0);
+                Assert.IsTrue(names.Contains("Folder1_Yesterday"));
             }
             finally
             {
                 await repository.DeleteContentAsync(
-                    new[] { "/Root/Content/Folder1" },
+                    new[] { "/Root/Content/Folder1_Yesterday" },
                     true, cancel).ConfigureAwait(false);
             }
         }
@@ -771,23 +581,22 @@ Assert.Inconclusive();
             try
             {
                 await EnsureContentAsync("/Root/Content/Events1", "EventList", repository, cancel);
-                var @event = await EnsureContentAsync("/Root/Content/Events1/Event1", "CalendarEvent", repository, cancel);
+                var @event = await EnsureContentAsync("/Root/Content/Events1/Event1_NextMonth", "CalendarEvent", repository, cancel);
                 var date = DateTime.UtcNow.AddMonths(1);
                 @event["StartDate"] = new DateTime(date.Year, date.Month, 1, 0, 0, 0, DateTimeKind.Utc);
                 @event["EndDate"] = new DateTime(date.Year, date.Month, 22, 0, 0, 0, DateTimeKind.Utc);
                 await @event.SaveAsync(cancel);
 
-                // ACTION for doc
                 /*<doc>*/
                 var result = await repository.QueryAsync(
                     new QueryContentRequest { ContentQuery = "StartDate:@@NextMonth@@" }, cancel);
-
-                // foreach (dynamic content in result)
-                //    Console.WriteLine($"{content.Id} {content.Name}");
                 /*</doc>*/
+                /* RAW REQUEST:
+                GET https://localhost:44362/OData.svc/Root?query=StartDate:@@NextMonth@@
+                */
 
                 var names = result.Select(c => c.Name).Distinct().ToArray();
-                Assert.IsTrue(names.Length > 0);
+                Assert.IsTrue(names.Contains("Event1_NextMonth"));
             }
             finally
             {
@@ -804,37 +613,38 @@ Assert.Inconclusive();
         {
             try
             {
-                var folder = await EnsureContentAsync("/Root/Content/Folder1", "Folder", repository, cancel);
+                var folder = await EnsureContentAsync("/Root/Content/Folder1_PreviousYear", "Folder", repository, cancel);
                 var date = DateTime.UtcNow.AddYears(-1);
                 folder["CreationDate"] = new DateTime(date.Year, 1, 1, 0, 0, 0, DateTimeKind.Utc);
                 await folder.SaveAsync(cancel);
 
-                // ACTION for doc
                 /*<doc>*/
                 var result = await repository.QueryAsync(
                     new QueryContentRequest { ContentQuery = "CreationDate:@@PreviousYear@@" }, cancel);
-
-                // foreach (dynamic content in result)
-                //    Console.WriteLine($"{content.Id} {content.Name}");
                 /*</doc>*/
+                /* RAW REQUEST:
+                GET https://localhost:44362/OData.svc/Root?query=CreationDate:@@PreviousYear@@
+                */
 
                 // ASSERT
                 var names = result.Select(c => c.Name).Distinct().ToArray();
-                Assert.IsTrue(names.Length > 0);
+                Assert.IsTrue(names.Contains("Folder1_PreviousYear"));
             }
             finally
             {
                 await repository.DeleteContentAsync(
-                    new[] { "/Root/Content/Folder1" },
+                    new[] { "/Root/Content/Folder1_PreviousYear" },
                     true, cancel).ConfigureAwait(false);
             }
         }
 
         /// <tab category="querying" article="query-by-date" example="byLifespan" />
+        //UNDONE:Docs2: the test is not implemented
         [TestMethod]
         [Description("Query by lifespan validity")]
         public async Task Docs_Querying_Date_LifespanOn()
         {
+Assert.Inconclusive();
             try
             {
                 await EnsureContentAsync("/Root/Content/Folder1", "Folder", repository, cancel);

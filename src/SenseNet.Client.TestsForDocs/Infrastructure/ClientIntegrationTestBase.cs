@@ -227,13 +227,13 @@ namespace SenseNet.Client.TestsForDocs.Infrastructure
                 c["Power"] = "90 hp";
                 c["Price"] = 2_240_000;
             }, repository, cancel);
-            await EnsureContentAsync("/Root/Content/Cars/AACE257", "Car", c =>
+            await EnsureContentAsync("/Root/Content/Cars/AACE642", "Car", c =>
             {
                 c["DisplayName"] = "Nissan GTR R32";
                 c["Make"] = "Nissan";
                 c["Model"] = "GTR R32";
                 c["Style"] = "Coupe";
-                c["StartingDate"] = DateTime.Parse("2023-12-29");
+                c["StartingDate"] = DateTime.Parse("2023-12-29 09:30:00");
                 c["Color"] = "Black";
                 c["EngineSize"] = "2800 ccm";
                 c["Power"] = "320 hp";
