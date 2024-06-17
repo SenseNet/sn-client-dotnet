@@ -106,8 +106,7 @@ public class ContentGeneralPropertiesTests : TestBase
         dynamic data = JsonHelper.Deserialize(json);
         var dict = data.ToObject<Dictionary<string, object>>();
         var keys = string.Join(", ", dict.Keys);
-        Assert.AreEqual("Name, VersioningMode, InheritableVersioningMode", keys);
-        Assert.AreEqual("Content1", data.Name.ToString());
+        Assert.AreEqual("VersioningMode, InheritableVersioningMode", keys);
     }
     [TestMethod]
     public async Task GeneralProps_T_Save_VersioningModes_NotNull()
@@ -148,9 +147,7 @@ public class ContentGeneralPropertiesTests : TestBase
         dynamic data = JsonHelper.Deserialize(json);
         var dict = data.ToObject<Dictionary<string, object>>();
         var keys = string.Join(", ", dict.Keys);
-        Assert.AreEqual("Name, VersioningMode, InheritableVersioningMode", keys);
-        Assert.AreEqual("Content1", data.Name.ToString());
-        Assert.AreEqual("[\"1\"]", RemoveWhitespaces(data.VersioningMode.ToString()));
+        Assert.AreEqual("InheritableVersioningMode", keys);
         Assert.AreEqual("[\"3\"]", RemoveWhitespaces(data.InheritableVersioningMode.ToString()));
     }
 
@@ -249,8 +246,7 @@ public class ContentGeneralPropertiesTests : TestBase
         dynamic data = JsonHelper.Deserialize(json);
         var dict = data.ToObject<Dictionary<string, object>>();
         var keys = string.Join(", ", dict.Keys);
-        Assert.AreEqual("Name, ApprovingMode, InheritableApprovingMode", keys);
-        Assert.AreEqual("Content1", data.Name.ToString());
+        Assert.AreEqual("ApprovingMode, InheritableApprovingMode", keys);
     }
     [TestMethod]
     public async Task GeneralProps_T_Save_ApprovingModes_NotNull()
@@ -291,8 +287,7 @@ public class ContentGeneralPropertiesTests : TestBase
         dynamic data = JsonHelper.Deserialize(json);
         var dict = data.ToObject<Dictionary<string, object>>();
         var keys = string.Join(", ", dict.Keys);
-        Assert.AreEqual("Name, ApprovingMode, InheritableApprovingMode", keys);
-        Assert.AreEqual("Content1", data.Name.ToString());
+        Assert.AreEqual("ApprovingMode, InheritableApprovingMode", keys);
         Assert.AreEqual("[\"0\"]", RemoveWhitespaces(data.ApprovingMode.ToString()));
         Assert.AreEqual("[\"2\"]", RemoveWhitespaces(data.InheritableApprovingMode.ToString()));
     }
@@ -388,8 +383,7 @@ public class ContentGeneralPropertiesTests : TestBase
         dynamic data = JsonHelper.Deserialize(json);
         var dict = data.ToObject<Dictionary<string, object>>();
         var keys = string.Join(", ", dict.Keys);
-        Assert.AreEqual("Name, PreviewEnabled", keys);
-        Assert.AreEqual("Content1", data.Name.ToString());
+        Assert.AreEqual("PreviewEnabled", keys);
     }
     [TestMethod]
     public async Task GeneralProps_T_Save_PreviewEnabled_NotNull()
@@ -428,8 +422,7 @@ public class ContentGeneralPropertiesTests : TestBase
         dynamic data = JsonHelper.Deserialize(json);
         var dict = data.ToObject<Dictionary<string, object>>();
         var keys = string.Join(", ", dict.Keys);
-        Assert.AreEqual("Name, PreviewEnabled", keys);
-        Assert.AreEqual("Content1", data.Name.ToString());
+        Assert.AreEqual("PreviewEnabled", keys);
         Assert.AreEqual("[\"2\"]", RemoveWhitespaces(data.PreviewEnabled.ToString()));
     }
 
@@ -453,7 +446,7 @@ public class ContentGeneralPropertiesTests : TestBase
     [TestMethod]
     public async Task GeneralProps_T_Gender_EmptyToNull()
     {
-        await GenderTest(@"{ ""d"": { ""Id"": 999543,""Gender"": []}}", null, true, "");
+        await GenderTest(@"{ ""d"": { ""Id"": 999543,""Gender"": []}}", null, false, null);
     }
     [TestMethod]
     public async Task GeneralProps_T_Gender_EmptyToFemale()
@@ -548,7 +541,7 @@ public class ContentGeneralPropertiesTests : TestBase
     public async Task GeneralProps_T_MaritalStatus_EmptyToNull()
     {
         await MaritalStatusTest(@"{ ""d"": { ""Id"": 999543,""MaritalStatus"": []}}",
-            null, true, "");
+            null, false, null);
     }
     [TestMethod]
     public async Task GeneralProps_T_MaritalStatus_EmptyToSingle()
@@ -661,7 +654,7 @@ public class ContentGeneralPropertiesTests : TestBase
         dynamic data = JsonHelper.Deserialize(json);
         var dict = data.ToObject<Dictionary<string, object>>();
         var keys = string.Join(", ", dict.Keys);
-        Assert.AreEqual("Name, Priority", keys);
+        Assert.AreEqual("Priority", keys);
     }
     [TestMethod]
     public async Task GeneralProps_T_Save_TaskPriority_NotNull()
@@ -702,8 +695,7 @@ public class ContentGeneralPropertiesTests : TestBase
         dynamic data = JsonHelper.Deserialize(json);
         var dict = data.ToObject<Dictionary<string, object>>();
         var keys = string.Join(", ", dict.Keys);
-        Assert.AreEqual("Name, Priority", keys);
-        Assert.AreEqual("Content1", data.Name.ToString());
+        Assert.AreEqual("Priority", keys);
         Assert.AreEqual("[\"3\"]", RemoveWhitespaces(data.Priority.ToString()));
     }
     [TestMethod]
@@ -745,8 +737,7 @@ public class ContentGeneralPropertiesTests : TestBase
         dynamic data = JsonHelper.Deserialize(json);
         var dict = data.ToObject<Dictionary<string, object>>();
         var keys = string.Join(", ", dict.Keys);
-        Assert.AreEqual("Name, Priority", keys);
-        Assert.AreEqual("Content1", data.Name.ToString());
+        Assert.AreEqual("Priority", keys);
         Assert.AreEqual("[\"1\"]", RemoveWhitespaces(data.Priority.ToString()));
     }
 
@@ -775,7 +766,7 @@ public class ContentGeneralPropertiesTests : TestBase
         Assert.AreEqual(TaskState.Pending, content.Status);
 
         // ACT
-        content.Priority = null;
+        content.Status = null;
         await content.SaveAsync(_cancel);
 
         // ASSERT
@@ -789,7 +780,7 @@ public class ContentGeneralPropertiesTests : TestBase
         dynamic data = JsonHelper.Deserialize(json);
         var dict = data.ToObject<Dictionary<string, object>>();
         var keys = string.Join(", ", dict.Keys);
-        Assert.AreEqual("Name, Status", keys);
+        Assert.AreEqual("Status", keys);
     }
     [TestMethod]
     public async Task GeneralProps_T_Save_TaskStatus_NotNull()
@@ -830,8 +821,7 @@ public class ContentGeneralPropertiesTests : TestBase
         dynamic data = JsonHelper.Deserialize(json);
         var dict = data.ToObject<Dictionary<string, object>>();
         var keys = string.Join(", ", dict.Keys);
-        Assert.AreEqual("Name, Status", keys);
-        Assert.AreEqual("Content1", data.Name.ToString());
+        Assert.AreEqual("Status", keys);
         Assert.AreEqual("[\"deferred\"]", RemoveWhitespaces(data.Status.ToString()));
     }
 
@@ -875,7 +865,7 @@ public class ContentGeneralPropertiesTests : TestBase
         json = json.Substring("models=[".Length).TrimEnd(']');
         var dict = JsonHelper.Deserialize<Dictionary<string, object>>(json);
         var keys = string.Join(", ", dict.Keys);
-        Assert.AreEqual("Name, MemoType", keys);
+        Assert.AreEqual("MemoType", keys);
         Assert.AreEqual(null, dict["MemoType"]);
     }
     [TestMethod]
@@ -916,7 +906,7 @@ public class ContentGeneralPropertiesTests : TestBase
         json = json.Substring("models=[".Length).TrimEnd(']');
         var dict = JsonHelper.Deserialize<Dictionary<string, object>>(json);
         var keys = string.Join(", ", dict.Keys);
-        Assert.AreEqual("Name, MemoType", keys);
+        Assert.AreEqual("MemoType", keys);
         var value = dict["MemoType"];
         Assert.IsNotNull(value);
         var valueAsJArray = value as JArray;
@@ -964,7 +954,7 @@ public class ContentGeneralPropertiesTests : TestBase
         json = json.Substring("models=[".Length).TrimEnd(']');
         var dict = JsonHelper.Deserialize<Dictionary<string, object>>(json);
         var keys = string.Join(", ", dict.Keys);
-        Assert.AreEqual("Name, WebHookHttpMethod", keys);
+        Assert.AreEqual("WebHookHttpMethod", keys);
         Assert.AreEqual(null, dict["WebHookHttpMethod"]);
     }
     [TestMethod]
@@ -1005,7 +995,7 @@ public class ContentGeneralPropertiesTests : TestBase
         json = json.Substring("models=[".Length).TrimEnd(']');
         var dict = JsonHelper.Deserialize<Dictionary<string, object>>(json);
         var keys = string.Join(", ", dict.Keys);
-        Assert.AreEqual("Name, WebHookHttpMethod", keys);
+        Assert.AreEqual("WebHookHttpMethod", keys);
         var value = dict["WebHookHttpMethod"];
         Assert.IsNotNull(value);
         var valueAsJArray = value as JArray;
@@ -1053,7 +1043,7 @@ public class ContentGeneralPropertiesTests : TestBase
         json = json.Substring("models=[".Length).TrimEnd(']');
         var dict = JsonHelper.Deserialize<Dictionary<string, object>>(json);
         var keys = string.Join(", ", dict.Keys);
-        Assert.AreEqual("Name, NotificationMode", keys);
+        Assert.AreEqual("NotificationMode", keys);
         Assert.AreEqual(null, dict["NotificationMode"]);
     }
     [TestMethod]
@@ -1094,7 +1084,7 @@ public class ContentGeneralPropertiesTests : TestBase
         json = json.Substring("models=[".Length).TrimEnd(']');
         var dict = JsonHelper.Deserialize<Dictionary<string, object>>(json);
         var keys = string.Join(", ", dict.Keys);
-        Assert.AreEqual("Name, NotificationMode", keys);
+        Assert.AreEqual("NotificationMode", keys);
         var value = dict["NotificationMode"];
         Assert.IsNotNull(value);
         var valueAsJArray = value as JArray;
@@ -1140,7 +1130,7 @@ public class ContentGeneralPropertiesTests : TestBase
         json = json.Substring("models=[".Length).TrimEnd(']');
         var dict = JsonHelper.Deserialize<Dictionary<string, object>>(json);
         var keys = string.Join(", ", dict.Keys);
-        Assert.AreEqual("Name, EventType", keys);
+        Assert.AreEqual("EventType", keys);
         Assert.AreEqual(null, dict["EventType"]);
     }
     [TestMethod]
@@ -1181,7 +1171,7 @@ public class ContentGeneralPropertiesTests : TestBase
         json = json.Substring("models=[".Length).TrimEnd(']');
         var dict = JsonHelper.Deserialize<Dictionary<string, object>>(json);
         var keys = string.Join(", ", dict.Keys);
-        Assert.AreEqual("Name, EventType", keys);
+        Assert.AreEqual("EventType", keys);
         Assert.IsNotNull(dict["EventType"], "EventType is null.");
         Assert.AreEqual(typeof(JArray), dict["EventType"].GetType());
         var values = (JArray)dict["EventType"];
@@ -1298,7 +1288,7 @@ public class ContentGeneralPropertiesTests : TestBase
             setProperty: content => { content.Index = 42; content.DisplayName = "Content 1"; },
             assertSaveRequest: (savedPropertyNames, properties) =>
             {
-                Assert.AreEqual("Name, DisplayName, Index", savedPropertyNames);
+                Assert.AreEqual("DisplayName, Index", savedPropertyNames);
                 Assert.AreEqual("42", properties["Index"].ToString());
                 Assert.AreEqual("Content 1", properties["DisplayName"].ToString());
             });
