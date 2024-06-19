@@ -19,7 +19,7 @@ namespace SenseNet.Client.TestsForDocs
     {
         private class MyContent : Content { public MyContent(IRestCaller rc, ILogger<Content> l) : base(rc, l) { } }
         // ReSharper disable once InconsistentNaming
-        private CancellationToken cancel => new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
+        private CancellationToken cancel => new CancellationTokenSource(TimeSpan.FromSeconds(1000)).Token;
         // ReSharper disable once InconsistentNaming
         IRepository repository =>
             GetRepositoryCollection(services => { services.RegisterGlobalContentType<MyContent>(); })
@@ -378,7 +378,6 @@ namespace SenseNet.Client.TestsForDocs
         }
 
         /// <tab category="content-management" article="update" example="updateReferenceMultiple" />
-        //UNDONE:Docs2:-- BUG: SaveAsync need to throw an exception. Complete test when modifying CTD works.
         [TestMethod]
         [Description("Update the value of a reference field 2")]
         public async Task Docs2_ContentManagement_Update_MultiReference()

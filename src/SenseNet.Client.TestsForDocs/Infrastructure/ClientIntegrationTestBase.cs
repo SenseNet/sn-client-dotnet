@@ -64,6 +64,16 @@ namespace SenseNet.Client.TestsForDocs.Infrastructure
   </Fields>
 </ContentType>
 ";
+        protected static readonly string ArticleContentType = @"<?xml version='1.0' encoding='utf-8'?>
+<ContentType name='Article' parentType='GenericContent' handler='SenseNet.ContentRepository.GenericContent' xmlns='http://schemas.sensenet.com/SenseNet/ContentRepository/ContentTypeDefinition'>
+  <DisplayName>Article</DisplayName>
+  <Description>Article</Description>
+  <Fields>
+    <Field name='Lead' type='LongText'/>
+    <Field name='Body' type='LongText'/>
+  </Fields>
+</ContentType>
+";
         protected static async Task EnsureBasicStructureAsync(IRepository repository, CancellationToken cancel)
         {
             var carCt = await repository.LoadContentAsync<ContentType>("/Root/System/Schema/ContentTypes/GenericContent/Car", cancel);
@@ -71,16 +81,35 @@ namespace SenseNet.Client.TestsForDocs.Infrastructure
             {
                 await repository.UploadAsync(new UploadRequest
                 {
-                    FileName = "Car", ContentName = "Car", ContentType = "ContentType",
+                    FileName = "Car",
+                    ContentName = "Car",
+                    ContentType = "ContentType",
                     ParentPath = "/Root/System/Schema/ContentTypes/GenericContent"
                 }, CarContentType, cancel);
+            }
+            var articleCt = await repository.LoadContentAsync<ContentType>("/Root/System/Schema/ContentTypes/GenericContent/Article", cancel);
+            if (articleCt == null)
+            {
+                await repository.UploadAsync(new UploadRequest
+                {
+                    FileName = "Article",
+                    ContentName = "Article",
+                    ContentType = "ContentType",
+                    ParentPath = "/Root/System/Schema/ContentTypes/GenericContent"
+                }, ArticleContentType, cancel);
             }
 
             await repository.InvokeActionAsync(new OperationRequest
             {
                 Path = "/Root/Content",
                 OperationName = "AddAllowedChildTypes",
-                Parameters = { { "contentTypes", "Car"} }
+                Parameters = { { "contentTypes", "Car" } }
+            }, cancel);
+            await repository.InvokeActionAsync(new OperationRequest
+            {
+                Path = "/Root/Content",
+                OperationName = "AddAllowedChildTypes",
+                Parameters = { { "contentTypes", "Article" } }
             }, cancel);
 
             await EnsureContentAsync("/Root/Content", "Folder", repository, cancel);

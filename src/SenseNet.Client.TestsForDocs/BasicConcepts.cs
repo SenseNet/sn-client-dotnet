@@ -29,18 +29,20 @@ namespace SenseNet.Client.TestsForDocs
         public async Task Docs2_BasicConcepts_GetSingleContentById()
         {
             var content =
-                /*<doc>*/await repository.LoadContentAsync(1368, cancel)/*</doc>*/.ConfigureAwait(false);
+                /*<doc>*/await repository.LoadContentAsync(11, cancel)/*</doc>*/.ConfigureAwait(false);
             Assert.IsNotNull(content);
-            Assert.AreEqual(1368, content.Id);
+            Assert.AreEqual(11, content.Id);
+            Assert.AreEqual("Operators", content.Name);
 
             /*<doc>*/
             // or
             /*</doc>*/
 
             var myContent =
-                /*<doc>*/await repository.LoadContentAsync<Folder>(1368, cancel)/*</doc>*/.ConfigureAwait(false);
+                /*<doc>*/await repository.LoadContentAsync<Group>(11, cancel)/*</doc>*/.ConfigureAwait(false);
             Assert.IsNotNull(myContent);
-            Assert.AreEqual(1368, myContent.Id);
+            Assert.AreEqual(11, myContent.Id);
+            Assert.AreEqual("Operators", content.Name);
         }
 
         /// <tab category="basic-concepts" article="entry" example="byPath" />
@@ -218,10 +220,10 @@ namespace SenseNet.Client.TestsForDocs
             {
                 Path = "/Root/Content/Cars/OT1234",
                 Expand = new[] { "CreatedBy" },
-                Select = new[] { "Name", "CreatedBy/Name" }
+                Select = new[] { "Name", "CreatedBy/DisplayName" }
             }, cancel)/*</doc>*/.ConfigureAwait(false);
 
-            Assert.AreEqual("Admin", content.CreatedBy.Name.ToString());
+            Assert.AreEqual("Admin", content.CreatedBy.DisplayName.ToString());
         }
 
         /// <tab category="basic-concepts" article="select-expand" example="expandAllowedChildTypes" />
@@ -330,7 +332,7 @@ namespace SenseNet.Client.TestsForDocs
             var result = /*<doc>*/await repository.LoadCollectionAsync(new LoadCollectionRequest
             {
                 Path = "/Root/Content/Cars",
-                OrderBy = new[] { "StartingDate desc", "DisplayName", "Name" }
+                OrderBy = new[] { "StartingDate desc", "DisplayName" }
             }, cancel)/*</doc>*/.ConfigureAwait(false);
 
             var dates = result

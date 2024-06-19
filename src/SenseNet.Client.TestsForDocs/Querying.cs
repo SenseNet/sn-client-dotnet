@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json.Linq;
 using SenseNet.Client.TestsForDocs.Infrastructure;
+using System.Linq;
 // ReSharper disable RedundantAssignment
 // ReSharper disable InconsistentNaming
 
@@ -181,6 +182,26 @@ Assert.Inconclusive();
             // ASSERT
             var names = result.Select(c => c.Name).Distinct().ToArray();
             Assert.IsTrue(10 >= names.Length);
+        }
+
+        /* ====================================================================================== Fulltext Search */
+
+        /// <tab category="querying" article="query" example="fullText" />
+        [TestMethod]
+        [Description("Fulltext search")]
+        public async Task Docs_Querying_FullTextSearch()
+        {
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "California" }, cancel);
+            /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?query=California
+            */
+
+            // ASSERT
+            var displayNames = result.Select(c => c.DisplayName).Distinct().ToArray();
+            Assert.IsTrue(displayNames.Contains("Ferrari California"));
         }
 
         /* ====================================================================================== Query by Id or Path */
@@ -387,26 +408,6 @@ Assert.Inconclusive();
             // ASSERT
             var displayName = result.Select(c => c.DisplayName).Distinct().Single();
             Assert.AreEqual("Ferrari California", displayName);
-        }
-
-        /* ====================================================================================== Fulltext Search */
-
-        /// <tab category="querying" article="query" example="fullText" />
-        [TestMethod]
-        [Description("Fulltext search")]
-        public async Task Docs_Querying_FullTextSearch()
-        {
-            /*<doc>*/
-            var result = await repository.QueryAsync(
-                new QueryContentRequest {ContentQuery = "California"}, cancel);
-            /*</doc>*/
-            /* RAW REQUEST:
-            GET https://localhost:44362/OData.svc/Root?query=California
-            */
-
-            // ASSERT
-            var displayNames = result.Select(c => c.DisplayName).Distinct().ToArray();
-            Assert.IsTrue(displayNames.Contains("Ferrari California"));
         }
 
         /* ====================================================================================== Query by date */
@@ -639,37 +640,50 @@ Assert.Inconclusive();
         }
 
         /// <tab category="querying" article="query-by-date" example="byLifespan" />
-        //UNDONE:Docs2: the test is not implemented
         [TestMethod]
         [Description("Query by lifespan validity")]
         public async Task Docs_Querying_Date_LifespanOn()
         {
-Assert.Inconclusive();
+            await EnsureContentAsync("/Root/Content/Articles", "Folder", repository, cancel);
+            await EnsureContentAsync("/Root/Content/Articles/Article1", "Article", c =>
+            {
+                var now = DateTime.UtcNow;
+                c["EnableLifespan"] = true;
+                c["ValidFrom"] = now.AddDays(-3);
+                c["ValidTill"] = now.AddDays(-1);
+            }, repository, cancel);
+            await EnsureContentAsync("/Root/Content/Articles/Article2", "Article", c =>
+            {
+                var now = DateTime.UtcNow;
+                c["EnableLifespan"] = true;
+                c["ValidFrom"] = now.AddDays(-1);
+                c["ValidTill"] = now.AddDays(1);
+            }, repository, cancel);
+            await EnsureContentAsync("/Root/Content/Articles/Article3", "Article", c =>
+            {
+                var now = DateTime.UtcNow;
+                c["EnableLifespan"] = true;
+                c["ValidFrom"] = now.AddDays(1);
+                c["ValidTill"] = now.AddDays(3);
+            }, repository, cancel);
             try
             {
-                await EnsureContentAsync("/Root/Content/Folder1", "Folder", repository, cancel);
-
-                // ACTION for doc
                 /*<doc>*/
                 var result = await repository.QueryAsync(
                     new QueryContentRequest {ContentQuery = "TypeIs:Article .LIFESPAN:ON"}, cancel);
-
-                // foreach (dynamic content in result)
-                //    Console.WriteLine($"{content.Id} {content.Name}");
                 /*</doc>*/
-
-                // Real test
-                result = await repository.QueryAsync(
-                    new QueryContentRequest { ContentQuery = "TypeIs:Folder .LIFESPAN:ON" }, cancel);
+                /*RAW REQUEST:
+                GET https://localhost:44362/OData.svc/Root?metadata=no&query=TypeIs:Article .LIFESPAN:ON
+                */
 
                 // ASSERT
-                var names = result.Select(c => c.Name).Distinct().ToArray();
-                Assert.IsTrue(names.Length > 0);
+                var names = string.Join(", ", result.Select(c => c.Name).OrderBy(x => x));
+                Assert.AreEqual("Article2", names);
             }
             finally
             {
                 await repository.DeleteContentAsync(
-                    new[] {"/Root/Content/Folder1"},
+                    new[] { "/Root/Content/Articles" },
                     true, cancel).ConfigureAwait(false);
             }
         }
@@ -681,22 +695,22 @@ Assert.Inconclusive();
         [Description("Query by related content")]
         public async Task Docs_Querying_NestedQuery()
         {
-            // ACTION for doc
+            var jjohnson = await repository.LoadContentAsync("/Root/IMS/Public/jjohnson", cancel);
+            var content = await repository.LoadContentAsync("/Root/Content/Cars/OT6578", cancel);
+            content["ModifiedBy"] = jjohnson.Path;
+            await content.SaveAsync(cancel);
+
             /*<doc>*/
             var result = await repository.QueryAsync(
-                new QueryContentRequest { ContentQuery = "Manager:{{Name:'businesscat'}}" }, cancel);
-
-            // foreach (dynamic content in result)
-            //    Console.WriteLine($"{content.Id} {content.Name}");
+                new QueryContentRequest { ContentQuery = "ModifiedBy:{{Name:'jjohnson'}}" }, cancel);
             /*</doc>*/
-
-            // Real test
-            result = await repository.QueryAsync(
-                new QueryContentRequest {ContentQuery = "ModifiedBy:{{Name:'admin'}}"}, cancel);
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?query=ModifiedBy:{{Name:'jjohnson'}}
+            */
 
             // ASSERT
-            var names = result.Select(c => c.Name).Distinct().ToArray();
-            Assert.IsTrue(names.Length > 0);
+            var displayName = result.Select(c => c.DisplayName).Distinct().First();
+            Assert.AreEqual("Toyota AE86", displayName);
         }
 
         /* ====================================================================================== Query by type */
@@ -706,18 +720,18 @@ Assert.Inconclusive();
         [Description("Query by a type")]
         public async Task Docs_Querying_Type()
         {
-            // ACTION for doc
             /*<doc>*/
             var result = await repository.QueryAsync(
-                new QueryContentRequest { ContentQuery = "Type:DocumentLibrary" }, cancel);
-
-            // foreach (dynamic content in result)
-            //    Console.WriteLine($"{content.Id} {content.Name}");
+                new QueryContentRequest { ContentQuery = "Type:Car" }, cancel);
             /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?query=Type:Car
+            */
 
             // ASSERT
-            var names = result.Select(c => c.Name).Distinct().ToArray();
-            Assert.IsTrue(names.Length > 0);
+            Assert.IsTrue(result.Count() > 8);
+            var types = result.Select(c => c.Type).Distinct().ToArray();
+            Assert.AreEqual("Car", types.Single());
         }
 
         /// <tab category="basic-concepts" article="query-by-type" example="byTypeFamily" />
@@ -725,18 +739,19 @@ Assert.Inconclusive();
         [Description("Query by a type and its subtypes")]
         public async Task Docs_Querying_TypeIs()
         {
-            // ACTION for doc
             /*<doc>*/
             var result = await repository.QueryAsync(
                 new QueryContentRequest { ContentQuery = "TypeIs:Folder" }, cancel);
-
-            // foreach (dynamic content in result)
-            //    Console.WriteLine($"{content.Id} {content.Name}");
             /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?query=TypeIs:Folder
+            */
 
             // ASSERT
-            var names = result.Select(c => c.Name).Distinct().ToArray();
-            Assert.IsTrue(names.Length > 0);
+            var types = result.Select(c => c.Type).Distinct().OrderBy(x => x).ToArray();
+            Assert.IsTrue(types.Contains("Folder"));
+            Assert.IsTrue(types.Contains("DocumentLibrary"));
+            Assert.IsTrue(types.Contains("Workspace"));
         }
 
         /* ====================================================================================== Ordering */
@@ -746,18 +761,17 @@ Assert.Inconclusive();
         [Description("Order by a field - lowest to highest")]
         public async Task Docs_Querying_OrderBy_Ascending()
         {
-            // ACTION for doc
             /*<doc>*/
             var result = await repository.QueryAsync(
-                new QueryContentRequest { ContentQuery = "Type:Folder .SORT:Name" }, cancel);
-
-            // foreach (dynamic content in result)
-            //    Console.WriteLine($"{content.Id} {content.Name}");
+                new QueryContentRequest { ContentQuery = "Type:Car .SORT:Name" }, cancel);
             /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?query=Type:Car .SORT:Name
+            */
 
             // ASSERT
-            Assert.IsTrue(result.Count() > 2);
             var names = result.Select(c => c.Name).Distinct().ToArray();
+            Assert.IsTrue(result.Count() > 2);
             for (var i = 1; i < names.Length; i++)
                 Assert.IsTrue(String.Compare(names[i - 1], names[i], StringComparison.Ordinal) <= 0);
         }
@@ -770,11 +784,11 @@ Assert.Inconclusive();
             // ACTION for doc
             /*<doc>*/
             var result = await repository.QueryAsync(
-                new QueryContentRequest { ContentQuery = "Type:Folder .REVERSESORT:Name" }, cancel);
-
-            // foreach (dynamic content in result)
-            //    Console.WriteLine($"{content.Id} {content.Name}");
+                new QueryContentRequest { ContentQuery = "Type:Car .REVERSESORT:Name" }, cancel);
             /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?query=Type:Car .REVERSESORT:Name
+            */
 
             // ASSERT
             Assert.IsTrue(result.Count() > 2);
@@ -788,14 +802,13 @@ Assert.Inconclusive();
         [Description("Order by multiple fields")]
         public async Task Docs_Querying_OrderBy_MultipleField()
         {
-            // ACTION for doc
             /*<doc>*/
             var result = await repository.QueryAsync(
-                new QueryContentRequest { ContentQuery = "Type:Folder .SORT:Name .SORT:Index" }, cancel);
-
-            // foreach (dynamic content in result)
-            //    Console.WriteLine($"{content.Id} {content.Name}");
+                new QueryContentRequest { ContentQuery = "Type:Car .SORT:Color .SORT:Name" }, cancel);
             /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?query=Type:Car .SORT:Color .SORT:Name
+            */
 
             // ASSERT
             var names = result.Select(c => c.Name).Distinct().ToArray();
@@ -807,14 +820,13 @@ Assert.Inconclusive();
         [Description("Order by multiple fields in different directions")]
         public async Task Docs_Querying_OrderBy_DifferendDirections()
         {
-            // ACTION for doc
             /*<doc>*/
             var result = await repository.QueryAsync(
-                new QueryContentRequest { ContentQuery = "Type:Folder .SORT:Name .REVERSESORT:Index" }, cancel);
-
-            // foreach (dynamic content in result)
-            //    Console.WriteLine($"{content.Id} {content.Name}");
+                new QueryContentRequest { ContentQuery = "Type:Car .REVERSESORT:Color .SORT:Name" }, cancel);
             /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?query=Type:Car .REVERSESORT:Color .SORT:Name
+            */
 
             // ASSERT
             var names = result.Select(c => c.Name).Distinct().ToArray();
@@ -829,11 +841,11 @@ Assert.Inconclusive();
             // ACTION for doc
             /*<doc>*/
             var result = await repository.QueryAsync(
-                new QueryContentRequest { ContentQuery = "TypeIs:File .SORT:ModificationDate" }, cancel);
-
-            // foreach (dynamic content in result)
-            //    Console.WriteLine($"{content.Id} {content.Name}");
+                new QueryContentRequest { ContentQuery = "Type:Car .SORT:StartingDate" }, cancel);
             /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?query=Type:Car .SORT:StartingDate
+            */
 
             // ASSERT
             var names = result.Select(c => c.Name).Distinct().ToArray();
@@ -847,18 +859,17 @@ Assert.Inconclusive();
         [Description("Limit result count")]
         public async Task Docs_Querying_Top()
         {
-            // ACTION for doc
             /*<doc>*/
             var result = await repository.QueryAsync(
-                new QueryContentRequest { ContentQuery = "TypeIs:Folder .TOP:10" }, cancel);
-
-            // foreach (dynamic content in result)
-            //    Console.WriteLine($"{content.Id} {content.Name}");
+                new QueryContentRequest { ContentQuery = "TypeIs:Car .TOP:5" }, cancel);
             /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?query=TypeIs:Car .TOP:5
+            */
 
             // ASSERT
             var names = result.Select(c => c.Name).Distinct().ToArray();
-            Assert.IsTrue(names.Length > 2);
+            Assert.AreEqual(5, names.Length);
         }
 
         /// <tab category="querying" article="query-paging" example="skip-and-top" />
@@ -869,15 +880,15 @@ Assert.Inconclusive();
             // ACTION for doc
             /*<doc>*/
             var result = await repository.QueryAsync(
-                new QueryContentRequest { ContentQuery = "TypeIs:Folder .SKIP:3 .TOP:3" }, cancel);
-
-            // foreach (dynamic content in result)
-            //    Console.WriteLine($"{content.Id} {content.Name}");
+                new QueryContentRequest { ContentQuery = "TypeIs:Car .SKIP:3 .TOP:3" }, cancel);
             /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?query=TypeIs:Car .SKIP:3 .TOP:3
+            */
 
             // ASSERT
             var names = result.Select(c => c.Name).Distinct().ToArray();
-            Assert.IsTrue(names.Length > 2);
+            Assert.AreEqual(3, names.Length);
         }
 
         /* ====================================================================================== Multiple predicates */
@@ -887,37 +898,17 @@ Assert.Inconclusive();
         [Description("Operators 1")]
         public async Task Docs_Querying_Operators_Or()
         {
-            try
-            {
-                var folder1 = await EnsureContentAsync("/Root/Content/Folder1", "Folder", repository, cancel);
-                folder1["Description"] = "cherry apple banana";
-                await folder1.SaveAsync(cancel);
-                var folder2 = await EnsureContentAsync("/Root/Content/Folder2", "Folder", repository, cancel);
-                folder2["Description"] = "cherry melon walnut";
-                await folder2.SaveAsync(cancel);
-                var folder3 = await EnsureContentAsync("/Root/Content/Folder3", "Folder", repository, cancel);
-                folder3["Description"] = "cherry pear banana";
-                await folder3.SaveAsync(cancel);
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest {ContentQuery = "Color:White OR Color:Red"}, cancel);
+            /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?query=Color:White OR Color:Red
+            */
 
-                // ACTION for doc
-                /*<doc>*/
-                var result = await repository.QueryAsync(
-                    new QueryContentRequest { ContentQuery = "melon OR apple" }, cancel);
-
-                // foreach (dynamic content in result)
-                //    Console.WriteLine($"{content.Id} {content.Name}");
-                /*</doc>*/
-
-                // ASSERT
-                var actual = string.Join(", ", result.Select(c => c.Name).OrderBy(x => x).Distinct());
-                Assert.AreEqual("Folder1, Folder2", actual);
-            }
-            finally
-            {
-                await repository.DeleteContentAsync(
-                    new[] { "/Root/Content/Folder1", "/Root/Content/Folder2", "/Root/Content/Folder3" },
-                    true, cancel).ConfigureAwait(false);
-            }
+            // ASSERT
+            var actual = string.Join(", ", result.Select(c => c["Color"].ToString()).OrderBy(x => x).Distinct());
+            Assert.AreEqual("Red, White", actual);
         }
 
         /// <tab category="querying" article="query-multiple-predicates" example="and" />
@@ -925,47 +916,17 @@ Assert.Inconclusive();
         [Description("Operators 2")]
         public async Task Docs_Querying_Operators_And()
         {
-            // In memory index does not implement well any stemmer.
-            // See 'private List<string> GetValues(SnTerm field)' in InMemoryIndex.cs
-            // Use this query for in memory index tests:
-            //var result = await repository.QueryAsync(
-            //    new QueryContentRequest { ContentQuery = "Description:*document* AND Description:*library*" }, cancel);
-            try
-            {
-                var folder1 = await EnsureContentAsync("/Root/Content/Folder1", "Folder", repository, cancel);
-                folder1["Description"] = "cherry apple banana";
-                await folder1.SaveAsync(cancel);
-                var folder2 = await EnsureContentAsync("/Root/Content/Folder2", "Folder", repository, cancel);
-                folder2["Description"] = "cherry melon walnut";
-                await folder2.SaveAsync(cancel);
-                var folder3 = await EnsureContentAsync("/Root/Content/Folder3", "Folder", repository, cancel);
-                folder3["Description"] = "cherry pear banana";
-                await folder3.SaveAsync(cancel);
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "Color:White AND Style:Sedan" }, cancel);
+            /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?query=Color:White AND Style:Sedan
+            */
 
-                // ACTION for doc
-                /*<doc>*/
-                var result = await repository.QueryAsync(
-                    new QueryContentRequest { ContentQuery = "+EventType:Demo AND +EventType:Meeting" }, cancel);
-
-                // foreach (dynamic content in result)
-                //    Console.WriteLine($"{content.Id} {content.Name}");
-                /*</doc>*/
-
-                // Real test
-                result = await repository.QueryAsync(
-                    new QueryContentRequest { ContentQuery = "Description:'cherry' AND Description:'banana'" }, cancel);
-
-                // ASSERT
-                var actual = string.Join(", ", result.Select(c => c.Name).OrderBy(x => x).Distinct());
-                Assert.AreEqual("Folder1, Folder3", actual);
-            }
-            finally
-            {
-                await repository.DeleteContentAsync(
-                    new[] { "/Root/Content/Folder1", "/Root/Content/Folder2", "/Root/Content/Folder3" },
-                    true, cancel).ConfigureAwait(false);
-            }
-
+            // ASSERT
+            var actual = string.Join(", ", result.Select(c => c.DisplayName).OrderBy(x => x).Distinct());
+            Assert.AreEqual("Toyota AE86", actual);
         }
 
         /// <tab category="querying" article="query-multiple-predicates" example="plus" />
@@ -973,15 +934,17 @@ Assert.Inconclusive();
         [Description("Operators 3")]
         public async Task Docs_Querying_Operators_Must()
         {
-            //UNDONE:-- BUG in the doc: 'AND' operator need to be deleted
-            // ACTION for doc
-            var result = await Content.QueryAsync("+EventType:Demo AND +EventType:Meeting");
-
-            // foreach (dynamic content in result)
-            //     Console.WriteLine($"{content.Id} {content.Name}");
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "+Color:White +Style:Sedan" }, cancel);
+            /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?query=+Color:White +Style:Sedan
+            */
 
             // ASSERT
-            Assert.Inconclusive();
+            var actual = string.Join(", ", result.Select(c => c.DisplayName).OrderBy(x => x).Distinct());
+            Assert.AreEqual("Toyota AE86", actual);
         }
 
         /// <tab category="querying" article="query-multiple-predicates" example="not" />
@@ -989,14 +952,17 @@ Assert.Inconclusive();
         [Description("Operators 4")]
         public async Task Docs_Querying_Operators_Not()
         {
-            // ACTION for doc
-            var result = await Content.QueryAsync("apple NOT melon");
-
-            // foreach (dynamic content in result)
-            //     Console.WriteLine($"{content.Id} {content.Name}");
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "Color:White AND NOT Style:Sedan" }, cancel);
+            /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?query=Color:White AND NOT Style:Sedan
+            */
 
             // ASSERT
-            Assert.Inconclusive();
+            var actual = string.Join(", ", result.Select(c => c.DisplayName).OrderBy(x => x).Distinct());
+            Assert.AreEqual("Skoda Octavia", actual);
         }
 
         /// <tab category="querying" article="query-multiple-predicates" example="minus" />
@@ -1004,14 +970,17 @@ Assert.Inconclusive();
         [Description("Operators 5")]
         public async Task Docs_Querying_Operators_MustNot()
         {
-            // ACTION for doc
-            var result = await Content.QueryAsync("upgrade -demo");
-
-            // foreach (dynamic content in result)
-            //     Console.WriteLine($"{content.Id} {content.Name}");
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "+Color:White -Style:Sedan" }, cancel);
+            /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?query=+Color:White -Style:Sedan
+            */
 
             // ASSERT
-            Assert.Inconclusive();
+            var actual = string.Join(", ", result.Select(c => c.DisplayName).OrderBy(x => x).Distinct());
+            Assert.AreEqual("Skoda Octavia", actual);
         }
 
         /// <tab category="querying" article="query-multiple-predicates" example="grouping" />
@@ -1019,133 +988,222 @@ Assert.Inconclusive();
         [Description("Grouping")]
         public async Task Docs_Querying_Operators_Grouping()
         {
-            // ACTION for doc
-            var result = await Content.QueryAsync("(EventType:Demo AND EventType:Meeting) OR EventType:Deadline");
-
-            // foreach (dynamic content in result)
-            //     Console.WriteLine($"{content.Id} {content.Name}");
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "Color:White AND (Style:Sedan OR Price:<10000000)" }, cancel);
+            /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?metadata=no&query=Color:White AND (Style:Sedan OR Price:<10000000)
+            */
 
             // ASSERT
-            Assert.Inconclusive();
+            var actual = string.Join(", ", result.Select(c => c.DisplayName).OrderBy(x => x).Distinct());
+            Assert.AreEqual("Skoda Octavia, Toyota AE86", actual);
         }
 
         /* ====================================================================================== Query system content */
 
         /// 
         [TestMethod]
-        [Description("")]
+        [Description("Query system content")]
         public async Task Docs_Querying_AutofiltersOff()
         {
-            // ACTION for doc
-            var result = await Content.QueryAsync("Type:ContentType .AUTOFILTERS:OFF");
-
-            // foreach (dynamic content in result)
-            //     Console.WriteLine($"{content.Id} {content.Name}");
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "TypeIs:Folder .AUTOFILTERS:OFF" }, cancel);
+            /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?metadata=no&query=TypeIs:Folder .AUTOFILTERS:OFF
+            */
 
             // ASSERT
-            Assert.Inconclusive();
+            var types = result.Select(c => c.Type).Distinct().ToArray();
+            Assert.IsTrue(types.Contains("Folder"));
+            Assert.IsTrue(types.Contains("SystemFolder"));
         }
 
         /* ====================================================================================== Template parameters */
 
-        /// 
+        /// <tab category="querying" article="query-template-parameters" example="sharedWithCurrentUser" />
         [TestMethod]
         [Description("Using template parameters 1")]
         public async Task Docs_Querying_Template_CurrentUser()
         {
-            // ACTION for doc
-            var result = await Content.QueryAsync("SharedWith:@@CurrentUser@@");
-
-            // foreach (dynamic content in result)
-            //     Console.WriteLine($"{content.Id} {content.Name}");
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "Type:Car AND ModifiedBy:@@CurrentUser@@" }, cancel);
+            /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?metadata=no&query=Type:Car AND ModifiedBy:@@CurrentUser@@
+            */
 
             // ASSERT
-            Assert.Inconclusive();
+            Assert.IsTrue(result.Count() > 8);
         }
 
-        /// 
+        /// <tab category="querying" article="query-template-parameters" example="todaysEvents" />
         [TestMethod]
         [Description("Using template parameters 2")]
         public async Task Docs_Querying_Template_Today()
         {
-            // ACTION for doc
-            var result = await Content.QueryAsync("CalendarEvent AND StartDate:@@Today@@");
+            await EnsureContentAsync("/Root/Content/Tasks", "TaskList", repository, cancel);
+            await EnsureContentAsync("/Root/Content/Tasks/Task1", "Task", c =>
+            {
+                c["StartDate"] = DateTime.Now.AddDays(-2);
+                c["DueDate"] = DateTime.Now.AddDays(2);
+                c["AssignedTo"] = 1;
+            }, repository, cancel);
+            await EnsureContentAsync("/Root/Content/Tasks/Task2", "Task", c =>
+            {
+                c["StartDate"] = DateTime.Now;
+                c["DueDate"] = DateTime.Now.AddDays(7);
+                c["AssignedTo"] = 1;
+            }, repository, cancel);
+            try
+            {
+                /*<doc>*/
+                var result = await repository.QueryAsync(
+                    new QueryContentRequest { ContentQuery = "TypeIs:Task AND StartDate:>@@Today@@" }, cancel);
+                /*</doc>*/
+                /* RAW REQUEST:
+                GET https://localhost:44362/OData.svc/Root?metadata=no&query=TypeIs:Task AND StartDate:>@@Today@@
+                */
 
-            // foreach (dynamic content in result)
-            //     Console.WriteLine($"{content.Id} {content.Name}");
-
-            // ASSERT
-            Assert.Inconclusive();
+                // ASSERT
+                var actual = string.Join(", ", result.Select(c => c.Name).OrderBy(x => x).Distinct());
+                Assert.AreEqual("Task2", actual);
+            }
+            finally
+            {
+                await repository.DeleteContentAsync("/Root/Content/Tasks", true, cancel);
+            }
         }
 
-        /// 
+        /// <tab category="querying" article="query-template-parameters" example="nextWeekTasksOfAUser" />
         [TestMethod]
         [Description("Templates with properties 1")]
         public async Task Docs_Querying_Template_NextWeekCurrentUser()
         {
-            // ACTION for doc
-            var result = await Content.QueryAsync("+TypeIs:Task +DueDate:@@NextWeek@@ +AssignedTo:'@@CurrentUser@@'");
+            await EnsureContentAsync("/Root/Content/Tasks", "TaskList", repository, cancel);
+            await EnsureContentAsync("/Root/Content/Tasks/Task1", "Task", c =>
+            {
+                c["StartDate"] = DateTime.Now.AddDays(1);
+                c["DueDate"] = DateTime.Now.AddDays(7);
+                c["AssignedTo"] = 1;
+            }, repository, cancel);
+            try
+            {
+                /*<doc>*/
+                var result = await repository.QueryAsync(new QueryContentRequest
+                    { ContentQuery = "+TypeIs:Task +DueDate:>@@NextWeek@@ +AssignedTo:'@@CurrentUser@@'" }, cancel);
+                /*</doc>*/
+                /* RAW REQUEST:
+                GET https://localhost:44362/OData.svc/Root?metadata=no&query=+TypeIs:Task +DueDate:@@NextWeek@@ +AssignedTo:'@@CurrentUser@@'
+                */
 
-            // foreach (dynamic content in result)
-            //     Console.WriteLine($"{content.Id} {content.Name}");
-
-            // ASSERT
-            Assert.Inconclusive();
+                // ASSERT
+                var actual = string.Join(", ", result.Select(c => c.Name).OrderBy(x => x).Distinct());
+                Assert.AreEqual("Task1", actual);
+            }
+            finally
+            {
+                await repository.DeleteContentAsync("/Root/Content/Tasks", true, cancel);
+            }
         }
 
-        /// 
+        /// <tab category="querying" article="query-template-parameters" example="chainingProperties" />
+        //UNDONE:Docs2:- the test is not implemented well: server returns http 500 if the current user's manager is null
         [TestMethod]
         [Description("Templates with properties 2")]
         public async Task Docs_Querying_Template_PropertyChain()
         {
-            //UNDONE:- the test is not implemented well: server returns http 500 if the current user's manager is null
-            /*
-            // ACTION for doc
-            var result = await Content.QueryAsync("TypeIs:User +CreationDate:<@@CurrentUser.Manager.CreationDate@@");
-
-            // foreach (dynamic content in result)
-            //     Console.WriteLine($"{content.Id} {content.Name}");
+            /*<doc>*/
+            var result = await repository.QueryAsync(
+                new QueryContentRequest { ContentQuery = "TypeIs:Task +CreationDate:<@@CurrentUser.Manager.CreationDate@@" }, cancel);
+            /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root?metadata=no&query=TypeIs:User +CreationDate:<@@CurrentUser.Manager.CreationDate@@
             */
 
             // ASSERT
-            Assert.Inconclusive();
+            var actual = string.Join(", ", result.Select(c => c.DisplayName).OrderBy(x => x).Distinct());
+            Assert.AreEqual("____", actual);
         }
 
-        /// 
+        /// <tab category="querying" article="query-template-parameters" example="template-expressions" />
         [TestMethod]
         [Description("Template expressions 1")]
         public async Task Docs_Querying_Template_MinusDays()
         {
-            //UNDONE:--- BUG in doc: unwanted leading equal sign
-            /*
-            // ACTION for doc
-            var result = await Content.QueryAsync("=CreationDate:>@@CurrentDate-5days@@");
+            await EnsureContentAsync("/Root/Content/Tasks", "TaskList", repository, cancel);
+            await EnsureContentAsync("/Root/Content/Tasks/Task1", "Task", c =>
+            {
+                c["StartDate"] = DateTime.Now.AddDays(-2);
+                c["DueDate"] = DateTime.Now.AddDays(2);
+                c["AssignedTo"] = 1;
+            }, repository, cancel);
+            await EnsureContentAsync("/Root/Content/Tasks/Task2", "Task", c =>
+            {
+                c["StartDate"] = DateTime.Now.AddDays(-7);
+                c["DueDate"] = DateTime.Now;
+                c["AssignedTo"] = 1;
+            }, repository, cancel);
+            try
+            {
+                /*<doc>*/
+                var result = await repository.QueryAsync(
+                    new QueryContentRequest { ContentQuery = "TypeIs:Task AND StartDate:<@@CurrentDate-5days@@" }, cancel);
+                /*</doc>*/
+                /* RAW REQUEST:
+                GET https://localhost:44362/OData.svc/Root?metadata=no&query=TypeIs:Task AND StartDate:>@@CurrentDate-5days@@
+                */
 
-            // foreach (dynamic content in result)
-            //     Console.WriteLine($"{content.Id} {content.Name}");
-            */
-
-            // IMPROVED TEST
-            // ACTION
-            var result = await Content.QueryAsync("CreationDate:>@@CurrentDate-5days@@");
-
-            // ASSERT
-            Assert.IsTrue(result.Count() > 0);
+                // ASSERT
+                var actual = string.Join(", ", result.Select(c => c.Name).OrderBy(x => x).Distinct());
+                Assert.AreEqual("Task2", actual);
+            }
+            finally
+            {
+                await repository.DeleteContentAsync("/Root/Content/Tasks", true, cancel);
+            }
         }
 
-        /// 
+        /// <tab category="querying" article="query-template-parameters" example="template-expressions-methodlike" />
         [TestMethod]
         [Description("Template expressions 2")]
         public async Task Docs_Querying_Template_AddDays()
         {
-            // ACTION for doc
-            var result = await Content.QueryAsync("CreationDate:<@@CurrentDate.AddDays(-5)@@");
+            await EnsureContentAsync("/Root/Content/Tasks", "TaskList", repository, cancel);
+            await EnsureContentAsync("/Root/Content/Tasks/Task1", "Task", c =>
+            {
+                c["StartDate"] = DateTime.Now.AddDays(-2);
+                c["DueDate"] = DateTime.Now.AddDays(2);
+                c["AssignedTo"] = 1;
+            }, repository, cancel);
+            await EnsureContentAsync("/Root/Content/Tasks/Task2", "Task", c =>
+            {
+                c["StartDate"] = DateTime.Now.AddDays(-7);
+                c["DueDate"] = DateTime.Now;
+                c["AssignedTo"] = 1;
+            }, repository, cancel);
+            try
+            {
+                /*<doc>*/
+                var result = await repository.QueryAsync(
+                    new QueryContentRequest { ContentQuery = "TypeIs:Task AND StartDate:<@@CurrentDate.AddDays(-5)@@" }, cancel);
+                /*</doc>*/
+                /* RAW REQUEST:
+                GET https://localhost:44362/OData.svc/Root?metadata=no&query=TypeIs:Task AND StartDate:<@@CurrentDate.AddDays(-5)@@
+                */
 
-            // foreach (dynamic content in result)
-            //     Console.WriteLine($"{content.Id} {content.Name}");
-
-            // ASSERT
-            Assert.Inconclusive();
+                // ASSERT
+                var actual = string.Join(", ", result.Select(c => c.Name).OrderBy(x => x).Distinct());
+                Assert.AreEqual("Task2", actual);
+            }
+            finally
+            {
+                await repository.DeleteContentAsync("/Root/Content/Tasks", true, cancel);
+            }
         }
     }
 }
