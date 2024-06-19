@@ -19,7 +19,7 @@ namespace SenseNet.Client.TestsForDocs
         /// <tab category="querying" article="query" example="wildcard-search-single" />
         [TestMethod]
         [Description("Wildcard search 1")]
-        public async Task Docs_Querying_Wildcard_QuestionMark()
+        public async Task Docs2_Querying_Wildcard_QuestionMark()
         {
             /*<doc>*/
             var result = await repository.QueryAsync(
@@ -37,7 +37,7 @@ namespace SenseNet.Client.TestsForDocs
         /// <tab category="querying" article="query" example="wildcard-search-multiple" />
         [TestMethod]
         [Description("Wildcard search 2")]
-        public async Task Docs_Querying_Wildcard_Asterisk()
+        public async Task Docs2_Querying_Wildcard_Asterisk()
         {
             // ACTION for doc
             /*<doc>*/
@@ -59,7 +59,7 @@ namespace SenseNet.Client.TestsForDocs
         /// <tab category="querying" article="query" example="fuzzy-search" />
         [TestMethod]
         [Description("Fuzzy search")]
-        public async Task Docs_Querying_FuzzySearch()
+        public async Task Docs2_Querying_FuzzySearch()
         {
             /*<doc>*/
             var result = await repository.QueryAsync(
@@ -79,7 +79,7 @@ namespace SenseNet.Client.TestsForDocs
         //UNDONE:Docs2: the test is not implemented
         [TestMethod]
         [Description("Proximity search")]
-        public async Task Docs_Querying_ProximitySearch()
+        public async Task Docs2_Querying_ProximitySearch()
         {
 Assert.Inconclusive();
             try
@@ -113,7 +113,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query" example="special-characters-escaping" />
         [TestMethod]
         [Description("Escaping special characters 1")]
-        public async Task Docs_Querying_Escaping1()
+        public async Task Docs2_Querying_Escaping1()
         {
             // ACTION for doc
             /*<doc>*/
@@ -132,7 +132,7 @@ Assert.Inconclusive();
         //UNDONE:Docs2: the test is not implemented
         [TestMethod]
         [Description("Escaping special characters 2")]
-        public async Task Docs_Querying_Escaping2()
+        public async Task Docs2_Querying_Escaping2()
         {
 Assert.Inconclusive();
             try
@@ -168,7 +168,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query" example="quick-query" />
         [TestMethod]
         [Description("Quick queries")]
-        public async Task Docs_Querying_QuickQuery()
+        public async Task Docs2_Querying_QuickQuery()
         {
             // ACTION for doc
             /*<doc>*/
@@ -189,7 +189,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query" example="fullText" />
         [TestMethod]
         [Description("Fulltext search")]
-        public async Task Docs_Querying_FullTextSearch()
+        public async Task Docs2_Querying_FullTextSearch()
         {
             /*<doc>*/
             var result = await repository.QueryAsync(
@@ -209,7 +209,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-by-id-path" example="byId" />
         [TestMethod]
         [Description("Query a content by its Id")]
-        public async Task Docs_Querying_Id()
+        public async Task Docs2_Querying_Id()
         {
             /*<doc>*/
             var result = await repository.QueryAsync(
@@ -228,7 +228,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-by-id-path" example="byMultipleIds" />
         [TestMethod]
         [Description("Query multiple content by their Ids")]
-        public async Task Docs_Querying_MoreId()
+        public async Task Docs2_Querying_MoreId()
         {
             /*<doc>*/
             var result = await repository.QueryAsync(
@@ -248,7 +248,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-by-id-path" example="inFolder" />
         [TestMethod]
         [Description("Search in a folder")]
-        public async Task Docs_Querying_InFolder()
+        public async Task Docs2_Querying_InFolder()
         {
             // ACTION for doc
             /*<doc>*/
@@ -267,7 +267,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-by-id-path" example="inTree" />
         [TestMethod]
         [Description("Search in a branch of the content tree")]
-        public async Task Docs_Querying_InTree()
+        public async Task Docs2_Querying_InTree()
         {
             /*<doc>*/
             var result = await repository.QueryAsync(
@@ -287,7 +287,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-by-field" example="byShortText" />
         [TestMethod]
         [Description("Query by a text field 1")]
-        public async Task Docs_Querying_Name()
+        public async Task Docs2_Querying_Name()
         {
             /*<doc>*/
             var result = await repository.QueryAsync(
@@ -305,7 +305,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-by-field" example="byLongText" />
         [TestMethod]
         [Description("Query by a text field 2")]
-        public async Task Docs_Querying_Description_Wildcard()
+        public async Task Docs2_Querying_Description_Wildcard()
         {
             /*<doc>*/
             var result = await repository.QueryAsync(
@@ -323,7 +323,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-by-field" example="byNumber" />
         [TestMethod]
         [Description("Query by a number field")]
-        public async Task Docs_Querying_NumberField()
+        public async Task Docs2_Querying_NumberField()
         {
             /*<doc>*/
             var result = await repository.QueryAsync(
@@ -342,7 +342,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-by-field" example="byBoolean" />
         [TestMethod]
         [Description("Query by a boolean field")]
-        public async Task Docs_Querying_BooleanField()
+        public async Task Docs2_Querying_BooleanField()
         {
             /*<doc>*/
             var result = await repository.QueryAsync(
@@ -361,7 +361,7 @@ Assert.Inconclusive();
         //UNDONE:Docs2: the test is not implemented
         [TestMethod]
         [Description("Query by choice field (localized value)")]
-        public async Task Docs_Querying_ChoiceField_LocalizedValue()
+        public async Task Docs2_Querying_ChoiceField_LocalizedValue()
         {
 Assert.Inconclusive();
             try
@@ -395,7 +395,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-by-field" example="byChoice" />
         [TestMethod]
         [Description("Query by choice field (value)")]
-        public async Task Docs_Querying_ChoiceField_Value()
+        public async Task Docs2_Querying_ChoiceField_Value()
         {
             /*<doc>*/
             var result = await repository.QueryAsync(
@@ -415,7 +415,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-by-date" example="byExactDate" />
         [TestMethod]
         [Description("Query by an exact date")]
-        public async Task Docs_Querying_Date_Day()
+        public async Task Docs2_Querying_Date_Day()
         {
             /*<doc>*/
             var result = await repository.QueryAsync(
@@ -433,7 +433,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-by-date" example="byExactDateTime" />
         [TestMethod]
         [Description("")]
-        public async Task Docs_Querying_Date_Second()
+        public async Task Docs2_Querying_Date_Second()
         {
             /*<doc>*/
             var result = await repository.QueryAsync(
@@ -451,7 +451,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-by-date" example="byDateBefore" />
         [TestMethod]
         [Description("Query before or after a specific date")]
-        public async Task Docs_Querying_Date_LessThan()
+        public async Task Docs2_Querying_Date_LessThan()
         {
             /*<doc>*/
             var result = await repository.QueryAsync(
@@ -471,7 +471,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-by-date" example="byDateAfter" />
         [TestMethod]
         [Description("Query before or after a specific date")]
-        public async Task Docs_Querying_Date_GreaterThan()
+        public async Task Docs2_Querying_Date_GreaterThan()
         {
             /*<doc>*/
             var result = await repository.QueryAsync(
@@ -491,7 +491,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-by-date" example="byExclusiveRange" />
         [TestMethod]
         [Description("")]
-        public async Task Docs_Querying_Date_Range_Exclusive()
+        public async Task Docs2_Querying_Date_Range_Exclusive()
         {
             /*<doc>*/
             var result = await repository.QueryAsync(
@@ -509,7 +509,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-by-date" example="byInclusiveRange" />
         [TestMethod]
         [Description("Query by a date range")]
-        public async Task Docs_Querying_Date_Range_Inclusive()
+        public async Task Docs2_Querying_Date_Range_Inclusive()
         {
             /*<doc>*/
             var result = await repository.QueryAsync(
@@ -527,7 +527,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-by-date" example="byMixedRange" />
         [TestMethod]
         [Description("")]
-        public async Task Docs_Querying_Date_Range_Mixed()
+        public async Task Docs2_Querying_Date_Range_Mixed()
         {
             /*<doc>*/
             var result = await repository.QueryAsync(
@@ -545,7 +545,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-by-date" example="byYesterday" />
         [TestMethod]
         [Description("Querying with dynamic template parameters 1")]
-        public async Task Docs_Querying_Date_Template_Yesterday()
+        public async Task Docs2_Querying_Date_Template_Yesterday()
         {
             try
             {
@@ -577,7 +577,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-by-date" example="byNextMonth" />
         [TestMethod]
         [Description("Querying with dynamic template parameters 2")]
-        public async Task Docs_Querying_Date_Template_NextMonth()
+        public async Task Docs2_Querying_Date_Template_NextMonth()
         {
             try
             {
@@ -610,7 +610,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-by-date" example="byPreviousYear" />
         [TestMethod]
         [Description("Querying with dynamic template parameters 3")]
-        public async Task Docs_Querying_Date_Template_PreviousYear()
+        public async Task Docs2_Querying_Date_Template_PreviousYear()
         {
             try
             {
@@ -642,7 +642,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-by-date" example="byLifespan" />
         [TestMethod]
         [Description("Query by lifespan validity")]
-        public async Task Docs_Querying_Date_LifespanOn()
+        public async Task Docs2_Querying_Date_LifespanOn()
         {
             await EnsureContentAsync("/Root/Content/Articles", "Folder", repository, cancel);
             await EnsureContentAsync("/Root/Content/Articles/Article1", "Article", c =>
@@ -693,7 +693,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-by-references" example="byManager" />
         [TestMethod]
         [Description("Query by related content")]
-        public async Task Docs_Querying_NestedQuery()
+        public async Task Docs2_Querying_NestedQuery()
         {
             var jjohnson = await repository.LoadContentAsync("/Root/IMS/Public/jjohnson", cancel);
             var content = await repository.LoadContentAsync("/Root/Content/Cars/OT6578", cancel);
@@ -718,7 +718,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-by-type" example="byExactType" />
         [TestMethod]
         [Description("Query by a type")]
-        public async Task Docs_Querying_Type()
+        public async Task Docs2_Querying_Type()
         {
             /*<doc>*/
             var result = await repository.QueryAsync(
@@ -737,7 +737,7 @@ Assert.Inconclusive();
         /// <tab category="basic-concepts" article="query-by-type" example="byTypeFamily" />
         [TestMethod]
         [Description("Query by a type and its subtypes")]
-        public async Task Docs_Querying_TypeIs()
+        public async Task Docs2_Querying_TypeIs()
         {
             /*<doc>*/
             var result = await repository.QueryAsync(
@@ -759,7 +759,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-ordering" example="lowestToHighest" />
         [TestMethod]
         [Description("Order by a field - lowest to highest")]
-        public async Task Docs_Querying_OrderBy_Ascending()
+        public async Task Docs2_Querying_OrderBy_Ascending()
         {
             /*<doc>*/
             var result = await repository.QueryAsync(
@@ -779,7 +779,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-ordering" example="highestToLowest" />
         [TestMethod]
         [Description("Order by a field - highest to lowest")]
-        public async Task Docs_Querying_OrderBy_Descending()
+        public async Task Docs2_Querying_OrderBy_Descending()
         {
             // ACTION for doc
             /*<doc>*/
@@ -800,7 +800,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-ordering" example="byMultipleFields" />
         [TestMethod]
         [Description("Order by multiple fields")]
-        public async Task Docs_Querying_OrderBy_MultipleField()
+        public async Task Docs2_Querying_OrderBy_MultipleField()
         {
             /*<doc>*/
             var result = await repository.QueryAsync(
@@ -818,7 +818,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-ordering" example="multipleFieldsAndDirections" />
         [TestMethod]
         [Description("Order by multiple fields in different directions")]
-        public async Task Docs_Querying_OrderBy_DifferendDirections()
+        public async Task Docs2_Querying_OrderBy_DifferendDirections()
         {
             /*<doc>*/
             var result = await repository.QueryAsync(
@@ -836,7 +836,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-ordering" example="byDate" />
         [TestMethod]
         [Description("Order by date")]
-        public async Task Docs_Querying_OrderBy_Date()
+        public async Task Docs2_Querying_OrderBy_Date()
         {
             // ACTION for doc
             /*<doc>*/
@@ -857,7 +857,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-paging" example="top" />
         [TestMethod]
         [Description("Limit result count")]
-        public async Task Docs_Querying_Top()
+        public async Task Docs2_Querying_Top()
         {
             /*<doc>*/
             var result = await repository.QueryAsync(
@@ -875,7 +875,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-paging" example="skip-and-top" />
         [TestMethod]
         [Description("Jump to page")]
-        public async Task Docs_Querying_TopSkip()
+        public async Task Docs2_Querying_TopSkip()
         {
             // ACTION for doc
             /*<doc>*/
@@ -896,7 +896,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-multiple-predicates" example="or" />
         [TestMethod]
         [Description("Operators 1")]
-        public async Task Docs_Querying_Operators_Or()
+        public async Task Docs2_Querying_Operators_Or()
         {
             /*<doc>*/
             var result = await repository.QueryAsync(
@@ -914,7 +914,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-multiple-predicates" example="and" />
         [TestMethod]
         [Description("Operators 2")]
-        public async Task Docs_Querying_Operators_And()
+        public async Task Docs2_Querying_Operators_And()
         {
             /*<doc>*/
             var result = await repository.QueryAsync(
@@ -932,7 +932,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-multiple-predicates" example="plus" />
         [TestMethod]
         [Description("Operators 3")]
-        public async Task Docs_Querying_Operators_Must()
+        public async Task Docs2_Querying_Operators_Must()
         {
             /*<doc>*/
             var result = await repository.QueryAsync(
@@ -950,7 +950,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-multiple-predicates" example="not" />
         [TestMethod]
         [Description("Operators 4")]
-        public async Task Docs_Querying_Operators_Not()
+        public async Task Docs2_Querying_Operators_Not()
         {
             /*<doc>*/
             var result = await repository.QueryAsync(
@@ -968,7 +968,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-multiple-predicates" example="minus" />
         [TestMethod]
         [Description("Operators 5")]
-        public async Task Docs_Querying_Operators_MustNot()
+        public async Task Docs2_Querying_Operators_MustNot()
         {
             /*<doc>*/
             var result = await repository.QueryAsync(
@@ -986,7 +986,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-multiple-predicates" example="grouping" />
         [TestMethod]
         [Description("Grouping")]
-        public async Task Docs_Querying_Operators_Grouping()
+        public async Task Docs2_Querying_Operators_Grouping()
         {
             /*<doc>*/
             var result = await repository.QueryAsync(
@@ -1006,7 +1006,7 @@ Assert.Inconclusive();
         /// 
         [TestMethod]
         [Description("Query system content")]
-        public async Task Docs_Querying_AutofiltersOff()
+        public async Task Docs2_Querying_AutofiltersOff()
         {
             /*<doc>*/
             var result = await repository.QueryAsync(
@@ -1027,7 +1027,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-template-parameters" example="sharedWithCurrentUser" />
         [TestMethod]
         [Description("Using template parameters 1")]
-        public async Task Docs_Querying_Template_CurrentUser()
+        public async Task Docs2_Querying_Template_CurrentUser()
         {
             /*<doc>*/
             var result = await repository.QueryAsync(
@@ -1044,7 +1044,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-template-parameters" example="todaysEvents" />
         [TestMethod]
         [Description("Using template parameters 2")]
-        public async Task Docs_Querying_Template_Today()
+        public async Task Docs2_Querying_Template_Today()
         {
             await EnsureContentAsync("/Root/Content/Tasks", "TaskList", repository, cancel);
             await EnsureContentAsync("/Root/Content/Tasks/Task1", "Task", c =>
@@ -1082,7 +1082,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-template-parameters" example="nextWeekTasksOfAUser" />
         [TestMethod]
         [Description("Templates with properties 1")]
-        public async Task Docs_Querying_Template_NextWeekCurrentUser()
+        public async Task Docs2_Querying_Template_NextWeekCurrentUser()
         {
             await EnsureContentAsync("/Root/Content/Tasks", "TaskList", repository, cancel);
             await EnsureContentAsync("/Root/Content/Tasks/Task1", "Task", c =>
@@ -1115,7 +1115,7 @@ Assert.Inconclusive();
         //UNDONE:Docs2:- the test is not implemented well: server returns http 500 if the current user's manager is null
         [TestMethod]
         [Description("Templates with properties 2")]
-        public async Task Docs_Querying_Template_PropertyChain()
+        public async Task Docs2_Querying_Template_PropertyChain()
         {
             /*<doc>*/
             var result = await repository.QueryAsync(
@@ -1133,7 +1133,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-template-parameters" example="template-expressions" />
         [TestMethod]
         [Description("Template expressions 1")]
-        public async Task Docs_Querying_Template_MinusDays()
+        public async Task Docs2_Querying_Template_MinusDays()
         {
             await EnsureContentAsync("/Root/Content/Tasks", "TaskList", repository, cancel);
             await EnsureContentAsync("/Root/Content/Tasks/Task1", "Task", c =>
@@ -1171,7 +1171,7 @@ Assert.Inconclusive();
         /// <tab category="querying" article="query-template-parameters" example="template-expressions-methodlike" />
         [TestMethod]
         [Description("Template expressions 2")]
-        public async Task Docs_Querying_Template_AddDays()
+        public async Task Docs2_Querying_Template_AddDays()
         {
             await EnsureContentAsync("/Root/Content/Tasks", "TaskList", repository, cancel);
             await EnsureContentAsync("/Root/Content/Tasks/Task1", "Task", c =>
