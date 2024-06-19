@@ -129,12 +129,10 @@ Assert.Inconclusive();
         }
 
         /// <tab category="querying" article="query" example="special-character-apostrophe" />
-        //UNDONE:Docs2: the test is not implemented
         [TestMethod]
         [Description("Escaping special characters 2")]
         public async Task Docs2_Querying_Escaping2()
         {
-Assert.Inconclusive();
             try
             {
                 // This name is not possible: (1+1):2. The forbidden characters are replaced.
@@ -150,6 +148,11 @@ Assert.Inconclusive();
                 var result2 = await repository.QueryAsync(
                     new QueryContentRequest { ContentQuery = "DisplayName:\"(1+1):2\"" }, cancel);
                 /*</doc>*/
+                /* RAW REQUEST:
+                GET https://localhost:44362/OData.svc/Root?metadata=no&query=DisplayName:'(1+1):2'
+                or
+                GET https://localhost:44362/OData.svc/Root?metadata=no&query=DisplayName:"(1+1):2"
+                */
 
                 // ASSERT
                 var names1 = result1.Select(c => c["DisplayName"].ToString()).Distinct().ToArray();
@@ -181,7 +184,7 @@ Assert.Inconclusive();
 
             // ASSERT
             var names = result.Select(c => c.Name).Distinct().ToArray();
-            Assert.IsTrue(10 >= names.Length);
+            Assert.IsTrue(8 <= names.Length);
         }
 
         /* ====================================================================================== Fulltext Search */
@@ -358,12 +361,10 @@ Assert.Inconclusive();
         }
 
         /// <tab category="querying" article="query-by-field" example="byChoiceLocalized" />
-        //UNDONE:Docs2: the test is not implemented
         [TestMethod]
         [Description("Query by choice field (localized value)")]
         public async Task Docs2_Querying_ChoiceField_LocalizedValue()
         {
-Assert.Inconclusive();
             try
             {
                 await EnsureContentAsync("/Root/Content/Memos1", "MemoList", repository, cancel);
@@ -371,14 +372,13 @@ Assert.Inconclusive();
                 memo["MemoType"] = "iaudit";
                 await memo.SaveAsync(cancel);
 
-                // ACTION for doc
                 /*<doc>*/
                 var result = await repository.QueryAsync(
                     new QueryContentRequest { ContentQuery = "MemoType:'Internal audit'" }, cancel);
-
-                // foreach (dynamic content in result)
-                //    Console.WriteLine($"{content.Id} {content.Name}");
                 /*</doc>*/
+                /* RAW REQUEST:
+                GET https://localhost:44362/OData.svc/Root?metadata=no&query=MemoType:'Internal audit'
+                */
 
                 // ASSERT
                 var names = result.Select(c => c.Name).Distinct().ToArray();
