@@ -381,5 +381,14 @@ namespace SenseNet.Client.TestsForDocs.Infrastructure
             return provider.GetRequiredService<IRepositoryCollection>();
         }
 
+        protected async Task EmptyTrash(IRepository repository, CancellationToken cancel)
+        {
+            var bags = await repository.LoadCollectionAsync(
+                new LoadCollectionRequest {Path = "/Root/Trash",}, cancel).ConfigureAwait(false);
+            var bagIds = bags.Select(x => x.Id).ToArray();
+SnTrace.Test.Write($">>>> Empty trash. Bag count: {bagIds.Length}");
+            if (bagIds.Any())
+                await repository.DeleteContentAsync(bagIds, true, cancel);
+        }
     }
 }

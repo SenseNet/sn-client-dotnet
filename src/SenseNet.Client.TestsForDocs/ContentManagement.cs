@@ -445,14 +445,24 @@ namespace SenseNet.Client.TestsForDocs
                 Assert.AreEqual("Yellow", loaded["Color"].ToString());
                 Assert.AreEqual(string.Empty, loaded["Model"].ToString());
                 Assert.AreEqual("[]", loaded["Style"].ToString());
-                Assert.AreEqual("0001-01-01 00:00:00", ((JValue)loaded["StartingDate"]).Value<DateTime>().ToString("yyyy-MM-dd HH:mm:ss"));
+                Assert.AreEqual("0001-01-01 00:00:00", ((JValue) loaded["StartingDate"]).Value<DateTime>().ToString("yyyy-MM-dd HH:mm:ss"));
                 Assert.AreEqual(string.Empty, loaded["EngineSize"].ToString());
                 Assert.AreEqual(string.Empty, loaded["Power"].ToString());
                 Assert.AreEqual("0", loaded["Price"].ToString());
             }
             finally
             {
-                await backup.SaveAsync(cancel);
+                var reloaded = await repository.LoadContentAsync("/Root/Content/Cars/OT1234", cancel);
+                reloaded["DisplayName"] = backup["DisplayName"];
+                reloaded["Make"] = backup["Make"];
+                reloaded["Model"] = backup["Model"];
+                reloaded["Style"] = backup["Style"];
+                reloaded["StartingDate"] = backup["StartingDate"];
+                reloaded["Color"] = backup["Color"];
+                reloaded["EngineSize"] = backup["EngineSize"];
+                reloaded["Power"] = backup["Power"];
+                reloaded["Price"] = backup["Price"];
+                await reloaded.SaveAsync(cancel);
             }
         }
 
@@ -521,23 +531,30 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Move items to the trash")]
         public async Task Docs2_ContentManagement_Delete_ToTrash()
         {
-            // ALIGN
-            await EnsureContentAsync("/Root/Content/Cars/AAXY123", "Car", repository, cancel);
+            try
+            {
+                // ALIGN
+                await EnsureContentAsync("/Root/Content/Cars/AAXY123", "Car", repository, cancel);
 
-            /*<doc>*/
-            await repository.DeleteContentAsync("/Root/Content/Cars/AAXY123", false, cancel);
-            /*</doc>*/
-            /* RAW REQUEST:
-            POST https://localhost:44362/OData.svc/('Root')/DeleteBatch
-            models=[{
-              "permanent":false,
-              "paths":["/Root/Content/Cars/AAXY123"]
-            }] 
-            */
+                /*<doc>*/
+                await repository.DeleteContentAsync("/Root/Content/Cars/AAXY123", false, cancel);
+                /*</doc>*/
+                /* RAW REQUEST:
+                POST https://localhost:44362/OData.svc/('Root')/DeleteBatch
+                models=[{
+                  "permanent":false,
+                  "paths":["/Root/Content/Cars/AAXY123"]
+                }] 
+                */
 
-            // ASSERT
-            var content = await repository.LoadContentAsync("/Root/Content/Cars/AAXY123", cancel);
-            Assert.IsNull(content);
+                // ASSERT
+                var content = await repository.LoadContentAsync("/Root/Content/Cars/AAXY123", cancel);
+                Assert.IsNull(content);
+            }
+            finally
+            {
+                await EmptyTrash(repository, cancel);
+            }
         }
 
         /* ====================================================================================== Upload */
@@ -1424,8 +1441,10 @@ namespace SenseNet.Client.TestsForDocs
             finally
             {
                 await repository.DeleteContentAsync(path, true, cancel);
+                await EmptyTrash(repository, cancel);
             }
         }
+
 
         /// <tab category="content-management" article="trash" example="restoreToAnotherDestination" />
         [TestMethod]
@@ -1465,6 +1484,7 @@ namespace SenseNet.Client.TestsForDocs
             {
                 await repository.DeleteContentAsync("/Root/Content/TestFolder", true, cancel);
                 await repository.DeleteContentAsync("/Root/Content/Target", true, cancel);
+                await EmptyTrash(repository, cancel);
             }
         }
 
@@ -1508,6 +1528,7 @@ namespace SenseNet.Client.TestsForDocs
                 await repository.DeleteContentAsync("/Root/Content/TestFolder", true, cancel);
                 await repository.DeleteContentAsync("/Root/Content/TestFolder(1)", true, cancel);
                 await repository.DeleteContentAsync("/Root/Content/Target", true, cancel);
+                await EmptyTrash(repository, cancel);
             }
 
         }
@@ -1517,30 +1538,37 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Delete items from the trash")]
         public async Task Docs2_ContentManagement_Trash_DeleteFromTrash()
         {
-            Content content = await EnsureContentAsync("/Root/Content/TestFolder", "Folder", repository, cancel);
-            await repository.DeleteContentAsync("/Root/Content/TestFolder", false, cancel);
-            var trashBags = await repository.LoadCollectionAsync(
-                new LoadCollectionRequest {Path = "/Root/Trash"}, cancel);
-            var bag = trashBags.First();
-            bag.Name = "TrashBag-2024061101254";
-            await bag.SaveAsync(cancel);
-
-            Assert.IsFalse(await repository.IsContentExistsAsync("/Root/Content/TestFolder", cancel));
-
-            /*<doc>*/
-            await repository.InvokeActionAsync(new OperationRequest
+            try
             {
-                Path = "/Root/Trash/TrashBag-2024061101254",
-                OperationName = "Delete"
-            }, cancel);
-            /*</doc>*/
-            /* RAW REQUEST:
-            POST https://localhost:44362/OData.svc/Root/Trash('TrashBag-2024061101254')/Delete
-            */
+                Content content = await EnsureContentAsync("/Root/Content/TestFolder", "Folder", repository, cancel);
+                await repository.DeleteContentAsync("/Root/Content/TestFolder", false, cancel);
+                var trashBags = await repository.LoadCollectionAsync(
+                    new LoadCollectionRequest {Path = "/Root/Trash"}, cancel);
+                var bag = trashBags.First();
+                bag.Name = "TrashBag-2024061101254";
+                await bag.SaveAsync(cancel);
 
-            //ASSERT
-            Assert.IsFalse(await repository.IsContentExistsAsync("/Root/Content/Target/TestFolder", cancel));
-            Assert.IsFalse(await repository.IsContentExistsAsync("/Root/Trash/TrashBag-2020061101254", cancel));
+                Assert.IsFalse(await repository.IsContentExistsAsync("/Root/Content/TestFolder", cancel));
+
+                /*<doc>*/
+                await repository.InvokeActionAsync(new OperationRequest
+                {
+                    Path = "/Root/Trash/TrashBag-2024061101254",
+                    OperationName = "Delete"
+                }, cancel);
+                /*</doc>*/
+                /* RAW REQUEST:
+                POST https://localhost:44362/OData.svc/Root/Trash('TrashBag-2024061101254')/Delete
+                */
+
+                //ASSERT
+                Assert.IsFalse(await repository.IsContentExistsAsync("/Root/Content/Target/TestFolder", cancel));
+                Assert.IsFalse(await repository.IsContentExistsAsync("/Root/Trash/TrashBag-2020061101254", cancel));
+            }
+            finally
+            {
+                await EmptyTrash(repository, cancel);
+            }
         }
 
         /* ====================================================================================== List Fields */
