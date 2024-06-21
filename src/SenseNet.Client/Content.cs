@@ -912,6 +912,8 @@ public partial class Content : DynamicObject
 
             foreach (var field in _fields)
             {
+                if(field.Key == "Existing")
+                    continue;
                 dict[field.Key] = field.Value;
             }
         }
