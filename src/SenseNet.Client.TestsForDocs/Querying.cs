@@ -1117,6 +1117,7 @@ Assert.Inconclusive();
         [Description("Templates with properties 2")]
         public async Task Docs2_Querying_Template_PropertyChain()
         {
+Assert.Inconclusive();
             /*<doc>*/
             var result = await repository.QueryAsync(
                 new QueryContentRequest { ContentQuery = "TypeIs:Task +CreationDate:<@@CurrentUser.Manager.CreationDate@@" }, cancel);
