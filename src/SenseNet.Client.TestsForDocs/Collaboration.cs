@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json.Linq;
 using SenseNet.Client.TestsForDocs.Infrastructure;
+using SenseNet.Diagnostics;
 using SenseNet.Extensions.DependencyInjection;
 
 namespace SenseNet.Client.TestsForDocs
@@ -32,11 +33,13 @@ namespace SenseNet.Client.TestsForDocs
         {
             try
             {
+                SnTrace.Test.Write(">>>> ACT");
                 /*<doc>*/
                 var content = await repository.LoadContentAsync("/Root/Content/Documents", cancel);
                 content.InheritableVersioningMode = VersioningMode.MajorAndMinor;
                 await content.SaveAsync(cancel);
                 /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
                 /* RAW REQUEST:
                 PATCH https://localhost:44362/OData.svc//Root/Content/('Documents')
                 models=[{"InheritableVersioningMode":["3"]}] 
@@ -63,6 +66,7 @@ namespace SenseNet.Client.TestsForDocs
             await EnsureContentAsync("/Root/Content/Documents/BusinessPlan.docx", "File", repository, cancel);
             try
             {
+                SnTrace.Test.Write(">>>> ACT");
                 /*<doc>*/
                 var content = await repository.LoadContentAsync(new LoadContentRequest
                 {
@@ -71,6 +75,7 @@ namespace SenseNet.Client.TestsForDocs
                 }, cancel);
                 var version = content.Version;
                 /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
                 /* RAW REQUEST:
                 GET https://localhost:44362/OData.svc/Root/Content/Documents('BusinessPlan.docx')?metadata=no&$select=Id,Type,Path,Version
                 */
@@ -103,6 +108,7 @@ namespace SenseNet.Client.TestsForDocs
 
             try
             {
+                SnTrace.Test.Write(">>>> ACT");
                 /*<doc>*/
                 var request = new LoadContentRequest
                 {
@@ -112,6 +118,7 @@ namespace SenseNet.Client.TestsForDocs
                 var content = await repository.LoadContentAsync(request, cancel);
                 var version = content.Version;
                 /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
                 /* RAW REQUEST:
                 GET https://localhost:44362/OData.svc/Root/Content/Documents('BusinessPlan.docx')?version=V2.0.A
                 */
@@ -136,10 +143,12 @@ namespace SenseNet.Client.TestsForDocs
             await EnsureContentAsync("/Root/Content/Documents/BusinessPlan.docx", "File", repository, cancel);
             try
             {
+                SnTrace.Test.Write(">>>> ACT");
                 /*<doc>*/
                 var content = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
                 await content.CheckOutAsync(cancel);
                 /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
                 /* RAW REQUEST:
                 POST https://localhost:44362/OData.svc/Root/Content/Documents('BusinessPlan.docx')/CheckOut
                 */
@@ -167,10 +176,12 @@ namespace SenseNet.Client.TestsForDocs
                 doc = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
                 Assert.AreEqual("V2.0.L", doc.Version);
 
+                SnTrace.Test.Write(">>>> ACT");
                 /*<doc>*/
                 var content = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
                 await content.CheckInAsync(cancel);
                 /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
                 /* RAW REQUEST:
                 POST https://localhost:44362/OData.svc/Root/Content/Documents('BusinessPlan.docx')/CheckIn
                 */
@@ -196,6 +207,7 @@ namespace SenseNet.Client.TestsForDocs
                 var content1 = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
                 await content1.CheckOutAsync(cancel);
 
+                SnTrace.Test.Write(">>>> ACT");
                 /*<doc>*/
                 var content = await repository.LoadContentAsync(new LoadContentRequest
                 {
@@ -206,9 +218,9 @@ namespace SenseNet.Client.TestsForDocs
                 var locked = content.Locked;
                 var lockedBy = content.CheckedOutTo?.Name;
                 /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
                 /* RAW REQUEST:
-                GET https://localhost:44362/OData.svc/Root/Content/Documents('BusinessPlan.docx')?
-                $expand=CheckedOutTo&$select=Locked,CheckedOutTo/Name
+                GET https://localhost:44362/OData.svc/Root/Content/Documents('BusinessPlan.docx')?$expand=CheckedOutTo&$select=Locked,CheckedOutTo/Name
                 */
 
                 // ASSERT
@@ -237,10 +249,12 @@ namespace SenseNet.Client.TestsForDocs
                 document = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
                 Assert.AreEqual("V1.2.D", document.Version);
 
+                SnTrace.Test.Write(">>>> ACT");
                 /*<doc>*/
                 var content = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
                 await content.PublishAsync(cancel);
                 /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
                 /* RAW REQUEST:
                 POST https://localhost:44362/OData.svc/Root/Content/Documents('BusinessPlan.docx')/Publish
                 */
@@ -272,11 +286,12 @@ namespace SenseNet.Client.TestsForDocs
                 document = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
                 Assert.AreEqual("V1.2.L", document.Version);
 
-                // ACTION for doc
+                SnTrace.Test.Write(">>>> ACT");
                 /*<doc>*/
                 var content = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
                 await content.UndoCheckOutAsync(cancel);
                 /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
                 /* RAW REQUEST:
                 POST https://localhost:44362/OData.svc/Root/Content/Documents('BusinessPlan.docx')/UndoCheckOut
                 */
@@ -317,10 +332,12 @@ namespace SenseNet.Client.TestsForDocs
                     PostData = new { user = user.Id.ToString() }
                 }, HttpMethod.Post, cancel);
 
+                SnTrace.Test.Write(">>>> ACT");
                 /*<doc>*/
                 var content = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
                 await content.ForceUndoCheckOutAsync(cancel);
                 /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
                 /* RAW REQUEST:
                 POST https://localhost:44362/OData.svc/Root/Content/Documents('BusinessPlan.docx')/ForceUndoCheckOut
                 */
@@ -354,15 +371,8 @@ namespace SenseNet.Client.TestsForDocs
                 document = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
                 await document.CheckOutAsync(cancel);
 
+                SnTrace.Test.Write(">>>> ACT");
                 /*<doc>*/
-//var request = new ODataRequest(repository.Server)
-//{
-//    Path = "/Root/Content/Documents/BusinessPlan.docx",
-//    ActionName = "TakeLockOver",
-//    PostData = new {user = "/Root/IMS/BuiltIn/Portal/PublicAdmin" }
-//};
-//var result = await repository.GetResponseStringAsync(request, HttpMethod.Post, cancel);
-
                 await repository.InvokeActionAsync(new OperationRequest
                 {
                     Path = "/Root/Content/Documents/BusinessPlan.docx",
@@ -370,6 +380,7 @@ namespace SenseNet.Client.TestsForDocs
                     PostData = new {user = "/Root/IMS/BuiltIn/Portal/PublicAdmin"}
                 }, cancel);
                 /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
                 /* RAW REQUEST:
                 POST https://localhost:44362/OData.svc/Root/Content/Documents('BusinessPlan.docx')/TakeLockOver
                 models=[{"user":"/Root/IMS/BuiltIn/Portal/PublicAdmin"}] 
@@ -417,93 +428,55 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Get version history of a content")]
         public async Task Docs_Collaboration_Versioning_VersionHistory()
         {
-            // ALIGN
-            // ReSharper disable once InconsistentNaming
-            await using var Console = new StringWriter();
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
-            await EnsureContentAsync("/Root/Content/Documents", "Folder", repository, cancel);
-            var doc = await EnsureContentAsync("/Root/Content/Documents/BusinessPlan.docx", "File", repository, cancel);
-            var docId = doc.Id;
+            await EnsureContentAsync("/Root/Content/Documents/BusinessPlan.docx", "File", repository, cancel);
+            var document = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
+            var documentId = document.Id;
+            document.VersioningMode = VersioningMode.MajorAndMinor;
+            await document.SaveAsync(cancel);
             try
             {
-                doc = await repository.LoadContentAsync(docId, cancel);
-                doc["VersioningMode"] = new[] { 3 };
-                await doc.SaveAsync(cancel);
+                document = await repository.LoadContentAsync(documentId, cancel);
 
-                await doc.CheckOutAsync(cancel);
-                await doc.CheckInAsync(cancel);
-                await doc.CheckOutAsync(cancel);
-                await doc.CheckInAsync(cancel);
-                await doc.PublishAsync(cancel);
-                await doc.CheckOutAsync(cancel);
-                await doc.CheckInAsync(cancel);
-                await doc.CheckOutAsync(cancel);
-                await doc.CheckInAsync(cancel);
-                await doc.CheckOutAsync(cancel);
-                await doc.CheckInAsync(cancel);
-                await doc.PublishAsync(cancel);
-                await doc.CheckOutAsync(cancel);
-                await doc.CheckInAsync(cancel);
-                await doc.CheckOutAsync(cancel);
-                await doc.CheckInAsync(cancel);
+                await document.CheckOutAsync(cancel);
+                await document.CheckInAsync(cancel);
+                await document.CheckOutAsync(cancel);
+                await document.CheckInAsync(cancel);
+                await document.PublishAsync(cancel);
+                await document.CheckOutAsync(cancel);
+                await document.CheckInAsync(cancel);
+                await document.CheckOutAsync(cancel);
+                await document.CheckInAsync(cancel);
+                await document.CheckOutAsync(cancel);
+                await document.CheckInAsync(cancel);
+                await document.PublishAsync(cancel);
+                await document.CheckOutAsync(cancel);
+                await document.CheckInAsync(cancel);
+                await document.CheckOutAsync(cancel);
+                await document.CheckInAsync(cancel);
 
-                // ACTION for doc
+                SnTrace.Test.Write(">>>> ACT");
                 /*<doc>*/
-                var request = new ODataRequest(repository.Server)
+                var result = await repository.InvokeContentCollectionFunctionAsync<Content>(new OperationRequest
                 {
-                    /*</doc>*/Select = new []{ "Version" },
-                    /*<doc>*/Path = "/Root/Content/Documents/BusinessPlan.docx",
-                    ActionName = "Versions",
-                };
-                var result = await repository.GetResponseStringAsync(request, HttpMethod.Get, cancel);
-                Console.WriteLine(result);
+                    Path = "/Root/Content/Documents/BusinessPlan.docx",
+                    OperationName = "Versions",
+                }, cancel);
+                var versions = result
+                    .Select(content => content.Version)
+                    .ToArray(); // e.g. ["V1.0.A", "V1.1.D", "V2.0.A"]
                 /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
+                /* RAW REQUEST:
+                GET https://localhost:44362/OData.svc/Root/Content/Documents('BusinessPlan.docx')/Versions
+                */
 
                 // ASSERT
-                var expected = @"{
-  ""d"": {
-    ""__count"": 9,
-    ""results"": [
-      {
-        ""Version"": ""V1.0.A""
-      },
-      {
-        ""Version"": ""V1.1.D""
-      },
-      {
-        ""Version"": ""V1.2.D""
-      },
-      {
-        ""Version"": ""V2.0.A""
-      },
-      {
-        ""Version"": ""V2.1.D""
-      },
-      {
-        ""Version"": ""V2.2.D""
-      },
-      {
-        ""Version"": ""V3.0.A""
-      },
-      {
-        ""Version"": ""V3.1.D""
-      },
-      {
-        ""Version"": ""V3.2.D""
-      }
-    ]
-  }
-}
-";
-                var message = Console.GetStringBuilder().ToString();
-                Assert.AreEqual(expected, message);
+                Assert.AreEqual("V1.0.A, V1.1.D, V1.2.D, V2.0.A, V2.1.D, V2.2.D, V3.0.A, V3.1.D, V3.2.D",
+                    string.Join(", ", versions));
             }
             finally
             {
-                var c = await repository
-                    .LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
-                if (c != null)
-                    await c.DeleteAsync(true, cancel);
+                await repository.DeleteContentAsync("/Root/Content/Documents/BusinessPlan.docx", true, cancel);
             }
         }
 
@@ -512,37 +485,36 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Restore an old version")]
         public async Task Docs_Collaboration_Versioning_RestoreOldVersion()
         {
-            // ALIGN
-            // ReSharper disable once InconsistentNaming
-            await using var Console = new StringWriter();
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
-            await EnsureContentAsync("/Root/Content/Documents", "Folder", repository, cancel);
-            var doc = await EnsureContentAsync("/Root/Content/Documents/BusinessPlan.docx", "File", repository, cancel);
-            var docId = doc.Id;
+            await EnsureContentAsync("/Root/Content/Documents/BusinessPlan.docx", "File", repository, cancel);
+            var document = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
+            var documentId = document.Id;
+            document.VersioningMode = VersioningMode.MajorAndMinor;
+            await document.SaveAsync(cancel);
             try
             {
-                doc["VersioningMode"] = new[] { 3 };
-                await doc.SaveAsync(cancel); // V1.1.D
+                await document.CheckOutAsync(cancel); // V1.2.L
+                await document.CheckInAsync(cancel); // V1.2.D
+                document = await repository.LoadContentAsync(documentId, cancel);
+                Assert.AreEqual("V1.2.D", document.Version);
 
-                await doc.CheckOutAsync(cancel); // V1.2.L
-                await doc.CheckInAsync(cancel); // V1.2.D
-
-                // ACTION for doc
+                SnTrace.Test.Write(">>>> ACT");
                 /*<doc>*/
                 var content = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
                 await content.RestoreVersionAsync("V1.0.A", cancel);
                 /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
+                /* RAW REQUEST:
+                POST https://localhost:44362/OData.svc/content(1930)/RestoreVersion
+                models=[{"version":"V1.0.A"}] 
+                */
 
                 // ASSERT
-                content = await repository.LoadContentAsync(docId, cancel);
-                Assert.AreEqual("V1.0.A", content["Version"].ToString());
+                content = await repository.LoadContentAsync(documentId, cancel);
+                Assert.AreEqual("V1.0.A", content.Version);
             }
             finally
             {
-                var c = await repository
-                    .LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
-                if (c != null)
-                    await c.DeleteAsync(true, cancel);
+                await repository.DeleteContentAsync("/Root/Content/Documents/BusinessPlan.docx", true, cancel);
             }
         }
 
