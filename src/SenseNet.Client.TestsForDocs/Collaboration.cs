@@ -485,14 +485,20 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Restore an old version")]
         public async Task Docs_Collaboration_Versioning_RestoreOldVersion()
         {
-            await EnsureContentAsync("/Root/Content/Documents/BusinessPlan.docx", "File", repository, cancel);
+            await EnsureContentAsync("/Root/Content/Documents/BusinessPlan.docx", "File", c =>
+            {
+                c.Description = "first version";
+            }, repository, cancel);
             var document = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
             var documentId = document.Id;
             document.VersioningMode = VersioningMode.MajorAndMinor;
-            await document.SaveAsync(cancel);
+            document.Description = "second version";
+            await document.SaveAsync(cancel); // V1.1.D
             try
             {
                 await document.CheckOutAsync(cancel); // V1.2.L
+                document = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
+                document.Description = "third version";
                 await document.CheckInAsync(cancel); // V1.2.D
                 document = await repository.LoadContentAsync(documentId, cancel);
                 Assert.AreEqual("V1.2.D", document.Version);
@@ -510,7 +516,17 @@ namespace SenseNet.Client.TestsForDocs
 
                 // ASSERT
                 content = await repository.LoadContentAsync(documentId, cancel);
-                Assert.AreEqual("V1.0.A", content.Version);
+                Assert.AreEqual("first version", content.Description);
+                Assert.AreEqual("V1.3.D", content.Version);
+                var result = await repository.InvokeContentCollectionFunctionAsync<Content>(new OperationRequest
+                {
+                    Path = "/Root/Content/Documents/BusinessPlan.docx",
+                    OperationName = "Versions",
+                }, cancel);
+                var versions = result
+                    .Select(content => content.Version)
+                    .ToArray(); // e.g. ["V1.0.A", "V1.1.D", "V2.0.A"]
+                Assert.AreEqual("V1.0.A, V1.1.D, V1.2.D, V1.3.D", string.Join(", ", versions));
             }
             finally
             {
