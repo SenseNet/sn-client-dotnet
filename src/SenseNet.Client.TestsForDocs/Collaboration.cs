@@ -520,7 +520,7 @@ namespace SenseNet.Client.TestsForDocs
 
         /* ====================================================================================== Approval */
 
-        /// 
+        /// <tab category="collaboration" article="approval" example="enableApproval" />
         [TestMethod]
         [Description("Enable simple approval")]
         public async Task Docs_Collaboration_Approval_Enable()
@@ -557,7 +557,7 @@ namespace SenseNet.Client.TestsForDocs
             }
         }
 
-        /// 
+        /// <tab category="collaboration" article="approval" example="approve" />
         [TestMethod]
         [Description("Approve a content")]
         public async Task Docs_Collaboration_Approval_Approve()
@@ -602,7 +602,7 @@ namespace SenseNet.Client.TestsForDocs
             }
         }
 
-        /// 
+        /// <tab category="collaboration" article="approval" example="reject" />
         [TestMethod]
         [Description("Reject a content")]
         public async Task Docs_Collaboration_Approval_Reject()
@@ -650,63 +650,150 @@ namespace SenseNet.Client.TestsForDocs
 
         /* ====================================================================================== Saved queries */
 
-        /// 
+        /// <tab category="collaboration" article="saved-queries" example="saveQuery" />
         [TestMethod]
         [Description("Save a query")]
         public async Task Docs_Collaboration_SavedQueries_SavePublic()
         {
-            // ACTION for doc
-            var body = @"models=[{
-                ""query"": ""+TypeIs:File +InTree:/Root/Content/IT"",
-                ""displayName"": ""Public query"",
-                ""queryType"": ""Public""}]";
-            var result = await RESTCaller.GetResponseStringAsync(
-                "/Root/Content/IT/Document_Library", "SaveQuery", HttpMethod.Post, body);
-            Console.WriteLine(result);
+            try
+            {
+                SnTrace.Test.Write(">>>> ACT");
+                /*<doc>*/
+                await repository.InvokeActionAsync(new OperationRequest
+                {
+                    Path = "/Root/Content/Cars",
+                    OperationName = "SaveQuery",
+                    PostData = new
+                    {
+                        Query = "+TypeIs:Car +InTree:/Root/Content/Cars",
+                        DisplayName = "All cars",
+                        QueryType = "Public"
+                    }
+                }, cancel);
+                /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
+                /* RAW REQUEST:
+                POST https://localhost:44362/OData.svc/Root/Content('Cars')/SaveQuery
+                models=[{
+                  "Query":"+TypeIs:Car +InTree:/Root/Content/Cars",
+                  "DisplayName":"All cars",
+                  "QueryType":"Public"
+                }]
+                */
 
-            // ASSERT
-            Assert.Inconclusive();
+                // ASSERT
+                var savedQueries = await repository.LoadCollectionAsync(new LoadCollectionRequest
+                    {Path= "/Root/Content/Queries" }, cancel);
+                var savedQuery = savedQueries.FirstOrDefault();
+                Assert.IsNotNull(savedQuery);
+                Assert.AreEqual("+TypeIs:Car +InTree:/Root/Content/Cars", savedQuery["Query"].ToString());
+                Assert.AreEqual("All cars", savedQuery["DisplayName"].ToString());
+                Assert.AreEqual("[\r\n  \"Public\"\r\n]", savedQuery["QueryType"].ToString());
+            }
+            finally
+            {
+                await repository.DeleteContentAsync("/Root/Content/Queries", true, cancel);
+            }
         }
 
-        /// 
+        /// <tab category="collaboration" article="saved-queries" example="savePrivateQuery" />
+        //TODO: Causes error if the user profile cannot be created.
+        // Switch on this on the3 server:
+        // {
+        //   "sensenet": {
+        //     "identityManagement": {
+        //       "UserProfilesEnabled":  true 
+        //     } 
         [TestMethod]
         [Description("Save a private query")]
         public async Task Docs_Collaboration_SavedQueries_SavePrivate()
         {
-            Assert.Inconclusive();
-            //UNDONE:---- ERROR: The server returned an error (HttpStatus: InternalServerError): User profile could not be created.
-            // ACTION for doc
-            var body = @"models=[{
-                ""query"": ""+TypeIs:File +InTree:/Root/Content/IT"",
-                ""displayName"": ""My query"",
-                ""queryType"": ""Private""}]";
-            var result = await RESTCaller.GetResponseStringAsync(
-                "/Root/Content/IT/Document_Library", "SaveQuery", HttpMethod.Post, body);
-            Console.WriteLine(result);
+            try
+            {
+                SnTrace.Test.Write(">>>> ACT");
+                /*<doc>*/
+                await repository.InvokeActionAsync(new OperationRequest
+                {
+                    Path = "/Root/Content/Cars",
+                    OperationName = "SaveQuery",
+                    PostData = new
+                    {
+                        Query = "+TypeIs:Car +InTree:/Root/Content/Cars",
+                        DisplayName = "My query",
+                        QueryType = "Private"
+                    }
+                }, cancel);
+                /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
+                /* RAW REQUEST:
+                POST https://localhost:44362/OData.svc/Root/Content('Cars')/SaveQuery
+                models=[{
+                  "Query":"+TypeIs:Car +InTree:/Root/Content/Cars",
+                  "DisplayName":"My query",
+                  "QueryType":"Private"
+                }]
+                */
 
-            // ASSERT
-            Assert.Inconclusive();
+                // ASSERT
+                var savedQueries = await repository.LoadCollectionAsync(new LoadCollectionRequest
+                    { Path = "/Root/Profiles/BuiltIn/Admin/Queries" }, cancel);
+                var savedQuery = savedQueries.FirstOrDefault();
+                Assert.IsNotNull(savedQuery);
+                Assert.AreEqual("+TypeIs:Car +InTree:/Root/Content/Cars", savedQuery["Query"].ToString());
+                Assert.AreEqual("My query", savedQuery["DisplayName"].ToString());
+                Assert.AreEqual("[\r\n  \"Private\"\r\n]", savedQuery["QueryType"].ToString());
+            }
+            finally
+            {
+                await repository.DeleteContentAsync("/Root/Profiles/BuiltIn/Admin/Queries", true, cancel);
+            }
         }
 
-        /// 
+        /// <tab category="collaboration" article="saved-queries" example="getSavedQueries" />
         [TestMethod]
         [Description("Get saved queries")]
         public async Task Docs_Collaboration_SavedQueries_Get()
         {
-            Assert.Inconclusive();
-            //UNDONE:---- ERROR: (every second run if the test filter is: 'Docs_Collaboration_') Invalid response. Request: https://localhost:44362/OData.svc/Root/Content/Documents('BusinessPlan.docx')/GetQueries?metadata=no&onlyPublic=true. Response: 
-            // ACTION for doc
-            var result = await RESTCaller.GetResponseJsonAsync(new ODataRequest
+            try
             {
-                IsCollectionRequest = false,
-                Path = "/Root/Content/Documents/BusinessPlan.docx",
-                ActionName = "GetQueries",
-                Parameters = { { "onlyPublic", "true" } }
-            });
-            Console.WriteLine(result);
+                await repository.InvokeActionAsync(new OperationRequest
+                {
+                    Path = "/Root/Content/Cars",
+                    OperationName = "SaveQuery",
+                    PostData = new
+                    {
+                        Query = "+TypeIs:Car +InTree:/Root/Content/Cars",
+                        DisplayName = "All cars",
+                        QueryType = "Public"
+                    }
+                }, cancel);
 
-            // ASSERT
-            Assert.Inconclusive();
+                SnTrace.Test.Write(">>>> ACT");
+                /*<doc>*/
+                var savedQueries = await repository.InvokeContentCollectionFunctionAsync<SnQuery>(new OperationRequest
+                {
+                    Path = "/Root/Content/Cars",
+                    OperationName = "GetQueries",
+                    Parameters = { { "onlyPublic", "true" } }
+                }, cancel);
+                /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
+                /* RAW REQUEST:
+                GET https://localhost:44362/OData.svc/Root/Content('Cars')/GetQueries?onlyPublic=true
+                */
+
+                // ASSERT
+                var savedQuery = savedQueries.FirstOrDefault();
+                Assert.IsNotNull(savedQuery);
+                Assert.AreEqual("+TypeIs:Car +InTree:/Root/Content/Cars", savedQuery["Query"].ToString());
+                Assert.AreEqual("All cars", savedQuery["DisplayName"].ToString());
+                Assert.AreEqual("[\r\n  \"Public\"\r\n]", savedQuery["QueryType"].ToString());
+            }
+            finally
+            {
+                await repository.DeleteContentAsync("/Root/Content/Queries", true, cancel);
+            }
+
         }
     }
 }
