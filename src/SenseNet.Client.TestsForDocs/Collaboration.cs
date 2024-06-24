@@ -525,28 +525,34 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Enable simple approval")]
         public async Task Docs_Collaboration_Approval_Enable()
         {
-            //UNDONE:- Feature request: use a textual language element instead of an integer array for InheritableApprovingMode
-            //UNDONE:- Feature request: use a textual language element instead of an integer array for InheritableVersioningMode
-            // ALIGN
-            // ReSharper disable once InconsistentNaming
-            await using var Console = new StringWriter();
             try
             {
-                // ACTION for doc
-                var content = await repository.LoadContentAsync("/Root/Content/IT", cancel);
-                content["InheritableApprovingMode"] = new[] { 2 };
-                content["InheritableVersioningMode"] = new[] { 3 };
+                SnTrace.Test.Write(">>>> ACT");
+                /*<doc>*/
+                var content = await repository.LoadContentAsync("/Root/Content/Documents", cancel);
+                content.InheritableApprovingMode = ApprovingEnabled.Yes;
+                content.InheritableVersioningMode = VersioningMode.MajorAndMinor;
                 await content.SaveAsync(cancel);
+                /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
+                /* RAW REQUEST:
+                PATCH https://localhost:44362/OData.svc/Root/Content/Documents
+                models=[{
+                  "InheritableVersioningMode":["3"],
+                  "InheritableApprovingMode":["2"]
+                }] 
+                */
 
                 // ASSERT
-                var message = Console.GetStringBuilder().ToString();
-                Assert.Inconclusive();
+                var loaded = await repository.LoadContentAsync("/Root/Content/Documents", cancel);
+                Assert.AreEqual(ApprovingEnabled.Yes, loaded.InheritableApprovingMode);
+                Assert.AreEqual(VersioningMode.MajorAndMinor, loaded.InheritableVersioningMode);
             }
             finally
             {
-                var content = await repository.LoadContentAsync("/Root/Content/IT", cancel);
-                content["InheritableApprovingMode"] = new[] { 0 };
-                content["InheritableVersioningMode"] = new[] { 0 };
+                var content = await repository.LoadContentAsync("/Root/Content/Documents", cancel);
+                content.InheritableApprovingMode = ApprovingEnabled.Inherited;
+                content.InheritableVersioningMode = VersioningMode.Inherited;
                 await content.SaveAsync(cancel);
             }
         }
@@ -556,34 +562,43 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Approve a content")]
         public async Task Docs_Collaboration_Approval_Approve()
         {
-            Assert.Inconclusive();
-            //UNDONE:---- ERROR: The server returned an error (HttpStatus: InternalServerError): Currently this action is not allowed on this content.
-            // ALIGN
-            // ReSharper disable once InconsistentNaming
-            await using var Console = new StringWriter();
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
-            await EnsureContentAsync("/Root/Content/Documents", "Folder", repository, cancel);
-            await EnsureContentAsync("/Root/Content/Documents/BusinessPlan.docx", "File", repository, cancel);
             try
             {
-                // ACTION for doc
-                var result = await RESTCaller.GetResponseJsonAsync(method: HttpMethod.Post, requestData: new ODataRequest
-                {
-                    IsCollectionRequest = false,
-                    Path = "/Root/Content/Documents/BusinessPlan.docx",
-                    ActionName = "Approve",
-                });
-                Console.WriteLine(result);
+                await EnsureContentAsync("/Root/Content/Documents/BusinessPlan.docx", "File", repository, cancel);
+                var document = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
+                var documentId = document.Id;
+                document.ApprovingMode = ApprovingEnabled.Yes;
+                document.VersioningMode = VersioningMode.MajorAndMinor;
+                await document.SaveAsync(cancel);
+                document = await repository.LoadContentAsync(documentId, cancel);
+                Assert.AreEqual("V1.1.D", document.Version);
+                await document.CheckOutAsync(cancel);
+                document = await repository.LoadContentAsync(documentId, cancel);
+                Assert.AreEqual("V1.2.L", document.Version);
+                await document.CheckInAsync(cancel);
+                document = await repository.LoadContentAsync(documentId, cancel);
+                Assert.AreEqual("V1.2.D", document.Version);
+                await document.PublishAsync(cancel);
+                document = await repository.LoadContentAsync(documentId, cancel);
+                Assert.AreEqual("V1.2.P", document.Version);
+
+                SnTrace.Test.Write(">>>> ACT");
+                /*<doc>*/
+                var content = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
+                await content.ApproveAsync(cancel);
+                /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
+                /* RAW REQUEST:
+                POST https://localhost:44362/OData.svc/Root/Content/Documents/('BusinessPlan.docx')/Approve
+                */
 
                 // ASSERT
-                var message = Console.GetStringBuilder().ToString();
-                Assert.Inconclusive();
+                var loaded = await repository.LoadContentAsync(documentId, cancel);
+                Assert.AreEqual("V2.0.A", loaded.Version);
             }
             finally
             {
-                var c = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
-                if (c != null)
-                    await c.DeleteAsync(true, cancel);
+                await repository.DeleteContentAsync("/Root/Content/Documents/BusinessPlan.docx", true, cancel);
             }
         }
 
@@ -592,31 +607,44 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Reject a content")]
         public async Task Docs_Collaboration_Approval_Reject()
         {
-            Assert.Inconclusive();
-            //UNDONE:---- ERROR: The server returned an error (HttpStatus: InternalServerError): Currently this action is not allowed on this content.
-            // ALIGN
-            // ReSharper disable once InconsistentNaming
-            await using var Console = new StringWriter();
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
-            await EnsureContentAsync("/Root/Content/Documents", "Folder", repository, cancel);
-            await EnsureContentAsync("/Root/Content/Documents/BusinessPlan.docx", "File", repository, cancel);
             try
             {
-                // ACTION for doc
-                var body = @"models=[{""rejectReason"": ""Reject reason""}]";
-                var result = await RESTCaller.GetResponseStringAsync(
-                    "/Root/Content/Documents/BusinessPlan.docx", "Reject", HttpMethod.Post, body);
-                Console.WriteLine(result);
+                await EnsureContentAsync("/Root/Content/Documents/BusinessPlan.docx", "File", repository, cancel);
+                var document = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
+                var documentId = document.Id;
+                document.ApprovingMode = ApprovingEnabled.Yes;
+                document.VersioningMode = VersioningMode.MajorAndMinor;
+                await document.SaveAsync(cancel);
+                document = await repository.LoadContentAsync(documentId, cancel);
+                Assert.AreEqual("V1.1.D", document.Version);
+                await document.CheckOutAsync(cancel);
+                document = await repository.LoadContentAsync(documentId, cancel);
+                Assert.AreEqual("V1.2.L", document.Version);
+                await document.CheckInAsync(cancel);
+                document = await repository.LoadContentAsync(documentId, cancel);
+                Assert.AreEqual("V1.2.D", document.Version);
+                await document.PublishAsync(cancel);
+                document = await repository.LoadContentAsync(documentId, cancel);
+                Assert.AreEqual("V1.2.P", document.Version);
+
+                SnTrace.Test.Write(">>>> ACT");
+                /*<doc>*/
+                var content = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
+                await content.RejectAsync("Not acceptable. The document is not complete.", cancel);
+                /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
+                /* RAW REQUEST:
+                POST https://localhost:44362/OData.svc/Root/Content/Documents/('BusinessPlan.docx')/Reject
+                models=[{"rejectReason":"Not acceptable. The document is not complete."}] 
+                */
 
                 // ASSERT
-                var message = Console.GetStringBuilder().ToString();
-                Assert.Inconclusive();
+                var loaded = await repository.LoadContentAsync(documentId, cancel);
+                Assert.AreEqual("V1.2.R", loaded.Version);
             }
             finally
             {
-                var c = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
-                if (c != null)
-                    await c.DeleteAsync(true, cancel);
+                await repository.DeleteContentAsync("/Root/Content/Documents/BusinessPlan.docx", true, cancel);
             }
         }
 
