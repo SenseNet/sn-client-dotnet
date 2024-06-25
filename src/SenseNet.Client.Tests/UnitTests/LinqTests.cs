@@ -675,7 +675,7 @@ public class LinqTests : TestBase
             catch (TargetInvocationException e)
             {
                 // ASSERT
-                Assert.AreEqual("Used in processing LINQ expressions only. Do not use in your code this constructor.", e.InnerException?.Message);
+                Assert.AreEqual("This method is used in processing LINQ expressions only. Do not use it in your code.", e.InnerException?.Message);
             }
         });
     }

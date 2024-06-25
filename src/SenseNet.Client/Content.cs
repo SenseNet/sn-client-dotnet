@@ -308,13 +308,13 @@ public partial class Content : DynamicObject
     }
 
     /// <summary>
-    /// Used in processing LINQ expressions only. Do not use in your code this constructor.
+    /// This method is used in processing LINQ expressions only. Do not use it in your code.
     /// </summary>
-    /// <param name="fieldProjection"></param>
+    /// <param name="fields"></param>
     /// <exception cref="NotSupportedException"></exception>
     public static T Create<T>(params object[] fields) where T : Content
     {
-        throw new NotSupportedException("Used in processing LINQ expressions only. Do not use in your code this constructor.");
+        throw new NotSupportedException("This method is used in processing LINQ expressions only. Do not use it in your code.");
     }
 
     //============================================================================= Static API

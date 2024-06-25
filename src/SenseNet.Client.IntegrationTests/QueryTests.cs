@@ -122,7 +122,7 @@ public class QueryTests : IntegrationTestBase
         var contents = repository.Content
             .Where(u => u.InTree("/Root/IMS") && u.Name.StartsWith("Adm"))
             .OrderBy(c => c.Path)
-            .Select(u => new Content(u.Name, u.Type, u.Path))
+            .Select(u => Content.Create<Content>(u.Name, u.Type, u.Path))
             .ToArray();
 
         // ASSERT
