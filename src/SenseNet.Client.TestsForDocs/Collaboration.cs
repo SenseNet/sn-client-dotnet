@@ -272,7 +272,7 @@ namespace SenseNet.Client.TestsForDocs
         /// <tab category="collaboration" article="versioning" example="undoChanges" />
         [TestMethod]
         [Description("Undo changes")]
-        public async Task Docs22_Collaboration_Versioning_Undo()
+        public async Task Docs2_Collaboration_Versioning_Undo()
         {
             await EnsureContentAsync("/Root/Content/Documents/BusinessPlan.docx", "File", repository, cancel);
             var document = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);

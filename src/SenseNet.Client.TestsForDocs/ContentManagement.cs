@@ -1284,7 +1284,7 @@ namespace SenseNet.Client.TestsForDocs
         }
 
         /// <tab category="content-management" article="allowed-childtypes" example="checkAllowedTypes" />
-        //UNDONE:Doc2: Missing assertion.
+        //UNDONE:Docs2: Missing assertion.
         [TestMethod]
         [Description("Check allowed childtypes")]
         public async Task Docs2_ContentManagement_AllowedChildTypes_Check()
