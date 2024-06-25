@@ -434,7 +434,7 @@ public partial class Content
     }
 
     private readonly string[] _skippedProperties = new[]
-        {"FieldNames", "Id", "Item", "ParentPath", "ParentId", "Path", "Repository", "Server"};
+        {"FieldNames", "Id", "Item", "ParentPath", "ParentId", "Path", "Versions", "Repository", "Server"};
     private void ManagePostData(IDictionary<string, object> postData)
     {
         var originalFields = (JObject)_responseContent;
@@ -456,8 +456,10 @@ public partial class Content
                 {
                     if (ManageReferences(property.PropertyType, property.Name, propertyValue, originalValue, postData))
                         continue;
-                    var originalRawValue = originalValue is JObject ? JsonHelper.Serialize(originalValue) : originalValue.ToString();
-                    var currentRawValue = propertyValue is string ? (string)propertyValue : JsonHelper.Serialize(propertyValue);
+                    var originalRawValue = JsonHelper.Serialize(originalValue).Trim('"');
+                    if (originalRawValue == "[]")
+                        originalRawValue = "null";
+                    var currentRawValue = propertyValue is string ? (string)propertyValue : JsonHelper.Serialize(propertyValue).Trim('"');
                     if (currentRawValue == originalRawValue)
                         continue;
                 }

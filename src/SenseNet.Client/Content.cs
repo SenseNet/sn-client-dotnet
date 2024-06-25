@@ -922,7 +922,6 @@ public partial class Content : DynamicObject
     public async Task SaveAsync(CancellationToken cancel)
     {
         dynamic postData = new ExpandoObject();
-        postData.Name = this.Name;
 
         // add local field values to post data
         if (_fields != null)
