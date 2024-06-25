@@ -29,7 +29,7 @@ namespace SenseNet.Client.TestsForDocs
         /// <tab category="collaboration" article="versioning" example="enableVersioning" />
         [TestMethod]
         [Description("Enable versioning")]
-        public async Task Docs_Collaboration_Versioning_EnableVersioning()
+        public async Task Docs2_Collaboration_Versioning_EnableVersioning()
         {
             try
             {
@@ -60,7 +60,7 @@ namespace SenseNet.Client.TestsForDocs
         /// <tab category="collaboration" article="versioning" example="versionNumber" />
         [TestMethod]
         [Description("Get current version of a content")]
-        public async Task Docs_Collaboration_Versioning_GetCurrentVersion()
+        public async Task Docs2_Collaboration_Versioning_GetCurrentVersion()
         {
             // ALIGN
             await EnsureContentAsync("/Root/Content/Documents/BusinessPlan.docx", "File", repository, cancel);
@@ -92,7 +92,7 @@ namespace SenseNet.Client.TestsForDocs
         /// <tab category="collaboration" article="versioning" example="specificVersion" />
         [TestMethod]
         [Description("Get a specific version of a content")]
-        public async Task Docs_Collaboration_Versioning_GetSpecificVersion()
+        public async Task Docs2_Collaboration_Versioning_GetSpecificVersion()
         {
             var documents = await repository.LoadContentAsync("/Root/Content/Documents", cancel);
             documents.InheritableVersioningMode = VersioningMode.MajorOnly;
@@ -138,7 +138,7 @@ namespace SenseNet.Client.TestsForDocs
         /// <tab category="collaboration" article="versioning" example="checkout" />
         [TestMethod]
         [Description("Checkout a content for edit")]
-        public async Task Docs_Collaboration_Versioning_CheckOut()
+        public async Task Docs2_Collaboration_Versioning_CheckOut()
         {
             await EnsureContentAsync("/Root/Content/Documents/BusinessPlan.docx", "File", repository, cancel);
             try
@@ -166,7 +166,7 @@ namespace SenseNet.Client.TestsForDocs
         /// <tab category="collaboration" article="versioning" example="checkin" />
         [TestMethod]
         [Description("Check-in a content")]
-        public async Task Docs_Collaboration_Versioning_CheckIn()
+        public async Task Docs2_Collaboration_Versioning_CheckIn()
         {
             await EnsureContentAsync("/Root/Content/Documents/BusinessPlan.docx", "File", repository, cancel);
             try
@@ -199,7 +199,7 @@ namespace SenseNet.Client.TestsForDocs
         /// <tab category="collaboration" article="versioning" example="locked" />
         [TestMethod]
         [Description("How to know if a content is locked")]
-        public async Task Docs_Collaboration_Versioning_IsLocked()
+        public async Task Docs2_Collaboration_Versioning_IsLocked()
         {
             await EnsureContentAsync("/Root/Content/Documents/BusinessPlan.docx", "File", repository, cancel);
             try
@@ -236,7 +236,7 @@ namespace SenseNet.Client.TestsForDocs
         /// <tab category="collaboration" article="versioning" example="publish" />
         [TestMethod]
         [Description("Publish a new major version")]
-        public async Task Docs_Collaboration_Versioning_Publish()
+        public async Task Docs2_Collaboration_Versioning_Publish()
         {
             await EnsureContentAsync("/Root/Content/Documents/BusinessPlan.docx", "File", repository, cancel);
             var document = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
@@ -272,7 +272,7 @@ namespace SenseNet.Client.TestsForDocs
         /// <tab category="collaboration" article="versioning" example="undoChanges" />
         [TestMethod]
         [Description("Undo changes")]
-        public async Task Docs_Collaboration_Versioning_Undo()
+        public async Task Docs22_Collaboration_Versioning_Undo()
         {
             await EnsureContentAsync("/Root/Content/Documents/BusinessPlan.docx", "File", repository, cancel);
             var document = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
@@ -309,7 +309,7 @@ namespace SenseNet.Client.TestsForDocs
         /// <tab category="collaboration" article="versioning" example="forceUndoChanges" />
         [TestMethod]
         [Description("Force undo changes")]
-        public async Task Docs_Collaboration_Versioning_ForceUndo()
+        public async Task Docs2_Collaboration_Versioning_ForceUndo()
         {
             await EnsureContentAsync("/Root/Content/Documents/BusinessPlan.docx", "File", repository, cancel);
             var document = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
@@ -355,7 +355,7 @@ namespace SenseNet.Client.TestsForDocs
         /// <tab category="collaboration" article="versioning" example="takeLockOver" />
         [TestMethod]
         [Description("Take lock over")]
-        public async Task Docs_Collaboration_Versioning_TakeLockOver()
+        public async Task Docs2_Collaboration_Versioning_TakeLockOver()
         {
             Content document;
             int documentId = 0;
@@ -426,7 +426,7 @@ namespace SenseNet.Client.TestsForDocs
         /// <tab category="collaboration" article="versioning" example="versionHistory" />
         [TestMethod]
         [Description("Get version history of a content")]
-        public async Task Docs_Collaboration_Versioning_VersionHistory()
+        public async Task Docs2_Collaboration_Versioning_VersionHistory()
         {
             await EnsureContentAsync("/Root/Content/Documents/BusinessPlan.docx", "File", repository, cancel);
             var document = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
@@ -483,7 +483,7 @@ namespace SenseNet.Client.TestsForDocs
         /// <tab category="collaboration" article="versioning" example="recallVersion" />
         [TestMethod]
         [Description("Restore an old version")]
-        public async Task Docs_Collaboration_Versioning_RestoreOldVersion()
+        public async Task Docs2_Collaboration_Versioning_RestoreOldVersion()
         {
             await EnsureContentAsync("/Root/Content/Documents/BusinessPlan.docx", "File", c =>
             {
@@ -539,7 +539,7 @@ namespace SenseNet.Client.TestsForDocs
         /// <tab category="collaboration" article="approval" example="enableApproval" />
         [TestMethod]
         [Description("Enable simple approval")]
-        public async Task Docs_Collaboration_Approval_Enable()
+        public async Task Docs2_Collaboration_Approval_Enable()
         {
             try
             {
@@ -576,7 +576,7 @@ namespace SenseNet.Client.TestsForDocs
         /// <tab category="collaboration" article="approval" example="approve" />
         [TestMethod]
         [Description("Approve a content")]
-        public async Task Docs_Collaboration_Approval_Approve()
+        public async Task Docs2_Collaboration_Approval_Approve()
         {
             try
             {
@@ -621,7 +621,7 @@ namespace SenseNet.Client.TestsForDocs
         /// <tab category="collaboration" article="approval" example="reject" />
         [TestMethod]
         [Description("Reject a content")]
-        public async Task Docs_Collaboration_Approval_Reject()
+        public async Task Docs2_Collaboration_Approval_Reject()
         {
             try
             {
@@ -669,7 +669,7 @@ namespace SenseNet.Client.TestsForDocs
         /// <tab category="collaboration" article="saved-queries" example="saveQuery" />
         [TestMethod]
         [Description("Save a query")]
-        public async Task Docs_Collaboration_SavedQueries_SavePublic()
+        public async Task Docs2_Collaboration_SavedQueries_SavePublic()
         {
             try
             {
@@ -722,7 +722,7 @@ namespace SenseNet.Client.TestsForDocs
         //     } 
         [TestMethod]
         [Description("Save a private query")]
-        public async Task Docs_Collaboration_SavedQueries_SavePrivate()
+        public async Task Docs2_Collaboration_SavedQueries_SavePrivate()
         {
             try
             {
@@ -768,7 +768,7 @@ namespace SenseNet.Client.TestsForDocs
         /// <tab category="collaboration" article="saved-queries" example="getSavedQueries" />
         [TestMethod]
         [Description("Get saved queries")]
-        public async Task Docs_Collaboration_SavedQueries_Get()
+        public async Task Docs2_Collaboration_SavedQueries_Get()
         {
             try
             {
