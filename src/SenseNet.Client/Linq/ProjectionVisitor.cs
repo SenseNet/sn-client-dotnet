@@ -47,10 +47,6 @@ internal class ProjectionVisitor : ExpressionVisitor
     private bool _parsing;
     protected override Expression VisitMethodCall(MethodCallExpression node)
     {
-    //    return base.VisitMethodCall(node);
-    //}
-    //protected override Expression VisitNew(NewExpression node)
-    //{
         if (_parsing)
             throw new NotSupportedException("Invalid Select expression.");
         _parsing = true;
@@ -107,8 +103,7 @@ internal class ProjectionVisitor : ExpressionVisitor
 
         if (typeof(Content).IsAssignableFrom(node.Type))
             _referenceFields.Add(text);
-        //else
-            _fields.Add(text);
+        _fields.Add(text);
 
         return base.VisitMember(node);
     }

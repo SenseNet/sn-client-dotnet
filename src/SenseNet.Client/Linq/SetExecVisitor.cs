@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq.Expressions;
-using System.Text;
 
 namespace SenseNet.Client.Linq
 {
@@ -49,12 +47,9 @@ namespace SenseNet.Client.Linq
             {
                 if (node.Type.FullName?.StartsWith("System.Nullable`1[") ?? false)
                 {
-                    //if (node.Operand.NodeType == ExpressionType.Constant)
-                    //{
-                        var item = _parentChain.Peek();
-                        if (item != null)
-                            item.SetExecutable(false);
-                    //}
+                    var item = _parentChain.Peek();
+                    if (item != null)
+                        item.SetExecutable(false);
                 }
             }
             return  base.VisitUnary(node);

@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
 using SenseNet.Client.Linq.Predicates;
 
 namespace SenseNet.Client.Linq
@@ -499,12 +497,6 @@ namespace SenseNet.Client.Linq
                     throw new NotSupportedException(
                         "The select method can contain only one creation expression of the Content or any inherited type e.g. Content.Create<User>(...selected field list...).");
                 }
-case "Create":
-{
-    if(IsContentCreationExpressionForProjection(methodCallExpr))
-        break;
-    throw SnExpression.CallingAsEnumerableExpectedError(methodCallExpr.Method.Name);
-}
                 default:
                     throw SnExpression.CallingAsEnumerableExpectedError(methodCallExpr.Method.Name);
             }
@@ -635,7 +627,6 @@ case "Create":
 
         private SnQueryPredicate CreateTypeIsPredicate(Type targetType)
         {
-            //var contentTypeName = ContentTypeManager.GetContentTypeNameByType(targetType);
             var contentTypeName = _repository.GetContentTypeByName(targetType.Name);
             if (contentTypeName == null)
                 throw new ApplicationException($"Unknown Content Type: {targetType.FullName}");
@@ -871,7 +862,6 @@ case "Create":
 
             var indexValue = ConvertToTermValue(value);
 
-            //fieldDataType = fieldInfo.FieldDataType;
             fieldDataType = value?.GetType() ?? typeof(string);
 
             return indexValue;
@@ -1001,123 +991,6 @@ case "Create":
             if (value is null)
                 return new IndexValue(string.Empty);
             throw new NotImplementedException();
-            /*
-    public class NotIndexedIndexFieldHandler : FieldIndexHandler
-        public override IndexValue ConvertToTermValue(object value)
-        {
-            return new IndexValue(value.ToString());
-        }
-    public class BinaryIndexHandler : FieldIndexHandler
-        public override IndexValue ConvertToTermValue(object value)
-        {
-            return value == null ? new IndexValue(string.Empty) : new IndexValue(((string)value).ToLowerInvariant());
-        }
-    public class TypeTreeIndexHandler : FieldIndexHandler
-        public override IndexValue ConvertToTermValue(object value)
-        {
-            return value == null ? new IndexValue(string.Empty) : new IndexValue(((string)value).ToLowerInvariant());
-        }
-    public class ContentTypeEnumerableIndexHandler : FieldIndexHandler
-        public override IndexValue ConvertToTermValue(object value)
-        {
-            return new IndexValue(((ContentType)value).Name);
-        }
-    public class HyperLinkIndexHandler : FieldIndexHandler, IIndexValueConverter<object>, IIndexValueConverter
-        public override IndexValue ConvertToTermValue(object value)
-        {
-            return value == null ? new IndexValue(string.Empty) : new IndexValue(((string)value).ToLowerInvariant());
-        }
-    public class ChoiceIndexHandler : FieldIndexHandler, IIndexValueConverter<object>, IIndexValueConverter
-        public override IndexValue ConvertToTermValue(object value)
-        {
-            return value == null ? new IndexValue(string.Empty) : new IndexValue(((string)value).ToLowerInvariant());
-        }
-    public class PermissionChoiceIndexHandler : FieldIndexHandler, IIndexValueConverter<object>, IIndexValueConverter
-        public override IndexValue ConvertToTermValue(object value)
-        {
-            return value == null ? new IndexValue(string.Empty) : new IndexValue(((string)value).ToLowerInvariant());
-        }
-    public class LowerStringIndexHandler : FieldIndexHandler, IIndexValueConverter<string>, IIndexValueConverter
-        public override IndexValue ConvertToTermValue(object value)
-        {
-            if (value == null)
-                return new IndexValue(string.Empty);
-            var text = (string) value;
-            return new IndexValue(IsRegex(text) ? text : text.ToLowerInvariant());
-        }
-    public class BooleanIndexHandler : FieldIndexHandler, IIndexValueConverter<bool>, IIndexValueConverter
-        public override IndexValue ConvertToTermValue(object value)
-        {
-            return new IndexValue((bool) value);
-        }
-    public class IntegerIndexHandler : FieldIndexHandler, IIndexValueConverter<int>, IIndexValueConverter
-        public override IndexValue ConvertToTermValue(object value)
-        {
-            return new IndexValue((int)value);
-        }
-    public class NumberIndexHandler : FieldIndexHandler, IIndexValueConverter<decimal>, IIndexValueConverter
-        public override IndexValue ConvertToTermValue(object value)
-        {
-            var doubleValue = Convert.ToDouble(value);
-            return new IndexValue(doubleValue);
-        }
-    public class DateTimeIndexHandler : FieldIndexHandler, IIndexValueConverter<DateTime>, IIndexValueConverter
-        public override IndexValue ConvertToTermValue(object value)
-        {
-            return new IndexValue(((DateTime)value));
-        }
-    public class LongTextIndexHandler : FieldIndexHandler, IIndexValueConverter<string>, IIndexValueConverter
-        public override IndexValue ConvertToTermValue(object value)
-        {
-            return value == null ? new IndexValue(string.Empty) : new IndexValue(((string)value).ToLowerInvariant());
-        }
-    public class RichTextIndexHandler : FieldIndexHandler, IIndexValueConverter<string>, IIndexValueConverter
-        public override IndexValue ConvertToTermValue(object value)
-        {
-            return value == null ? new IndexValue(string.Empty) : new IndexValue(((string)value).ToLowerInvariant());
-        }
-    public class ReferenceIndexHandler : FieldIndexHandler, IIndexValueConverter<int>, IIndexValueConverter
-        public override IndexValue ConvertToTermValue(object value)
-        {
-            if (value == null)
-                return new IndexValue(SnQuery.NullReferenceValue);
-
-            if (value is INode node)
-                return new IndexValue(node.Id);
-
-            if (value is IEnumerable)
-                throw new SnNotSupportedException("ReferenceIndexHandler.ConvertToTermValue() isn't implemented when value is IEnumerable.");
-
-            throw new NotSupportedException($"Type {value.GetType()} is not supported as value of ReferenceField");
-        }
-    public class ExclusiveTypeIndexHandler : FieldIndexHandler, IIndexValueConverter<ContentType>, IIndexValueConverter
-        public override IndexValue ConvertToTermValue(object value)
-        {
-            return value == null ? new IndexValue(string.Empty) : new IndexValue(((string)value).ToLowerInvariant());
-        }
-    public class InFolderIndexHandler : FieldIndexHandler, IIndexValueConverter<string>, IIndexValueConverter
-        public override IndexValue ConvertToTermValue(object value)
-        {
-            var path = ((string)value).ToLowerInvariant();
-            if (!path.StartsWith("/root"))
-                throw new ApplicationException(string.Concat("Invalid path: '", path, "'. It must be absolute: '/root' or '/root/...'."));
-            return new IndexValue(path);
-        }
-    public class InTreeIndexHandler : FieldIndexHandler, IIndexValueConverter<string>, IIndexValueConverter
-        public override IndexValue ConvertToTermValue(object value)
-        {
-            var path = ((string)value).ToLowerInvariant();
-            if (!path.StartsWith("/root"))
-                throw new ApplicationException(string.Concat("Invalid path: '", path, "'. It must be absolute: '/root' or '/root/...'."));
-            return new IndexValue(path);
-        }
-    public class TagIndexHandler : FieldIndexHandler, IIndexValueConverter<string>, IIndexValueConverter
-        public override IndexValue ConvertToTermValue(object value)
-        {
-            return value == null ? new IndexValue(string.Empty) : new IndexValue(((string)value).ToLowerInvariant());
-        }
-
-            */
         }
     }
 }

@@ -110,35 +110,7 @@ namespace SenseNet.Client.Linq
                     throw new ArgumentOutOfRangeException(nameof(value), value, null);
             }
         }
-
-
-        //TODO: Part of 'CQL to SQL compiler' for future use.
-        //private static void ValidateQuery<T>(IQueryResult<T> x, IQueryResult<T> y)
-        //{
-        //    executor = SearchProvider.GetExecutor(this);
-        //    executor.Initialize(this, permissionChecker);
-        //    result = Execute(executor);
-        //    if (!(executor is LuceneQueryExecutor))
-        //    {
-        //        var fallbackExecutor = SearchProvider.GetFallbackExecutor(this);
-        //        fallbackExecutor.Initialize(this, permissionChecker);
-        //        var expectedResult = Execute(fallbackExecutor);
-        //        AssertResultsAreEqual(expectedResult, result, fallbackExecutor.QueryString, executor.QueryString);
-        //    }
-        //}
-        //protected void AssertResultsAreEqual(IEnumerable<LucObject> expected, IEnumerable<LucObject> actual, string cql, string sql)
-        //{
-        //    var exp = string.Join(",", expected.Select(x => x.NodeId).Distinct().OrderBy(y => y));
-        //    var act = string.Join(",", actual.Select(x => x.NodeId).OrderBy(y => y));
-        //    if (exp != act)
-        //    {
-        //        var msg = string.Format("VALIDATION: Results are different. Expected:{0}, actual:{1}, CQL:{2}, SQL:{3}", exp, act, cql, sql);
-        //        SnTrace.Test.Write(msg);
-        //        throw new Exception(msg);
-        //    }
-        //}
-
-
+        
         /// <summary>
         /// Creates a new SnQuery instance by parsing the given CQL query
         ///  and context containing query settings.
