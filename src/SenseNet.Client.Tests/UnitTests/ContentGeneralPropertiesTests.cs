@@ -132,7 +132,7 @@ public class ContentGeneralPropertiesTests : TestBase
         var content = await repository.LoadContentAsync<Content>(request, CancellationToken.None);
 
         // ACT
-        content.VersioningMode = VersioningMode.None;
+        content.VersioningMode = VersioningMode.None; // not changed
         content.InheritableVersioningMode = VersioningMode.MajorAndMinor;
         await content.SaveAsync(_cancel);
 
@@ -147,8 +147,7 @@ public class ContentGeneralPropertiesTests : TestBase
         dynamic data = JsonHelper.Deserialize(json);
         var dict = data.ToObject<Dictionary<string, object>>();
         var keys = string.Join(", ", dict.Keys);
-        Assert.AreEqual("VersioningMode, InheritableVersioningMode", keys);
-        Assert.AreEqual("[\"1\"]", RemoveWhitespaces(data.VersioningMode.ToString()));
+        Assert.AreEqual("InheritableVersioningMode", keys);
         Assert.AreEqual("[\"3\"]", RemoveWhitespaces(data.InheritableVersioningMode.ToString()));
     }
 
@@ -447,7 +446,9 @@ public class ContentGeneralPropertiesTests : TestBase
     [TestMethod]
     public async Task GeneralProps_T_Gender_EmptyToNull()
     {
-        await GenderTest(@"{ ""d"": { ""Id"": 999543,""Gender"": []}}", null, true, "");
+        // Setting null on an enum means  "not changed" if that"s value was an empty array.
+        await GenderTest(@"{ ""d"": { ""Id"": 999543,""Gender"": []}}",
+            null, false, "");
     }
     [TestMethod]
     public async Task GeneralProps_T_Gender_EmptyToFemale()
@@ -541,8 +542,9 @@ public class ContentGeneralPropertiesTests : TestBase
     [TestMethod]
     public async Task GeneralProps_T_MaritalStatus_EmptyToNull()
     {
+        // Setting null on an enum means  "not changed" if that"s value was an empty array.
         await MaritalStatusTest(@"{ ""d"": { ""Id"": 999543,""MaritalStatus"": []}}",
-            null, true, "");
+            null, false, "");
     }
     [TestMethod]
     public async Task GeneralProps_T_MaritalStatus_EmptyToSingle()
@@ -781,7 +783,7 @@ public class ContentGeneralPropertiesTests : TestBase
         dynamic data = JsonHelper.Deserialize(json);
         var dict = data.ToObject<Dictionary<string, object>>();
         var keys = string.Join(", ", dict.Keys);
-        Assert.AreEqual("Status", keys);
+        Assert.AreEqual("", keys);
     }
     [TestMethod]
     public async Task GeneralProps_T_Save_TaskStatus_NotNull()
