@@ -40,6 +40,11 @@ namespace SenseNet.Client.TestsForDocs
 
             var myContent =
                 /*<doc>*/await repository.LoadContentAsync<Group>(11, cancel)/*</doc>*/.ConfigureAwait(false);
+
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/content(11)
+            */
+
             Assert.IsNotNull(myContent);
             Assert.AreEqual(11, myContent.Id);
             Assert.AreEqual("Operators", content.Name);
@@ -60,6 +65,11 @@ namespace SenseNet.Client.TestsForDocs
             /*</doc>*/
             var myContent =
                 /*<doc>*/await repository.LoadContentAsync<Folder>("/Root/Content/Cars", cancel)/*</doc>*/.ConfigureAwait(false);
+
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root/Content('Cars')
+            */
+
             Assert.IsNotNull(myContent);
             Assert.AreEqual("/Root/Content/Cars", myContent.Path);
         }
@@ -70,14 +80,18 @@ namespace SenseNet.Client.TestsForDocs
         public async Task Docs2_BasicConcepts_GetSingleProperty()
         {
             var response =
-                // ACTION for doc
                 /*<doc>*/
                 await repository.GetResponseStringAsync(new ODataRequest
                 {
                     Path = "/Root/Content/Cars",
                     PropertyName = "Description"
                 }, HttpMethod.Get, cancel);
-                /*</doc>*/
+            /*</doc>*/
+
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root/Content('Cars')/Description
+            */
+
             // ASSERT
             Assert.AreEqual("{\"d\":{\"Description\":\"Thisfoldercontainsourcars.\"}}", response.RemoveWhitespaces());
         }
@@ -88,7 +102,6 @@ namespace SenseNet.Client.TestsForDocs
         public async Task Docs2_BasicConcepts_GetSinglePropertyValue()
         {
             var response =
-                // ACTION for doc
                 /*<doc>*/
                 await repository.GetResponseStringAsync(
                     new Uri(repository.Server.Url + "/OData.svc/Root/Content/('Cars')/Description/$value"),
@@ -96,7 +109,10 @@ namespace SenseNet.Client.TestsForDocs
                     postData: null,
                     additionalHeaders: null,
                     cancel);
-                /*</doc>*/
+            /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root/Content/('Cars')/Description/$value
+            */
 
             // ASSERT
             Assert.AreEqual("This folder contains our cars.", response);
@@ -115,6 +131,10 @@ namespace SenseNet.Client.TestsForDocs
                 /*</doc>*/
                 .ConfigureAwait(false);
 
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root/Content/Cars
+            */
+
             var childArray1 = children1.ToArray();
             Assert.IsTrue(childArray1.Length > 0);
             Assert.AreEqual("/Root/Content/Cars", childArray1[0].ParentPath);
@@ -129,6 +149,9 @@ namespace SenseNet.Client.TestsForDocs
                 /*<doc>*/await repository.GetContentCountAsync(new LoadCollectionRequest {Path = "/Root/Content/Cars"}, cancel)
                     /*</doc>*/
                     .ConfigureAwait(false);
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root/Content/Cars/$count
+            */
 
             var children = 
                 await repository.LoadCollectionAsync(new LoadCollectionRequest { Path = "/Root/Content/Cars" }, cancel)
@@ -142,7 +165,6 @@ namespace SenseNet.Client.TestsForDocs
         [Description("$inlinecount query option")]
         public async Task Docs2_BasicConcepts_ChildrenInlineCount()
         {
-            // ACTION for doc
             /*<doc>*/
             var result = await repository.LoadCollectionAsync(new LoadCollectionRequest
             {
@@ -153,6 +175,9 @@ namespace SenseNet.Client.TestsForDocs
             }, cancel);
             Console.WriteLine($"TotalCount: {result.TotalCount}, Count: {result.Count}");
             /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root/Content/Cars?$top=3&$skip=4&$inlinecount=allpages 
+            */
 
             // ASSERT
             Assert.AreEqual(3, result.Count);
@@ -171,6 +196,9 @@ namespace SenseNet.Client.TestsForDocs
                 Path = "/Root/Content/Cars/AAKE452",
                 Select = new[] { "Make", "Model", "Color" }
             }, cancel)/*</doc>*/.ConfigureAwait(false);
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root/Content/Cars('AAKE452')?$select=Make,Model,Color
+            */
 
             var make = content.Make.ToString();
             var model = content.Model.ToString();
@@ -185,13 +213,14 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Expand 1")]
         public async Task Docs2_BasicConcepts_Expand_CreatedBy()
         {
-            // ACTION for doc
             dynamic content = /*<doc>*/await repository.LoadContentAsync(new LoadContentRequest
             {
                 Path = "/Root/Content/Cars/OT1234",
                 Expand = new[] { "CreatedBy" },
             }, cancel)/*</doc>*/.ConfigureAwait(false);
-            //Console.WriteLine(content.CreatedBy.Name);
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root/Content/Cars('OT1234')?$expand=CreatedBy
+            */
 
             // ASSERT
             Assert.AreEqual("Admin", content.CreatedBy.Name.ToString());
@@ -207,6 +236,9 @@ namespace SenseNet.Client.TestsForDocs
                 Path = "/Root/Content/Cars/OT1234",
                 Expand = new[] { "CreatedBy/CreatedBy" },
             }, cancel)/*</doc>*/.ConfigureAwait(false);
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root/Content/Cars('OT1234')?$expand=CreatedBy/CreatedBy
+            */
 
             Assert.AreEqual("Admin", content.CreatedBy.CreatedBy.Name.ToString());
         }
@@ -222,6 +254,9 @@ namespace SenseNet.Client.TestsForDocs
                 Expand = new[] { "CreatedBy" },
                 Select = new[] { "Name", "CreatedBy/DisplayName" }
             }, cancel)/*</doc>*/.ConfigureAwait(false);
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root/Content/Cars('OT1234')?$expand=CreatedBy&$select=Name,CreatedBy/DisplayName
+            */
 
             Assert.AreEqual("Admin", content.CreatedBy.DisplayName.ToString());
         }
@@ -236,6 +271,9 @@ namespace SenseNet.Client.TestsForDocs
                 Path = "/Root/Content/Cars",
                 Expand = new[] { "AllowedChildTypes" }
             }, cancel)/*</doc>*/.ConfigureAwait(false);
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root/Content('Cars')?$expand=AllowedChildTypes
+            */
 
             Assert.AreEqual(0, content.AllowedChildTypes.Length);
 
@@ -254,12 +292,14 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Expand 5")]
         public async Task Docs2_BasicConcepts_Expand_Actions()
         {
-            // ACTION for doc
             dynamic content = /*<doc>*/await repository.LoadContentAsync(new LoadContentRequest
             {
                 Path = "/Root/Content/Cars",
                 Expand = new[] { "Actions" }
             }, cancel)/*</doc>*/.ConfigureAwait(false);
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root/Content('Cars')?$expand=Actions
+            */
 
             Assert.IsTrue(50 < (int)content.Actions.Count);
             Assert.AreEqual("Add", content.Actions[0].Name.ToString());
@@ -277,6 +317,9 @@ namespace SenseNet.Client.TestsForDocs
                 Path = "/Root/Content/Cars",
                 OrderBy = new[] {"DisplayName"}
             }, cancel)/*</doc>*/.ConfigureAwait(false);
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root/Content/Cars?$orderby=DisplayName
+            */
 
             var names = result.Select(x => ((dynamic)x).DisplayName.ToString()).ToArray();
             Assert.AreEqual(13, names.Length);
@@ -294,6 +337,9 @@ namespace SenseNet.Client.TestsForDocs
                 Path = "/Root/Content/Cars",
                 OrderBy = new[] { "Price asc" }
             }, cancel)/*</doc>*/.ConfigureAwait(false);
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root/Content/Cars?$orderby=Price asc
+            */
 
             var prices = result
                 .Where(x => ((dynamic)x).Price != null)
@@ -314,6 +360,9 @@ namespace SenseNet.Client.TestsForDocs
                 Path = "/Root/Content/Cars", 
                 OrderBy = new[] { "StartingDate desc" }
             }, cancel)/*</doc>*/.ConfigureAwait(false);
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root/Content/Cars?$orderby=StartingDate desc
+            */
 
             var dates = result
                 .Where(x=> ((dynamic)x).StartingDate != null)
@@ -334,6 +383,9 @@ namespace SenseNet.Client.TestsForDocs
                 Path = "/Root/Content/Cars",
                 OrderBy = new[] { "StartingDate desc", "DisplayName" }
             }, cancel)/*</doc>*/.ConfigureAwait(false);
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root/Content/Cars?$orderby=StartingDate desc,DisplayName
+            */
 
             var dates = result
                 .Where(x => ((dynamic) x).StartingDate != null)
@@ -354,6 +406,9 @@ namespace SenseNet.Client.TestsForDocs
                 Path = "/Root/Content/Cars",
                 Top = 5,
             }, cancel)/*</doc>*/.ConfigureAwait(false);
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root/Content/Cars?$top=5
+            */
 
             Assert.IsTrue(result.Count() <= 5);
         }
@@ -368,6 +423,9 @@ namespace SenseNet.Client.TestsForDocs
                 Path = "/Root/Content/Cars",
                 Skip = 5,
             }, cancel)/*</doc>*/.ConfigureAwait(false);
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root/Content/Cars?$skip=5
+            */
 
             var ids = result.Select(c => c.Id).ToArray();
             var children = await repository.LoadCollectionAsync(new LoadCollectionRequest
@@ -391,6 +449,9 @@ namespace SenseNet.Client.TestsForDocs
                 Top = 3,
                 Skip = 3
             }, cancel)/*</doc>*/.ConfigureAwait(false);
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root/Content/Cars?$top=3&$skip=3
+            */
 
             var ids = result.Select(c => c.Id).ToArray();
             var children = await repository.LoadCollectionAsync(new LoadCollectionRequest
@@ -415,6 +476,9 @@ namespace SenseNet.Client.TestsForDocs
                 Path = "/Root/Content/Cars",
                 ChildrenFilter = "Price gt 1000000.0m" // The "m" suffix is required in case of Number fields
             }, cancel)/*</doc>*/.ConfigureAwait(false);
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root/Content/Cars?$filter=Price gt 1000000.0m
+            */
 
             // ASSERT
             var prices = result.Select(x => (decimal)((dynamic)x).Price);
@@ -432,6 +496,9 @@ namespace SenseNet.Client.TestsForDocs
                 Path = "/Root/Content/Cars",
                 ChildrenFilter = "substringof('Supra', DisplayName) eq true"
             }, cancel)/*</doc>*/.ConfigureAwait(false);
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root/Content/Cars?$filter=substringof('Supra', DisplayName) eq true
+            */
 
             var contents = result.ToArray();
             Assert.IsTrue(0 < contents.Length);
@@ -448,6 +515,9 @@ namespace SenseNet.Client.TestsForDocs
                 Path = "/Root/Content/Cars",
                 ChildrenFilter = "startswith(DisplayName, 'Toyota') eq true"
             }, cancel)/*</doc>*/.ConfigureAwait(false);
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root/Content/Cars?$filter=startswith(DisplayName, 'Toyota') eq true
+            */
 
             var contents = result.ToArray();
             Assert.IsTrue(0 < contents.Length);
@@ -464,6 +534,9 @@ namespace SenseNet.Client.TestsForDocs
                 Path = "/Root/Content/Cars",
                 ChildrenFilter = "endswith(DisplayName, 'Octavia') eq true"
             }, cancel)/*</doc>*/.ConfigureAwait(false);
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root/Content/Cars?$filter=endswith(DisplayName, 'Octavia') eq true
+            */
 
             var contents = result.ToArray();
             Assert.IsTrue(0 < contents.Length);
@@ -480,6 +553,9 @@ namespace SenseNet.Client.TestsForDocs
                 Path = "/Root/Content/Cars",
                 ChildrenFilter = "StartingDate gt datetime'2020-01-12T03:55:00'"
             }, cancel)/*</doc>*/.ConfigureAwait(false);
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root/Content/Cars?$filter=StartingDate gt datetime'2020-01-12T03:55:00'
+            */
 
             var contents = result.ToArray();
             Assert.IsTrue(2 < contents.Length);
@@ -497,6 +573,9 @@ namespace SenseNet.Client.TestsForDocs
                 Path = "/Root/Content/Cars",
                 ChildrenFilter = "ContentType eq 'Car'"
             }, cancel)/*</doc>*/.ConfigureAwait(false);
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root/Content/Cars?$filter=ContentType eq 'Car'
+            */
 
             var contents = result.ToArray();
             Assert.IsTrue(2 < contents.Length);
@@ -514,6 +593,9 @@ namespace SenseNet.Client.TestsForDocs
                 Path = "/Root/Content/Cars",
                 ChildrenFilter = "isof('Folder')"
             }, cancel)/*</doc>*/.ConfigureAwait(false);
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root/Content/Cars?$filter=isof('Folder')
+            */
 
             var contents = result.ToArray();
             Assert.IsTrue(1 < contents.Length);
@@ -533,6 +615,9 @@ namespace SenseNet.Client.TestsForDocs
                     Path = "/Root/Content/Cars",
                     Metadata = MetadataFormat.None // None, Minimal, Full (default)
                 }, cancel)/*</doc>*/.ConfigureAwait(false);
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root/Content('Cars')?metadata=no
+            */
 
             Assert.IsNull(content["__metadata"]);
         }
@@ -543,7 +628,6 @@ namespace SenseNet.Client.TestsForDocs
         public async Task Docs2_BasicConcepts_GlobalMetadata()
         {
             var response =
-                // ACTION for doc
                 /*<doc>*/
                 await repository.GetResponseStringAsync(
                     new Uri(repository.Server.Url + "/OData.svc/$metadata"),
@@ -551,7 +635,10 @@ namespace SenseNet.Client.TestsForDocs
                     postData: null,
                     additionalHeaders: null,
                     cancel);
-                /*</doc>*/
+            /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/$metadata
+            */
 
             // ASSERT
             Assert.IsTrue(response.Contains("<edmx:Edmx"));
@@ -564,7 +651,6 @@ namespace SenseNet.Client.TestsForDocs
         public async Task Docs2_BasicConcepts_LocalMetadata()
         {
             var response =
-                // ACTION for doc
                 /*<doc>*/
                 await repository.GetResponseStringAsync(
                     new Uri(repository.Server.Url + "/OData.svc/Root/Content/Cars/$metadata"),
@@ -573,6 +659,9 @@ namespace SenseNet.Client.TestsForDocs
                     additionalHeaders: null,
                     cancel);
             /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root/Content/Cars/$metadata
+            */
 
             // ASSERT
             Assert.IsTrue(response.Contains("<edmx:Edmx"));
@@ -591,7 +680,10 @@ namespace SenseNet.Client.TestsForDocs
             {
                 Path = "/Root/Content/Cars",
                 AutoFilters = FilterStatus.Disabled
-            }, cancel)/*/<doc>*/.ConfigureAwait(false);
+            }, cancel)/*/</doc>*/.ConfigureAwait(false);
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root/Content/Cars?enableautofilters=false
+            */
 
             var contents = result.ToArray();
             Assert.IsTrue(contents.Any());
@@ -606,12 +698,14 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Filter content by lifespan validity")]
         public async Task Docs2_BasicConcepts_LifespanFilter()
         {
-            // ACTION for doc
             var result = /*<doc>*/await repository.LoadCollectionAsync(new LoadCollectionRequest
             {
                 Path = "/Root/Content/Cars",
                 LifespanFilter = FilterStatus.Enabled
-            }, cancel)/*/<doc>*/.ConfigureAwait(false);
+            }, cancel)/*/</doc>*/.ConfigureAwait(false);
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root/Content/Cars?enablelifespanfilter=true
+            */
 
             //Assert.Inconclusive("TODO: Missing assertion in this test");
         }
@@ -629,6 +723,9 @@ namespace SenseNet.Client.TestsForDocs
                 Expand = new[] { "Actions" },
                 Select = new[] { "Actions" },
             }, cancel)/*</doc>*/.ConfigureAwait(false);
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root/Content('Cars')?$expand=Actions&$select=Actions
+            */
 
             var actions = content["Actions"];
             Assert.IsTrue(10 < actions.Count);
@@ -639,7 +736,6 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Scenario")]
         public async Task Docs2_BasicConcepts_Scenario()
         {
-            // ACTION for doc
             /*<doc>*/
             dynamic content = await repository.LoadContentAsync(new LoadContentRequest
             {
@@ -653,6 +749,9 @@ namespace SenseNet.Client.TestsForDocs
             foreach (var item in content.Actions)
                 actionNames.Add(item.Name.ToString());
             /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root/Content('Cars')?$expand=Actions&$select=Actions&scenario=ContextMenu
+            */
 
             // ASSERT
             Assert.IsTrue(actionNames.Count > 1);
@@ -666,11 +765,13 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Get schema")]
         public async Task Docs2_BasicConcepts_GetSchema()
         {
-            // ACTION for doc
             /*<doc>*/
             string schema = await repository.GetResponseStringAsync(
                 new ODataRequest {Path = "/Root", ActionName = "GetSchema"}, HttpMethod.Get, cancel);
             /*</doc>*/
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/('Root')/GetSchema?
+            */
 
             // ASSERT
             var replaced = schema.Substring(0, 50)
@@ -686,7 +787,6 @@ namespace SenseNet.Client.TestsForDocs
         [Description("Change the schema")]
         public async Task Docs2_BasicConcepts_GetCtd()
         {
-            // ACTION for doc
             /*<doc>*/
             var carContentType = await repository.LoadContentAsync(
                 "/Root/System/Schema/ContentTypes/GenericContent/Car", cancel);
@@ -703,7 +803,11 @@ namespace SenseNet.Client.TestsForDocs
                 },
                 cancel);
             /*</doc>*/
-
+            /* RAW REQUEST:
+            GET https://localhost:44362/binaryhandler.ashx?nodeid=1154&propertyname=Binary
+            or
+            GET https://localhost:44362/binaryhandler.ashx?nodepath=/Root/System/Schema/ContentTypes/GenericContent/Car&propertyname=Binary
+            */
             string? ctd2 = null;
             await repository.ProcessWebResponseAsync(
                 relativeUrl: $"/binaryhandler.ashx?nodepath={carContentType.Path}&propertyname=Binary",
