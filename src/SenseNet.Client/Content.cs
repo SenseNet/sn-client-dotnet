@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using SenseNet.Client.Security;
+using AngleSharp.Dom;
 
 namespace SenseNet.Client;
 
@@ -143,6 +144,13 @@ public partial class Content : DynamicObject
 
 
     public string[] FieldNames { get; private set; } = Array.Empty<string>();
+
+    /*-------------------------------------------------------------------------- SnLinq */
+
+    public bool InFolder(string path) => throw new NotSupportedException("Use only in a LINQ expression");
+    public bool InFolder(Content content) => throw new NotSupportedException("Use only in a LINQ expression");
+    public bool InTree(string path) => throw new NotSupportedException("Use only in a LINQ expression");
+    public bool InTree(Content content) => throw new NotSupportedException("Use only in a LINQ expression");
 
     //============================================================================= Technical properties
 
@@ -297,6 +305,16 @@ public partial class Content : DynamicObject
         {
             Existing = true
         };
+    }
+
+    /// <summary>
+    /// This method is used in processing LINQ expressions only. Do not use it in your code.
+    /// </summary>
+    /// <param name="fields"></param>
+    /// <exception cref="NotSupportedException"></exception>
+    public static T Create<T>(params object?[] fields) where T : Content
+    {
+        throw new NotSupportedException("This method is used in processing LINQ expressions only. Do not use it in your code.");
     }
 
     //============================================================================= Static API

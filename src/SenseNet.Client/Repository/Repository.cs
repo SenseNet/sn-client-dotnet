@@ -15,6 +15,7 @@ using System.Net;
 using System.Text;
 using System.IdentityModel.Tokens.Jwt;
 using Newtonsoft.Json;
+using SenseNet.Client.Linq;
 
 // ReSharper disable once CheckNamespace
 namespace SenseNet.Client;
@@ -385,6 +386,10 @@ internal class Repository : IRepository
 
         throw new ClientException($"Invalid count response. Request: {oDataRequest.GetUri()}. Response: {response}");
     }
+
+    /* ============================================================================ LINQ-SUPPORT */
+
+    public ContentSet<Content> Content => new ContentSet<Content>(this);
 
     /* ============================================================================ UPLOAD */
 
@@ -919,7 +924,7 @@ internal class Repository : IRepository
         string contentTypeName = jsonModel.Type?.ToString();
         return GetContentTypeByName(contentTypeName);
     }
-    internal Type? GetContentTypeByName(string? contentTypeName)
+    public Type? GetContentTypeByName(string? contentTypeName)
     {
         if (contentTypeName == null)
             return null;

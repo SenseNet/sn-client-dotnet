@@ -104,4 +104,35 @@ public class QueryTests : IntegrationTestBase
         Assert.AreEqual("TestGroup", types[0]);
         Assert.AreEqual("TestUser", types[1]);
     }
+
+    [TestMethod]
+    public async Task IT_Linq_Content_Where()
+    {
+        var cancel = new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token;
+        var repository = await GetRepositoryCollection(services =>
+            {
+                services
+                    //.RegisterGlobalContentType<TestUser>("Identity")
+                    .RegisterGlobalContentType<TestUser>("User")
+                    .RegisterGlobalContentType<TestGroup>("Group");
+            })
+            .GetRepositoryAsync("local", cancel).ConfigureAwait(false);
+
+        // ACT
+        var contents = repository.Content
+            .Where(u => u.InTree("/Root/IMS") && u.Name.StartsWith("Adm"))
+            .OrderBy(c => c.Path)
+            .Select(u => Content.Create<Content>(u.Name, u.Type, u.Path))
+            .ToArray();
+
+        // ASSERT
+        Assert.IsTrue(contents.Length > 2);
+        Assert.IsTrue(contents.Any(c => c.Name == "Admin" && c is TestUser));
+        Assert.IsTrue(contents.Any(c => c.Name == "Administrators" && c is TestGroup));
+
+        // Check that the result is in the correct order.
+        var paths = contents.Select(c => c.Path).ToArray();
+        var orderedPaths = contents.Select(c => c.Path).OrderBy(s => s).ToArray();
+        Assert.AreEqual(string.Join(", ", orderedPaths), string.Join(", ", paths));
+    }
 }
