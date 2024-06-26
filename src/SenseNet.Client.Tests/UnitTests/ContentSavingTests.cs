@@ -173,7 +173,7 @@ public class ContentSavingTests : TestBase
 
         // ASSERT-2
         var names = string.Join(", ", fields.Keys.OrderBy(x => x));
-        Assert.AreEqual("Index, Name", names);
+        Assert.AreEqual("Index", names);
         Assert.AreEqual(42L, fields["Index"]);
     }
     [TestMethod]
@@ -186,7 +186,7 @@ public class ContentSavingTests : TestBase
 
         // ASSERT-2
         var names = string.Join(", ", fields.Keys.OrderBy(x => x));
-        Assert.AreEqual("Index, Name", names);
+        Assert.AreEqual("Index", names);
         Assert.AreEqual(42L, fields["Index"]);
     }
     [TestMethod]
@@ -200,7 +200,7 @@ public class ContentSavingTests : TestBase
 
         // ASSERT-2
         var names = string.Join(", ", fields.Keys.OrderBy(x => x));
-        Assert.AreEqual("Index2, Name", names);
+        Assert.AreEqual("Index2", names);
         Assert.AreEqual(43L, fields["Index2"]);
     }
     [TestMethod]
@@ -214,7 +214,7 @@ public class ContentSavingTests : TestBase
 
         // ASSERT-2
         var names = string.Join(", ", fields.Keys.OrderBy(x => x));
-        Assert.AreEqual("Index, Index2, Name", names);
+        Assert.AreEqual("Index, Index2", names);
         Assert.AreEqual(42L, fields["Index"]);
     }
     private async Task<IDictionary<string, object>> UpdateBaseTypeTest(Action<dynamic> setProperties)
@@ -281,7 +281,7 @@ public class ContentSavingTests : TestBase
 
         // ASSERT-2
         var names = string.Join(", ", fields.Keys.OrderBy(x => x));
-        Assert.AreEqual("Index, Name", names);
+        Assert.AreEqual("Index", names);
         Assert.AreEqual(42L, fields["Index"]);
     }
     [TestMethod]
@@ -294,7 +294,7 @@ public class ContentSavingTests : TestBase
 
         // ASSERT-2
         var names = string.Join(", ", fields.Keys.OrderBy(x => x));
-        Assert.AreEqual("Index, Name", names);
+        Assert.AreEqual("Index", names);
         Assert.AreEqual(42L, fields["Index"]);
     }
     [TestMethod]
@@ -307,7 +307,7 @@ public class ContentSavingTests : TestBase
 
         // ASSERT (Strong property is not saved if not changed)
         var names = string.Join(", ", fields.Keys.OrderBy(x => x));
-        Assert.AreEqual("Index2, Name", names);
+        Assert.AreEqual("Index2", names);
         Assert.AreEqual(43L, fields["Index2"]);
     }
     [TestMethod]
@@ -321,7 +321,7 @@ public class ContentSavingTests : TestBase
 
         // ASSERT
         var names = string.Join(", ", fields.Keys.OrderBy(x => x));
-        Assert.AreEqual("Index, Index2, Name", names);
+        Assert.AreEqual("Index, Index2", names);
         Assert.AreEqual(42L, fields["Index"]);
     }
     private async Task<IDictionary<string, object>> UpdateStronglyTypedTest<T>(Action<T> setProperties) where T : Content
@@ -632,7 +632,7 @@ public class ContentSavingTests : TestBase
         var data = JsonHelper.Deserialize(json);
         Dictionary<string, object> dict = data.ToObject<Dictionary<string, object>>();
         var names = string.Join(", ", dict.Keys.OrderBy(x => x));
-        Assert.AreEqual("Index2, Name", names);
+        Assert.AreEqual("Index2", names);
     }
 
     private class ReferredContent : Content
@@ -741,7 +741,7 @@ public class ContentSavingTests : TestBase
                         " References_ContentArray, References_ContentEnumerable, References_ContentList," +
                         " References_WellKnownArray, References_WellKnownEnumerable, References_WellKnownList", names);
         Assert.IsNotNull(data);
-        Assert.AreEqual("{\"Name\":\"MyContent-1\",\"__ContentType\":\"TestContent_References\",\"Existing\":false," +
+        Assert.AreEqual("{\"__ContentType\":\"TestContent_References\",\"Existing\":false," +
                         "\"Reference_Content\":[100001]," +
                         "\"References_ContentArray\":[\"/Root/Refs/Content-2\",100003]," +
                         "\"References_ContentEnumerable\":[\"/Root/Refs/Content-4\",100005]," +
@@ -749,7 +749,8 @@ public class ContentSavingTests : TestBase
                         "\"Reference_WellKnown\":[\"/Root/Refs/ReferredContent-1\"]," +
                         "\"References_WellKnownArray\":[200002,\"/Root/Refs/ReferredContent-3\"]," +
                         "\"References_WellKnownEnumerable\":[200004,\"/Root/Refs/ReferredContent-5\"]," +
-                        "\"References_WellKnownList\":[200006,\"/Root/Refs/ReferredContent-7\"]}", JsonHelper.Serialize(data));
+                        "\"References_WellKnownList\":[200006,\"/Root/Refs/ReferredContent-7\"]," +
+                        "\"Name\":\"MyContent-1\"}", JsonHelper.Serialize(data));
 
     }
     [TestMethod]
@@ -831,9 +832,9 @@ public class ContentSavingTests : TestBase
         var fields = data.ToObject<Dictionary<string, object>>();
 
         var names = string.Join(", ", fields.Keys.OrderBy(x => x));
-        Assert.AreEqual("Name, Reference_Content, References_ContentEnumerable, References_WellKnownArray, References_WellKnownList", names);
+        Assert.AreEqual("Reference_Content, References_ContentEnumerable, References_WellKnownArray, References_WellKnownList", names);
         Assert.IsNotNull(data);
-        Assert.AreEqual("{\"Name\":null," +
+        Assert.AreEqual("{" +
                         "\"Reference_Content\":[300001]," +
                         "\"References_ContentEnumerable\":[\"/Root/Refs2/Content-4\",300005]," +
                         "\"References_WellKnownArray\":[400002,\"/Root/Refs2/ReferredContent-3\"]," +
@@ -918,9 +919,9 @@ public class ContentSavingTests : TestBase
         var fields = data.ToObject<Dictionary<string, object>>();
 
         var names = string.Join(", ", fields.Keys.OrderBy(x => x));
-        Assert.AreEqual("Name, Reference_Content, References_ContentEnumerable, References_WellKnownArray, References_WellKnownList", names);
+        Assert.AreEqual("Reference_Content, References_ContentEnumerable, References_WellKnownArray, References_WellKnownList", names);
         Assert.IsNotNull(data);
-        Assert.AreEqual("{\"Name\":null," +
+        Assert.AreEqual("{" +
                         "\"Reference_Content\":null," +
                         "\"References_ContentEnumerable\":[\"/Root/Refs2/Content-4\"]," +
                         "\"References_WellKnownArray\":null," +
@@ -1005,9 +1006,9 @@ public class ContentSavingTests : TestBase
         var fields = data.ToObject<Dictionary<string, object>>();
 
         var names = string.Join(", ", fields.Keys.OrderBy(x => x));
-        Assert.AreEqual("Name, References_ContentEnumerable, References_WellKnownList", names);
+        Assert.AreEqual("References_ContentEnumerable, References_WellKnownList", names);
         Assert.IsNotNull(data);
-        Assert.AreEqual("{\"Name\":null," +
+        Assert.AreEqual("{" +
                         "\"References_ContentEnumerable\":[\"/Root/Refs2/Content-4\"]," +
                         "\"References_WellKnownList\":[400006,\"/Root/Refs2/ReferredContent-7\"]}", JsonHelper.Serialize(data));
     }
