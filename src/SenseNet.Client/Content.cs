@@ -312,7 +312,7 @@ public partial class Content : DynamicObject
     /// </summary>
     /// <param name="fields"></param>
     /// <exception cref="NotSupportedException"></exception>
-    public static T Create<T>(params object[] fields) where T : Content
+    public static T Create<T>(params object?[] fields) where T : Content
     {
         throw new NotSupportedException("This method is used in processing LINQ expressions only. Do not use it in your code.");
     }

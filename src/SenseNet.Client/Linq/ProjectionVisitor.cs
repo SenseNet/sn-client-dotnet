@@ -45,8 +45,12 @@ internal class ProjectionVisitor : ExpressionVisitor
     }
 
     private bool _parsing;
-    protected override Expression VisitNew(NewExpression node)
+    protected override Expression VisitMethodCall(MethodCallExpression node)
     {
+    //    return base.VisitMethodCall(node);
+    //}
+    //protected override Expression VisitNew(NewExpression node)
+    //{
         if (_parsing)
             throw new NotSupportedException("Invalid Select expression.");
         _parsing = true;
@@ -72,11 +76,12 @@ internal class ProjectionVisitor : ExpressionVisitor
             }
         }
 
-        base.VisitNew(node);
+        base.VisitMethodCall(node);
 
         Compute();
         return node;
     }
+
 
     private static string FormatId(int id)
     {

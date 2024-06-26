@@ -279,6 +279,11 @@ namespace SenseNet.Client.Linq
         {
             Trace(MethodBase.GetCurrentMethod(), node);
             Expression visited = null;
+
+            // Postpone parsing Content.Create<T>()
+            if (IsContentCreationExpressionForProjection(node))
+                return node;
+
             try
             {
                 visited = base.VisitMethodCall(node);
@@ -481,23 +486,39 @@ namespace SenseNet.Client.Linq
                     if (methodCallExpr.Arguments.Count == 2)
                         if (methodCallExpr.Arguments[1] is UnaryExpression unaryExpression)
                             if (unaryExpression.Operand is LambdaExpression lambdaExpression)
-                                if (lambdaExpression.Body is NewExpression newExpression)
-                                {
-                                    var sv = new ProjectionVisitor();
-                                    sv.Visit(lambdaExpression);
-                                    ExpandedFields = sv.ExpandedFields;
-                                    SelectedFields = sv.SelectedFields;
-                                    break;
-                                }
+                                if (lambdaExpression.Body is MethodCallExpression methodCall)
+                                    if (IsContentCreationExpressionForProjection(methodCall))
+                                    {
+                                        var sv = new ProjectionVisitor();
+                                        sv.Visit(lambdaExpression);
+                                        ExpandedFields = sv.ExpandedFields;
+                                        SelectedFields = sv.SelectedFields;
+                                        break;
+                                    }
 
                     throw new NotSupportedException(
-                        "The select method can contain only one creation expression of the Content or any inherited type.");
+                        "The select method can contain only one creation expression of the Content or any inherited type e.g. Content.Create<User>(...selected field list...).");
                 }
+case "Create":
+{
+    if(IsContentCreationExpressionForProjection(methodCallExpr))
+        break;
+    throw SnExpression.CallingAsEnumerableExpectedError(methodCallExpr.Method.Name);
+}
                 default:
                     throw SnExpression.CallingAsEnumerableExpectedError(methodCallExpr.Method.Name);
             }
 
             return visited;
+        }
+        private bool IsContentCreationExpressionForProjection(MethodCallExpression methodCallExpression)
+        {
+            var method = methodCallExpression.Method;
+            return method.DeclaringType == typeof(Content) &&
+                   method.IsPublic &&
+                   method.IsStatic &&
+                   method.IsGenericMethod &&
+                   typeof(Content).IsAssignableFrom(method.ReturnType);
         }
         protected override Expression VisitNew(NewExpression node)
         {
