@@ -24,7 +24,7 @@ namespace SenseNet.Client.TestsForDocs
             SnTrace.Test.Write(">>>> ACT END");
 
 
-
+            /*
             Assert.Inconclusive();
             // ACTION for doc
             var body = @"models=[{
@@ -38,6 +38,7 @@ namespace SenseNet.Client.TestsForDocs
 
             // ASSERT
             Assert.Inconclusive();
+            */
         }
 
         /// 
@@ -53,7 +54,7 @@ namespace SenseNet.Client.TestsForDocs
             SnTrace.Test.Write(">>>> ACT END");
 
 
-
+            /*
             Assert.Inconclusive();
             // ACTION for doc
             var body = @"models=[{
@@ -67,6 +68,7 @@ namespace SenseNet.Client.TestsForDocs
 
             // ASSERT
             Assert.Inconclusive();
+            */
         }
 
         /// 
@@ -82,7 +84,7 @@ namespace SenseNet.Client.TestsForDocs
             SnTrace.Test.Write(">>>> ACT END");
 
 
-
+            /*
             Assert.Inconclusive();
             // ACTION for doc
             var body = @"models=[{
@@ -96,6 +98,7 @@ namespace SenseNet.Client.TestsForDocs
 
             // ASSERT
             Assert.Inconclusive();
+            */
         }
 
         /// 
@@ -111,7 +114,7 @@ namespace SenseNet.Client.TestsForDocs
             SnTrace.Test.Write(">>>> ACT END");
 
 
-
+            /*
             Assert.Inconclusive();
             // ACTION for doc
             var body = @"models=[{""id"": ""1b9abb5f-ed49-48c8-8edd-2c7e634bd77b""}]";
@@ -121,6 +124,7 @@ namespace SenseNet.Client.TestsForDocs
 
             // ASSERT
             Assert.Inconclusive();
+            */
         }
 
         /// 
@@ -136,7 +140,7 @@ namespace SenseNet.Client.TestsForDocs
             SnTrace.Test.Write(">>>> ACT END");
 
 
-
+            /*
             Assert.Inconclusive();
             // ACTION for doc
             var result = await RESTCaller.GetResponseStringAsync(
@@ -145,6 +149,7 @@ namespace SenseNet.Client.TestsForDocs
 
             // ASSERT
             Assert.Inconclusive();
+            */
         }
 
         /// 
@@ -160,7 +165,7 @@ namespace SenseNet.Client.TestsForDocs
             SnTrace.Test.Write(">>>> ACT END");
 
 
-
+            /*
             Assert.Inconclusive();
             // ACTION for doc
             var result = await Content.QueryAsync("SharedWith:@@CurrentUser@@");
@@ -169,6 +174,7 @@ namespace SenseNet.Client.TestsForDocs
 
             // ASSERT
             Assert.Inconclusive();
+            */
         }
 
         /// 
@@ -184,7 +190,7 @@ namespace SenseNet.Client.TestsForDocs
             SnTrace.Test.Write(">>>> ACT END");
 
 
-
+            /*
             Assert.Inconclusive();
             // ACTION for doc
             var result = await Content.QueryAsync("SharedBy:@@CurrentUser@@");
@@ -193,6 +199,7 @@ namespace SenseNet.Client.TestsForDocs
 
             // ASSERT
             Assert.Inconclusive();
+            */
         }
 
         /// 
@@ -208,7 +215,7 @@ namespace SenseNet.Client.TestsForDocs
             SnTrace.Test.Write(">>>> ACT END");
 
 
-
+            /*
             Assert.Inconclusive();
             // ACTION for doc
             var body = @"models=[{
@@ -222,6 +229,7 @@ namespace SenseNet.Client.TestsForDocs
 
             // ASSERT
             Assert.Inconclusive();
+            */
         }
     }
 }

@@ -31,15 +31,10 @@ public class Group : Content
     /// <param name="groupId">Group id.</param>
     /// <param name="memberIds">Ids of members to add to the group.</param>
     /// <param name="server">Target server.</param>
-    [Obsolete("Use AddMembersAsync instance method")]
+    [Obsolete("Use AddMembersAsync instance method", true)]
     public static async Task AddMembersAsync(int groupId, int[] memberIds, ServerContext server = null)
     {
-        await RESTCaller.GetResponseStringAsync(groupId, "AddMembers", HttpMethod.Post, JsonHelper.GetJsonPostModel(new
-                {
-                    contentIds = memberIds
-                }),
-                server)
-            .ConfigureAwait(false);
+        throw new NotSupportedException();
     }
     /// <summary>
     /// Removes members from a group.
@@ -47,15 +42,10 @@ public class Group : Content
     /// <param name="groupId">Group id.</param>
     /// <param name="memberIds">Ids of members to remove from the group.</param>
     /// <param name="server">Target server.</param>
-    [Obsolete("Use RemoveMembersAsync instance method")]
+    [Obsolete("Use RemoveMembersAsync instance method", true)]
     public static async Task RemoveMembersAsync(int groupId, int[] memberIds, ServerContext server = null)
     {
-        await RESTCaller.GetResponseStringAsync(groupId, "RemoveMembers", HttpMethod.Post, JsonHelper.GetJsonPostModel(new
-                {
-                    contentIds = memberIds
-                }),
-                server)
-            .ConfigureAwait(false);
+        throw new NotSupportedException();
     }
 
     //============================================================================= Instance API

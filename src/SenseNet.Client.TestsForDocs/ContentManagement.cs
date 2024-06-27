@@ -1582,6 +1582,8 @@ namespace SenseNet.Client.TestsForDocs
 
             /*<doc>*/
             /*</doc>*/
+
+            /*
             // ACTION for doc
             var result = await RESTCaller.GetResponseJsonAsync(new ODataRequest
             {
@@ -1593,6 +1595,7 @@ namespace SenseNet.Client.TestsForDocs
 
             // ASSERT
             Assert.Inconclusive();
+            */
         }
 
         /// <tab category="content-management" article="list-fields" example="metadata" />
@@ -1604,6 +1607,8 @@ namespace SenseNet.Client.TestsForDocs
 
             /*<doc>*/
             /*</doc>*/
+
+            /*
             // ALIGN
             await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
 
@@ -1621,6 +1626,7 @@ namespace SenseNet.Client.TestsForDocs
             {
                 await Content.DeleteAsync("/Root/Content/IT/Document_Library", true, CancellationToken.None);
             }
+            */
         }
 
         /// <tab category="content-management" article="list-fields" example="addField" />
@@ -1660,6 +1666,7 @@ namespace SenseNet.Client.TestsForDocs
                 */
 
                 // ASSERT
+                /*
                 await EnsureContentAsync("/Root/Content/Document_Library/Folder1", "Folder", c =>
                 {
                     c["#MyField"] = 789;
@@ -1667,6 +1674,8 @@ namespace SenseNet.Client.TestsForDocs
                 var body = @"models=[{""#MyField1"":1234}]";
                 var xx = await RESTCaller.GetResponseStringAsync("/Root/Content/Document_Library/Folder1", null,
                     HttpMethod.Patch, body, repository.Server);
+                */
+
                 ////var x = repository.GetResponseStringAsync(new ODataRequest
                 ////{
                 ////    Path = "/Root/Content/Document_Library",
@@ -1692,6 +1701,8 @@ namespace SenseNet.Client.TestsForDocs
 
             /*<doc>*/
             /*</doc>*/
+
+            /*
             // ALIGN
             await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
             try
@@ -1709,6 +1720,7 @@ namespace SenseNet.Client.TestsForDocs
             {
                 await Content.DeleteAsync("/Root/Content/IT/Document_Library", true, CancellationToken.None);
             }
+            */
         }
 
         /// <tab category="content-management" article="list-fields" example="editFieldVirtualChildPut" />
@@ -1720,6 +1732,8 @@ namespace SenseNet.Client.TestsForDocs
 
             /*<doc>*/
             /*</doc>*/
+
+            /*
             // ALIGN
             await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
             try
@@ -1737,6 +1751,7 @@ namespace SenseNet.Client.TestsForDocs
             {
                 await Content.DeleteAsync("/Root/Content/IT/Document_Library", true, CancellationToken.None);
             }
+            */
         }
 
         /// <tab category="content-management" article="list-fields" example="editFieldWithAction" />
@@ -1778,6 +1793,8 @@ namespace SenseNet.Client.TestsForDocs
 
             /*<doc>*/
             /*</doc>*/
+
+            /*
             // ALIGN
             await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary", repository, cancel);
             try
@@ -1794,6 +1811,7 @@ namespace SenseNet.Client.TestsForDocs
             {
                 await Content.DeleteAsync("/Root/Content/IT/Document_Library", true, CancellationToken.None);
             }
+            */
         }
 
         /// <tab category="content-management" article="list-fields" example="removeFieldAction" />
@@ -1805,6 +1823,7 @@ namespace SenseNet.Client.TestsForDocs
 
             /*<doc>*/
             /*</doc>*/
+
             //UNDONE:- The server returned an error (HttpStatus: InternalServerError): Operation not found: DeleteField(Name)
             /*
             // ALIGN

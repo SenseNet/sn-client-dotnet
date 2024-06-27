@@ -24,7 +24,7 @@ namespace SenseNet.Client.TestsForDocs
             SnTrace.Test.Write(">>>> ACT END");
 
 
-
+            /*
             Assert.Inconclusive();
             // ACTION for doc
             var result = await RESTCaller.GetResponseStringAsync(
@@ -33,6 +33,7 @@ namespace SenseNet.Client.TestsForDocs
 
             // ASSERT
             Assert.Inconclusive();
+            */
         }
 
         /// <tab category="preview" article="previews" example="checkPreviews" />
@@ -48,7 +49,7 @@ namespace SenseNet.Client.TestsForDocs
             SnTrace.Test.Write(">>>> ACT END");
 
 
-
+            /*
             Assert.Inconclusive();
             // ACTION for doc
             var body = @"models=[{
@@ -61,6 +62,7 @@ namespace SenseNet.Client.TestsForDocs
 
             // ASSERT
             Assert.Inconclusive();
+            */
         }
 
         /// <tab category="preview" article="previews" example="regeneratePreviews" />
@@ -76,7 +78,7 @@ namespace SenseNet.Client.TestsForDocs
             SnTrace.Test.Write(">>>> ACT END");
 
 
-
+            /*
             Assert.Inconclusive();
             // ACTION for doc
             await RESTCaller.GetResponseStringAsync(
@@ -85,6 +87,7 @@ namespace SenseNet.Client.TestsForDocs
 
             // ASSERT
             Assert.Inconclusive();
+            */
         }
 
         /// <tab category="preview" article="previews" example="addComment" />
@@ -100,7 +103,7 @@ namespace SenseNet.Client.TestsForDocs
             SnTrace.Test.Write(">>>> ACT END");
 
 
-
+            /*
             Assert.Inconclusive();
             // ACTION for doc
             var body = @"models=[{
@@ -115,6 +118,7 @@ namespace SenseNet.Client.TestsForDocs
 
             // ASSERT
             Assert.Inconclusive();
+            */
         }
 
         /// <tab category="preview" article="previews" example="getComments" />
@@ -130,7 +134,7 @@ namespace SenseNet.Client.TestsForDocs
             SnTrace.Test.Write(">>>> ACT END");
 
 
-
+            /*
             Assert.Inconclusive();
             // ACTION for doc
             var result = await RESTCaller.GetResponseJsonAsync(new ODataRequest
@@ -144,6 +148,7 @@ namespace SenseNet.Client.TestsForDocs
 
             // ASSERT
             Assert.Inconclusive();
+            */
         }
 
         /// <tab category="preview" article="previews" example="removeComment" />
@@ -159,7 +164,7 @@ namespace SenseNet.Client.TestsForDocs
             SnTrace.Test.Write(">>>> ACT END");
 
 
-
+            /*
             Assert.Inconclusive();
             // ACTION for doc
             var body = @"models=[{
@@ -171,6 +176,7 @@ namespace SenseNet.Client.TestsForDocs
 
             // ASSERT
             Assert.Inconclusive();
+            */
         }
     }
 }

@@ -33,11 +33,13 @@ namespace SenseNet.Client.TestsForDocs
 
 
             //UNDONE:- Feature request: Content.GetPermissionAsync
+            /*
             // ACTION for doc
             var result = await RESTCaller.GetResponseStringAsync("/Root/Content/IT", "GetPermissions");
 
             // ASSERT
             Assert.Inconclusive();
+            */
         }
 
         /// <tab category="permissions" article="permissions" example="getAcl" />
@@ -75,6 +77,7 @@ namespace SenseNet.Client.TestsForDocs
 
 
             //UNDONE:- Feature request: Content.GetPermissionAsync(identity)
+            /*
             // ACTION for doc
             var req = new ODataRequest
             {
@@ -86,6 +89,7 @@ namespace SenseNet.Client.TestsForDocs
 
             // ASSERT
             Assert.Inconclusive();
+            */
         }
 
         /// <tab category="permissions" article="permissions" example="hasPermission" />
@@ -407,6 +411,7 @@ namespace SenseNet.Client.TestsForDocs
             SnTrace.Test.Write(">>>> ACT END");
 
 
+            /*
             //UNDONE:- Feature request: PermissionQueries methods
             Assert.Inconclusive();
             // ACTION for doc
@@ -425,6 +430,7 @@ namespace SenseNet.Client.TestsForDocs
 
             // ASSERT
             Assert.Inconclusive();
+            */
         }
 
         /// <tab category="permissions" article="permission-queries" example="getRelatedPermissions" />
@@ -440,6 +446,7 @@ namespace SenseNet.Client.TestsForDocs
             SnTrace.Test.Write(">>>> ACT END");
 
 
+            /*
             Assert.Inconclusive();
             // ACTION for doc
             var body = @"models=[{
@@ -453,6 +460,7 @@ namespace SenseNet.Client.TestsForDocs
 
             // ASSERT
             Assert.Inconclusive();
+            */
         }
 
         /// <tab category="permissions" article="permission-queries" example="getRelatedItems" />
@@ -469,6 +477,7 @@ namespace SenseNet.Client.TestsForDocs
 
 
             // ACTION for doc
+            /*
             var req = new ODataRequest
             {
                 Path = "/Root/Content/IT",
@@ -482,9 +491,9 @@ namespace SenseNet.Client.TestsForDocs
                 ""explicitOnly"": true}]";
             var result = await RESTCaller.GetResponseStringAsync(req, HttpMethod.Post, body);
             Console.WriteLine(result);
-
             // ASSERT
             Assert.Inconclusive();
+            */
         }
 
         /// <tab category="permissions" article="permission-queries" example="getRelatedIdentitiesByPermissions" />
@@ -500,6 +509,7 @@ namespace SenseNet.Client.TestsForDocs
             SnTrace.Test.Write(">>>> ACT END");
 
 
+            /*
             // ACTION for doc
             var req = new ODataRequest
             {
@@ -516,6 +526,7 @@ namespace SenseNet.Client.TestsForDocs
 
             // ASSERT
             Assert.Inconclusive();
+            */
         }
 
         /// <tab category="permissions" article="permission-queries" example="getRelatedItemsOneLevel" />
@@ -531,6 +542,7 @@ namespace SenseNet.Client.TestsForDocs
             SnTrace.Test.Write(">>>> ACT END");
 
 
+            /*
             // ACTION for doc
             var req = new ODataRequest
             {
@@ -547,6 +559,7 @@ namespace SenseNet.Client.TestsForDocs
 
             // ASSERT
             Assert.Inconclusive();
+            */
         }
 
         /// <tab category="permissions" article="permission-queries" example="getAllowedUsers" />
@@ -562,6 +575,7 @@ namespace SenseNet.Client.TestsForDocs
             SnTrace.Test.Write(">>>> ACT END");
 
 
+            /*
             // ACTION for doc
             var result = await RESTCaller.GetResponseStringAsync(new ODataRequest
             {
@@ -574,6 +588,7 @@ namespace SenseNet.Client.TestsForDocs
 
             // ASSERT
             Assert.Inconclusive();
+            */
         }
 
         /// <tab category="permissions" article="permission-queries" example="getParentGroups" />
@@ -589,6 +604,7 @@ namespace SenseNet.Client.TestsForDocs
             SnTrace.Test.Write(">>>> ACT END");
 
 
+            /*
             // ACTION for doc
             var result = await RESTCaller.GetResponseStringAsync(new ODataRequest
             {
@@ -601,6 +617,7 @@ namespace SenseNet.Client.TestsForDocs
 
             // ASSERT
             Assert.Inconclusive();
+            */
         }
     }
 }
