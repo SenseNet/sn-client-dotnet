@@ -107,7 +107,7 @@ namespace SenseNet.Client.TestsForDocs
 
             // ACTION for doc
             var content = await Content.LoadAsync("/Root/Content/IT").ConfigureAwait(false);
-            var hasPermission = await content.HasPermissionAsync(new[] { "Open" });
+            var hasPermission = await content.HasPermissionAsync(new[] { "Open" }, null, cancel);
 
             // ASSERT
             Assert.Inconclusive();
@@ -137,7 +137,7 @@ namespace SenseNet.Client.TestsForDocs
             {
                 // ACTION for doc
                 var content = await Content.LoadAsync("/Root/Content/IT").ConfigureAwait(false);
-                var hasPermission = await content.HasPermissionAsync(new[] { "Open" }, "/Root/IMS/Public/devdog");
+                var hasPermission = await content.HasPermissionAsync(new[] { "Open" }, "/Root/IMS/Public/devdog", cancel);
 
                 // ASSERT
                 Assert.Inconclusive();
@@ -175,7 +175,7 @@ namespace SenseNet.Client.TestsForDocs
             {
                 // ACTION for doc
                 var content = await Content.LoadAsync("/Root/Content/IT").ConfigureAwait(false);
-                var hasPermission = await content.HasPermissionAsync(new[] { "Open,Save" }, "/Root/IMS/Public/devdog");
+                var hasPermission = await content.HasPermissionAsync(new[] { "Open,Save" }, "/Root/IMS/Public/devdog", cancel);
 
                 // ASSERT
                 Assert.Inconclusive();
@@ -212,7 +212,7 @@ namespace SenseNet.Client.TestsForDocs
             {
                 // ACTION for doc
                 var content = await Content.LoadAsync("/Root/Content/IT").ConfigureAwait(false);
-                var hasPermission = await content.HasPermissionAsync(new[] { "SeePermissions" }, "/Root/IMS/Public/devdog");
+                var hasPermission = await content.HasPermissionAsync(new[] { "SeePermissions" }, "/Root/IMS/Public/devdog", cancel);
 
                 // ASSERT
                 Assert.Inconclusive();
@@ -252,7 +252,7 @@ namespace SenseNet.Client.TestsForDocs
                 }
             };
             var content = await Content.LoadAsync("/Root/Content/IT");
-            await SecurityManager.SetPermissionsAsync(content.Id, permissionRequest);
+            await SecurityManager.SetPermissionsAsync(content.Id, permissionRequest, repository, cancel);
 
             // ASSERT
             Assert.Inconclusive();
@@ -281,7 +281,7 @@ namespace SenseNet.Client.TestsForDocs
                     Approve = PermissionValue.Allow,
                 }
             };
-            await SecurityManager.SetPermissionsAsync(content.Id, permissionRequest);
+            await SecurityManager.SetPermissionsAsync(content.Id, permissionRequest, repository, cancel);
 
             // ASSERT
             Assert.Inconclusive();
@@ -310,7 +310,7 @@ namespace SenseNet.Client.TestsForDocs
                     Delete = PermissionValue.Deny,
                 }
             };
-            await SecurityManager.SetPermissionsAsync(content.Id, permissionRequest);
+            await SecurityManager.SetPermissionsAsync(content.Id, permissionRequest, repository, cancel);
 
             // ASSERT
             Assert.Inconclusive();
@@ -322,16 +322,17 @@ namespace SenseNet.Client.TestsForDocs
         public async Task Docs_Permissions_Management_Break()
         {
             //UNDONE:Docs2: not implemented
-            Assert.Inconclusive();
+            //Assert.Inconclusive();
+
+            await EnsureContentAsync("/Root/Content/xxx", "SystemFolder", repository, cancel);
             SnTrace.Test.Write(">>>> ACT");
             /*<doc>*/
+            var content = await repository.LoadContentAsync("/Root/Content/xxx", cancel);
+            await content.BreakInheritanceAsync(cancel);
             /*</doc>*/
             SnTrace.Test.Write(">>>> ACT END");
 
-
-            // ACTION for doc
-            var content = await Content.LoadAsync("/Root/Content/IT/Document_Library");
-            await content.BreakInheritanceAsync();
+            await repository.DeleteContentAsync("/Root/Content/xxx", true, cancel);
 
             // ASSERT
             Assert.Inconclusive();
@@ -361,7 +362,7 @@ namespace SenseNet.Client.TestsForDocs
                     AddNew = PermissionValue.Allow,
                 }
             };
-            await SecurityManager.SetPermissionsAsync(content.Id, permissionRequest);
+            await SecurityManager.SetPermissionsAsync(content.Id, permissionRequest, repository, cancel);
 
             // ASSERT
             Assert.Inconclusive();
@@ -390,7 +391,7 @@ namespace SenseNet.Client.TestsForDocs
                     Custom01 = PermissionValue.Allow,
                 }
             };
-            await SecurityManager.SetPermissionsAsync(content.Id, permissionRequest);
+            await SecurityManager.SetPermissionsAsync(content.Id, permissionRequest, repository, cancel);
 
             // ASSERT
             Assert.Inconclusive();

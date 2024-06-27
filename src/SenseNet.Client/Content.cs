@@ -1018,26 +1018,56 @@ public partial class Content : DynamicObject
     /// <param name="permissions">Permission names to check.</param>
     /// <param name="user">The user who's permissions need to be checked. If it is not provided, the server checks the current user.</param>
     /// <param name="server">Target server.</param>
+    [Obsolete("Use HasPermissionAsync(string[], string?) overload instead.", true)]
     public async Task<bool> HasPermissionAsync(string[] permissions, string? user = null, ServerContext? server = null)
     {
-        return await SecurityManager.HasPermissionAsync(this.Id, permissions, user, server).ConfigureAwait(false);
+        return await SecurityManager.HasPermissionAsync(this.Id, permissions, user, Repository, CancellationToken.None).ConfigureAwait(false);
+    }
+    /// <summary>
+    /// Checks whether a user has the provided permissions on the content.
+    /// </summary>
+    /// <param name="permissions">Permission names to check.</param>
+    /// <param name="user">The user who's permissions need to be checked. If it is not provided, the server checks the current user.</param>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    /// <returns>A task that represents an asynchronous operation and wraps a boolean value.</returns>
+    public Task<bool> HasPermissionAsync(string[] permissions, string? user, CancellationToken cancel)
+    {
+        return SecurityManager.HasPermissionAsync(this.Id, permissions, user, Repository, cancel);
     }
 
     /// <summary>
     /// Breaks permissions on the content.
     /// </summary>
     /// <param name="server">Target server.</param>
-    public async Task BreakInheritanceAsync(ServerContext? server = null)
+    [Obsolete("Use BreakInheritanceAsync(CancellationToken) overload instead.", true)]
+    public Task BreakInheritanceAsync(ServerContext? server = null)
     {
-        await SecurityManager.BreakInheritanceAsync(this.Id, server).ConfigureAwait(false);
+        throw new NotSupportedException();
+    }
+    /// <summary>
+    /// Breaks permissions on the content.
+    /// </summary>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    public Task BreakInheritanceAsync(CancellationToken cancel)
+    {
+        return SecurityManager.BreakInheritanceAsync(this.Id, Repository, cancel);
     }
     /// <summary>
     /// Removes permission break on the content.
     /// </summary>
     /// <param name="server">Target server.</param>
-    public async Task UnbreakInheritanceAsync(ServerContext? server = null)
+    [Obsolete("Use UnbreakInheritanceAsync(CancellationToken) overload instead.", true)]
+    public Task UnbreakInheritanceAsync(ServerContext? server = null)
     {
-        await SecurityManager.UnbreakInheritanceAsync(this.Id, server).ConfigureAwait(false);
+        throw new NotSupportedException();
+    }
+    /// <summary>
+    /// Removes permission break on the content.
+    /// </summary>
+    /// <param name="cancel">The token to monitor for cancellation requests.</param>
+    public Task UnbreakInheritanceAsync(CancellationToken cancel)
+    {
+        return SecurityManager.UnbreakInheritanceAsync(this.Id, Repository, cancel);
     }
 
     //============================================================================= DynamicObject implementation

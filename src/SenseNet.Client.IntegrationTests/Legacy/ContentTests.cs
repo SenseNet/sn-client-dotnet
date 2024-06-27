@@ -8,6 +8,8 @@ namespace SenseNet.Client.IntegrationTests.Legacy
     [TestClass]
     public class ContentTests : IntegrationTestBase
     {
+        private readonly CancellationToken _cancel = new CancellationToken(false);
+
         [ClassInitialize]
         public static void ClassInitializer(TestContext context)
         {
@@ -185,11 +187,14 @@ namespace SenseNet.Client.IntegrationTests.Legacy
         [TestMethod]
         public async Task Content_HasPermission()
         {
-            var content = await Content.LoadAsync(2).ConfigureAwait(false);
+            var repository = await GetRepositoryCollection()
+                .GetRepositoryAsync("local", CancellationToken.None).ConfigureAwait(false);
+
+            var content = await repository.LoadContentAsync(2, _cancel).ConfigureAwait(false);
 
             // ACTION
             var result = await content.HasPermissionAsync(new []{Permission.Open, Permission.Approve},
-                Constants.User.AdminPath).ConfigureAwait(false);
+                Constants.User.AdminPath, CancellationToken.None).ConfigureAwait(false);
 
             // ASSERT
             Assert.IsTrue(result);
