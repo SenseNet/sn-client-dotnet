@@ -53,8 +53,10 @@ namespace SenseNet.Client.IntegrationTests.Legacy
         [TestMethod]
         public async Task ParseException()
         {
+            var restCaller = new DefaultRestCaller(null, null);
+
             var webEx = new HttpRequestException("error");
-            var ce = await RESTCaller.GetClientExceptionAsync(webEx, "url", HttpMethod.Post, "body").ConfigureAwait(false);
+            var ce = await restCaller.GetClientExceptionAsync(webEx, "url", HttpMethod.Post, "body").ConfigureAwait(false);
 
             Assert.AreEqual("url", ce.Data["Url"]);
             Assert.AreEqual("POST", ce.Data["Method"]);
