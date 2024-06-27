@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json.Linq;
 using SenseNet.Client.TestsForDocs.Infrastructure;
+using SenseNet.Diagnostics;
 using SenseNet.Extensions.DependencyInjection;
 
 namespace SenseNet.Client.TestsForDocs
@@ -28,382 +29,367 @@ namespace SenseNet.Client.TestsForDocs
         /// <tab category="collaboration" article="versioning" example="enableVersioning" />
         [TestMethod]
         [Description("Enable versioning")]
-        public async Task Docs_Collaboration_Versioning_EnableVersioning()
+        public async Task Docs2_Collaboration_Versioning_EnableVersioning()
         {
-            //UNDONE:- Feature request: use a textual language element instead of an integer array for InheritableVersioningMode
             try
             {
-                // ACTION for doc
+                SnTrace.Test.Write(">>>> ACT");
                 /*<doc>*/
-                var content = await repository.LoadContentAsync("/Root/Content/IT", cancel);
-                content["InheritableVersioningMode"] = new[] {3};
+                var content = await repository.LoadContentAsync("/Root/Content/Documents", cancel);
+                content.InheritableVersioningMode = VersioningMode.MajorAndMinor;
                 await content.SaveAsync(cancel);
                 /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
+                /* RAW REQUEST:
+                PATCH https://localhost:44362/OData.svc//Root/Content/('Documents')
+                models=[{"InheritableVersioningMode":["3"]}] 
+                */
 
                 // ASSERT
-                var loaded = await Content.LoadAsync("/Root/Content/IT");
+                var loaded = await repository.LoadContentAsync("/Root/Content/Documents", cancel);
                 Assert.AreEqual(3, ((JArray)loaded["InheritableVersioningMode"]).Single().Value<int>());
             }
             finally
             {
-                var content = await Content.LoadAsync("/Root/Content/IT");
+                var content = await repository.LoadContentAsync("/Root/Content/Documents", cancel);
                 content["InheritableVersioningMode"] = new[] { 0 };
-                await content.SaveAsync();
+                await content.SaveAsync(cancel);
             }
         }
 
         /// <tab category="collaboration" article="versioning" example="versionNumber" />
         [TestMethod]
         [Description("Get current version of a content")]
-        public async Task Docs_Collaboration_Versioning_GetCurrentVersion()
+        public async Task Docs2_Collaboration_Versioning_GetCurrentVersion()
         {
             // ALIGN
-            // ReSharper disable once InconsistentNaming
-            await using var Console = new StringWriter();
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File");
+            await EnsureContentAsync("/Root/Content/Documents/BusinessPlan.docx", "File", repository, cancel);
             try
             {
-                // ACTION for doc
+                SnTrace.Test.Write(">>>> ACT");
                 /*<doc>*/
-                dynamic content = await repository.LoadContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", cancel);
+                var content = await repository.LoadContentAsync(new LoadContentRequest
+                {
+                    Path = "/Root/Content/Documents/BusinessPlan.docx",
+                    Select = new []{"Id", "Type", "Path", "Version"}
+                }, cancel);
                 var version = content.Version;
-                Console.WriteLine(version);
                 /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
+                /* RAW REQUEST:
+                GET https://localhost:44362/OData.svc/Root/Content/Documents('BusinessPlan.docx')?metadata=no&$select=Id,Type,Path,Version
+                */
 
                 // ASSERT
-                var message = Console.GetStringBuilder().ToString();
-                Assert.AreEqual("V1.0.A", message.Trim());
-                Assert.AreEqual("V1.0.A", content.Version.ToString());
+                Assert.AreEqual("V1.0.A", version);
             }
             finally
             {
-                var c = await repository
-                    .LoadContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", cancel);
-                if (c != null)
-                    await c.DeleteAsync(true, cancel);
+                await repository.DeleteContentAsync("/Root/Content/Documents/BusinessPlan.docx", true, cancel);
             }
         }
 
         /// <tab category="collaboration" article="versioning" example="specificVersion" />
         [TestMethod]
         [Description("Get a specific version of a content")]
-        public async Task Docs_Collaboration_Versioning_GetSpecificVersion()
+        public async Task Docs2_Collaboration_Versioning_GetSpecificVersion()
         {
-            // ALIGN
-            // ReSharper disable once InconsistentNaming
-            await using var Console = new StringWriter();
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File");
+            var documents = await repository.LoadContentAsync("/Root/Content/Documents", cancel);
+            documents.InheritableVersioningMode = VersioningMode.MajorOnly;
+            await documents.SaveAsync(cancel);
+            await EnsureContentAsync("/Root/Content/Documents/BusinessPlan.docx", "File", repository, cancel);
+            var doc = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
+            await doc.CheckOutAsync(cancel);
+            await doc.CheckInAsync(cancel);
+            await doc.CheckOutAsync(cancel);
+            await doc.CheckInAsync(cancel);
+            var docLastVersion = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
+            Assert.AreEqual("V3.0.A", docLastVersion.Version);
+
             try
             {
-                // ACTION for doc
+                SnTrace.Test.Write(">>>> ACT");
                 /*<doc>*/
                 var request = new LoadContentRequest
                 {
-                    Path = "/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx",
-                    Version = "V1.0.A"
+                    Path = "/Root/Content/Documents/BusinessPlan.docx",
+                    Version = "V2.0.A"
                 };
-                dynamic content = await repository.LoadContentAsync(request, cancel);
-                Console.WriteLine(content.Version);
+                var content = await repository.LoadContentAsync(request, cancel);
+                var version = content.Version;
                 /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
+                /* RAW REQUEST:
+                GET https://localhost:44362/OData.svc/Root/Content/Documents('BusinessPlan.docx')?version=V2.0.A
+                */
 
                 // ASSERT
-                var message = Console.GetStringBuilder().ToString();
-                Assert.AreEqual("V1.0.A", message.Trim());
-                Assert.AreEqual("V1.0.A", content.Version.ToString());
+                Assert.AreEqual("V2.0.A", content.Version);
             }
             finally
             {
-                var c = await repository
-                    .LoadContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", cancel);
-                if (c != null)
-                    await c.DeleteAsync(true, cancel);
+                documents = await repository.LoadContentAsync("/Root/Content/Documents", cancel);
+                documents["InheritableVersioningMode"] = new[] { 0 };
+                await documents.SaveAsync(cancel);
+                await repository.DeleteContentAsync("/Root/Content/Documents/BusinessPlan.docx", true, cancel);
             }
         }
 
         /// <tab category="collaboration" article="versioning" example="checkout" />
         [TestMethod]
         [Description("Checkout a content for edit")]
-        public async Task Docs_Collaboration_Versioning_CheckOut()
+        public async Task Docs2_Collaboration_Versioning_CheckOut()
         {
-            // ALIGN
-            // ReSharper disable once InconsistentNaming
-            await using var Console = new StringWriter();
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File");
+            await EnsureContentAsync("/Root/Content/Documents/BusinessPlan.docx", "File", repository, cancel);
             try
             {
-                // ACTION for doc
+                SnTrace.Test.Write(">>>> ACT");
                 /*<doc>*/
-                var content = await repository.LoadContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", cancel);
+                var content = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
                 await content.CheckOutAsync(cancel);
                 /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
+                /* RAW REQUEST:
+                POST https://localhost:44362/OData.svc/Root/Content/Documents('BusinessPlan.docx')/CheckOut
+                */
 
                 // ASSERT
-                content = await repository.LoadContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", cancel);
+                content = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
                 Assert.AreEqual("V2.0.L", content["Version"].ToString());
             }
             finally
             {
-                var c = await repository
-                    .LoadContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", cancel);
-                if (c != null)
-                    await c.DeleteAsync(true, cancel);
+                await repository.DeleteContentAsync("/Root/Content/Documents/BusinessPlan.docx", true, cancel);
             }
         }
 
         /// <tab category="collaboration" article="versioning" example="checkin" />
         [TestMethod]
         [Description("Check-in a content")]
-        public async Task Docs_Collaboration_Versioning_CheckIn()
+        public async Task Docs2_Collaboration_Versioning_CheckIn()
         {
-            // ALIGN
-            // ReSharper disable once InconsistentNaming
-            await using var Console = new StringWriter();
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File");
+            await EnsureContentAsync("/Root/Content/Documents/BusinessPlan.docx", "File", repository, cancel);
             try
             {
-                var content1 = await repository.LoadContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", cancel);
-                await content1.CheckOutAsync(cancel);
-                content1 = await repository.LoadContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", cancel);
+                var doc = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
+                await doc.CheckOutAsync(cancel);
+                doc = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
+                Assert.AreEqual("V2.0.L", doc.Version);
 
-                // ACTION for doc
+                SnTrace.Test.Write(">>>> ACT");
                 /*<doc>*/
-                var content = await repository.LoadContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", cancel);
+                var content = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
                 await content.CheckInAsync(cancel);
                 /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
+                /* RAW REQUEST:
+                POST https://localhost:44362/OData.svc/Root/Content/Documents('BusinessPlan.docx')/CheckIn
+                */
 
                 // ASSERT
-                content = await repository.LoadContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", cancel);
+                content = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
                 Assert.AreEqual("V1.0.A", content["Version"].ToString());
             }
             finally
             {
-                var c = await repository
-                    .LoadContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", cancel);
-                if (c != null)
-                    await c.DeleteAsync(true, cancel);
+                await repository.DeleteContentAsync("/Root/Content/Documents/BusinessPlan.docx", true, cancel);
             }
         }
 
         /// <tab category="collaboration" article="versioning" example="locked" />
         [TestMethod]
         [Description("How to know if a content is locked")]
-        public async Task Docs_Collaboration_Versioning_IsLocked()
+        public async Task Docs2_Collaboration_Versioning_IsLocked()
         {
-            // ALIGN
-            // ReSharper disable once InconsistentNaming
-            await using var Console = new StringWriter();
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File");
+            await EnsureContentAsync("/Root/Content/Documents/BusinessPlan.docx", "File", repository, cancel);
             try
             {
-                var content1 = await repository.LoadContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", cancel);
+                var content1 = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
                 await content1.CheckOutAsync(cancel);
 
-                // ACTION for doc
+                SnTrace.Test.Write(">>>> ACT");
                 /*<doc>*/
-                dynamic content = await repository.LoadContentAsync(new LoadContentRequest
+                var content = await repository.LoadContentAsync(new LoadContentRequest
                 {
-                    Path = "/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx",
+                    Path = "/Root/Content/Documents/BusinessPlan.docx",
                     Expand = new List<string> { "CheckedOutTo" },
                     Select = new List<string> { "Locked", "CheckedOutTo/Name" },
                 }, cancel);
                 var locked = content.Locked;
-                var lockedBy = content.CheckedOutTo.Name;
-                Console.WriteLine($"Locked: {locked}, LockedBy: {lockedBy}");
+                var lockedBy = content.CheckedOutTo?.Name;
                 /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
+                /* RAW REQUEST:
+                GET https://localhost:44362/OData.svc/Root/Content/Documents('BusinessPlan.docx')?$expand=CheckedOutTo&$select=Locked,CheckedOutTo/Name
+                */
 
                 // ASSERT
-                var message = Console.GetStringBuilder().ToString();
-                Assert.AreEqual("Locked: True, LockedBy: Admin", message.Trim());
+                Assert.AreEqual(true, locked);
+                Assert.AreEqual("Admin", lockedBy);
             }
             finally
             {
-                var c = await repository
-                    .LoadContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", cancel);
-                if (c != null)
-                    await c.DeleteAsync(true, cancel);
+                await repository.DeleteContentAsync("/Root/Content/Documents/BusinessPlan.docx", true, cancel);
             }
         }
 
         /// <tab category="collaboration" article="versioning" example="publish" />
         [TestMethod]
         [Description("Publish a new major version")]
-        public async Task Docs_Collaboration_Versioning_Publish()
+        public async Task Docs2_Collaboration_Versioning_Publish()
         {
-            // ALIGN
-            // ReSharper disable once InconsistentNaming
-            await using var Console = new StringWriter();
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File");
+            await EnsureContentAsync("/Root/Content/Documents/BusinessPlan.docx", "File", repository, cancel);
+            var document = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
+            document.VersioningMode = VersioningMode.MajorAndMinor;
+            await document.SaveAsync(cancel);
             try
             {
-                var content1 = await repository.LoadContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", cancel);
-                content1["VersioningMode"] = new[] { 3 };
-                await content1.SaveAsync(cancel);
+                await document.CheckOutAsync(cancel);
+                await document.CheckInAsync(cancel);
+                document = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
+                Assert.AreEqual("V1.2.D", document.Version);
 
-                content1 = await repository.LoadContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", cancel);
-
-                await content1.CheckOutAsync(cancel);
-
-                await content1.CheckInAsync(cancel);
-
-                // ACTION for doc
+                SnTrace.Test.Write(">>>> ACT");
                 /*<doc>*/
-                var content = await repository.LoadContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", cancel);
+                var content = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
                 await content.PublishAsync(cancel);
                 /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
+                /* RAW REQUEST:
+                POST https://localhost:44362/OData.svc/Root/Content/Documents('BusinessPlan.docx')/Publish
+                */
 
                 // ASSERT
-                content = await repository.LoadContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", cancel);
+                content = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
                 Assert.AreEqual("V2.0.A", content["Version"].ToString());
             }
             finally
             {
-                var c = await repository
-                    .LoadContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", cancel);
-                if (c != null)
-                    await c.DeleteAsync(true, cancel);
+                await repository.DeleteContentAsync("/Root/Content/Documents/BusinessPlan.docx", true, cancel);
             }
         }
 
         /// <tab category="collaboration" article="versioning" example="undoChanges" />
         [TestMethod]
         [Description("Undo changes")]
-        public async Task Docs_Collaboration_Versioning_Undo()
+        public async Task Docs2_Collaboration_Versioning_Undo()
         {
-            // ALIGN
-            // ReSharper disable once InconsistentNaming
-            await using var Console = new StringWriter();
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File");
+            await EnsureContentAsync("/Root/Content/Documents/BusinessPlan.docx", "File", repository, cancel);
+            var document = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
+            document.VersioningMode = VersioningMode.MajorAndMinor;
+            await document.SaveAsync(cancel);
             try
             {
-                var content1 = await repository.LoadContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", cancel);
-                content1["VersioningMode"] = new[] { 3 };
-                await content1.SaveAsync(cancel);
+                document = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
+                Assert.AreEqual("V1.1.D", document.Version);
+                await document.CheckOutAsync(cancel);
+                document = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
+                Assert.AreEqual("V1.2.L", document.Version);
 
-                content1 = await repository.LoadContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", cancel);
-                Assert.AreEqual("V1.1.D", content1["Version"].ToString());
-                await content1.CheckOutAsync(cancel);
-
-                // ACTION for doc
+                SnTrace.Test.Write(">>>> ACT");
                 /*<doc>*/
-                var content = await repository.LoadContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", cancel);
+                var content = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
                 await content.UndoCheckOutAsync(cancel);
                 /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
+                /* RAW REQUEST:
+                POST https://localhost:44362/OData.svc/Root/Content/Documents('BusinessPlan.docx')/UndoCheckOut
+                */
 
                 // ASSERT
-                content = await repository.LoadContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", cancel);
+                content = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
                 Assert.AreEqual("V1.1.D", content["Version"].ToString());
             }
             finally
             {
-                var c = await repository
-                    .LoadContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", cancel);
-                if (c != null)
-                    await c.DeleteAsync(true, cancel);
+                await repository.DeleteContentAsync("/Root/Content/Documents/BusinessPlan.docx", true, cancel);
             }
         }
 
         /// <tab category="collaboration" article="versioning" example="forceUndoChanges" />
         [TestMethod]
         [Description("Force undo changes")]
-        public async Task Docs_Collaboration_Versioning_ForceUndo()
+        public async Task Docs2_Collaboration_Versioning_ForceUndo()
         {
-            // ALIGN
-            // ReSharper disable once InconsistentNaming
-            await using var Console = new StringWriter();
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder");
-            var doc = await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File");
-            var docId = doc.Id;
+            await EnsureContentAsync("/Root/Content/Documents/BusinessPlan.docx", "File", repository, cancel);
+            var document = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
+            var documentId = document.Id;
+            document.VersioningMode = VersioningMode.MajorAndMinor;
+            await document.SaveAsync(cancel);
             var user = await repository.LoadContentAsync("/Root/IMS/BuiltIn/Portal/PublicAdmin", cancel);
             try
             {
-                doc = await repository.LoadContentAsync(docId, cancel);
-                doc["VersioningMode"] = new[] { 3 };
-                await doc.SaveAsync(cancel);
-
-                doc = await repository.LoadContentAsync(docId, cancel);
-                Assert.AreEqual("V1.1.D", doc["Version"].ToString());
-
-                await doc.CheckOutAsync(cancel); // V1.2.L
+                document = await repository.LoadContentAsync(documentId, cancel);
+                Assert.AreEqual("V1.1.D", document.Version);
+                await document.CheckOutAsync(cancel); // V1.2.L
+                document = await repository.LoadContentAsync(documentId, cancel);
+                Assert.AreEqual("V1.2.L", document.Version);
 
                 await repository.GetResponseStringAsync(new ODataRequest(repository.Server)
                 {
-                    Path = "/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx",
+                    Path = "/Root/Content/Documents/BusinessPlan.docx",
                     ActionName = "TakeLockOver",
                     PostData = new { user = user.Id.ToString() }
                 }, HttpMethod.Post, cancel);
 
-                // ACTION for doc
+                SnTrace.Test.Write(">>>> ACT");
                 /*<doc>*/
-                var content = await repository.LoadContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", cancel);
+                var content = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
                 await content.ForceUndoCheckOutAsync(cancel);
                 /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
+                /* RAW REQUEST:
+                POST https://localhost:44362/OData.svc/Root/Content/Documents('BusinessPlan.docx')/ForceUndoCheckOut
+                */
 
                 // ASSERT
-                content = await repository.LoadContentAsync(docId, cancel);
+                content = await repository.LoadContentAsync(documentId, cancel);
                 Assert.AreEqual("V1.1.D", content["Version"].ToString());
             }
             finally
             {
-                var c = await repository
-                    .LoadContentAsync(docId, cancel);
-                if (c != null)
-                    await c.DeleteAsync(true, cancel);
+                await repository.DeleteContentAsync("/Root/Content/Documents/BusinessPlan.docx", true, cancel);
             }
         }
 
         /// <tab category="collaboration" article="versioning" example="takeLockOver" />
         [TestMethod]
         [Description("Take lock over")]
-        public async Task Docs_Collaboration_Versioning_TakeLockOver()
+        public async Task Docs2_Collaboration_Versioning_TakeLockOver()
         {
-            // ALIGN
-            // ReSharper disable once InconsistentNaming
-            await using var Console = new StringWriter();
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder");
-            var doc = await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File");
-            var docId = doc.Id;
-            var user = await repository.LoadContentAsync("/Root/IMS/BuiltIn/Portal/PublicAdmin", cancel);
+            Content document;
+            int documentId = 0;
             try
             {
-                doc = await repository.LoadContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", cancel);
-                doc["VersioningMode"] = new[] { 3 };
-                await doc.SaveAsync(cancel);
+                await EnsureContentAsync("/Root/Content/Documents/BusinessPlan.docx", "File", repository, cancel);
+                document = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
+                documentId = document.Id;
+                document.VersioningMode = VersioningMode.MajorAndMinor;
+                await document.SaveAsync(cancel);
+                var user = await repository.LoadContentAsync("/Root/IMS/BuiltIn/Portal/PublicAdmin", cancel);
 
-                await doc.CheckOutAsync(cancel);
+                document = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
+                await document.CheckOutAsync(cancel);
 
-                // ACTION for doc
+                SnTrace.Test.Write(">>>> ACT");
                 /*<doc>*/
-                var request = new ODataRequest(repository.Server)
+                await repository.InvokeActionAsync(new OperationRequest
                 {
-                    Path = "/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx",
-                    ActionName = "TakeLockOver",
-                    PostData = new {user = "12345"}
-                };/*</doc>*/
-                request.PostData = new {user = user.Id.ToString()};/*<doc>*/
-                var result = await repository.GetResponseStringAsync(request, HttpMethod.Post, cancel);
-                Console.WriteLine(result);
+                    Path = "/Root/Content/Documents/BusinessPlan.docx",
+                    OperationName = "TakeLockOver",
+                    PostData = new {user = "/Root/IMS/BuiltIn/Portal/PublicAdmin"}
+                }, cancel);
                 /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
+                /* RAW REQUEST:
+                POST https://localhost:44362/OData.svc/Root/Content/Documents('BusinessPlan.docx')/TakeLockOver
+                models=[{"user":"/Root/IMS/BuiltIn/Portal/PublicAdmin"}] 
+                */
 
                 // ASSERT
-                request = new ODataRequest(repository.Server)
+                var request = new ODataRequest(repository.Server)
                 {
-                    ContentId = docId,
+                    ContentId = documentId,
                     Expand = new []{ "CheckedOutTo" },
                     Select = new []{ "CheckedOutTo/Name" }
                 };
@@ -414,25 +400,25 @@ namespace SenseNet.Client.TestsForDocs
     }
   }
 }";
-                result = await repository.GetResponseStringAsync(request, HttpMethod.Get, cancel);
+                var result = await repository.GetResponseStringAsync(request, HttpMethod.Get, cancel);
                 Assert.AreEqual(expected, result);
             }
             finally
             {
-                doc = await repository.LoadContentAsync(docId, cancel);
-                if (doc != null)
+                document = await repository.LoadContentAsync(documentId, cancel);
+                if (document != null)
                 {
-                    if (doc["Version"].ToString().EndsWith("L"))
+                    if (document.Version?.EndsWith("L") ?? false)
                     {
                         var result = await repository.GetResponseStringAsync(new ODataRequest(repository.Server)
                         {
-                            ContentId = docId,
+                            ContentId = documentId,
                             ActionName = "TakeLockOver",
                             PostData = new { user = "1" }
                         }, HttpMethod.Post, cancel);
                     }
 
-                    await doc.DeleteAsync(true, cancel);
+                    await document.DeleteAsync(true, cancel);
                 }
             }
         }
@@ -440,288 +426,390 @@ namespace SenseNet.Client.TestsForDocs
         /// <tab category="collaboration" article="versioning" example="versionHistory" />
         [TestMethod]
         [Description("Get version history of a content")]
-        public async Task Docs_Collaboration_Versioning_VersionHistory()
+        public async Task Docs2_Collaboration_Versioning_VersionHistory()
         {
-            // ALIGN
-            // ReSharper disable once InconsistentNaming
-            await using var Console = new StringWriter();
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder");
-            var doc = await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File");
-            var docId = doc.Id;
+            await EnsureContentAsync("/Root/Content/Documents/BusinessPlan.docx", "File", repository, cancel);
+            var document = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
+            var documentId = document.Id;
+            document.VersioningMode = VersioningMode.MajorAndMinor;
+            await document.SaveAsync(cancel);
             try
             {
-                doc = await repository.LoadContentAsync(docId, cancel);
-                doc["VersioningMode"] = new[] { 3 };
-                await doc.SaveAsync(cancel);
+                document = await repository.LoadContentAsync(documentId, cancel);
 
-                await doc.CheckOutAsync(cancel);
-                await doc.CheckInAsync(cancel);
-                await doc.CheckOutAsync(cancel);
-                await doc.CheckInAsync(cancel);
-                await doc.PublishAsync(cancel);
-                await doc.CheckOutAsync(cancel);
-                await doc.CheckInAsync(cancel);
-                await doc.CheckOutAsync(cancel);
-                await doc.CheckInAsync(cancel);
-                await doc.CheckOutAsync(cancel);
-                await doc.CheckInAsync(cancel);
-                await doc.PublishAsync(cancel);
-                await doc.CheckOutAsync(cancel);
-                await doc.CheckInAsync(cancel);
-                await doc.CheckOutAsync(cancel);
-                await doc.CheckInAsync(cancel);
+                await document.CheckOutAsync(cancel);
+                await document.CheckInAsync(cancel);
+                await document.CheckOutAsync(cancel);
+                await document.CheckInAsync(cancel);
+                await document.PublishAsync(cancel);
+                await document.CheckOutAsync(cancel);
+                await document.CheckInAsync(cancel);
+                await document.CheckOutAsync(cancel);
+                await document.CheckInAsync(cancel);
+                await document.CheckOutAsync(cancel);
+                await document.CheckInAsync(cancel);
+                await document.PublishAsync(cancel);
+                await document.CheckOutAsync(cancel);
+                await document.CheckInAsync(cancel);
+                await document.CheckOutAsync(cancel);
+                await document.CheckInAsync(cancel);
 
-                // ACTION for doc
+                SnTrace.Test.Write(">>>> ACT");
                 /*<doc>*/
-                var request = new ODataRequest(repository.Server)
+                var result = await repository.InvokeContentCollectionFunctionAsync<Content>(new OperationRequest
                 {
-                    /*</doc>*/Select = new []{ "Version" },
-                    /*<doc>*/Path = "/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx",
-                    ActionName = "Versions",
-                };
-                var result = await repository.GetResponseStringAsync(request, HttpMethod.Get, cancel);
-                Console.WriteLine(result);
+                    Path = "/Root/Content/Documents/BusinessPlan.docx",
+                    OperationName = "Versions",
+                }, cancel);
+                var versions = result
+                    .Select(content => content.Version)
+                    .ToArray(); // e.g. ["V1.0.A", "V1.1.D", "V2.0.A"]
                 /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
+                /* RAW REQUEST:
+                GET https://localhost:44362/OData.svc/Root/Content/Documents('BusinessPlan.docx')/Versions
+                */
 
                 // ASSERT
-                var expected = @"{
-  ""d"": {
-    ""__count"": 9,
-    ""results"": [
-      {
-        ""Version"": ""V1.0.A""
-      },
-      {
-        ""Version"": ""V1.1.D""
-      },
-      {
-        ""Version"": ""V1.2.D""
-      },
-      {
-        ""Version"": ""V2.0.A""
-      },
-      {
-        ""Version"": ""V2.1.D""
-      },
-      {
-        ""Version"": ""V2.2.D""
-      },
-      {
-        ""Version"": ""V3.0.A""
-      },
-      {
-        ""Version"": ""V3.1.D""
-      },
-      {
-        ""Version"": ""V3.2.D""
-      }
-    ]
-  }
-}
-";
-                var message = Console.GetStringBuilder().ToString();
-                Assert.AreEqual(expected, message);
+                Assert.AreEqual("V1.0.A, V1.1.D, V1.2.D, V2.0.A, V2.1.D, V2.2.D, V3.0.A, V3.1.D, V3.2.D",
+                    string.Join(", ", versions));
             }
             finally
             {
-                var c = await repository
-                    .LoadContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", cancel);
-                if (c != null)
-                    await c.DeleteAsync(true, cancel);
+                await repository.DeleteContentAsync("/Root/Content/Documents/BusinessPlan.docx", true, cancel);
             }
         }
 
         /// <tab category="collaboration" article="versioning" example="recallVersion" />
         [TestMethod]
         [Description("Restore an old version")]
-        public async Task Docs_Collaboration_Versioning_RestoreOldVersion()
+        public async Task Docs2_Collaboration_Versioning_RestoreOldVersion()
         {
-            // ALIGN
-            // ReSharper disable once InconsistentNaming
-            await using var Console = new StringWriter();
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder");
-            var doc = await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File");
-            var docId = doc.Id;
+            await EnsureContentAsync("/Root/Content/Documents/BusinessPlan.docx", "File", c =>
+            {
+                c.Description = "first version";
+            }, repository, cancel);
+            var document = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
+            var documentId = document.Id;
+            document.VersioningMode = VersioningMode.MajorAndMinor;
+            document.Description = "second version";
+            await document.SaveAsync(cancel); // V1.1.D
             try
             {
-                doc["VersioningMode"] = new[] { 3 };
-                await doc.SaveAsync(cancel); // V1.1.D
+                await document.CheckOutAsync(cancel); // V1.2.L
+                document = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
+                document.Description = "third version";
+                await document.CheckInAsync(cancel); // V1.2.D
+                document = await repository.LoadContentAsync(documentId, cancel);
+                Assert.AreEqual("V1.2.D", document.Version);
 
-                await doc.CheckOutAsync(cancel); // V1.2.L
-                await doc.CheckInAsync(cancel); // V1.2.D
-
-                // ACTION for doc
+                SnTrace.Test.Write(">>>> ACT");
                 /*<doc>*/
-                var content = await repository.LoadContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", cancel);
+                var content = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
                 await content.RestoreVersionAsync("V1.0.A", cancel);
                 /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
+                /* RAW REQUEST:
+                POST https://localhost:44362/OData.svc/content(1930)/RestoreVersion
+                models=[{"version":"V1.0.A"}] 
+                */
 
                 // ASSERT
-                content = await repository.LoadContentAsync(docId, cancel);
-                Assert.AreEqual("V1.0.A", content["Version"].ToString());
+                content = await repository.LoadContentAsync(documentId, cancel);
+                Assert.AreEqual("first version", content.Description);
+                Assert.AreEqual("V1.3.D", content.Version);
+                var result = await repository.InvokeContentCollectionFunctionAsync<Content>(new OperationRequest
+                {
+                    Path = "/Root/Content/Documents/BusinessPlan.docx",
+                    OperationName = "Versions",
+                }, cancel);
+                var versions = result
+                    .Select(content => content.Version)
+                    .ToArray(); // e.g. ["V1.0.A", "V1.1.D", "V2.0.A"]
+                Assert.AreEqual("V1.0.A, V1.1.D, V1.2.D, V1.3.D", string.Join(", ", versions));
             }
             finally
             {
-                var c = await repository
-                    .LoadContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", cancel);
-                if (c != null)
-                    await c.DeleteAsync(true, cancel);
+                await repository.DeleteContentAsync("/Root/Content/Documents/BusinessPlan.docx", true, cancel);
             }
         }
 
         /* ====================================================================================== Approval */
 
+        /// <tab category="collaboration" article="approval" example="enableApproval" />
         [TestMethod]
         [Description("Enable simple approval")]
-        public async Task Docs_Collaboration_Approval_Enable()
+        public async Task Docs2_Collaboration_Approval_Enable()
         {
-            //UNDONE:- Feature request: use a textual language element instead of an integer array for InheritableApprovingMode
-            //UNDONE:- Feature request: use a textual language element instead of an integer array for InheritableVersioningMode
-            // ALIGN
-            // ReSharper disable once InconsistentNaming
-            await using var Console = new StringWriter();
             try
             {
-                // ACTION for doc
-                var content = await Content.LoadAsync("/Root/Content/IT");
-                content["InheritableApprovingMode"] = new[] { 2 };
-                content["InheritableVersioningMode"] = new[] { 3 };
-                await content.SaveAsync();
+                SnTrace.Test.Write(">>>> ACT");
+                /*<doc>*/
+                var content = await repository.LoadContentAsync("/Root/Content/Documents", cancel);
+                content.InheritableApprovingMode = ApprovingEnabled.Yes;
+                content.InheritableVersioningMode = VersioningMode.MajorAndMinor;
+                await content.SaveAsync(cancel);
+                /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
+                /* RAW REQUEST:
+                PATCH https://localhost:44362/OData.svc/Root/Content/Documents
+                models=[{
+                  "InheritableVersioningMode":["3"],
+                  "InheritableApprovingMode":["2"]
+                }] 
+                */
 
                 // ASSERT
-                var message = Console.GetStringBuilder().ToString();
-                Assert.Inconclusive();
+                var loaded = await repository.LoadContentAsync("/Root/Content/Documents", cancel);
+                Assert.AreEqual(ApprovingEnabled.Yes, loaded.InheritableApprovingMode);
+                Assert.AreEqual(VersioningMode.MajorAndMinor, loaded.InheritableVersioningMode);
             }
             finally
             {
-                var content = await Content.LoadAsync("/Root/Content/IT");
-                content["InheritableApprovingMode"] = new[] { 0 };
-                content["InheritableVersioningMode"] = new[] { 0 };
-                await content.SaveAsync();
+                var content = await repository.LoadContentAsync("/Root/Content/Documents", cancel);
+                content.InheritableApprovingMode = ApprovingEnabled.Inherited;
+                content.InheritableVersioningMode = VersioningMode.Inherited;
+                await content.SaveAsync(cancel);
             }
         }
+
+        /// <tab category="collaboration" article="approval" example="approve" />
         [TestMethod]
         [Description("Approve a content")]
-        public async Task Docs_Collaboration_Approval_Approve()
+        public async Task Docs2_Collaboration_Approval_Approve()
         {
-            Assert.Inconclusive();
-            //UNDONE:---- ERROR: The server returned an error (HttpStatus: InternalServerError): Currently this action is not allowed on this content.
-            // ALIGN
-            // ReSharper disable once InconsistentNaming
-            await using var Console = new StringWriter();
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File");
             try
             {
-                // ACTION for doc
-                var result = await RESTCaller.GetResponseJsonAsync(method: HttpMethod.Post, requestData: new ODataRequest
-                {
-                    IsCollectionRequest = false,
-                    Path = "/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx",
-                    ActionName = "Approve",
-                });
-                Console.WriteLine(result);
+                await EnsureContentAsync("/Root/Content/Documents/BusinessPlan.docx", "File", repository, cancel);
+                var document = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
+                var documentId = document.Id;
+                document.ApprovingMode = ApprovingEnabled.Yes;
+                document.VersioningMode = VersioningMode.MajorAndMinor;
+                await document.SaveAsync(cancel);
+                document = await repository.LoadContentAsync(documentId, cancel);
+                Assert.AreEqual("V1.1.D", document.Version);
+                await document.CheckOutAsync(cancel);
+                document = await repository.LoadContentAsync(documentId, cancel);
+                Assert.AreEqual("V1.2.L", document.Version);
+                await document.CheckInAsync(cancel);
+                document = await repository.LoadContentAsync(documentId, cancel);
+                Assert.AreEqual("V1.2.D", document.Version);
+                await document.PublishAsync(cancel);
+                document = await repository.LoadContentAsync(documentId, cancel);
+                Assert.AreEqual("V1.2.P", document.Version);
+
+                SnTrace.Test.Write(">>>> ACT");
+                /*<doc>*/
+                var content = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
+                await content.ApproveAsync(cancel);
+                /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
+                /* RAW REQUEST:
+                POST https://localhost:44362/OData.svc/Root/Content/Documents/('BusinessPlan.docx')/Approve
+                */
 
                 // ASSERT
-                var message = Console.GetStringBuilder().ToString();
-                Assert.Inconclusive();
+                var loaded = await repository.LoadContentAsync(documentId, cancel);
+                Assert.AreEqual("V2.0.A", loaded.Version);
             }
             finally
             {
-                var c = await Content.LoadAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx");
-                if (c != null)
-                    await c.DeleteAsync(true);
+                await repository.DeleteContentAsync("/Root/Content/Documents/BusinessPlan.docx", true, cancel);
             }
         }
+
+        /// <tab category="collaboration" article="approval" example="reject" />
         [TestMethod]
         [Description("Reject a content")]
-        public async Task Docs_Collaboration_Approval_Reject()
+        public async Task Docs2_Collaboration_Approval_Reject()
         {
-            Assert.Inconclusive();
-            //UNDONE:---- ERROR: The server returned an error (HttpStatus: InternalServerError): Currently this action is not allowed on this content.
-            // ALIGN
-            // ReSharper disable once InconsistentNaming
-            await using var Console = new StringWriter();
-            await EnsureContentAsync("/Root/Content/IT/Document_Library", "DocumentLibrary");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary", "Folder");
-            await EnsureContentAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "File");
             try
             {
-                // ACTION for doc
-                var body = @"models=[{""rejectReason"": ""Reject reason""}]";
-                var result = await RESTCaller.GetResponseStringAsync(
-                    "/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "Reject", HttpMethod.Post, body);
-                Console.WriteLine(result);
+                await EnsureContentAsync("/Root/Content/Documents/BusinessPlan.docx", "File", repository, cancel);
+                var document = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
+                var documentId = document.Id;
+                document.ApprovingMode = ApprovingEnabled.Yes;
+                document.VersioningMode = VersioningMode.MajorAndMinor;
+                await document.SaveAsync(cancel);
+                document = await repository.LoadContentAsync(documentId, cancel);
+                Assert.AreEqual("V1.1.D", document.Version);
+                await document.CheckOutAsync(cancel);
+                document = await repository.LoadContentAsync(documentId, cancel);
+                Assert.AreEqual("V1.2.L", document.Version);
+                await document.CheckInAsync(cancel);
+                document = await repository.LoadContentAsync(documentId, cancel);
+                Assert.AreEqual("V1.2.D", document.Version);
+                await document.PublishAsync(cancel);
+                document = await repository.LoadContentAsync(documentId, cancel);
+                Assert.AreEqual("V1.2.P", document.Version);
+
+                SnTrace.Test.Write(">>>> ACT");
+                /*<doc>*/
+                var content = await repository.LoadContentAsync("/Root/Content/Documents/BusinessPlan.docx", cancel);
+                await content.RejectAsync("Not acceptable. The document is not complete.", cancel);
+                /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
+                /* RAW REQUEST:
+                POST https://localhost:44362/OData.svc/Root/Content/Documents/('BusinessPlan.docx')/Reject
+                models=[{"rejectReason":"Not acceptable. The document is not complete."}] 
+                */
 
                 // ASSERT
-                var message = Console.GetStringBuilder().ToString();
-                Assert.Inconclusive();
+                var loaded = await repository.LoadContentAsync(documentId, cancel);
+                Assert.AreEqual("V1.2.R", loaded.Version);
             }
             finally
             {
-                var c = await Content.LoadAsync("/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx");
-                if (c != null)
-                    await c.DeleteAsync(true);
+                await repository.DeleteContentAsync("/Root/Content/Documents/BusinessPlan.docx", true, cancel);
             }
         }
 
         /* ====================================================================================== Saved queries */
 
+        /// <tab category="collaboration" article="saved-queries" example="saveQuery" />
         [TestMethod]
         [Description("Save a query")]
-        public async Task Docs_Collaboration_SavedQueries_SavePublic()
+        public async Task Docs2_Collaboration_SavedQueries_SavePublic()
         {
-            // ACTION for doc
-            var body = @"models=[{
-                ""query"": ""+TypeIs:File +InTree:/Root/Content/IT"",
-                ""displayName"": ""Public query"",
-                ""queryType"": ""Public""}]";
-            var result = await RESTCaller.GetResponseStringAsync(
-                "/Root/Content/IT/Document_Library", "SaveQuery", HttpMethod.Post, body);
-            Console.WriteLine(result);
+            try
+            {
+                SnTrace.Test.Write(">>>> ACT");
+                /*<doc>*/
+                await repository.InvokeActionAsync(new OperationRequest
+                {
+                    Path = "/Root/Content/Cars",
+                    OperationName = "SaveQuery",
+                    PostData = new
+                    {
+                        Query = "+TypeIs:Car +InTree:/Root/Content/Cars",
+                        DisplayName = "All cars",
+                        QueryType = "Public"
+                    }
+                }, cancel);
+                /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
+                /* RAW REQUEST:
+                POST https://localhost:44362/OData.svc/Root/Content('Cars')/SaveQuery
+                models=[{
+                  "Query":"+TypeIs:Car +InTree:/Root/Content/Cars",
+                  "DisplayName":"All cars",
+                  "QueryType":"Public"
+                }]
+                */
 
-            // ASSERT
-            Assert.Inconclusive();
+                // ASSERT
+                var savedQueries = await repository.LoadCollectionAsync(new LoadCollectionRequest
+                    {Path= "/Root/Content/Queries" }, cancel);
+                var savedQuery = savedQueries.FirstOrDefault();
+                Assert.IsNotNull(savedQuery);
+                Assert.AreEqual("+TypeIs:Car +InTree:/Root/Content/Cars", savedQuery["Query"].ToString());
+                Assert.AreEqual("All cars", savedQuery["DisplayName"].ToString());
+                Assert.AreEqual("[\r\n  \"Public\"\r\n]", savedQuery["QueryType"].ToString());
+            }
+            finally
+            {
+                await repository.DeleteContentAsync("/Root/Content/Queries", true, cancel);
+            }
         }
+
+        /// <tab category="collaboration" article="saved-queries" example="savePrivateQuery" />
+        //TODO: Causes error if the user profile cannot be created.
+        // Switch on this on the3 server:
+        // {
+        //   "sensenet": {
+        //     "identityManagement": {
+        //       "UserProfilesEnabled":  true 
+        //     } 
         [TestMethod]
         [Description("Save a private query")]
-        public async Task Docs_Collaboration_SavedQueries_SavePrivate()
+        public async Task Docs2_Collaboration_SavedQueries_SavePrivate()
         {
-            Assert.Inconclusive();
-            //UNDONE:---- ERROR: The server returned an error (HttpStatus: InternalServerError): User profile could not be created.
-            // ACTION for doc
-            var body = @"models=[{
-                ""query"": ""+TypeIs:File +InTree:/Root/Content/IT"",
-                ""displayName"": ""My query"",
-                ""queryType"": ""Private""}]";
-            var result = await RESTCaller.GetResponseStringAsync(
-                "/Root/Content/IT/Document_Library", "SaveQuery", HttpMethod.Post, body);
-            Console.WriteLine(result);
+            try
+            {
+                SnTrace.Test.Write(">>>> ACT");
+                /*<doc>*/
+                await repository.InvokeActionAsync(new OperationRequest
+                {
+                    Path = "/Root/Content/Cars",
+                    OperationName = "SaveQuery",
+                    PostData = new
+                    {
+                        Query = "+TypeIs:Car +InTree:/Root/Content/Cars",
+                        DisplayName = "My query",
+                        QueryType = "Private"
+                    }
+                }, cancel);
+                /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
+                /* RAW REQUEST:
+                POST https://localhost:44362/OData.svc/Root/Content('Cars')/SaveQuery
+                models=[{
+                  "Query":"+TypeIs:Car +InTree:/Root/Content/Cars",
+                  "DisplayName":"My query",
+                  "QueryType":"Private"
+                }]
+                */
 
-            // ASSERT
-            Assert.Inconclusive();
+                // ASSERT
+                var savedQueries = await repository.LoadCollectionAsync(new LoadCollectionRequest
+                    { Path = "/Root/Profiles/BuiltIn/Admin/Queries" }, cancel);
+                var savedQuery = savedQueries.FirstOrDefault();
+                Assert.IsNotNull(savedQuery);
+                Assert.AreEqual("+TypeIs:Car +InTree:/Root/Content/Cars", savedQuery["Query"].ToString());
+                Assert.AreEqual("My query", savedQuery["DisplayName"].ToString());
+                Assert.AreEqual("[\r\n  \"Private\"\r\n]", savedQuery["QueryType"].ToString());
+            }
+            finally
+            {
+                await repository.DeleteContentAsync("/Root/Profiles/BuiltIn/Admin/Queries", true, cancel);
+            }
         }
+
+        /// <tab category="collaboration" article="saved-queries" example="getSavedQueries" />
         [TestMethod]
         [Description("Get saved queries")]
-        public async Task Docs_Collaboration_SavedQueries_Get()
+        public async Task Docs2_Collaboration_SavedQueries_Get()
         {
-            Assert.Inconclusive();
-            //UNDONE:---- ERROR: (every second run if the test filter is: 'Docs_Collaboration_') Invalid response. Request: https://localhost:44362/OData.svc/Root/Content/IT/Document_Library/Calgary('BusinessPlan.docx')/GetQueries?metadata=no&onlyPublic=true. Response: 
-            // ACTION for doc
-            var result = await RESTCaller.GetResponseJsonAsync(new ODataRequest
+            try
             {
-                IsCollectionRequest = false,
-                Path = "/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx",
-                ActionName = "GetQueries",
-                Parameters = { { "onlyPublic", "true" } }
-            });
-            Console.WriteLine(result);
+                await repository.InvokeActionAsync(new OperationRequest
+                {
+                    Path = "/Root/Content/Cars",
+                    OperationName = "SaveQuery",
+                    PostData = new
+                    {
+                        Query = "+TypeIs:Car +InTree:/Root/Content/Cars",
+                        DisplayName = "All cars",
+                        QueryType = "Public"
+                    }
+                }, cancel);
 
-            // ASSERT
-            Assert.Inconclusive();
+                SnTrace.Test.Write(">>>> ACT");
+                /*<doc>*/
+                var savedQueries = await repository.InvokeContentCollectionFunctionAsync<SnQuery>(new OperationRequest
+                {
+                    Path = "/Root/Content/Cars",
+                    OperationName = "GetQueries",
+                    Parameters = { { "onlyPublic", "true" } }
+                }, cancel);
+                /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
+                /* RAW REQUEST:
+                GET https://localhost:44362/OData.svc/Root/Content('Cars')/GetQueries?onlyPublic=true
+                */
+
+                // ASSERT
+                var savedQuery = savedQueries.FirstOrDefault();
+                Assert.IsNotNull(savedQuery);
+                Assert.AreEqual("+TypeIs:Car +InTree:/Root/Content/Cars", savedQuery["Query"].ToString());
+                Assert.AreEqual("All cars", savedQuery["DisplayName"].ToString());
+                Assert.AreEqual("[\r\n  \"Public\"\r\n]", savedQuery["QueryType"].ToString());
+            }
+            finally
+            {
+                await repository.DeleteContentAsync("/Root/Content/Queries", true, cancel);
+            }
+
         }
     }
 }

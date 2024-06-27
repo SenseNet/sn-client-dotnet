@@ -1,12 +1,30 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using SenseNet.Diagnostics;
 using SenseNet.Extensions.DependencyInjection;
 
 namespace SenseNet.Client.IntegrationTests;
 
 public class IntegrationTestBase
 {
+    [AssemblyInitialize]
+    public static void InitializeAllTests(TestContext context)
+    {
+        SnTrace.Custom.Enabled = true;
+        SnTrace.Test.Enabled = true;
+    }
+
+    public TestContext TestContext { get; set; }
+
+    [TestInitialize]
+    public void InitializeTest()
+    {
+        SnTrace.Custom.Enabled = true;
+        SnTrace.Test.Enabled = true;
+        SnTrace.Test.Write($">>>> TEST: {TestContext.TestName}");
+    }
+
     protected IRepositoryCollection GetRepositoryCollection(Action<IServiceCollection> addServices = null)
     {
         var services = new ServiceCollection();

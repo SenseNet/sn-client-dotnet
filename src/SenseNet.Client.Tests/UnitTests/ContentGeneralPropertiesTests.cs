@@ -769,7 +769,7 @@ public class ContentGeneralPropertiesTests : TestBase
         Assert.AreEqual(TaskState.Pending, content.Status);
 
         // ACT
-        content.Priority = null;
+        content.Status = null;
         await content.SaveAsync(_cancel);
 
         // ASSERT

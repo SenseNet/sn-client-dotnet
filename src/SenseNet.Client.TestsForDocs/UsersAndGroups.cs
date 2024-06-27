@@ -1,184 +1,392 @@
 ﻿using System;
 using System.Net.Http;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NuGet.Frameworks;
 using SenseNet.Client.TestsForDocs.Infrastructure;
+using SenseNet.Diagnostics;
+using SenseNet.Extensions.DependencyInjection;
 
 namespace SenseNet.Client.TestsForDocs
 {
     [TestClass]
     public class UsersAndGroups : ClientIntegrationTestBase
     {
+        private CancellationToken cancel => new CancellationTokenSource(TimeSpan.FromSeconds(1000)).Token;
+        // ReSharper disable once InconsistentNaming
+        IRepository repository =>
+            GetRepositoryCollection()
+                .GetRepositoryAsync("local", cancel).GetAwaiter().GetResult();
+
         /* ====================================================================================== Main */
 
+        /// <tab category="users-and-groups" article="users-and-groups" example="createUser" />
         [TestMethod]
         [Description("Creating users")]
-        public async Task Docs_UsersAndGroups_Main_CreateUser()
+        public async Task Docs2_UsersAndGroups_Main_CreateUser()
         {
             try
             {
-                // ACTION for doc
-                var content = Content.CreateNew("/Root/IMS/Public", "User", "alba");
-                content["LoginName"] = "alba";
-                content["Email"] = "alba@sensenet.com";
-                content["Password"] = "alba";
+                SnTrace.Test.Write(">>>> ACT");
+                /*<doc>*/
+                var content = repository.CreateContent("/Root/IMS/Public", "User", "jsmith");
+                content["LoginName"] = "jsmith";
+                content["Email"] = "jsmith@example.com";
+                content["Password"] = "I8rRp2c9P0HJZENZcvlz";
+                content["FullName"] = "John Smith";
                 content["Enabled"] = true;
-                await content.SaveAsync();
+                await content.SaveAsync(cancel);
+                /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
+                /* RAW REQUEST:
+                POST https://localhost:44362/OData.svc/Root/IMS('Public')
+                models=[{
+                  "Name":"jsmith",
+                  "__ContentType":"User",
+                  "LoginName":"jsmith",
+                  "Email":"jsmith@example.com",
+                  "Password":"I8rRp2c9P0HJZENZcvlz",
+                  "FullName":"John Smith",
+                  "Enabled":true
+                }] 
+                */
 
                 // ASSERT
-                Assert.Inconclusive();
+                Assert.IsNotNull(content);
+                Assert.AreEqual("/Root/IMS/Public/jsmith", content.Path);
+                Assert.AreEqual("User", content["Type"].ToString());
+                var user = await repository.LoadContentAsync<User>(content.Id, cancel);
+                Assert.AreEqual("/Root/IMS/Public/jsmith", user.Path);
+                Assert.AreEqual("jsmith", user.LoginName);
+                Assert.AreEqual("jsmith@example.com", user.Email);
+                Assert.AreEqual(null, user.Password);
+                Assert.AreEqual("John Smith", user.FullName);
+                Assert.AreEqual(true, user.Enabled);
             }
             finally
             {
-                var c = await Content.LoadAsync("/Root/IMS/Public/alba");
+                var c = await repository.LoadContentAsync("/Root/IMS/Public/jsmith", cancel);
                 if (c != null)
-                    await c.DeleteAsync(true);
+                    await c.DeleteAsync(true, cancel);
             }
         }
+
+        /// <tab category="users-and-groups" article="users-and-groups" example="disableUser" />
         [TestMethod]
         [Description("Disable a user")]
-        public async Task Docs_UsersAndGroups_Main_DisableUser()
+        public async Task Docs2_UsersAndGroups_Main_DisableUser()
         {
-            // ALIGN
-            var c = Content.CreateNew("/Root/IMS/Public", "User", "editormanatee");
-            c["LoginName"] = "editormanatee";
-            c["Email"] = "editormanatee@sensenet.com";
-            c["Password"] = "editormanatee";
-            c["Enabled"] = true;
-            await c.SaveAsync();
+            var jsmith = repository.CreateContent("/Root/IMS/Public", "User", "jsmith");
+            jsmith["LoginName"] = "jsmith";
+            jsmith["Email"] = "jsmith@example.com";
+            jsmith["Password"] = "I8rRp2c9P0HJZENZcvlz";
+            jsmith["FullName"] = "John Smith";
+            jsmith["Enabled"] = true;
+            await jsmith.SaveAsync(cancel);
+
             try
             {
-                // ACTION for doc
-                var content = await Content.LoadAsync("/Root/IMS/Public/editormanatee");
-                content["Enabled"] = false;
-                await content.SaveAsync();
+                SnTrace.Test.Write(">>>> ACT");
+                /*<doc>*/
+                var user = await repository.LoadContentAsync<User>("/Root/IMS/Public/jsmith", cancel);
+                user.Enabled = false;
+                await user.SaveAsync(cancel);
+                /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
+                /* RAW REQUEST:
+                PATCH https://localhost:44362/OData.svc/Root/IMS/Public/jsmith
+                models=[{"Enabled":false}]
+                */
 
                 // ASSERT
-                Assert.Inconclusive();
+                var loaded = await repository.LoadContentAsync<User>("/Root/IMS/Public/jsmith", cancel);
+                Assert.IsFalse(loaded.Enabled);
             }
             finally
             {
-                c = await Content.LoadAsync("/Root/IMS/Public/editormanatee");
-                if (c != null)
-                    await c.DeleteAsync(true);
+                await repository.DeleteContentAsync("/Root/IMS/Public/jsmith", true, cancel);
             }
         }
+
+        /// <tab category="users-and-groups" article="users-and-groups" example="createRole" />
         [TestMethod]
         [Description("Creating roles (groups)")]
-        public async Task Docs_UsersAndGroups_Main_CreateGroup()
+        public async Task Docs2_UsersAndGroups_Main_CreateGroup()
         {
+
             try
             {
-                // ACTION for doc
-                var content = Content.CreateNew("/Root/IMS/Public", "Group", "Publishers");
-                content["Members"] = new[] { 1155, 1156 };
-                await content.SaveAsync();
+                SnTrace.Test.Write(">>>> ACT");
+                /*<doc>*/
+                var jsmith = await repository.LoadContentAsync("/Root/IMS/Public/jjohnson", cancel);
+                var etaylor = await repository.LoadContentAsync("/Root/IMS/Public/etaylor", cancel);
+                var drivers = repository.CreateContent<Group>("/Root/IMS/Public", null, "Drivers"); 
+                drivers.Members = new[] { jsmith, etaylor };
+                await drivers.SaveAsync(cancel);
+                /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
+                /* RAW REQUEST:
+                POST https://localhost:44362/OData.svc/Root/IMS('Public')
+                models=[{
+                  "__ContentType":"Group",
+                  "Name":"Drivers",
+                  "Members":[
+                    "/Root/IMS/Public/etaylor",
+                    "/Root/IMS/Public/jjohnson"
+                  ]
+                }] 
+                */
 
                 // ASSERT
-                Assert.Inconclusive();
+                var group = await repository.LoadContentAsync<Group>(new LoadContentRequest
+                {
+                    Path = "/Root/IMS/Public/Drivers",
+                    Expand =new []{"Members"},
+                    Select = new []{"Id", "Path", "Type", "Members/Id", "Members/Name", "Members/Type" }
+                }, cancel);
+                Assert.IsNotNull(group.Members);
+                var members = group.Members.OrderBy(g => g.Name).ToArray();
+                Assert.AreEqual("etaylor, jjohnson", string.Join(", ", members.Select(m => m.Name)));
+                Assert.AreEqual("User", members.Select(m => m.Type).Distinct().Single());
             }
             finally
             {
-                var c = await Content.LoadAsync("/Root/IMS/Public/Publishers");
-                if (c != null)
-                    await c.DeleteAsync(true);
+                await repository.DeleteContentAsync("/Root/IMS/Public/Drivers", true, cancel);
             }
         }
-
-        /* ====================================================================================== Login */
-
-        /* ====================================================================================== Logout */
 
         /* ====================================================================================== Group Membership */
 
+        /// <tab category="users-and-groups" article="memberships" example="loadMembers" />
         [TestMethod]
         [Description("Load members of a group")]
-        public async Task Docs_UsersAndGroups_GroupMembership_Load()
+        public async Task Docs2_UsersAndGroups_GroupMembership_Load()
         {
-            Assert.Inconclusive();
-            //UNDONE:---- ERROR: Cannot perform runtime binding on a null reference
-            // ACTION for doc
-            dynamic developers = await RESTCaller.GetContentAsync(new ODataRequest
+            SnTrace.Test.Write(">>>> ACT");
+            /*<doc>*/
+            var group = await repository.LoadContentAsync<Group>(new LoadContentRequest
             {
-                Path = "/Root/IMS/Public/developers",
-                IsCollectionRequest = false,
+                Path = "/Root/IMS/Public/Editors",
                 Expand = new[] { "Members" },
-                Select = new[] { "Members/LoginName" }
-            });
-            foreach (dynamic content in developers.Members)
-            {
-                Console.WriteLine(content.LoginName);
-            }
+                Select = new[] { "Id", "Path", "Type", "Members/Id", "Members/Path", "Members/Type", "Members/LoginName" }
+            }, cancel);
+            /*</doc>*/
+            SnTrace.Test.Write(">>>> ACT END");
+            /* RAW REQUEST:
+            GET https://localhost:44362/OData.svc/Root/IMS/Public('Editors')
+            ?metadata=no&$expand=Members&$select=Id,Path,Type,Members/Id,Members/Path,Members/Type,Members/LoginName
+            */
 
             // ASSERT
-            Assert.Inconclusive();
+            Assert.IsNotNull(group.Members);
+            var members = group.Members.OrderBy(g => g.Name).ToArray();
+            Assert.AreEqual("etaylor, jjohnson", string.Join(", ", members.Select(m => ((User)m).LoginName)));
         }
+
+        /// <tab category="users-and-groups" article="memberships" example="addMember" />
         [TestMethod]
         [Description("Add members to a group")]
-        public async Task Docs_UsersAndGroups_GroupMembership_Add()
+        public async Task Docs2_UsersAndGroups_GroupMembership_Add()
         {
-            Assert.Inconclusive();
-            //UNDONE:---- ERROR: Content not found
-            // ACTION for doc
-            var body = @"models=[{""contentIds"": [ 1155, 1157 ]}]";
-            var result = await RESTCaller.GetResponseStringAsync(
-                "/Root/IMS/Public/developers", "AddMembers", HttpMethod.Post, body);
-            Console.WriteLine(result);
+            var jsmith = await repository.LoadContentAsync("/Root/IMS/Public/jjohnson", cancel);
+            var etaylor = await repository.LoadContentAsync("/Root/IMS/Public/etaylor", cancel);
+            await repository.InvokeActionAsync(new OperationRequest
+            {
+                Path = "/Root/IMS/Public/Editors",
+                OperationName = "RemoveMembers",
+                PostData = new{contentIds = new[] {etaylor.Id, jsmith.Id}}
+            }, cancel);
+
+            SnTrace.Test.Write(">>>> ACT");
+            /*<doc>*/
+            await repository.InvokeActionAsync(new OperationRequest
+            {
+                Path = "/Root/IMS/Public/Editors",
+                OperationName = "AddMembers",
+                PostData = new { contentIds = new[] { etaylor.Id, jsmith.Id } }
+            }, cancel);
+            /*</doc>*/
+            SnTrace.Test.Write(">>>> ACT END");
+            /* RAW REQUEST:
+            POST https://localhost:44362/OData.svc/Root/IMS/Public('Editors')/AddMembers
+            models=[{"contentIds":[1157,1158]}]
+            */
 
             // ASSERT
-            Assert.Inconclusive();
+            var group = await repository.LoadContentAsync<Group>(new LoadContentRequest
+            {
+                Path = "/Root/IMS/Public/Editors",
+                Expand = new[] { "Members" },
+                Select = new[] { "Id", "Path", "Type", "Members/Id", "Members/Name", "Members/Type" }
+            }, cancel);
+            Assert.IsNotNull(group.Members);
+            var members = group.Members.OrderBy(g => g.Name).ToArray();
+            Assert.AreEqual("etaylor, jjohnson", string.Join(", ", members.Select(m => ((User)m).Name)));
         }
+
+        /// <tab category="users-and-groups" article="memberships" example="removeMember" />
         [TestMethod]
         [Description("Remove members from a group")]
-        public async Task Docs_UsersAndGroups_GroupMembership_Remove()
+        public async Task Docs2_UsersAndGroups_GroupMembership_Remove()
         {
-            Assert.Inconclusive();
-            //UNDONE:---- ERROR: Content not found
-            // ACTION for doc
-            var body = @"models=[{""contentIds"": [ 1157 ]}]";
-            var result = await RESTCaller.GetResponseStringAsync(
-                "/Root/IMS/Public/developers", "RemoveMembers", HttpMethod.Post, body);
-            Console.WriteLine(result);
+            var jsmith = await repository.LoadContentAsync("/Root/IMS/Public/jjohnson", cancel);
+            var etaylor = await repository.LoadContentAsync("/Root/IMS/Public/etaylor", cancel);
+            try
+            {
+                SnTrace.Test.Write(">>>> ACT");
+                /*<doc>*/
+                await repository.InvokeActionAsync(new OperationRequest
+                {
+                    Path = "/Root/IMS/Public/Editors",
+                    OperationName = "RemoveMembers",
+                    PostData = new { contentIds = new[] { etaylor.Id, jsmith.Id } }
+                }, cancel);
+                /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
+                /* RAW REQUEST:
+                POST https://localhost:44362/OData.svc/Root/IMS/Public('Editors')/RemoveMembers
+                models=[{"contentIds":[1157,1158]}]
+                */
 
-            // ASSERT
-            Assert.Inconclusive();
+                // ASSERT
+                var group = await repository.LoadContentAsync<Group>(new LoadContentRequest
+                {
+                    Path = "/Root/IMS/Public/Editors",
+                    Expand = new[] {"Members"},
+                    Select = new[] {"Id", "Path", "Type", "Members/Id", "Members/Name", "Members/Type"}
+                }, cancel);
+                Assert.IsNotNull(group.Members);
+                Assert.IsFalse(group.Members.Any());
+            }
+            finally
+            {
+                await repository.InvokeActionAsync(new OperationRequest
+                {
+                    Path = "/Root/IMS/Public/Editors",
+                    OperationName = "AddMembers",
+                    PostData = new { contentIds = new[] { etaylor.Id, jsmith.Id } }
+                }, cancel);
+            }
         }
+
+        /// <tab category="users-and-groups" article="memberships" example="allRoles" />
         [TestMethod]
         [Description("Get all group memberships (roles) of a user")]
-        public async Task Docs_UsersAndGroups_GroupMembership_GetRolesOfUser()
+        public async Task Docs2_UsersAndGroups_GroupMembership_GetRolesOfUser()
         {
-            // ACTION for doc
-            //UNDONE: Missing doc and test. REST: GET /OData.svc/Root/IMS/Public('devdog')?$select=AllRoles&$expand=AllRoles
+            var editors = await repository.LoadContentAsync("/Root/IMS/Public/Editors", cancel);
+            try
+            {
+                await repository.InvokeActionAsync(
+                    new OperationRequest
+                    {
+                        Path = "/Root/IMS/Builtin/Portal/Developers", OperationName = "AddMembers",
+                        PostData = new {contentIds = new[] {editors.Id}}
+                    }, cancel);
 
-            // ASSERT
-            Assert.Inconclusive();
+                SnTrace.Test.Write(">>>> ACT");
+                /*<doc>*/
+                var user = await repository.LoadContentAsync<User>(new LoadContentRequest
+                {
+                    Path = "/Root/IMS/Public/jjohnson",
+                    Expand = new[] { "AllRoles" },
+                    Select = new[] { "Id", "Path", "Type", "AllRoles/Id", "AllRoles/Path", "AllRoles/Type", "AllRoles/Name" }
+                }, cancel);
+                var roles = user.AllRoles?
+                    .Select(role => role.Name)
+                    .ToArray();
+                /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
+                /* RAW REQUEST:
+                GET https://localhost:44362/OData.svc/Root/IMS/Public('jjohnson')
+                ?metadata=no&$expand=AllRoles&$select=Id,Path,Type,AllRoles/Id,AllRoles/Path,AllRoles/Type,AllRoles/Name
+                */
+
+                // ASSERT
+                Assert.IsNotNull(roles);
+                Assert.IsTrue(roles.Length > 1);
+                Assert.IsTrue(roles.Contains("Editors"));
+                Assert.IsTrue(roles.Contains("Developers"));
+            }
+            finally
+            {
+                await repository.InvokeActionAsync(new OperationRequest
+                {
+                    Path = "/Root/IMS/Builtin/Portal/Developers",
+                    OperationName = "RemoveMembers",
+                    PostData = new { contentIds = new[] { editors.Id } }
+                }, cancel);
+            }
         }
+
+        /// <tab category="users-and-groups" article="memberships" example="directRoles" />
         [TestMethod]
         [Description("Get the list of groups where the user is directly added as a member")]
-        public async Task Docs_UsersAndGroups_GroupMembership_GetDirectRolesOfUser()
+        public async Task Docs2_UsersAndGroups_GroupMembership_GetDirectRolesOfUser()
         {
-            // ACTION for doc
-            //UNDONE: Missing doc and test. REST: GET /OData.svc/Root/IMS/Public('devdog')?$select=DirectRoles&$expand=DirectRoles
+            var editors = await repository.LoadContentAsync("/Root/IMS/Public/Editors", cancel);
+            try
+            {
+                await repository.InvokeActionAsync(
+                    new OperationRequest
+                    {
+                        Path = "/Root/IMS/Builtin/Portal/Developers",
+                        OperationName = "AddMembers",
+                        PostData = new { contentIds = new[] { editors.Id } }
+                    }, cancel);
 
-            // ASSERT
-            Assert.Inconclusive();
+                SnTrace.Test.Write(">>>> ACT");
+                /*<doc>*/
+                var user = await repository.LoadContentAsync<User>(new LoadContentRequest
+                {
+                    Path = "/Root/IMS/Public/jjohnson",
+                    Expand = new[] { "DirectRoles" },
+                    Select = new[] { "Id", "Path", "Type", "DirectRoles/Id", "DirectRoles/Path", "DirectRoles/Type", "DirectRoles/Name" }
+                }, cancel);
+                var roles = user.DirectRoles?
+                    .Select(role => role.Name)
+                    .ToArray();
+                /*</doc>*/
+                SnTrace.Test.Write(">>>> ACT END");
+                /* RAW REQUEST:
+                GET https://localhost:44362/OData.svc/Root/IMS/Public('jjohnson')?metadata=no&$expand=DirectRoles
+                &$select=Id,Path,Type,DirectRoles/Id,DirectRoles/Path,DirectRoles/Type,DirectRoles/Name
+                */
+
+                // ASSERT
+                Assert.IsNotNull(roles);
+                Assert.IsTrue(roles.Length == 1);
+                Assert.IsTrue(roles.Contains("Editors"));
+            }
+            finally
+            {
+                await repository.InvokeActionAsync(new OperationRequest
+                {
+                    Path = "/Root/IMS/Builtin/Portal/Developers",
+                    OperationName = "RemoveMembers",
+                    PostData = new { contentIds = new[] { editors.Id } }
+                }, cancel);
+            }
         }
+
+        /// <tab category="users-and-groups" article="memberships" example="workspaceMembers" />
+        //UNDONE:Docs2: Unnecessary example (?).
         [TestMethod]
         [Description("Get the list of workspaces where the given user is member")]
-        public async Task Docs_UsersAndGroups_GroupMembership_GetWorkspacesOfUser()
+        public async Task Docs2_UsersAndGroups_GroupMembership_GetWorkspacesOfUser()
         {
-            // ACTION for doc
-            //UNDONE: Missing doc and test. REST: GET /OData.svc/Root/Content?query=%2BType%3AGroup %2BMembers%3A{{Id%3A1163}} .AUTOFILTERS%3AOFF&$select=Workspace/DisplayName&$expand=Workspace
+            Assert.Inconclusive();
+            SnTrace.Test.Write(">>>> ACT");
+            /*<doc>*/
+            /*</doc>*/
+            SnTrace.Test.Write(">>>> ACT END");
+
+            //UNDONE: Missing doc and test. REST: GET /OData.svc/Root/Content?query=+Type:Group +Members:{{Id:1163}} .AUTOFILTERS:OFF&$select=Workspace/DisplayName&$expand=Workspace
 
             // ASSERT
             Assert.Inconclusive();
         }
-
-        /* ====================================================================================== Registration */
-
-        /* ====================================================================================== Change password */
-
-        /* ====================================================================================== Forgotten password */
 
     }
 }

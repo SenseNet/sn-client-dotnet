@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SenseNet.Client.TestsForDocs.Infrastructure;
+using SenseNet.Diagnostics;
 
 namespace SenseNet.Client.TestsForDocs
 {
@@ -10,12 +11,21 @@ namespace SenseNet.Client.TestsForDocs
     {
         /* ====================================================================================== Main */
 
+        /// <tab category="preview" article="previews" example="getPageCount" />
         [TestMethod]
         [Description("Get page count")]
         public async Task Docs_Preview_Main_GetPageCount()
         {
+            //UNDONE:Docs2: not implemented
             Assert.Inconclusive();
-            //UNDONE: this test has not run yet
+            SnTrace.Test.Write(">>>> ACT");
+            /*<doc>*/
+            /*</doc>*/
+            SnTrace.Test.Write(">>>> ACT END");
+
+
+
+            Assert.Inconclusive();
             // ACTION for doc
             var result = await RESTCaller.GetResponseStringAsync(
                 "/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "GetPageCount", HttpMethod.Post);
@@ -24,12 +34,22 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// <tab category="preview" article="previews" example="checkPreviews" />
         [TestMethod]
         [Description("Check previews")]
         public async Task Docs_Preview_Main_CheckPreviews()
         {
+            //UNDONE:Docs2: not implemented
             Assert.Inconclusive();
-            //UNDONE: this test has not run yet
+            SnTrace.Test.Write(">>>> ACT");
+            /*<doc>*/
+            /*</doc>*/
+            SnTrace.Test.Write(">>>> ACT END");
+
+
+
+            Assert.Inconclusive();
             // ACTION for doc
             var body = @"models=[{
                 ""generateMissing"": false}]";
@@ -42,12 +62,22 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// <tab category="preview" article="previews" example="regeneratePreviews" />
         [TestMethod]
         [Description("Regenerate previews")]
         public async Task Docs_Preview_Main_RegeneratePreviews()
         {
+            //UNDONE:Docs2: not implemented
             Assert.Inconclusive();
-            //UNDONE: this test has not run yet
+            SnTrace.Test.Write(">>>> ACT");
+            /*<doc>*/
+            /*</doc>*/
+            SnTrace.Test.Write(">>>> ACT END");
+
+
+
+            Assert.Inconclusive();
             // ACTION for doc
             await RESTCaller.GetResponseStringAsync(
                 "/Root/Content/IT/Document_Library/Calgary/BusinessPlan.docx", "RegeneratePreviews",
@@ -56,12 +86,22 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// <tab category="preview" article="previews" example="addComment" />
         [TestMethod]
         [Description("Add comment")]
         public async Task Docs_Preview_Main_AddComment()
         {
+            //UNDONE:Docs2: not implemented
             Assert.Inconclusive();
-            //UNDONE: this test has not run yet
+            SnTrace.Test.Write(">>>> ACT");
+            /*<doc>*/
+            /*</doc>*/
+            SnTrace.Test.Write(">>>> ACT END");
+
+
+
+            Assert.Inconclusive();
             // ACTION for doc
             var body = @"models=[{
                 ""page"": 3,
@@ -76,12 +116,22 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// <tab category="preview" article="previews" example="getComments" />
         [TestMethod]
         [Description("Get comments for a page")]
         public async Task Docs_Preview_Main_GetComments()
         {
+            //UNDONE:Docs2: not implemented
             Assert.Inconclusive();
-            //UNDONE: this test has not run yet
+            SnTrace.Test.Write(">>>> ACT");
+            /*<doc>*/
+            /*</doc>*/
+            SnTrace.Test.Write(">>>> ACT END");
+
+
+
+            Assert.Inconclusive();
             // ACTION for doc
             var result = await RESTCaller.GetResponseJsonAsync(new ODataRequest
             {
@@ -95,12 +145,22 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// <tab category="preview" article="previews" example="removeComment" />
         [TestMethod]
         [Description("Remove comment")]
         public async Task Docs_Preview_Main_RemoveComment()
         {
+            //UNDONE:Docs2: not implemented
             Assert.Inconclusive();
-            //UNDONE: this test has not run yet
+            SnTrace.Test.Write(">>>> ACT");
+            /*<doc>*/
+            /*</doc>*/
+            SnTrace.Test.Write(">>>> ACT END");
+
+
+
+            Assert.Inconclusive();
             // ACTION for doc
             var body = @"models=[{
                 ""id"": ""839ba802-d587-4153-b4e8-ccd4c593e1f4""}]";

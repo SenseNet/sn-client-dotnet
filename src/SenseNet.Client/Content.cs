@@ -930,6 +930,8 @@ public partial class Content : DynamicObject
 
             foreach (var field in _fields)
             {
+                if(field.Key == "Existing")
+                    continue;
                 dict[field.Key] = field.Value;
             }
         }
@@ -969,6 +971,10 @@ public partial class Content : DynamicObject
 
         // reset local values
         InitializeFromResponse(responseContent);
+    }
+    public async Task ResetAsync(object initialData, CancellationToken cancel)
+    {
+        await PutContentAsync(this.Path, initialData, cancel).ConfigureAwait(false);
     }
     private async Task<dynamic> PostContentAsync(string parentPath, object postData, CancellationToken cancel)
     {

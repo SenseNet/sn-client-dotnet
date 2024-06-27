@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Text;
 using AngleSharp;
+using SenseNet.Diagnostics;
 using static SenseNet.Client.Constants;
 
 namespace SenseNet.Client;
@@ -103,6 +104,15 @@ public class DefaultRestCaller : IRestCaller
         requestProcessor?.Invoke(handler, client, request);
 
         cancel.ThrowIfCancellationRequested();
+
+        if (SnTrace.Test.Enabled)
+        {
+            var content = request.Content;
+            var body = content == null ? "null" : await content.ReadAsStringAsync();
+            var msg = $">>>> RAW REQUEST: {method} {url} | {body}";
+            msg = msg.Replace("{", "{{").Replace("}", "}}");
+            SnTrace.Test.Write(msg);
+        }
 
         try
         {
