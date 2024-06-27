@@ -2,6 +2,12 @@
 {
     internal static class Constants
     {
+        public static class Repository
+        {
+            public static readonly string RootPath = "/Root";
+            public static readonly int RootId = 2;
+        }
+
         public static class User
         {
             public static readonly int AdminId = 1;
