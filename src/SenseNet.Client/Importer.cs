@@ -99,6 +99,7 @@ namespace SenseNet.Client
     /// <summary>
     /// Provides an API for importing files and folders from the file system.
     /// </summary>
+    [Obsolete("Do not use this class anymore. Use SenseNet.IO instead.", true)]
     public class Importer
     {
         private readonly string _sourcePath;

@@ -57,4 +57,32 @@ public class IntegrationTestBase
         return provider.GetRequiredService<IRepositoryCollection>();
     }
 
+    protected static Task<Content> EnsureContentAsync(string path, string typeName, IRepository repository, CancellationToken cancel)
+    {
+        return EnsureContentAsync(path, typeName, null, repository, cancel);
+    }
+    protected static async Task<Content> EnsureContentAsync(string path, string typeName, Action<Content>? setProperties, IRepository repository, CancellationToken cancel)
+    {
+        var content = await repository.LoadContentAsync(path, cancel);
+        if (content == null)
+        {
+            var parentPath = RepositoryPath.GetParentPath(path);
+            var name = RepositoryPath.GetFileName(path);
+            content = repository.CreateContent(parentPath, typeName, name);
+            if (setProperties == null)
+            {
+                await content.SaveAsync(cancel);
+                return content;
+            }
+        }
+
+        if (setProperties != null)
+        {
+            setProperties(content);
+            await content.SaveAsync(cancel);
+        }
+
+        return content;
+    }
+
 }
