@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SenseNet.Client.TestsForDocs.Infrastructure;
 using System.Threading.Channels;
 using SenseNet.Extensions.DependencyInjection;
+using SenseNet.Diagnostics;
 
 namespace SenseNet.Client.TestsForDocs;
 
@@ -17,10 +18,20 @@ public class Settings : ClientIntegrationTestBase
 
     /* ====================================================================================== ???? */
 
-    /// <tab category="________" article="setings" example="read" />
+    /// <tab category="settings" article="setings" example="read" />
     [TestMethod]
+    [Description("Reading settings")]
     public async Task Docs_Settings_Read()
     {
+        //UNDONE:Docs2: not implemented
+        Assert.Inconclusive();
+        SnTrace.Test.Write(">>>> ACT");
+        /*<doc>*/
+        /*</doc>*/
+        SnTrace.Test.Write(">>>> ACT END");
+
+
+
         await repository.UploadAsync(new UploadRequest
         {
             ParentPath = "/Root/System/Settings",
@@ -54,10 +65,20 @@ public class Settings : ClientIntegrationTestBase
         Assert.AreEqual("V1", settings.P1.ToString());
     }
 
-    /// <tab category="________" article="setings" example="write" />
+    /// <tab category="settings" article="setings" example="write" />
     [TestMethod]
+    [Description("Writing settings")]
     public async Task Docs_Settings_Write()
     {
+        //UNDONE:Docs2: not implemented
+        Assert.Inconclusive();
+        SnTrace.Test.Write(">>>> ACT");
+        /*<doc>*/
+        /*</doc>*/
+        SnTrace.Test.Write(">>>> ACT END");
+
+
+
         await repository.UploadAsync(new UploadRequest
         {
             ParentPath = "/Root/System/Settings",

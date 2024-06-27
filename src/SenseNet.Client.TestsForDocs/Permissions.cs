@@ -4,18 +4,34 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SenseNet.Client.Security;
 using SenseNet.Client.TestsForDocs.Infrastructure;
+using SenseNet.Diagnostics;
 
 namespace SenseNet.Client.TestsForDocs
 {
     [TestClass]
     public class Permissions : ClientIntegrationTestBase
     {
+        private CancellationToken cancel => new CancellationTokenSource(TimeSpan.FromSeconds(1000)).Token;
+        // ReSharper disable once InconsistentNaming
+        IRepository repository =>
+            GetRepositoryCollection()
+                .GetRepositoryAsync("local", cancel).GetAwaiter().GetResult();
+
         /* ====================================================================================== Main */
 
+        /// <tab category="permissions" article="permissions" example="getPermissionEntries" />
         [TestMethod]
         [Description("Get permission entries of a content")]
         public async Task Docs_Permissions_Main_GetPermissions_CurrentUser()
         {
+            //UNDONE:Docs2: not implemented
+            Assert.Inconclusive();
+            SnTrace.Test.Write(">>>> ACT");
+            /*<doc>*/
+            /*</doc>*/
+            SnTrace.Test.Write(">>>> ACT END");
+
+
             //UNDONE:- Feature request: Content.GetPermissionAsync
             // ACTION for doc
             var result = await RESTCaller.GetResponseStringAsync("/Root/Content/IT", "GetPermissions");
@@ -23,10 +39,20 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// <tab category="permissions" article="permissions" example="getAcl" />
         [TestMethod]
         [Description("Get full access control list of a content")]
         public async Task Docs_Permissions_Main_GetAcl()
         {
+            //UNDONE:Docs2: not implemented
+            Assert.Inconclusive();
+            SnTrace.Test.Write(">>>> ACT");
+            /*<doc>*/
+            /*</doc>*/
+            SnTrace.Test.Write(">>>> ACT END");
+
+
             //UNDONE:- Feature request: Content.GetAcl()
             // ACTION for doc
             //UNDONE: Missing doc and test. REST: GET /OData.svc/Root/Content('IT')/GetAcl
@@ -34,10 +60,20 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// <tab category="permissions" article="permissions" example="getPermissionEntry" />
         [TestMethod]
         [Description("Get a permissions entry of a specific user or group")]
         public async Task Docs_Permissions_Main_GetPermissions_Specific()
         {
+            //UNDONE:Docs2: not implemented
+            Assert.Inconclusive();
+            SnTrace.Test.Write(">>>> ACT");
+            /*<doc>*/
+            /*</doc>*/
+            SnTrace.Test.Write(">>>> ACT END");
+
+
             //UNDONE:- Feature request: Content.GetPermissionAsync(identity)
             // ACTION for doc
             var req = new ODataRequest
@@ -51,10 +87,20 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// <tab category="permissions" article="permissions" example="hasPermission" />
         [TestMethod]
         [Description("Check user access")]
         public async Task Docs_Permissions_Main_CheckPermission()
         {
+            //UNDONE:Docs2: not implemented
+            Assert.Inconclusive();
+            SnTrace.Test.Write(">>>> ACT");
+            /*<doc>*/
+            /*</doc>*/
+            SnTrace.Test.Write(">>>> ACT END");
+
+
             // ACTION for doc
             var content = await Content.LoadAsync("/Root/Content/IT").ConfigureAwait(false);
             var hasPermission = await content.HasPermissionAsync(new[] { "Open" });
@@ -62,10 +108,20 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// <tab category="permissions" article="permissions" example="hasPermissionUser" />
         [TestMethod]
         [Description("How can I check why a user cannot access a content?")]
         public async Task Docs_Permissions_Main_HasPermission_Open()
         {
+            //UNDONE:Docs2: not implemented
+            Assert.Inconclusive();
+            SnTrace.Test.Write(">>>> ACT");
+            /*<doc>*/
+            /*</doc>*/
+            SnTrace.Test.Write(">>>> ACT END");
+
+
             // ALIGN
             var user = Content.CreateNew("/Root/IMS/Public", "User", "devdog");
             user["LoginName"] = "devdog";
@@ -89,10 +145,20 @@ namespace SenseNet.Client.TestsForDocs
                     await user.DeleteAsync(true);
             }
         }
+
+        /// <tab category="permissions" article="permissions" example="canSave" />
         [TestMethod]
         [Description("How can I check why a user cannot save a content?")]
         public async Task Docs_Permissions_Main_HasPermission_Save()
         {
+            //UNDONE:Docs2: not implemented
+            Assert.Inconclusive();
+            SnTrace.Test.Write(">>>> ACT");
+            /*<doc>*/
+            /*</doc>*/
+            SnTrace.Test.Write(">>>> ACT END");
+
+
             //UNDONE: BUG: HasPermissionAsync method does not thrown any exception if the target user does not exist.
             // ALIGN
             var user = Content.CreateNew("/Root/IMS/Public", "User", "devdog");
@@ -117,10 +183,20 @@ namespace SenseNet.Client.TestsForDocs
                     await user.DeleteAsync(true);
             }
         }
+
+        /// <tab category="permissions" article="permissions" example="canSeePermissions" />
         [TestMethod]
         [Description("Check if I can see the permission settings")]
         public async Task Docs_Permissions_Main_HasPermission_See()
         {
+            //UNDONE:Docs2: not implemented
+            Assert.Inconclusive();
+            SnTrace.Test.Write(">>>> ACT");
+            /*<doc>*/
+            /*</doc>*/
+            SnTrace.Test.Write(">>>> ACT END");
+
+
             // ALIGN
             var user = Content.CreateNew("/Root/IMS/Public", "User", "devdog");
             user["LoginName"] = "devdog";
@@ -147,13 +223,21 @@ namespace SenseNet.Client.TestsForDocs
 
         /* ====================================================================================== Permission Management */
 
+        /// <tab category="permissions" article="permission-management" example="allowSave" />
         [TestMethod]
         [Description("Allow a user to save a content")]
         public async Task Docs_Permissions_Management_AllowUser()
         {
+            //UNDONE:Docs2: not implemented
+            Assert.Inconclusive();
+            SnTrace.Test.Write(">>>> ACT");
+            /*<doc>*/
+            /*</doc>*/
+            SnTrace.Test.Write(">>>> ACT END");
+
+
             //UNDONE:- Feature request: content.SetPermissionAsync(...)
             Assert.Inconclusive();
-            //UNDONE: this test has not run yet
             // ACTION for doc
             var permissionRequest = new[]
             {
@@ -169,12 +253,20 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// <tab category="permissions" article="permission-management" example="allowApproveForAGroup" />
         [TestMethod]
         [Description("Allow a group (role) to approve content in a document library")]
         public async Task Docs_Permissions_Management_AllowGroup()
         {
+            //UNDONE:Docs2: not implemented
             Assert.Inconclusive();
-            //UNDONE: this test has not run yet
+            SnTrace.Test.Write(">>>> ACT");
+            /*<doc>*/
+            /*</doc>*/
+            SnTrace.Test.Write(">>>> ACT END");
+
+
             // ACTION for doc
             var content = await Content.LoadAsync("/Root/Content/IT/Document_Library");
             var permissionRequest = new[]
@@ -190,12 +282,20 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// <tab category="permissions" article="permission-management" example="denyDelete" />
         [TestMethod]
         [Description("Prohibit a user from deleting content from a folder")]
         public async Task Docs_Permissions_Management_Deny()
         {
+            //UNDONE:Docs2: not implemented
             Assert.Inconclusive();
-            //UNDONE: this test has not run yet
+            SnTrace.Test.Write(">>>> ACT");
+            /*<doc>*/
+            /*</doc>*/
+            SnTrace.Test.Write(">>>> ACT END");
+
+
             // ACTION for doc
             var content = await Content.LoadAsync("/Root/Content/IT/Document_Library");
             var permissionRequest = new[]
@@ -211,12 +311,20 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// <tab category="permissions" article="permission-management" example="breakInheritance" />
         [TestMethod]
         [Description("Break inheritance")]
         public async Task Docs_Permissions_Management_Break()
         {
+            //UNDONE:Docs2: not implemented
             Assert.Inconclusive();
-            //UNDONE: this test has not run yet
+            SnTrace.Test.Write(">>>> ACT");
+            /*<doc>*/
+            /*</doc>*/
+            SnTrace.Test.Write(">>>> ACT END");
+
+
             // ACTION for doc
             var content = await Content.LoadAsync("/Root/Content/IT/Document_Library");
             await content.BreakInheritanceAsync();
@@ -224,12 +332,20 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// <tab category="permissions" article="permission-management" example="localOnly" />
         [TestMethod]
         [Description("Local only")]
         public async Task Docs_Permissions_Management_LocalOnly()
         {
+            //UNDONE:Docs2: not implemented
             Assert.Inconclusive();
-            //UNDONE: this test has not run yet
+            SnTrace.Test.Write(">>>> ACT");
+            /*<doc>*/
+            /*</doc>*/
+            SnTrace.Test.Write(">>>> ACT END");
+
+
             // ACTION for doc
             var content = await Content.LoadAsync("/Root/Content/IT/Document_Library");
             var permissionRequest = new[]
@@ -246,12 +362,20 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// <tab category="permissions" article="permission-management" example="customPermission" />
         [TestMethod]
         [Description("Using custom permissions")]
         public async Task Docs_Permissions_Management_Custom()
         {
+            //UNDONE:Docs2: not implemented
             Assert.Inconclusive();
-            //UNDONE: this test has not run yet
+            SnTrace.Test.Write(">>>> ACT");
+            /*<doc>*/
+            /*</doc>*/
+            SnTrace.Test.Write(">>>> ACT END");
+
+
             // ACTION for doc
             var content = await Content.LoadAsync("/Root/Content/IT/Document_Library");
             var permissionRequest = new[]
@@ -270,13 +394,21 @@ namespace SenseNet.Client.TestsForDocs
 
         /* ====================================================================================== Complex Permission Queries */
 
+        /// <tab category="permissions" article="permission-queries" example="getRelatedIdentities" />
         [TestMethod]
         [Description("Get all identities connected to a content")]
         public async Task Docs_Permissions_PermissionQueries_GetRelatedIdentities()
         {
+            //UNDONE:Docs2: not implemented
+            Assert.Inconclusive();
+            SnTrace.Test.Write(">>>> ACT");
+            /*<doc>*/
+            /*</doc>*/
+            SnTrace.Test.Write(">>>> ACT END");
+
+
             //UNDONE:- Feature request: PermissionQueries methods
             Assert.Inconclusive();
-            //UNDONE: this test has not run yet
             // ACTION for doc
             var result = await RESTCaller.GetResponseStringAsync(new ODataRequest
             {
@@ -294,12 +426,21 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// <tab category="permissions" article="permission-queries" example="getRelatedPermissions" />
         [TestMethod]
         [Description("Count number of permissions settings per identity")]
         public async Task Docs_Permissions_PermissionQueries_GetRelatedPermissions()
         {
+            //UNDONE:Docs2: not implemented
             Assert.Inconclusive();
-            //UNDONE: this test has not run yet
+            SnTrace.Test.Write(">>>> ACT");
+            /*<doc>*/
+            /*</doc>*/
+            SnTrace.Test.Write(">>>> ACT END");
+
+
+            Assert.Inconclusive();
             // ACTION for doc
             var body = @"models=[{
                 ""permissionLevel"": ""AllowedOrDenied"",
@@ -313,12 +454,20 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// <tab category="permissions" article="permission-queries" example="getRelatedItems" />
         [TestMethod]
         [Description("Get content with permission settings for a specific identity")]
         public async Task Docs_Permissions_PermissionQueries_GetRelatedItems()
         {
+            //UNDONE:Docs2: not implemented
             Assert.Inconclusive();
-            //UNDONE: this test has not run yet
+            SnTrace.Test.Write(">>>> ACT");
+            /*<doc>*/
+            /*</doc>*/
+            SnTrace.Test.Write(">>>> ACT END");
+
+
             // ACTION for doc
             var req = new ODataRequest
             {
@@ -337,12 +486,20 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// <tab category="permissions" article="permission-queries" example="getRelatedIdentitiesByPermissions" />
         [TestMethod]
         [Description("Get identities related to a permission in a subtree")]
         public async Task Docs_Permissions_PermissionQueries_GetRelatedIdentitiesByPermissions()
         {
+            //UNDONE:Docs2: not implemented
             Assert.Inconclusive();
-            //UNDONE: this test has not run yet
+            SnTrace.Test.Write(">>>> ACT");
+            /*<doc>*/
+            /*</doc>*/
+            SnTrace.Test.Write(">>>> ACT END");
+
+
             // ACTION for doc
             var req = new ODataRequest
             {
@@ -360,12 +517,20 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// <tab category="permissions" article="permission-queries" example="getRelatedItemsOneLevel" />
         [TestMethod]
         [Description("Get contents related to a permission in a container")]
         public async Task Docs_Permissions_PermissionQueries_GetRelatedItemsOneLevel()
         {
+            //UNDONE:Docs2: not implemented
             Assert.Inconclusive();
-            //UNDONE: this test has not run yet
+            SnTrace.Test.Write(">>>> ACT");
+            /*<doc>*/
+            /*</doc>*/
+            SnTrace.Test.Write(">>>> ACT END");
+
+
             // ACTION for doc
             var req = new ODataRequest
             {
@@ -383,12 +548,20 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// <tab category="permissions" article="permission-queries" example="getAllowedUsers" />
         [TestMethod]
         [Description("Get list of users allowed to do something")]
         public async Task Docs_Permissions_PermissionQueries_GetAllowedUsers()
         {
+            //UNDONE:Docs2: not implemented
             Assert.Inconclusive();
-            //UNDONE: this test has not run yet
+            SnTrace.Test.Write(">>>> ACT");
+            /*<doc>*/
+            /*</doc>*/
+            SnTrace.Test.Write(">>>> ACT END");
+
+
             // ACTION for doc
             var result = await RESTCaller.GetResponseStringAsync(new ODataRequest
             {
@@ -402,12 +575,20 @@ namespace SenseNet.Client.TestsForDocs
             // ASSERT
             Assert.Inconclusive();
         }
+
+        /// <tab category="permissions" article="permission-queries" example="getParentGroups" />
         [TestMethod]
         [Description("List of group memberships of a user")]
         public async Task Docs_Permissions_PermissionQueries_GetParentGroups()
         {
+            //UNDONE:Docs2: not implemented
             Assert.Inconclusive();
-            //UNDONE: this test has not run yet
+            SnTrace.Test.Write(">>>> ACT");
+            /*<doc>*/
+            /*</doc>*/
+            SnTrace.Test.Write(">>>> ACT END");
+
+
             // ACTION for doc
             var result = await RESTCaller.GetResponseStringAsync(new ODataRequest
             {

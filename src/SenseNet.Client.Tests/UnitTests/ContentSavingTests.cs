@@ -834,8 +834,7 @@ public class ContentSavingTests : TestBase
         var names = string.Join(", ", fields.Keys.OrderBy(x => x));
         Assert.AreEqual("Reference_Content, References_ContentEnumerable, References_WellKnownArray, References_WellKnownList", names);
         Assert.IsNotNull(data);
-        Assert.AreEqual("{" +
-                        "\"Reference_Content\":[300001]," +
+        Assert.AreEqual("{\"Reference_Content\":[300001]," +
                         "\"References_ContentEnumerable\":[\"/Root/Refs2/Content-4\",300005]," +
                         "\"References_WellKnownArray\":[400002,\"/Root/Refs2/ReferredContent-3\"]," +
                         "\"References_WellKnownList\":[400006,\"/Root/Refs2/ReferredContent-7\"]}", JsonHelper.Serialize(data));

@@ -39,12 +39,30 @@ internal static class RepositoryExtensions
         throw new System.ApplicationException(msg);
     }
 
-    public static T ProcessOperationResponse<T>(this Repository repository, string response, bool isAction)
+    public static T? ProcessOperationResponse<T>(this Repository repository, string response, bool isAction) //where T : class
     {
         if (string.IsNullOrEmpty(response))
             return default;
         repository.AssertParameterTypeIsNotContent<T>(isAction);
+        if (typeof(T) == typeof(string))
+            return (T)(object)response;
+        if (typeof(T) == typeof(object))
+            //return (T)(object)JsonConvert.DeserializeObject(response);
+            return (T)DeserializeObjectOrString(response);
         return JsonConvert.DeserializeObject<T>(response);
+    }
+
+    private static object DeserializeObjectOrString(string response)
+    {
+        try
+        {
+            return JsonConvert.DeserializeObject(response) ?? string.Empty;
+        }
+        catch
+        {
+            // do nothing
+        }
+        return response;
     }
     public static T ProcessContentOperationResponse<T>(this Repository repository, string response, bool isAction) where T : Content
     {
