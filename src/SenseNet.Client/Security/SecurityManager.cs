@@ -12,6 +12,7 @@ namespace SenseNet.Client.Security
     {
         internal static readonly string SETPERMISSIONS = "SetPermissions";
 
+        #region Obsolete
         /// <summary>
         /// Sets the provided permissions on the provided content.
         /// </summary>
@@ -19,18 +20,36 @@ namespace SenseNet.Client.Security
         /// <param name="permissions">Permission settings to be sent to the server.</param>
         /// <param name="server">Target server.</param>
         [Obsolete("Use SetPermissionsAsync(int, SetPermissionRequest[], IRepository, CancellationToken) overload instead.", true)]
-        public static async Task SetPermissionsAsync(int contentId, SetPermissionRequest[] permissions, ServerContext server = null)
-        {
-            if (permissions == null || permissions.Length == 0)
-                throw new InvalidOperationException("Please provide at least one permission entry.");
+        public static Task SetPermissionsAsync(int contentId, SetPermissionRequest[] permissions, ServerContext server = null) => throw new NotSupportedException();
 
-            await RESTCaller.GetResponseStringAsync(contentId, SETPERMISSIONS, HttpMethod.Post, JsonHelper.Serialize(new
-            {
-                r = permissions
-            }),
-            server)
-            .ConfigureAwait(false);
-        }
+        /// <summary>
+        /// Checks whether a user has the provided permissions on the provided content.
+        /// </summary>
+        /// <param name="contentId">Id of a content.</param>
+        /// <param name="permissions">Permission names to check.</param>
+        /// <param name="user">The user who's permissions need to be checked. If it is not provided, the server checks the current user.</param>
+        /// <param name="server">Target server.</param>
+        [Obsolete("Use HasPermissionAsync(int, string[], string?, IRepository, CancellationToken) overload instead.", true)]
+        public static Task<bool> HasPermissionAsync(int contentId, string[] permissions, string? user = null, ServerContext? server = null) => throw new NotSupportedException();
+
+        /// <summary>
+        /// Breaks permissions on the provided content.
+        /// </summary>
+        /// <param name="contentId">Id of a content.</param>
+        /// <param name="server">Target server.</param>
+        [Obsolete("Use BreakInheritanceAsync(int, IRepository, CancellationToken) overload instead.", true)]
+        public static Task BreakInheritanceAsync(int contentId, ServerContext? server = null) => throw new NotSupportedException();
+
+        /// <summary>
+        /// Removes permission break on the provided content.
+        /// </summary>
+        /// <param name="contentId">Id of a content.</param>
+        /// <param name="server">Target server.</param>
+        [Obsolete("Use UnbreakInheritanceAsync(int, IRepository, CancellationToken) overload instead.", true)]
+        public static Task UnbreakInheritanceAsync(int contentId, ServerContext? server = null) => throw new NotSupportedException();
+
+        #endregion
+
         /// <summary>
         /// Sets the provided permissions on the provided content.
         /// </summary>
@@ -54,35 +73,6 @@ namespace SenseNet.Client.Security
             }, cancel).ConfigureAwait(false);
         }
 
-        /// <summary>
-        /// Checks whether a user has the provided permissions on the provided content.
-        /// </summary>
-        /// <param name="contentId">Id of a content.</param>
-        /// <param name="permissions">Permission names to check.</param>
-        /// <param name="user">The user who's permissions need to be checked. If it is not provided, the server checks the current user.</param>
-        /// <param name="server">Target server.</param>
-        [Obsolete("Use HasPermissionAsync(int, string[], string?, IRepository, CancellationToken) overload instead.", true)]
-        public static async Task<bool> HasPermissionAsync(int contentId, string[] permissions, string? user = null, ServerContext? server = null)
-        {
-            if (permissions == null || permissions.Length == 0)
-                throw new InvalidOperationException("Please provide at least one permission entry.");
-
-            var requestData = new ODataRequest(server)
-            {
-                ContentId = contentId,
-                ActionName = "HasPermission",
-                Permissions = permissions,
-                User = user
-            };
-
-            var result = await RESTCaller.GetResponseStringAsync(requestData.GetUri(), server).ConfigureAwait(false);
-
-            bool hasPermission;
-            if (bool.TryParse(result, out hasPermission))
-                return hasPermission;
-
-            return false;
-        }
         /// <summary>
         /// Checks whether a user has the provided permissions on the provided content.
         /// </summary>
@@ -117,21 +107,6 @@ namespace SenseNet.Client.Security
         /// Breaks permissions on the provided content.
         /// </summary>
         /// <param name="contentId">Id of a content.</param>
-        /// <param name="server">Target server.</param>
-        [Obsolete("Use BreakInheritanceAsync(int, IRepository, CancellationToken) overload instead.", true)]
-        public static async Task BreakInheritanceAsync(int contentId, ServerContext? server = null)
-        {
-            await RESTCaller.GetResponseStringAsync(contentId, SETPERMISSIONS, HttpMethod.Post, JsonHelper.Serialize(new
-            {
-                inheritance = "break"
-            }),
-            server)
-            .ConfigureAwait(false);
-        }
-        /// <summary>
-        /// Breaks permissions on the provided content.
-        /// </summary>
-        /// <param name="contentId">Id of a content.</param>
         /// <param name="repository">Target repository</param>
         /// <param name="cancel">The token to monitor for cancellation requests.</param>
         /// <returns>A task that represents an asynchronous operation.</returns>
@@ -145,21 +120,6 @@ namespace SenseNet.Client.Security
             }, cancel).ConfigureAwait(false);
         }
 
-        /// <summary>
-        /// Removes permission break on the provided content.
-        /// </summary>
-        /// <param name="contentId">Id of a content.</param>
-        /// <param name="server">Target server.</param>
-        [Obsolete("Use UnbreakInheritanceAsync(int, IRepository, CancellationToken) overload instead.", true)]
-        public static async Task UnbreakInheritanceAsync(int contentId, ServerContext? server = null)
-        {
-            await RESTCaller.GetResponseStringAsync(contentId, SETPERMISSIONS, HttpMethod.Post, JsonHelper.Serialize(new
-                    {
-                        inheritance = "unbreak"
-                    }),
-                    server)
-                .ConfigureAwait(false);
-        }
         /// <summary>
         /// Removes permission break on the provided content.
         /// </summary>

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using IdentityModel.Client;
@@ -32,10 +33,12 @@ namespace SenseNet.Client.Authentication
     internal class IdentityServerTokenProvider : ITokenProvider
     {
         private readonly ILogger<IdentityServerTokenProvider> _logger;
+        private readonly IRestCaller _restCaller;
 
-        public IdentityServerTokenProvider(ILogger<IdentityServerTokenProvider> logger)
+        public IdentityServerTokenProvider(ILogger<IdentityServerTokenProvider> logger, IRestCaller restCaller)
         {
             _logger = logger;
+            _restCaller = restCaller;
         }
 
         public async Task<TokenInfo> GetTokenFromAuthorityAsync(AuthorityInfo authorityInfo, string secret,
@@ -86,13 +89,9 @@ namespace SenseNet.Client.Authentication
             // is provided by the repository using the request below.
             req.Parameters.Add("clientType", "client");
 
-            //TODO: remove this assertion when the GetResponse method below
-            // is able to receive a cancellation token.
-            cancel.ThrowIfCancellationRequested();
-
             try
             {
-                dynamic response = await RESTCaller.GetResponseJsonAsync(req, server)
+                dynamic response = await GetResponseJsonAsync(req, server, cancel)
                     .ConfigureAwait(false);
 
                 return new AuthorityInfo
@@ -108,5 +107,21 @@ namespace SenseNet.Client.Authentication
 
             return new AuthorityInfo();
         }
+        public async Task<dynamic> GetResponseJsonAsync(ODataRequest requestData, ServerContext server, CancellationToken cancel)
+        {
+            _restCaller.Server = server;
+            var rs = await _restCaller.GetResponseStringAsync(requestData.GetUri(), HttpMethod.Get, null, null, cancel)
+                .ConfigureAwait(false);
+
+            try
+            {
+                return JsonHelper.Deserialize(rs);
+            }
+            catch (Exception)
+            {
+                throw new ClientException(string.Format("Invalid response. Request: {0}. Response: {1}", requestData.GetUri(), rs));
+            }
+        }
+
     }
 }
