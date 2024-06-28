@@ -319,12 +319,14 @@ public partial class Content : DynamicObject
 
     //============================================================================= Static API
 
+    #region Obsolete methods with build time error
+
     /// <summary>
     /// Loads a content from the server.
     /// </summary>
     /// <param name="id">Content id.</param>
     /// <param name="server">Target server.</param>
-    [Obsolete("Use LoadContentAsync(int id, CancellationToken cancel) method of the IRepository.", false)]
+    [Obsolete("Use LoadContentAsync(int id, CancellationToken cancel) method of the IRepository.", true)]
     public static Task<Content?> LoadAsync(int id, ServerContext? server = null) => throw new NotSupportedException();
 
     /// <summary>
@@ -332,7 +334,7 @@ public partial class Content : DynamicObject
     /// </summary>
     /// <param name="path">Content path.</param>
     /// <param name="server">Target server.</param>
-    [Obsolete("Use LoadContentAsync(string path, CancellationToken cancel) method of the IRepository.", false)]
+    [Obsolete("Use LoadContentAsync(string path, CancellationToken cancel) method of the IRepository.", true)]
     public static Task<Content> LoadAsync(string path, ServerContext? server = null) => throw new NotSupportedException();
     /// <summary>
     /// Loads a content from the server. Use this method to specify a detailed 
@@ -340,7 +342,7 @@ public partial class Content : DynamicObject
     /// </summary>
     /// <param name="requestData">Detailed information that will be sent as part of the request.</param>
     /// <param name="server">Target server.</param>
-    [Obsolete("Use LoadContentAsync<T>(LoadContentRequest requestData, CancellationToken cancel) method of the IRepository.", false)]
+    [Obsolete("Use LoadContentAsync<T>(LoadContentRequest requestData, CancellationToken cancel) method of the IRepository.", true)]
     public static Task<Content?> LoadAsync(ODataRequest requestData, ServerContext? server = null) => throw new NotSupportedException();
 
     /// <summary>
@@ -348,7 +350,7 @@ public partial class Content : DynamicObject
     /// </summary>
     /// <param name="path">Content path.</param>
     /// <param name="server">Target server.</param>
-    [Obsolete("Use IsContentExistsAsync(string path, CancellationToken cancel) method of the IRepository.", false)]
+    [Obsolete("Use IsContentExistsAsync(string path, CancellationToken cancel) method of the IRepository.", true)]
     public static Task<bool> ExistsAsync(string path, ServerContext? server = null) => throw new NotSupportedException();
 
     /// <summary>
@@ -357,7 +359,7 @@ public partial class Content : DynamicObject
     /// <param name="path">Path of the container.</param>
     /// <param name="server">Target server.</param>
     /// <returns></returns>
-    [Obsolete("Use LoadCollectionAsync or LoadCollectionAsync<T> methods of the IRepository.", false)]
+    [Obsolete("Use LoadCollectionAsync or LoadCollectionAsync<T> methods of the IRepository.", true)]
     public static Task<IEnumerable<Content>> LoadCollectionAsync(string path, ServerContext? server = null) => throw new NotSupportedException();
     /// <summary>
     /// Queries the server for content items using the provided request data.
@@ -365,7 +367,7 @@ public partial class Content : DynamicObject
     /// <param name="requestData">Detailed information that will be sent as part of the request.
     /// For example Top, Skip, Select, etc.</param>
     /// <param name="server">Target server.</param>
-    [Obsolete("Use LoadCollectionAsync or LoadCollectionAsync<T> methods of the IRepository.", false)]
+    [Obsolete("Use LoadCollectionAsync or LoadCollectionAsync<T> methods of the IRepository.", true)]
     public static Task<IEnumerable<Content>> LoadCollectionAsync(ODataRequest requestData, ServerContext? server = null) => throw new NotSupportedException();
 
     /// <summary>
@@ -374,10 +376,11 @@ public partial class Content : DynamicObject
     /// <param name="requestData">Detailed information that will be sent as part of the request.
     /// For example Top, Skip, Select, Expand</param>
     /// <param name="server">Target server.</param>
-    [Obsolete("Use LoadReferencesAsync method of the IRepository.", false)]
+    [Obsolete("Use LoadReferencesAsync method of the IRepository.", true)]
     public static Task<IEnumerable<Content>> LoadReferencesAsync(ODataRequest requestData,
         ServerContext? server = null) => throw new NotSupportedException();
 
+    #endregion
 
     public Task<Content> LoadReferenceAsync(string fieldName, CancellationToken cancel)
     {
@@ -446,6 +449,8 @@ public partial class Content : DynamicObject
             throw new InvalidOperationException("Cannot load references of unsaved content.");
     }
 
+    #region Obsolete methods with build time error
+
     /// <summary>
     /// Executes a count-only query in a subfolder on the server.
     /// </summary>
@@ -453,7 +458,7 @@ public partial class Content : DynamicObject
     /// <param name="query">Content query text. If it is empty, the count of children will be returned.</param>
     /// <param name="server">Target server.</param>
     /// <returns>Count of result content.</returns>
-    [Obsolete("Use GetContentCountAsync, QueryCountAsync or QueryCountForAdminAsync methods of the IRepository.", false)]
+    [Obsolete("Use GetContentCountAsync, QueryCountAsync or QueryCountForAdminAsync methods of the IRepository.", true)]
     public static Task<int> GetCountAsync(string path, string query, ServerContext? server = null) => throw new NotSupportedException();
 
     /// <summary>
@@ -466,16 +471,10 @@ public partial class Content : DynamicObject
     /// <param name="expand">Fields to expand.</param>
     /// <param name="settings">Query settings.</param>
     /// <param name="server">Target server.</param>
-    [Obsolete("Use QueryForAdminAsync or QueryForAdminAsync<T> methods of the IRepository.", false)]
-    public static async Task<IEnumerable<Content>> QueryForAdminAsync(string queryText, string[]? select = null, string[]? expand = null, QuerySettings? settings = null, ServerContext? server = null)
-    {
-        if (settings == null)
-            settings = new QuerySettings();
-        settings.EnableAutofilters = FilterStatus.Disabled;
-        settings.EnableLifespanFilter = FilterStatus.Disabled;
-
-        return await QueryAsync(queryText, select, expand, settings, server).ConfigureAwait(false);
-    }
+    [Obsolete("Use QueryForAdminAsync or QueryForAdminAsync<T> methods of the IRepository.", true)]
+    public static async Task<IEnumerable<Content>> QueryForAdminAsync(
+        string queryText, string[]? select = null, string[]? expand = null, QuerySettings? settings = null, ServerContext? server = null)
+        => throw new NotSupportedException();
     /// <summary>
     /// Executes a query on the server and returns results filtered and expanded 
     /// based on the provided parameters. 
@@ -485,7 +484,7 @@ public partial class Content : DynamicObject
     /// <param name="expand">Fields to expand.</param>
     /// <param name="settings">Query settings.</param>
     /// <param name="server">Target server.</param>
-    [Obsolete("Use QueryAsync or QueryAsync<T> method of the IRepository.", false)]
+    [Obsolete("Use QueryAsync or QueryAsync<T> method of the IRepository.", true)]
     public static Task<IEnumerable<Content>> QueryAsync(string queryText, string[]? select = null,
         string[]? expand = null, QuerySettings? settings = null, ServerContext? server = null) => throw new NotSupportedException();
 
@@ -500,7 +499,7 @@ public partial class Content : DynamicObject
     /// <param name="server">Target server.</param>
     /// <param name="progressCallback">An optional callback method that is called after each chunk is uploaded to the server.</param>
     /// <returns>The uploaded file content returned at the end of the upload request.</returns>
-    [Obsolete("Use the UploadAsync method of IRepository.", false)]
+    [Obsolete("Use the UploadAsync method of IRepository.", true)]
     public static Task<Content> UploadAsync(string parentPath, string fileName, Stream stream,
         string? contentType = null, string? propertyName = null, ServerContext? server = null, 
         Action<int>? progressCallback = null) => throw new NotSupportedException();
@@ -516,7 +515,7 @@ public partial class Content : DynamicObject
     /// <param name="server">Target server.</param>
     /// <param name="progressCallback">An optional callback method that is called after each chunk is uploaded to the server.</param>
     /// <returns>The uploaded file content returned at the end of the upload request.</returns>
-    [Obsolete("Use the UploadAsync method of IRepository.", false)]
+    [Obsolete("Use the UploadAsync method of IRepository.", true)]
     public static Task<Content> UploadAsync(int parentId, string fileName, Stream stream,
         string? contentType = null, string? propertyName = null, ServerContext? server = null,
         Action<int>? progressCallback = null) => throw new NotSupportedException();
@@ -534,7 +533,7 @@ public partial class Content : DynamicObject
     /// <param name="propertyName">Name of the field to upload to. Default is Binary.</param>
     /// <param name="server">Target server.</param>
     /// <returns>The uploaded file content returned at the end of the upload request.</returns>
-    [Obsolete("Use the UploadTextAsync method of IRepository.", false)]
+    [Obsolete("Use the UploadTextAsync method of IRepository.", true)]
     public static Task<Content> UploadTextAsync(string parentPath, string fileName, string fileText,
         CancellationToken cancellationToken, string? contentType = null, string? propertyName = null,
         ServerContext? server = null) => throw new NotSupportedException();
@@ -551,7 +550,7 @@ public partial class Content : DynamicObject
     /// <param name="propertyName">Name of the field to upload to. Default is Binary.</param>
     /// <param name="server">Target server.</param>
     /// <returns>The uploaded file content returned at the end of the upload request.</returns>
-    [Obsolete("Use the UploadTextAsync method of IRepository.", false)]
+    [Obsolete("Use the UploadTextAsync method of IRepository.", true)]
     public static Task<Content> UploadTextAsync(int parentId, string fileName, string fileText,
         CancellationToken cancellationToken,
         string? contentType = null, string? propertyName = null, ServerContext? server = null) => throw new NotSupportedException();
@@ -569,7 +568,7 @@ public partial class Content : DynamicObject
     /// <param name="fileName">Binary file name. Default is the content name.</param>
     /// <param name="propertyName">Binary field name. Default is "Binary".</param>
     /// <param name="server">Target server.</param>
-    [Obsolete("Do not use this method anymore.", false)]
+    [Obsolete("Do not use this method anymore.", true)]
     public static async Task UploadBlobAsync(string parentPath, string contentName, long fileSize,
         Func<int, int, string, Task> blobCallback, string? contentType = null, string? fileName = null, 
         string? propertyName = null, ServerContext? server = null) => throw new NotSupportedException();
@@ -587,12 +586,12 @@ public partial class Content : DynamicObject
     /// <param name="fileName">Binary file name. Default is the content name.</param>
     /// <param name="propertyName">Binary field name. Default is "Binary".</param>
     /// <param name="server">Target server.</param>
-    [Obsolete("Do not use this method anymore.", false)]
+    [Obsolete("Do not use this method anymore.", true)]
     public static async Task UploadBlobAsync(int parentId, string contentName, long fileSize,
         Func<int, int, string, Task> blobCallback, string? contentType = null, string? fileName = null,
         string? propertyName = null, ServerContext? server = null) => throw new NotSupportedException();
 
-    [Obsolete("Do not use this method anymore.", false)]
+    [Obsolete("Do not use this method anymore.", true)]
     private static async Task SaveAndFinalizeBlobInternalAsync(string initResponse, long fileSize,
         Func<int, int, string, Task> blobCallback, string? fileName = null,
         string? propertyName = null, ServerContext? server = null) => throw new NotSupportedException();
@@ -606,7 +605,7 @@ public partial class Content : DynamicObject
     /// <param name="propertyName">Binary field name. Default is Binary.</param>
     /// <param name="server">Target server.</param>
     /// <returns>A token that can be used with the Blob storage API.</returns>
-    [Obsolete("Do not use this method anymore.", false)]
+    [Obsolete("Do not use this method anymore.", true)]
     public static async Task<string> GetBlobToken(int id, string? version = null, string? propertyName = null,
         ServerContext? server = null) => throw new NotSupportedException();
 
@@ -619,7 +618,7 @@ public partial class Content : DynamicObject
     /// <param name="propertyName">Binary field name. Default is Binary.</param>
     /// <param name="server">Target server.</param>
     /// <returns>A token that can be used with the Blob storage API.</returns>
-    [Obsolete("Do not use this method anymore.", false)]
+    [Obsolete("Do not use this method anymore.", true)]
     public static async Task<string> GetBlobToken(string path, string? version = null, string? propertyName = null,
         ServerContext? server = null) => throw new NotSupportedException();
 
@@ -631,7 +630,7 @@ public partial class Content : DynamicObject
     /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
     /// <param name="server">Target server. If null, the first one will be used from the configuration.</param>
     /// <returns>A task that represents an asynchronous operation.</returns>
-    [Obsolete("Use DeleteContentAsync(string path, bool permanent, CancellationToken cancel) method of the IRepository.", false)]
+    [Obsolete("Use DeleteContentAsync(string, bool, CancellationToken) method of the IRepository.", true)]
     public static async Task DeleteAsync(string path, bool permanent, CancellationToken cancellationToken,
         ServerContext? server = null) => throw new NotSupportedException();
 
@@ -643,7 +642,7 @@ public partial class Content : DynamicObject
     /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
     /// <param name="server">Target server. If null, the first one will be used from the configuration.</param>
     /// <returns>A task that represents an asynchronous operation.</returns>
-    [Obsolete("Use DeleteContentAsync(string[] paths, bool permanent, CancellationToken cancel) method of the IRepository.", false)]
+    [Obsolete("Use DeleteContentAsync(string[], bool, CancellationToken) method of the IRepository.", true)]
     public static Task DeleteAsync(string[] paths, bool permanent, CancellationToken cancellationToken,
         ServerContext? server = null) => throw new NotSupportedException();
 
@@ -655,7 +654,7 @@ public partial class Content : DynamicObject
     /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
     /// <param name="server">Target server. If null, the first one will be used from the configuration.</param>
     /// <returns>A task that represents an asynchronous operation.</returns>
-    [Obsolete("Use DeleteContentAsync(int id, bool permanent, CancellationToken cancel) method of the IRepository.", false)]
+    [Obsolete("Use DeleteContentAsync(int, bool, CancellationToken) method of the IRepository.", true)]
     public static async Task DeleteAsync(int id, bool permanent, CancellationToken cancellationToken,
         ServerContext? server = null) => throw new NotSupportedException();
 
@@ -667,7 +666,7 @@ public partial class Content : DynamicObject
     /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
     /// <param name="server">Target server. If null, the first one will be used from the configuration.</param>
     /// <returns>A task that represents an asynchronous operation.</returns>
-    [Obsolete("Use DeleteContentAsync(int[] ids, bool permanent, CancellationToken cancel) method of the IRepository.", false)]
+    [Obsolete("Use DeleteContentAsync(int[], bool, CancellationToken) method of the IRepository.", true)]
     public static Task DeleteAsync(int[] ids, bool permanent, CancellationToken cancellationToken,
         ServerContext? server = null) => throw new NotSupportedException();
 
@@ -679,9 +678,11 @@ public partial class Content : DynamicObject
     /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
     /// <param name="server">Target server. If null, the first one will be used from the configuration.</param>
     /// <returns>A task that represents an asynchronous operation.</returns>
-    [Obsolete("Use DeleteContentAsync(object[] idsOrPaths, bool permanent, CancellationToken cancel) method of the IRepository.", false)]
+    [Obsolete("Use DeleteContentAsync(object[], bool, CancellationToken) method of the IRepository.", true)]
     public static Task DeleteAsync(object[] idsOrPaths, bool permanent, CancellationToken cancellationToken,
         ServerContext? server = null) => throw new NotSupportedException();
+
+    #endregion
 
     //============================================================================= Instance API
 

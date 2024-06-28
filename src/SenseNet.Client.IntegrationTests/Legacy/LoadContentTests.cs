@@ -16,8 +16,11 @@ namespace SenseNet.Client.IntegrationTests.Legacy
         [TestMethod]
         public async Task Load_NotFound()
         {
+            var repository = await GetRepositoryCollection()
+                .GetRepositoryAsync("local", _cancel).ConfigureAwait(false);
+
             // load a non-existing content: this should not throw an exception
-            var content = await Content.LoadAsync("/Root/ThisPathDoesNotExist").ConfigureAwait(false);
+            var content = await repository.LoadContentAsync("/Root/ThisPathDoesNotExist", _cancel).ConfigureAwait(false);
 
             Assert.IsNull(content);
         }
@@ -25,7 +28,10 @@ namespace SenseNet.Client.IntegrationTests.Legacy
         [TestMethod]
         public async Task LoadById()
         {
-            var content = await Content.LoadAsync(Constants.User.AdminId).ConfigureAwait(false);
+            var repository = await GetRepositoryCollection()
+                .GetRepositoryAsync("local", _cancel).ConfigureAwait(false);
+
+            var content = await repository.LoadContentAsync(Constants.User.AdminId, _cancel).ConfigureAwait(false);
 
             Assert.IsNotNull(content);
             Assert.AreEqual(Constants.User.AdminId, content.Id);
@@ -34,26 +40,26 @@ namespace SenseNet.Client.IntegrationTests.Legacy
         [TestMethod]
         public async Task LoadReferences_DynamicProperty()
         {
-            dynamic adminGroup = await Content.LoadAsync(new ODataRequest
+            var repository = await GetRepositoryCollection()
+                .GetRepositoryAsync("local", _cancel).ConfigureAwait(false);
+            
+            var adminGroup = await repository.LoadContentAsync<Group>(new LoadContentRequest
             {
                 Path = Constants.Group.AdministratorsPath,
                 Expand = new[] { "Members" },
                 Select = new[] { "Id", "Name", "Members/Id", "Members/Path", "Members/Type", "Members/CreationDate" },
-                SiteUrl = ServerContext.GetUrl(null)
-            })
-            .ConfigureAwait(false);
+            }, _cancel);
 
-            IEnumerable<dynamic> members = adminGroup.Members;
+            Assert.IsNotNull(adminGroup);
+            var members = adminGroup.Members;
             Assert.IsNotNull(members);
 
-            // Use items as dynamic, without converting them to Content.
-            // This is OK if you do not need the Content class' functionality.
-            dynamic admin = members.FirstOrDefault();
+            var admin = members.FirstOrDefault();
             Assert.IsNotNull(admin);
 
             int id = admin.Id;
-            string path = admin.Path;
-            DateTime cd = admin.CreationDate;
+            var path = admin.Path;
+            var cd = admin.CreationDate;
 
             Assert.AreEqual(Constants.User.AdminId, id);
             Assert.AreEqual(Constants.User.AdminPath, path);
@@ -62,14 +68,19 @@ namespace SenseNet.Client.IntegrationTests.Legacy
         [TestMethod]
         public async Task LoadReferences_DynamicProperty_Enumerable()
         {
-            dynamic adminGroup = await Content.LoadAsync(new ODataRequest
+            var repository = await GetRepositoryCollection()
+                .GetRepositoryAsync("local", _cancel).ConfigureAwait(false);
+
+            dynamic adminGroup = await repository.LoadContentAsync(new LoadContentRequest
             {
                 Path = Constants.Group.AdministratorsPath,
-                Expand = new[] { "Members" },
-                Select = new[] { "Id", "Name", "Members/Id", "Members/Name", "Members/Path", "Members/Type", "Members/CreationDate", "Members/Index" },
-                SiteUrl = ServerContext.GetUrl(null)
-            })
-            .ConfigureAwait(false);
+                Expand = new[] {"Members"},
+                Select = new[]
+                {
+                    "Id", "Name", "Members/Id", "Members/Name", "Members/Path", "Members/Type", "Members/CreationDate",
+                    "Members/Index"
+                },
+            }, _cancel);
 
             //var members = ((IEnumerable<dynamic>)adminGroup.Members).ToContentEnumerable();
             //var members = adminGroup.Members.ToContentEnumerable();
@@ -84,7 +95,7 @@ namespace SenseNet.Client.IntegrationTests.Legacy
                 await member.SaveAsync().ConfigureAwait(false);
 
                 // load it again from the server
-                dynamic tempContent = await Content.LoadAsync(member.Id).ConfigureAwait(false);
+                dynamic tempContent = await repository.LoadContentAsync(member.Id, _cancel).ConfigureAwait(false);
 
                 Assert.AreEqual(newIndex, (int)tempContent.Index);
             }
@@ -93,7 +104,10 @@ namespace SenseNet.Client.IntegrationTests.Legacy
         [TestMethod]
         public async Task Load_PropertyAccess_DateTime()
         {
-            var content = await Content.LoadAsync(Constants.User.AdminId).ConfigureAwait(false);
+            var repository = await GetRepositoryCollection()
+                .GetRepositoryAsync("local", _cancel).ConfigureAwait(false);
+
+            var content = await repository.LoadContentAsync(Constants.User.AdminId, _cancel).ConfigureAwait(false);
             dynamic dContent = content;
 
             Assert.IsNotNull(content);
@@ -114,14 +128,16 @@ namespace SenseNet.Client.IntegrationTests.Legacy
         [TestMethod]
         public async Task Query_Simple()
         {
-            var tasks = await Content.QueryAsync("+TypeIs:Folder",
-                new[] { "Id", "Name", "Path", "DisplayName", "Description" },
-                settings: new QuerySettings
-                {
-                    EnableAutofilters = FilterStatus.Disabled,
-                    Top = 5
-                })
-                .ConfigureAwait(false);
+            var repository = await GetRepositoryCollection()
+                .GetRepositoryAsync("local", _cancel).ConfigureAwait(false);
+
+            var tasks = await repository.QueryAsync(new QueryContentRequest
+            {
+                ContentQuery = "+TypeIs:Folder",
+                Select = new[] { "Id", "Name", "Path", "DisplayName", "Description" },
+                Top = 5,
+                AutoFilters = FilterStatus.Disabled
+            }, _cancel).ConfigureAwait(false);
 
             var count = tasks.Count();
 
@@ -131,14 +147,16 @@ namespace SenseNet.Client.IntegrationTests.Legacy
         [TestMethod]
         public async Task Query_Complex()
         {
-            var tasks = await Content.QueryAsync("+TypeIs:(File Folder) +Name:(*e* *.js) +CreationDate:>'2000-01-01'",
-                new[] { "Id", "Name", "Path", "DisplayName", "Description" },
-                settings: new QuerySettings
-                {
-                    EnableAutofilters = FilterStatus.Disabled,
-                    Top = 5
-                })
-                .ConfigureAwait(false);
+            var repository = await GetRepositoryCollection()
+                .GetRepositoryAsync("local", _cancel).ConfigureAwait(false);
+            
+            var tasks = await repository.QueryAsync(new QueryContentRequest
+            {
+                ContentQuery = "+TypeIs:(File Folder) +Name:(*e* *.js) +CreationDate:>'2000-01-01'",
+                Select = new[] { "Id", "Name", "Path", "DisplayName", "Description" },
+                Top = 5,
+                AutoFilters = FilterStatus.Disabled
+            }, _cancel).ConfigureAwait(false);
 
             var count = tasks.Count();
 

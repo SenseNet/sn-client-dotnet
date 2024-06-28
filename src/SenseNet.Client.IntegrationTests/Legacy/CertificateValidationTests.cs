@@ -4,8 +4,10 @@ using System.Security.Cryptography.X509Certificates;
 namespace SenseNet.Client.IntegrationTests.Legacy
 {
     [TestClass]
-    public class CertificateValidationTests
+    public class CertificateValidationTests : IntegrationTestBase
     {
+        private CancellationToken _cancel => CancellationToken.None;
+
         [ClassInitialize]
         public static void ClassInitializer(TestContext context)
         {
@@ -24,6 +26,9 @@ namespace SenseNet.Client.IntegrationTests.Legacy
         [TestMethod]
         public async Task Cert_Validation()
         {
+            var repository = await GetRepositoryCollection()
+                .GetRepositoryAsync("local", _cancel).ConfigureAwait(false);
+
             var defaultServer = ClientContext.Current.Server;
             var regularServer = new ServerContext()
             {
@@ -45,13 +50,15 @@ namespace SenseNet.Client.IntegrationTests.Legacy
 
             // ACTION-1
             _serverCertificateCustomValidationCallbackCalled = false;
-            var content = await Content.LoadAsync("/Root", regularServer).ConfigureAwait(false);
+            repository.Server = regularServer;
+            _ = await repository.LoadContentAsync("/Root", _cancel);
             // ASSERT-1
             Assert.IsFalse(_serverCertificateCustomValidationCallbackCalled);
 
             // ACTION-2
             _serverCertificateCustomValidationCallbackCalled = false;
-            content = await Content.LoadAsync("/Root", trustedServer);
+            repository.Server = trustedServer;
+            _ = await repository.LoadContentAsync("/Root", _cancel);
             // ASSERT-2
             Assert.IsTrue(_serverCertificateCustomValidationCallbackCalled);
         }

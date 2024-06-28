@@ -34,7 +34,7 @@ namespace SenseNet.Client.DemoMvc.Controllers
                 Path = content.Path
             }, HttpContext.RequestAborted);
 
-            var user = await repository.Server.GetCurrentUserAsync().ConfigureAwait(false);
+            var user = await repository.GetCurrentUserAsync(null, null, HttpContext.RequestAborted).ConfigureAwait(false);
 
             return View(new SnContent
             {
