@@ -832,37 +832,7 @@ namespace SenseNet.Client.TestsForDocs
                 cancel);
             Assert.AreEqual("{Key:'Value'}", downloadedText);
         }
-
-        /// <tab category="content-management" article="upload" example="uploadFileNoChunks" />
-        [TestMethod]
-        [Description("Upload whole files instead of chunks")]
-        public void Docs2_ContentManagement_Upload_WholeFile()
-        {
-            /*<doc>*/
-            // The SenseNet.Client does not implement this feature on the .NET platform..
-            /*</doc>*/
-        }
-
-        /// <tab category="content-management" article="upload" example="uploadStructure" />
-        [TestMethod]
-        [Description("Upload a structure")]
-        public void Docs2_ContentManagement_Upload_Structure()
-        {
-            /*<doc>*/
-            // The SenseNet.Client does not implement this feature on the .NET platform..
-            /*</doc>*/
-        }
-
-        /// <tab category="content-management" article="upload" example="uploadResume" />
-        [TestMethod]
-        [Description("Interrupted uploads")]
-        public void Docs2_ContentManagement_Upload_Interrupted()
-        {
-            /*<doc>*/
-            // The SenseNet.Client does not implement this feature on the .NET platform..
-            /*</doc>*/
-        }
-
+        
         /* ====================================================================================== Copy or move */
 
         /// <tab category="content-management" article="copy-move" example="copyContent" />
@@ -1280,27 +1250,6 @@ namespace SenseNet.Client.TestsForDocs
                 content["AllowedChildTypes"] = backup;
                 await content.SaveAsync(cancel);
             }
-
-        }
-
-        /// <tab category="content-management" article="allowed-childtypes" example="checkAllowedTypes" />
-        //UNDONE:Docs2: Missing assertion.
-        [TestMethod]
-        [Description("Check allowed childtypes")]
-        public async Task Docs2_ContentManagement_AllowedChildTypes_Check()
-        {
-            /*<doc>*/
-            await repository.InvokeFunctionAsync<string>(new OperationRequest
-            {
-                Path = "/Root/Content",
-                OperationName = "CheckAllowedChildTypesOfFolders"
-            }, cancel);
-            /*</doc>*/
-            /* RAW REQUEST:
-            GET https://localhost:44362/OData.svc/Root('Content')/CheckAllowedChildTypesOfFolders
-            */
-
-            // ASSERT
         }
 
         /* ====================================================================================== Trash */

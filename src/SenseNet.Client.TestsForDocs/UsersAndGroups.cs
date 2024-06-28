@@ -369,24 +369,5 @@ namespace SenseNet.Client.TestsForDocs
                 }, cancel);
             }
         }
-
-        /// <tab category="users-and-groups" article="memberships" example="workspaceMembers" />
-        //UNDONE:Docs2: Unnecessary example (?).
-        [TestMethod]
-        [Description("Get the list of workspaces where the given user is member")]
-        public async Task Docs2_UsersAndGroups_GroupMembership_GetWorkspacesOfUser()
-        {
-            Assert.Inconclusive();
-            SnTrace.Test.Write(">>>> ACT");
-            /*<doc>*/
-            /*</doc>*/
-            SnTrace.Test.Write(">>>> ACT END");
-
-            //UNDONE: Missing doc and test. REST: GET /OData.svc/Root/Content?query=+Type:Group +Members:{{Id:1163}} .AUTOFILTERS:OFF&$select=Workspace/DisplayName&$expand=Workspace
-
-            // ASSERT
-            Assert.Inconclusive();
-        }
-
     }
 }
