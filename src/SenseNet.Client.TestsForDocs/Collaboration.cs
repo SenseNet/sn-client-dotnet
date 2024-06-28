@@ -713,8 +713,7 @@ namespace SenseNet.Client.TestsForDocs
         }
 
         /// <tab category="collaboration" article="saved-queries" example="savePrivateQuery" />
-        //TODO: Causes error if the user profile cannot be created.
-        // Switch on this on the3 server:
+        // Switch on this on the server:
         // {
         //   "sensenet": {
         //     "identityManagement": {
