@@ -3,8 +3,10 @@
 namespace SenseNet.Client.IntegrationTests.Legacy
 {
     [TestClass]
-    public class ErrorHandlingTests
+    public class ErrorHandlingTests : IntegrationTestBase
     {
+        private CancellationToken _cancel => new CancellationTokenSource(TimeSpan.FromSeconds(1000)).Token;
+
         [ClassInitialize]
         public static void ClassInitializer(TestContext context)
         {
@@ -14,12 +16,15 @@ namespace SenseNet.Client.IntegrationTests.Legacy
         [TestMethod]
         public async Task ContentTypeIsNotAllowed()
         {
-            var content = Content.CreateNew("/Root", "Memo", "memo01");
+            var repository = await GetRepositoryCollection()
+                .GetRepositoryAsync("local", _cancel).ConfigureAwait(false);
+
+            var content = repository.CreateContent("/Root", "Memo", "memo01");
             var errorIsCorrect = false;
 
             try
             {
-                await content.SaveAsync().ConfigureAwait(false);
+                await content.SaveAsync(_cancel).ConfigureAwait(false);
             }
             catch (ClientException ex)
             {
@@ -35,12 +40,15 @@ namespace SenseNet.Client.IntegrationTests.Legacy
         [TestMethod]
         public async Task ParentDoesNotExist()
         {
-            var content = Content.CreateNew("/Root/abcd", "Memo", "memo01");
+            var repository = await GetRepositoryCollection()
+                .GetRepositoryAsync("local", _cancel).ConfigureAwait(false);
+
+            var content = repository.CreateContent("/Root/abcd", "Memo", "memo01");
             var errorIsCorrect = false;
 
             try
             {
-                await content.SaveAsync().ConfigureAwait(false);
+                await content.SaveAsync(_cancel).ConfigureAwait(false);
             }
             catch (ClientException ex)
             {

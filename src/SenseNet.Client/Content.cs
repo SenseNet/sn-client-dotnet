@@ -221,7 +221,7 @@ public partial class Content : DynamicObject
     /// </summary>
     /// <param name="id">Content id.</param>
     /// <param name="server">Target server.</param>
-    [Obsolete("Use CreateExistingContent(int id) or CreateExistingContent<T>(int id) methods of the IRepository.")]
+    [Obsolete("Use CreateExistingContent(int id) or CreateExistingContent<T>(int id) methods of the IRepository.", true)]
     public static Content Create(int id, ServerContext? server = null)
     {
         return new Content(server)
@@ -235,7 +235,7 @@ public partial class Content : DynamicObject
     /// </summary>
     /// <param name="path">Content path.</param>
     /// <param name="server">Target server.</param>
-    [Obsolete("Use CreateExistingContent(string path) or CreateExistingContent<T>(string path) methods of the IRepository.")]
+    [Obsolete("Use CreateExistingContent(string path) or CreateExistingContent<T>(string path) methods of the IRepository.", true)]
     public static Content Create(string path, ServerContext? server = null)
     {
         if (string.IsNullOrEmpty(path))
@@ -256,7 +256,7 @@ public partial class Content : DynamicObject
     /// <param name="name">Name of the new content.</param>
     /// <param name="contentTemplate">Content template path.</param>
     /// <param name="server">Target server.</param>
-    [Obsolete("Use CreateContent or CreateContentByTemplate methods of the IRepository.")]
+    [Obsolete("Use CreateContent or CreateContentByTemplate methods of the IRepository.", true)]
     public static Content CreateNew(string parentPath, string contentType, string name, string? contentTemplate = null, ServerContext? server = null)
     {
         return CreateNew<Content>(parentPath, contentType, name, contentTemplate, server);
@@ -270,7 +270,7 @@ public partial class Content : DynamicObject
     /// <param name="name">Name of the new content.</param>
     /// <param name="contentTemplate">Content template path.</param>
     /// <param name="server">Target server.</param>
-    [Obsolete("Use CreateContent<T> or CreateContentByTemplate<T> methods of the IRepository.")]
+    [Obsolete("Use CreateContent<T> or CreateContentByTemplate<T> methods of the IRepository.", true)]
     public static T CreateNew<T>(string parentPath, string contentType, string name, string? contentTemplate = null, ServerContext? server = null) where T : Content
     {
         if (string.IsNullOrEmpty(parentPath))

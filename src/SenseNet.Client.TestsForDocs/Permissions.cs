@@ -127,7 +127,7 @@ namespace SenseNet.Client.TestsForDocs
 
 
             // ALIGN
-            var user = Content.CreateNew("/Root/IMS/Public", "User", "devdog");
+            var user = repository.CreateContent("/Root/IMS/Public", "User", "devdog");
             user["LoginName"] = "devdog";
             user["Email"] = "devdog@sensenet.com";
             user["Password"] = "devdog";
@@ -165,7 +165,7 @@ namespace SenseNet.Client.TestsForDocs
 
             //UNDONE: BUG: HasPermissionAsync method does not thrown any exception if the target user does not exist.
             // ALIGN
-            var user = Content.CreateNew("/Root/IMS/Public", "User", "devdog");
+            var user = repository.CreateContent("/Root/IMS/Public", "User", "devdog");
             user["LoginName"] = "devdog";
             user["Email"] = "devdog@sensenet.com";
             user["Password"] = "devdog";
@@ -202,7 +202,7 @@ namespace SenseNet.Client.TestsForDocs
 
 
             // ALIGN
-            var user = Content.CreateNew("/Root/IMS/Public", "User", "devdog");
+            var user = repository.CreateContent("/Root/IMS/Public", "User", "devdog");
             user["LoginName"] = "devdog";
             user["Email"] = "devdog@sensenet.com";
             user["Password"] = "devdog";

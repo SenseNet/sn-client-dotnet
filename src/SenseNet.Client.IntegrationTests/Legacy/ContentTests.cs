@@ -64,8 +64,8 @@ namespace SenseNet.Client.IntegrationTests.Legacy
             var ids = new int[count];
             for (int i = 0; i < count; i++)
             {
-                var content = Content.CreateNew("/Root", "Folder", Guid.NewGuid().ToString());
-                await content.SaveAsync().ConfigureAwait(false);
+                var content = repository.CreateContent("/Root", "Folder", Guid.NewGuid().ToString());
+                await content.SaveAsync(_cancel).ConfigureAwait(false);
                 paths[i] = content.Path;
                 ids[i] = content.Id;
             }
@@ -91,8 +91,8 @@ namespace SenseNet.Client.IntegrationTests.Legacy
             var ids = new int[count];
             for (int i = 0; i < count; i++)
             {
-                var content = Content.CreateNew("/Root", "Folder", Guid.NewGuid().ToString());
-                await content.SaveAsync().ConfigureAwait(false);
+                var content = repository.CreateContent("/Root", "Folder", Guid.NewGuid().ToString());
+                await content.SaveAsync(_cancel).ConfigureAwait(false);
                 paths[i] = content.Path;
                 ids[i] = content.Id;
             }
@@ -116,8 +116,8 @@ namespace SenseNet.Client.IntegrationTests.Legacy
             var ids = new int[count];
             for (int i = 0; i < count; i++)
             {
-                var content = Content.CreateNew("/Root", "Folder", Guid.NewGuid().ToString());
-                await content.SaveAsync().ConfigureAwait(false);
+                var content = repository.CreateContent("/Root", "Folder", Guid.NewGuid().ToString());
+                await content.SaveAsync(_cancel).ConfigureAwait(false);
                 paths[i] = content.Path;
                 ids[i] = content.Id;
             }
@@ -141,8 +141,8 @@ namespace SenseNet.Client.IntegrationTests.Legacy
             var ids = new int[count];
             for (int i = 0; i < count; i++)
             {
-                var content = Content.CreateNew("/Root", "Folder", Guid.NewGuid().ToString());
-                await content.SaveAsync().ConfigureAwait(false);
+                var content = repository.CreateContent("/Root", "Folder", Guid.NewGuid().ToString());
+                await content.SaveAsync(_cancel).ConfigureAwait(false);
                 paths[i] = content.Path;
                 ids[i] = content.Id;
             }
@@ -165,8 +165,8 @@ namespace SenseNet.Client.IntegrationTests.Legacy
             var ids = new int[count];
             for (int i = 0; i < count; i++)
             {
-                var content = Content.CreateNew("/Root", "Folder", Guid.NewGuid().ToString());
-                await content.SaveAsync().ConfigureAwait(false);
+                var content = repository.CreateContent("/Root", "Folder", Guid.NewGuid().ToString());
+                await content.SaveAsync(_cancel).ConfigureAwait(false);
                 paths[i] = content.Path;
                 ids[i] = content.Id;
             }
@@ -189,8 +189,8 @@ namespace SenseNet.Client.IntegrationTests.Legacy
             var ids = new int[count];
             for (int i = 0; i < count; i++)
             {
-                var content = Content.CreateNew("/Root", "Folder", Guid.NewGuid().ToString());
-                await content.SaveAsync().ConfigureAwait(false);
+                var content = repository.CreateContent("/Root", "Folder", Guid.NewGuid().ToString());
+                await content.SaveAsync(_cancel).ConfigureAwait(false);
                 paths[i] = content.Path;
                 ids[i] = content.Id;
             }
