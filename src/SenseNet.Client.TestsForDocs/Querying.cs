@@ -1112,12 +1112,13 @@ Assert.Inconclusive();
         }
 
         /// <tab category="querying" article="query-template-parameters" example="chainingProperties" />
-        //UNDONE:Docs2:- the test is not implemented well: server returns http 500 if the current user's manager is null
+        //UNDONE:Docs2:- Server returns an error if the current user's manager is null. Issue: Chained template parameters can cause server error. #2136
         [TestMethod]
         [Description("Templates with properties 2")]
         public async Task Docs2_Querying_Template_PropertyChain()
         {
-Assert.Inconclusive();
+            Assert.Inconclusive();
+
             /*<doc>*/
             var result = await repository.QueryAsync(
                 new QueryContentRequest { ContentQuery = "TypeIs:Task +CreationDate:<@@CurrentUser.Manager.CreationDate@@" }, cancel);
