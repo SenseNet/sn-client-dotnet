@@ -71,7 +71,7 @@ namespace SenseNet.Client.IntegrationTests.Legacy
             var repository = await GetRepositoryCollection()
                 .GetRepositoryAsync("local", _cancel).ConfigureAwait(false);
 
-            dynamic adminGroup = await repository.LoadContentAsync(new LoadContentRequest
+            var adminGroup = await repository.LoadContentAsync<Group>(new LoadContentRequest
             {
                 Path = Constants.Group.AdministratorsPath,
                 Expand = new[] {"Members"},
@@ -86,9 +86,9 @@ namespace SenseNet.Client.IntegrationTests.Legacy
             //var members = adminGroup.Members.ToContentEnumerable();
             var members = ContentExtensions.ToContentEnumerable(adminGroup.Members);
 
-            foreach (dynamic member in members)
+            foreach (var member in members)
             {
-                int newIndex = member.Index + 1;
+                int newIndex = (member.Index ?? 0) + 1;
                 member.Index = newIndex;
 
                 // use the client Content API, this was the purpose of the ToContentEnumerable extension method

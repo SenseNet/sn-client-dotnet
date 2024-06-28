@@ -783,7 +783,8 @@ public class ContentGeneralPropertiesTests : TestBase
         dynamic data = JsonHelper.Deserialize(json);
         var dict = data.ToObject<Dictionary<string, object>>();
         var keys = string.Join(", ", dict.Keys);
-        Assert.AreEqual("", keys);
+        Assert.AreEqual("Status", keys);
+        Assert.AreEqual(null, dict["Status"]);
     }
     [TestMethod]
     public async Task GeneralProps_T_Save_TaskStatus_NotNull()

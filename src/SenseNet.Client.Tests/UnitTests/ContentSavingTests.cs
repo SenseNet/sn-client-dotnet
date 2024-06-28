@@ -59,11 +59,10 @@ public class ContentSavingTests : TestBase
         Dictionary<string, object> fields = data.ToObject<Dictionary<string, object>>();
 
         var names = string.Join(", ", fields.Keys.OrderBy(x => x));
-        Assert.AreEqual("__ContentType, Existing, Index, Name", names);
+        Assert.AreEqual("__ContentType, Index, Name", names);
         Assert.IsNotNull(data);
         Assert.AreEqual("Folder", data.__ContentType.ToString());
         Assert.AreEqual("MyContent-1", data.Name.ToString());
-        Assert.AreEqual("False", data.Existing.ToString());
         Assert.AreEqual("9999", data.Index.ToString());
     }
     [TestMethod]
@@ -106,11 +105,10 @@ public class ContentSavingTests : TestBase
         Dictionary<string, object> fields = data.ToObject<Dictionary<string, object>>();
 
         var names = string.Join(", ", fields.Keys.OrderBy(x => x));
-        Assert.AreEqual("__ContentType, Existing, Index, Name", names);
+        Assert.AreEqual("__ContentType, Index, Name", names);
         Assert.IsNotNull(data);
         Assert.AreEqual("TestContent_A", data.__ContentType.ToString());
         Assert.AreEqual("MyContent-1", data.Name.ToString());
-        Assert.AreEqual("False", data.Existing.ToString());
         Assert.AreEqual("9998", data.Index.ToString());
     }
     [TestMethod]
@@ -154,11 +152,10 @@ public class ContentSavingTests : TestBase
         Dictionary<string, object> fields = data.ToObject<Dictionary<string, object>>();
 
         var names = string.Join(", ", fields.Keys.OrderBy(x => x));
-        Assert.AreEqual("__ContentType, Existing, Index, Index2, Name", names);
+        Assert.AreEqual("__ContentType, Index, Index2, Name", names);
         Assert.IsNotNull(data);
         Assert.AreEqual("TestContent_A", data.__ContentType.ToString());
         Assert.AreEqual("MyContent-1", data.Name.ToString());
-        Assert.AreEqual("False", data.Existing.ToString());
         Assert.AreEqual("9997", data.Index.ToString());
         Assert.AreEqual("9996", data.Index2.ToString());
     }
@@ -434,11 +431,10 @@ public class ContentSavingTests : TestBase
         Dictionary<string, object> fields = data.ToObject<Dictionary<string, object>>();
 
         var names = string.Join(", ", fields.Keys.OrderBy(x => x));
-        Assert.AreEqual("__ContentType, Existing, Index, Name, String1", names);
+        Assert.AreEqual("__ContentType, Index, Name, String1", names);
         Assert.IsNotNull(data);
         Assert.AreEqual("TestContent_IgnoredProperties", data.__ContentType.ToString());
         Assert.AreEqual("MyContent-1", data.Name.ToString());
-        Assert.AreEqual("False", data.Existing.ToString());
         Assert.AreEqual("9998", data.Index.ToString());
         Assert.AreEqual("String1Value", data.String1.ToString());
     }
@@ -737,11 +733,11 @@ public class ContentSavingTests : TestBase
         var fields = data.ToObject<Dictionary<string, object>>();
 
         var names = string.Join(", ", fields.Keys.OrderBy(x => x));
-        Assert.AreEqual("__ContentType, Existing, Name, Reference_Content, Reference_WellKnown," +
+        Assert.AreEqual("__ContentType, Name, Reference_Content, Reference_WellKnown," +
                         " References_ContentArray, References_ContentEnumerable, References_ContentList," +
                         " References_WellKnownArray, References_WellKnownEnumerable, References_WellKnownList", names);
         Assert.IsNotNull(data);
-        Assert.AreEqual("{\"__ContentType\":\"TestContent_References\",\"Existing\":false," +
+        Assert.AreEqual("{\"__ContentType\":\"TestContent_References\"," +
                         "\"Reference_Content\":[100001]," +
                         "\"References_ContentArray\":[\"/Root/Refs/Content-2\",100003]," +
                         "\"References_ContentEnumerable\":[\"/Root/Refs/Content-4\",100005]," +
