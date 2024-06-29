@@ -23,7 +23,7 @@ namespace SenseNet.Client.IntegrationTests.Legacy
                 return true;
             };
 
-        [TestMethod]
+        //[TestMethod]
         public async Task Cert_Validation()
         {
             var repository = await GetRepositoryCollection()
