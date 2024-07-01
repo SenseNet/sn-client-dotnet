@@ -71,8 +71,10 @@ public class ServerContext
     /// </summary>
     /// <param name="select">Fields to select.</param>
     /// <param name="expand">Fields to expand.</param>
+    [Obsolete("Use GetCurrentUserAsync(string[], string[], CancellationToken) method of IRepository instead.", true)]
     public Task<Content> GetCurrentUserAsync(string[] select = null, string[] expand = null)
     {
+        /*
         ODataRequest request = null;
 
         if (!string.IsNullOrEmpty(Authentication?.AccessToken))
@@ -127,6 +129,8 @@ public class ServerContext
         };
 
         return Content.LoadAsync(request, this);
+        */
+        throw new NotSupportedException();
     }
 
     /// <summary>

@@ -16,7 +16,7 @@ namespace SenseNet.Client
         /// <param name="server">Optional server argument for content items.</param>
         public static IEnumerable<Content> ToContentEnumerable(this IEnumerable<dynamic> source, ServerContext server = null)
         {
-            return source.Select(rc => (Content)Content.CreateFromResponse(rc, server));
+            return source.Select(rc => rc is Content ? (Content)rc : (Content) Content.CreateFromResponse(rc, server));
         }
 
         /// <summary>

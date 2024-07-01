@@ -4,6 +4,7 @@
     public class RenameTests : IntegrationTestBase
     {
         private static readonly string ROOTPATH = "/Root/_RenameTests";
+        private readonly CancellationToken _cancel = CancellationToken.None;
 
         [TestMethod]
         public async Task Rename_Folder_01()
@@ -12,7 +13,7 @@
             var repository = await GetRepositoryCollection()
                 .GetRepositoryAsync("local", CancellationToken.None).ConfigureAwait(false);
 
-            await Tools.EnsurePathAsync(ROOTPATH).ConfigureAwait(false);
+            await Tools.EnsurePathAsync(ROOTPATH, null, repository, _cancel).ConfigureAwait(false);
 
             var parent = repository.CreateContent(ROOTPATH, "Folder", "Parent-" + Guid.NewGuid());
             //var parent = Content.CreateNew(ROOTPATH, "Folder", "Parent-" + Guid.NewGuid());
@@ -34,13 +35,17 @@
             Assert.AreEqual(parent.Path + "/" + child.Name, child.Path);
         }
 
-        [ClassInitialize]
-        public static void Cleanup(TestContext context)
+        [TestInitialize]
+        public void InitializeTest(TestContext context)
         {
+            var repository = GetRepositoryCollection()
+                .GetRepositoryAsync("local", _cancel).GetAwaiter().GetResult();
+
             Initializer.InitializeServer(context);
 
-            var root = Content.LoadAsync(ROOTPATH).Result;
-            root?.DeleteAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+            var root = repository.LoadContentAsync(ROOTPATH, _cancel).Result;
+            root?.DeleteAsync(true, _cancel).ConfigureAwait(false).GetAwaiter().GetResult();
         }
+
     }
 }

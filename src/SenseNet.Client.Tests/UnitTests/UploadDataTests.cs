@@ -2,14 +2,17 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
 
 namespace SenseNet.Client.Tests.UnitTests
 {
     [TestClass]
-    public class UploadDataTests
+    public class UploadDataTests : TestBase
     {
+        private CancellationToken _cancel = new CancellationToken();
+
         [TestMethod]
         public void UploadData_DictionaryAndKeyValuePairsEquality()
         {
@@ -36,12 +39,23 @@ namespace SenseNet.Client.Tests.UnitTests
         [ExpectedException(typeof(InvalidOperationException))]
         public async Task Upload_Text_TooBig()
         {
+            var restCaller = CreateRestCallerForProcessWebRequestResponse(null);
+            var repositories = GetRepositoryCollection(
+                services => { services.AddSingleton(restCaller); });
+            var repository = await repositories.GetRepositoryAsync(FakeServer, _cancel)
+                .ConfigureAwait(false);
+
             var orig = ClientContext.Current.ChunkSizeInBytes;
 
             try
             {
                 ClientContext.Current.ChunkSizeInBytes = 10;
-                await Content.UploadTextAsync(1, "example.txt", "too long text", CancellationToken.None);
+                await repository.UploadAsync(new UploadRequest
+                {
+                    ParentId = 1,
+                    ContentName = "example.txt",
+                    ContentType = ""
+                }, "too long text", _cancel);
             }
             finally
             {

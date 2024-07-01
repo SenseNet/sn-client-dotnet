@@ -101,24 +101,6 @@ namespace SenseNet.Client.Tests.UnitTests
             // ReSharper disable once UnusedVariable
             var server = new ClientContext().Server;
         }
-        [TestMethod]
-        [ExpectedException(typeof(InvalidOperationException))]
-        public async Task NoServer_Load()
-        {
-            var savedClientContext = ClientContext.Current;
-
-            try
-            {
-                // create a temporary empty context
-                ClientContext.Current = new ClientContext();
-
-                await Content.LoadAsync(Constants.User.AdminId).ConfigureAwait(false);
-            }
-            finally
-            {
-                ClientContext.Current = savedClientContext;
-            }
-        }
 
         [TestMethod]
         public void RandomServer()

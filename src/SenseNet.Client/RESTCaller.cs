@@ -37,6 +37,7 @@ namespace SenseNet.Client
     /// Sends HTTP requests to the SenseNet OData REST API.
     /// </summary>
     // ReSharper disable once InconsistentNaming
+    [Obsolete("Use repository methods instead", true)]
     public static class RESTCaller
     {
         private static readonly string JsonContentMimeType = "application/json";
