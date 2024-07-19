@@ -868,7 +868,7 @@ public class ContentTests : IntegrationTestBase
         Assert.IsTrue(await repository.IsContentExistsAsync(content.Path, cancel));
 
         // ACT
-        var postData = @"models=[{""permanent"" = true}]";
+        var postData = @"models=[{""permanent"": true}]";
         var request = new OperationRequest() { ContentId = content.Id, OperationName = "Delete", PostData = postData };
         await repository.InvokeActionAsync(request, CancellationToken.None);
 
