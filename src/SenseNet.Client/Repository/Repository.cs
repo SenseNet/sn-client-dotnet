@@ -853,8 +853,12 @@ internal class Repository : IRepository
             {
                 if (request.PostData == null)
                     return;
-                var json = JsonConvert.SerializeObject(request.PostData);
-                httpRequest.Content = new StringContent(json);
+
+                var stringContent = request.PostData is string
+                    ? (string)request.PostData
+                    : JsonConvert.SerializeObject(request.PostData);
+                
+                httpRequest.Content = new StringContent(stringContent);
             },
             responseProcessor: async (response, cancellation) =>
             {

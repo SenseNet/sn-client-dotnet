@@ -855,4 +855,25 @@ public class ContentTests : IntegrationTestBase
         Assert.IsTrue(exception.Message.Contains("TestOperation"));
     }
 
+    [TestMethod]
+    public async Task IT_Op_ExecuteAction_RawData()
+    {
+        var repository = await GetRepositoryCollection()
+            .GetRepositoryAsync("local", CancellationToken.None).ConfigureAwait(false);
+        var cancel = new CancellationTokenSource().Token;
+
+        var content = repository.CreateContent("/Root/Content", "SystemFolder", Guid.NewGuid().ToString());
+        await content.SaveAsync(cancel);
+        Assert.AreNotEqual(0, content.Id);
+        Assert.IsTrue(await repository.IsContentExistsAsync(content.Path, cancel));
+
+        // ACT
+        var postData = @"models=[{""permanent"": true}]";
+        var request = new OperationRequest() { ContentId = content.Id, OperationName = "Delete", PostData = postData };
+        await repository.InvokeActionAsync(request, CancellationToken.None);
+
+        // ASSERT
+        Assert.IsFalse(await repository.IsContentExistsAsync(content.Path, cancel));
+    }
+
 }
