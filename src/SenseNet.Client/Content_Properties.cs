@@ -405,7 +405,7 @@ public partial class Content
         }
         if (input is JArray jArray)
         {
-            return GetReference(jArray[0], propertyType);
+            return jArray.Count == 0 ? null : GetReference(jArray[0], propertyType);
         }
         throw new NotSupportedException($"GetReference failed. Object type {input.GetType().FullName} is not supported.");
     }
