@@ -1068,6 +1068,47 @@ public class ContentLoadingTests : TestBase
         Assert.AreEqual(typeof(MyContentB), referredItems[2].GetType());
     }
 
+    [TestMethod]
+    public async Task LoadContent_T_References_Expanded_Empty()
+    {
+        // ALIGN
+        var restCaller = CreateRestCallerFor(@"{ ""d"": { ""Name"": ""Content"", ""Type"": ""Workspace"",
+    // single reference
+    ""Owner"": { ""Path"": ""/Root/IMS/BuiltIn/Portal/Admin"" },
+    // null reference
+    ""Manager"": []
+  }
+}");
+
+        var repositories = GetRepositoryCollection(services =>
+        {
+            services.AddSingleton(restCaller);
+            services.RegisterGlobalContentType<MyContent>();
+            services.RegisterGlobalContentType<MyContent2>();
+            services.RegisterGlobalContentType<MyContent3>();
+            services.RegisterGlobalContentType<TestContentForReferences>("Workspace");
+        });
+        var repository = await repositories.GetRepositoryAsync(FakeServer, CancellationToken.None)
+            .ConfigureAwait(false);
+
+        // ACT
+        var request = new LoadContentRequest()
+        {
+            Path = "/Root/Content",
+            Expand = new[] { "Owner", "Manager" },
+            Select = new[] { "Name", "Type", "Owner/Path", "Manager/Path" }
+        };
+        var content = await repository.LoadContentAsync<TestContentForReferences>(request, CancellationToken.None);
+
+        // ASSERT
+        var requestedUri = (Uri)restCaller.ReceivedCalls().ToArray()[1].GetArguments().First()!;
+        Assert.IsNotNull(requestedUri);
+        Assert.AreEqual("/OData.svc/Root('Content')?metadata=no&$expand=Owner,Manager&$select=Name,Type,Owner/Path,Manager/Path", requestedUri.PathAndQuery);
+
+        Assert.IsNotNull(content.Owner);
+        Assert.IsNull(content.Manager);
+    }
+
     /* =================================================================== CUSTOM PROPERTIES */
 
     private class CustomType1
