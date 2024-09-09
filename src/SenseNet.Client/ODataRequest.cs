@@ -447,7 +447,7 @@ namespace SenseNet.Client
         {
             // short url format that contains only the id
             if (ContentId > 0)
-                return $"{SiteUrl}/{SERVICE_NAME}/content({ContentId})";
+                return $"{SiteUrl.TrimEnd('/')}/{SERVICE_NAME}/content({ContentId})";
 
             // regular url that contains the content path
             var path = Path.TrimStart('/');

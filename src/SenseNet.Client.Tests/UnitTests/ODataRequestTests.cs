@@ -1254,6 +1254,34 @@ public class ODataRequestTests
 
     #endregion
 
+    #region Bug fixes
+
+    [TestMethod]
+    public void ODataRequest_ToString_FIX_152_DuplicatedSlash()
+    {
+        var url = "https://example.com";
+
+        var server = new ServerContext { Url = url };
+        var request = new ODataRequest(server) { Path = "/Root/Content", ActionName = "Action1" };
+        Assert.AreEqual("https://example.com/OData.svc/Root('Content')/Action1?metadata=no", request.ToString());
+
+        server = new ServerContext { Url = url };
+        request = new ODataRequest(server) { ContentId = 42, ActionName = "Action1" };
+        Assert.AreEqual("https://example.com/OData.svc/content(42)/Action1?metadata=no", request.ToString());
+
+        url = "https://example.com/";
+
+        server = new ServerContext { Url = url };
+        request = new ODataRequest(server) { Path = "/Root/Content", ActionName = "Action1" };
+        Assert.AreEqual("https://example.com/OData.svc/Root('Content')/Action1?metadata=no", request.ToString());
+
+        server = new ServerContext { Url = url };
+        request = new ODataRequest(server) { ContentId = 42, ActionName = "Action1" };
+        Assert.AreEqual("https://example.com/OData.svc/content(42)/Action1?metadata=no", request.ToString());
+    }
+
+    #endregion
+
     //#region LoadReferenceRequest_*
 
     [TestMethod]
