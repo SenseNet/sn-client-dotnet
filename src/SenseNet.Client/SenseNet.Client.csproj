@@ -41,9 +41,9 @@
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-		<PackageReference Include="SenseNet.Tools" Version="3.2.13" />
+		<PackageReference Include="SenseNet.Tools" Version="3.2.13.1" />
 		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.2.0" />
-		<PackageReference Include="System.Text.Json" Version="8.0.0" />
+		<PackageReference Include="System.Text.Json" Version="9.0.0" />
 	</ItemGroup>
 
 </Project>
