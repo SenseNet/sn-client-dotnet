@@ -1,10 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFrameworks>netstandard2.0;net6.0</TargetFrameworks>
+		<TargetFramework>net8.0</TargetFramework>
 		<RootNamespace>SenseNet.Client</RootNamespace>
 		<PackageId>SenseNet.Client</PackageId>
-		<Version>4.0.1</Version>
+		<Version>4.1.0</Version>
 		<Company>Sense/Net Inc.</Company>
 		<Description>A .Net client for sensenet that makes it easy to use the REST API of the Content Repository.</Description>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -30,20 +30,20 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="AngleSharp" Version="0.16.1" />
-		<PackageReference Include="IdentityModel" Version="4.1.1" />
-		<PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
-		<PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="3.1.7" />
-		<PackageReference Include="Microsoft.Extensions.Http" Version="6.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Logging" Version="6.0.0" />
-		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1">
+		<PackageReference Include="AngleSharp" Version="1.2.0" />
+		<PackageReference Include="IdentityModel" Version="7.0.0" />
+		<PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+		<PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Http" Version="9.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />
+		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-		<PackageReference Include="SenseNet.Tools" Version="3.2.13" />
-		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.2.0" />
-		<PackageReference Include="System.Text.Json" Version="8.0.0" />
+		<PackageReference Include="SenseNet.Tools" Version="3.3.0" />
+		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.3.0" />
+		<PackageReference Include="System.Text.Json" Version="9.0.0" />
 	</ItemGroup>
 
 </Project>

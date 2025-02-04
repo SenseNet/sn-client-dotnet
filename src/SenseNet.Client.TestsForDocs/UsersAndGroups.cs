@@ -1,12 +1,6 @@
-﻿using System;
-using System.Net.Http;
-using System.Threading.Channels;
-using System.Threading.Tasks;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using NuGet.Frameworks;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SenseNet.Client.TestsForDocs.Infrastructure;
 using SenseNet.Diagnostics;
-using SenseNet.Extensions.DependencyInjection;
 
 namespace SenseNet.Client.TestsForDocs
 {
