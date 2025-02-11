@@ -25,10 +25,6 @@
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-		<DocumentationFile>bin\Release\netstandard2.0\SenseNet.Client.xml</DocumentationFile>
-	</PropertyGroup>
-
 	<ItemGroup>
 		<PackageReference Include="AngleSharp" Version="1.2.0" />
 		<PackageReference Include="IdentityModel" Version="7.0.0" />
