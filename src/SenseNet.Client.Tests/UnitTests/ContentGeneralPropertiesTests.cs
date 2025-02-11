@@ -781,7 +781,7 @@ public class ContentGeneralPropertiesTests : TestBase
         var json = (string)arguments[2]!;
         json = json.Substring("models=[".Length).TrimEnd(']');
         dynamic data = JsonHelper.Deserialize(json);
-        var dict = data.ToObject<Dictionary<string, object>>();
+        var dict = (Dictionary<string, object>)data.ToObject<Dictionary<string, object>>();
         var keys = string.Join(", ", dict.Keys);
         Assert.AreEqual("Status", keys);
         Assert.AreEqual(null, dict["Status"]);
